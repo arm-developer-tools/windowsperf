@@ -1,0 +1,109 @@
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, Arm Limited
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+WPERF_ARMV8_ARCH_EVENTS(SW_INCR,                     0x0000, "sw_incr")
+WPERF_ARMV8_ARCH_EVENTS(L1I_CACHE_REFILL,            0x0001, "l1i_cache_refill")
+WPERF_ARMV8_ARCH_EVENTS(L1I_TLB_REFILL,              0x0002, "l1i_tlb_refill")
+WPERF_ARMV8_ARCH_EVENTS(L1D_CACHE_REFILL,            0x0003, "l1d_cache_refill")
+WPERF_ARMV8_ARCH_EVENTS(L1D_CACHE,                   0x0004, "l1d_cache")
+WPERF_ARMV8_ARCH_EVENTS(L1D_TLB_REFILL,              0x0005, "l1d_tlb_refill")
+WPERF_ARMV8_ARCH_EVENTS(LD_RETIRED,                  0x0006, "ld_retired")
+WPERF_ARMV8_ARCH_EVENTS(ST_RETIRED,                  0x0007, "st_retired")
+WPERF_ARMV8_ARCH_EVENTS(INST_RETIRED,                0x0008, "inst_retired")
+WPERF_ARMV8_ARCH_EVENTS(EXC_TAKEN,                   0x0009, "exc_taken")
+WPERF_ARMV8_ARCH_EVENTS(EXC_RETURN,                  0x000A, "exc_return")
+WPERF_ARMV8_ARCH_EVENTS(CID_WRITE_RETIRED,           0x000B, "cid_write_retired")
+WPERF_ARMV8_ARCH_EVENTS(PC_WRITE_RETIRED,            0x000C, "pc_write_retired")
+WPERF_ARMV8_ARCH_EVENTS(BR_IMMED_RETIRED,            0x000D, "br_immed_retired")
+WPERF_ARMV8_ARCH_EVENTS(BR_RETURN_RETIRED,           0x000E, "br_return_retired")
+WPERF_ARMV8_ARCH_EVENTS(UNALIGNED_LDST_RETIRED,      0x000F, "unaligned_ldst_retired")
+WPERF_ARMV8_ARCH_EVENTS(BR_MIS_PRED,                 0x0010, "br_mis_pred")
+WPERF_ARMV8_ARCH_EVENTS(CPU_CYCLES,                  0x0011, "cpu_cycles")
+WPERF_ARMV8_ARCH_EVENTS(BR_PRED,                     0x0012, "br_pred")
+WPERF_ARMV8_ARCH_EVENTS(MEM_ACCESS,                  0x0013, "mem_access")
+WPERF_ARMV8_ARCH_EVENTS(L1I_CACHE,                   0x0014, "l1i_cache")
+WPERF_ARMV8_ARCH_EVENTS(L1D_CACHE_WB,                0x0015, "l1d_cache_wb")
+WPERF_ARMV8_ARCH_EVENTS(L2D_CACHE,                   0x0016, "l2d_cache")
+WPERF_ARMV8_ARCH_EVENTS(L2D_CACHE_REFILL,            0x0017, "l2d_cache_refill")
+WPERF_ARMV8_ARCH_EVENTS(L2D_CACHE_WB,                0x0018, "l2d_cache_wb")
+WPERF_ARMV8_ARCH_EVENTS(BUS_ACCESS,                  0x0019, "bus_access")
+WPERF_ARMV8_ARCH_EVENTS(MEMORY_ERROR,                0x001A, "memory_error")
+WPERF_ARMV8_ARCH_EVENTS(INST_SPEC,                   0x001B, "inst_spec")
+WPERF_ARMV8_ARCH_EVENTS(TTBR_WRITE_RETIRED,          0x001C, "ttbr_write_retired")
+WPERF_ARMV8_ARCH_EVENTS(BUS_CYCLES,                  0x001D, "bus_cycles")
+WPERF_ARMV8_ARCH_EVENTS(CHAIN,                       0x001E, "chain")
+WPERF_ARMV8_ARCH_EVENTS(L1D_CACHE_ALLOCATE,          0x001F, "l1d_cache_allocate")
+WPERF_ARMV8_ARCH_EVENTS(L2D_CACHE_ALLOCATE,          0x0020, "l2d_cache_allocate")
+WPERF_ARMV8_ARCH_EVENTS(BR_RETIRED,                  0x0021, "br_retired")
+WPERF_ARMV8_ARCH_EVENTS(BR_MIS_PRED_RETIRED,         0x0022, "br_mis_pred_retired")
+WPERF_ARMV8_ARCH_EVENTS(STALL_FRONTEND,              0x0023, "stall_frontend")
+WPERF_ARMV8_ARCH_EVENTS(STALL_BACKEND,               0x0024, "stall_backend")
+WPERF_ARMV8_ARCH_EVENTS(L1D_TLB,                     0x0025, "l1d_tlb")
+WPERF_ARMV8_ARCH_EVENTS(L1I_TLB,                     0x0026, "l1i_tlb")
+WPERF_ARMV8_ARCH_EVENTS(L2I_CACHE,                   0x0027, "l2i_cache")
+WPERF_ARMV8_ARCH_EVENTS(L2I_CACHE_REFILL,            0x0028, "l2i_cache_refill")
+WPERF_ARMV8_ARCH_EVENTS(L3D_CACHE_ALLOCATE,          0x0029, "l3d_cache_allocate")
+WPERF_ARMV8_ARCH_EVENTS(L3D_CACHE_REFILL,            0x002A, "l3d_cache_refill")
+WPERF_ARMV8_ARCH_EVENTS(L3D_CACHE,                   0x002B, "l3d_cache")
+WPERF_ARMV8_ARCH_EVENTS(L3D_CACHE_WB,                0x002C, "l3d_cache_wb")
+WPERF_ARMV8_ARCH_EVENTS(L2D_TLB_REFILL,              0x002D, "l2d_tlb_refill")
+WPERF_ARMV8_ARCH_EVENTS(L2I_TLB_REFILL,              0x002E, "l2i_tlb_refill")
+WPERF_ARMV8_ARCH_EVENTS(L2D_TLB,                     0x002F, "l2d_tlb")
+WPERF_ARMV8_ARCH_EVENTS(L2I_TLB,                     0x0030, "l2i_tlb")
+WPERF_ARMV8_ARCH_EVENTS(REMOTE_ACCESS,               0x0031, "remote_access")
+WPERF_ARMV8_ARCH_EVENTS(LL_CACHE,                    0x0032, "ll_cache")
+WPERF_ARMV8_ARCH_EVENTS(LL_CACHE_MISS,               0x0033, "ll_cache_miss")
+WPERF_ARMV8_ARCH_EVENTS(DTLB_WALK,                   0x0034, "dtlb_walk")
+WPERF_ARMV8_ARCH_EVENTS(ITLB_WALK,                   0x0035, "itlb_walk")
+WPERF_ARMV8_ARCH_EVENTS(LL_CACHE_RD,                 0x0036, "ll_cache_rd")
+WPERF_ARMV8_ARCH_EVENTS(LL_CACHE_MISS_RD,            0x0037, "ll_cache_miss_rd")
+WPERF_ARMV8_ARCH_EVENTS(REMOTE_ACCESS_RD,            0x0038, "remote_access_rd")
+WPERF_ARMV8_ARCH_EVENTS(L1D_CACHE_LMISS_RD,          0x0039, "l1d_cache_lmiss_rd")
+WPERF_ARMV8_ARCH_EVENTS(OP_RETIRED,                  0x003A, "op_retired")
+WPERF_ARMV8_ARCH_EVENTS(OP_SPEC,                     0x003B, "op_spec")
+WPERF_ARMV8_ARCH_EVENTS(STALL,                       0x003C, "stall")
+WPERF_ARMV8_ARCH_EVENTS(STALL_SLOT_BACKEND,          0x003D, "stall_slot_backend")
+WPERF_ARMV8_ARCH_EVENTS(STALL_SLOT_FRONTEND,         0x003E, "stall_slot_frontend")
+WPERF_ARMV8_ARCH_EVENTS(STALL_SLOT,                  0x003F, "stall_slot")
+WPERF_ARMV8_ARCH_EVENTS(LDREX_SPEC,                  0x006C, "ldrex_spec")
+WPERF_ARMV8_ARCH_EVENTS(STREX_PASS_SPEC,             0x006D, "strex_pass_spec")
+WPERF_ARMV8_ARCH_EVENTS(STREX_FAIL_SPEC,             0x006E, "strex_fail_spec")
+WPERF_ARMV8_ARCH_EVENTS(STREX_SPEC,                  0x006F, "strex_spec")
+WPERF_ARMV8_ARCH_EVENTS(LD_SPEC,                     0x0070, "ld_spec")
+WPERF_ARMV8_ARCH_EVENTS(ST_SPEC,                     0x0071, "st_spec")
+WPERF_ARMV8_ARCH_EVENTS(LDST_SPEC,                   0x0072, "ldst_spec")
+WPERF_ARMV8_ARCH_EVENTS(DP_SPEC,                     0x0073, "dp_spec")
+WPERF_ARMV8_ARCH_EVENTS(ASE_SPEC,                    0x0074, "ase_spec")
+WPERF_ARMV8_ARCH_EVENTS(VFP_SPEC,                    0x0075, "vfp_spec")
+WPERF_ARMV8_ARCH_EVENTS(PC_WRITE_SPEC,               0x0076, "pc_write_spec")
+WPERF_ARMV8_ARCH_EVENTS(CRYPTO_SPEC,                 0x0077, "crypto_spec")
+WPERF_ARMV8_ARCH_EVENTS(BR_IMMED_SPEC,               0x0078, "br_immed_spec")
+WPERF_ARMV8_ARCH_EVENTS(BR_RETURN_SPEC,              0x0079, "br_return_spec")
+WPERF_ARMV8_ARCH_EVENTS(BR_INDIRECT_SPEC,            0x007A, "br_indirect_spec")

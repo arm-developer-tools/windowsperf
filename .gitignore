@@ -1,0 +1,26 @@
+# MSVC temp
+.vs
+.vs/
+.vs/*
+
+*.tmp
+*.bak
+
+tags
+
+# CLI build directory
+wperf/ARM64/
+wperf/ARM64/*
+wperf/Debug/*
+wperf/x64/*
+
+# Driver build directory
+wperf-driver/ARM64/
+wperf-driver/ARM64/*
+wperf-driver/Debug/*
+wperf-driver/x64/*
+
+# Doxygen documentation
+docs/*
+html/*
+latex/*

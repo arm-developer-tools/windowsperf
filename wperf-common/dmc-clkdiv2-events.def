@@ -1,0 +1,56 @@
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, Arm Limited
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+WPERF_DMC_CLKDIV2_EVENTS(CYCLE_COUNT,                     0x0000, "cycle_count")
+WPERF_DMC_CLKDIV2_EVENTS(ALLOCATE,                        0x0001, "allocate")
+WPERF_DMC_CLKDIV2_EVENTS(QUEUE_DEPTH,                     0x0002, "queue_depth")
+WPERF_DMC_CLKDIV2_EVENTS(WAITING_FOR_WR_DATA,             0x0003, "waiting_for_wr_data")
+WPERF_DMC_CLKDIV2_EVENTS(READ_BACKLOG,                    0x0004, "read_backlog")
+WPERF_DMC_CLKDIV2_EVENTS(WAITING_FOR_MI,                  0x0005, "waiting_for_mi")
+WPERF_DMC_CLKDIV2_EVENTS(HAZARD_RESOLUTION,               0x0006, "hazard_resolution")
+WPERF_DMC_CLKDIV2_EVENTS(ENQUEUE,                         0x0007, "enqueue")
+WPERF_DMC_CLKDIV2_EVENTS(ARBITRATE,                       0x0008, "arbitrate")
+WPERF_DMC_CLKDIV2_EVENTS(LRANK_TURNAROUND_ACTIVATE,       0x0009, "lrank_turnaround_activate")
+WPERF_DMC_CLKDIV2_EVENTS(PRANK_TURNAROUND_ACTIVATE,       0x000a, "prank_turnaround_activate")
+WPERF_DMC_CLKDIV2_EVENTS(READ_DEPTH,                      0x000b, "read_depth")
+WPERF_DMC_CLKDIV2_EVENTS(WRITE_DEPTH,                     0x000c, "write_depth")
+WPERF_DMC_CLKDIV2_EVENTS(HIGHIGH_QOS_DEPTH,               0x000d, "highigh_qos_depth")
+WPERF_DMC_CLKDIV2_EVENTS(HIGH_QOS_DEPTH,                  0x000e, "high_qos_depth")
+WPERF_DMC_CLKDIV2_EVENTS(MEDIUM_QOS_DEPTH,                0x000f, "medium_qos_depth")
+WPERF_DMC_CLKDIV2_EVENTS(LOW_QOS_DEPTH,                   0x0010, "low_qos_depth")
+WPERF_DMC_CLKDIV2_EVENTS(ACTIVATE,                        0x0011, "activate")
+WPERF_DMC_CLKDIV2_EVENTS(RDWR,                            0x0012, "rdwr")
+WPERF_DMC_CLKDIV2_EVENTS(REFRESH,                         0x0013, "refresh")
+WPERF_DMC_CLKDIV2_EVENTS(TRAINING_REQUEST,                0x0014, "training_request")
+WPERF_DMC_CLKDIV2_EVENTS(T_MAC_TRACKER,                   0x0015, "t_mac_tracker")
+WPERF_DMC_CLKDIV2_EVENTS(BK_FSM_TRACKER,                  0x0016, "bk_fsm_tracker")
+WPERF_DMC_CLKDIV2_EVENTS(BK_OPEN_TRACKER,                 0x0017, "bk_open_tracker")
+WPERF_DMC_CLKDIV2_EVENTS(RANKS_IN_PWR_DOWN,               0x0018, "ranks_in_pwr_down")
+WPERF_DMC_CLKDIV2_EVENTS(RANKS_IN_SREF,                   0x0019, "ranks_in_sref")
