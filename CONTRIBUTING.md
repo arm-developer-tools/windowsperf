@@ -2,13 +2,13 @@
 
 # Basic guidelines
 
-All changes you commit or submit by pull-request should follow these simple guidelines:
-* Use pull requests.
+All changes you commit or submit by merge request should follow these simple guidelines:
+* Use merge requests.
 * Should build without new warnings or errors. Please use project's solution file to drive build and test process.
-* Please do not squash your Pull Request's commits into one commit. Split PR into many meaningful commit, we can review separately.
+* Please do not squash your Merge Request's commits into one commit. Split PR into many meaningful commit, we can review separately.
 * Code should be free from profanities in any language.
 
-# Commits in your pull-requests should
+# Commits in your merge requests should
 
 * One commit should represent one meaningful change. E.g. please do not add new header file and in the same commit update project solution.
 * Have short (72 chars or less) meaningful subject.
@@ -33,19 +33,19 @@ Good commit message examples can be found [here](https://wiki.openstack.org/wiki
 
 You can group prefixes in your commit message subject (E.g.: `"wperf-common,docs: Add new header"`).
 
-# Advice on pull requests
+# Advice on merge requests
 
-* Applying the single responsibility principle to pull requests is always a good idea. Try not to include some additional stuff into the pull request. For example, do not fix any typos other than your current context or do not add a tiny bug fix to a feature.
+* Applying the single responsibility principle to merge requests is always a good idea. Try not to include some additional stuff into the merge request. For example, do not fix any typos other than your current context or do not add a tiny bug fix to a feature.
 * Title and description is the first place where you can inform other developers about the changes
-* Description of a pull request should always be prepared with the same attention, whether the pull request has a small or huge change.
-* Always think that anybody could read your pull request anytime.
-* You should build your code and test (if possible) before creating the pull request.
+* Description of a merge request should always be prepared with the same attention, whether the merge request has a small or huge change.
+* Always think that anybody could read your merge request anytime.
+* You should build your code and test (if possible) before creating the merge request.
 * Both reviewers and the author should be polite in the comments.
 
 # If you have commit access
 
 * Do NOT use `git push --force`.
-* Use Pull Requests to suggest changes to other maintainers.
+* Use Merge Requests to suggest changes to other maintainers.
 
 # Creating Reliable Kernel-Mode Drivers
 
