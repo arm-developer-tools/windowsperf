@@ -43,6 +43,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "debug.h"
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
+#include "wperf-common\iorequest.h"
 
 //
 // Port start
@@ -122,22 +123,6 @@ enum evt_type
     EVT_METRIC_GROUPED,
     EVT_PADDING,
     EVT_HDR,
-};
-
-enum evt_class
-{
-    EVT_CLASS_FIRST,
-    EVT_CORE = EVT_CLASS_FIRST,
-    EVT_DSU,
-    EVT_DMC_CLK,
-    EVT_DMC_CLKDIV2,
-    EVT_CLASS_NUM,
-};
-
-struct evt_hdr
-{
-    enum evt_class evt_class;
-    UINT16 num;
 };
 
 static const wchar_t* evt_class_name[EVT_CLASS_NUM] =

@@ -37,6 +37,7 @@
 #include "coreinfo.h"
 #include "sysregs.h"
 #include "wperf-common/macros.h"
+#include "wperf-common\iorequest.h"
 
 //
 // Constants
@@ -129,20 +130,6 @@ struct PMUCtlEvtAssignHdr
     UINT32 core_idx;
     UINT8 dmc_idx;
     UINT64 filter_bits;
-};
-
-enum evt_class
-{
-    EVT_CORE,
-    EVT_DSU,
-    EVT_DMC_CLK,
-    EVT_DMC_CLKDIV2,
-};
-
-struct evt_hdr
-{
-    enum evt_class evt_class;
-    UINT16 num;
 };
 
 struct pmu_event_usr
