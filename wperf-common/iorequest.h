@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2022, Arm Limited
@@ -29,7 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //
-// Protocol between wperf and wperf-driver
+// Below structures represent binary protocol between wperf and wperf-driver
 //
 enum evt_class
 {
@@ -46,3 +47,93 @@ struct evt_hdr
     enum evt_class evt_class;
     UINT16 num;
 };
+
+//
+// PMU communication
+//
+enum pmu_ctl_action
+{
+	PMU_CTL_START,
+	PMU_CTL_STOP,
+	PMU_CTL_RESET,
+	PMU_CTL_QUERY_HW_CFG,
+	PMU_CTL_QUERY_SUPP_EVENTS,
+	PMU_CTL_ASSIGN_EVENTS,
+	PMU_CTL_READ_COUNTING,
+	DSU_CTL_INIT,
+	DSU_CTL_READ_COUNTING,
+	DMC_CTL_INIT,
+	DMC_CTL_READ_COUNTING,
+};
+
+struct pmu_ctl_hdr
+{
+	enum pmu_ctl_action action;
+	UINT32 core_idx;
+	UINT8 dmc_idx;
+#define CTL_FLAG_CORE (0x1 << 0)
+#define CTL_FLAG_DSU  (0x1 << 1)
+#define CTL_FLAG_DMC  (0x1 << 2)
+	UINT32 flags;
+};
+
+struct pmu_ctl_evt_assign_hdr
+{
+    enum pmu_ctl_action action;
+    UINT32 core_idx;
+    UINT8 dmc_idx;
+    UINT64 filter_bits;
+};
+
+struct pmu_event_usr
+{
+    UINT32 event_idx;
+    UINT64 filter_bits;
+    UINT64 value;
+    UINT64 scheduled;
+};
+
+typedef struct pmu_event_read_out
+{
+    UINT32 evt_num;
+    UINT64 round;
+    struct pmu_event_usr evts[MAX_MANAGED_CORE_EVENTS];
+} ReadOut;
+
+//
+// DSU communication
+//
+struct dsu_ctl_hdr
+{
+    enum pmu_ctl_action action;
+    UINT16 cluster_num;
+    UINT16 cluster_size;
+};
+
+#pragma warning(push)
+#pragma warning(disable:4200)
+struct dmc_ctl_hdr
+{
+    enum pmu_ctl_action action;
+    UINT8 dmc_num;
+    UINT64 addr[0];
+};
+#pragma warning(pop)
+
+typedef struct dsu_read_counting_out
+{
+    UINT32 evt_num;
+    UINT64 round;
+    struct pmu_event_usr evts[MAX_MANAGED_DSU_EVENTS];
+} DSUReadOut;
+
+//
+// DMC communication
+//
+typedef struct dmc_pmu_event_read_out
+{
+	struct pmu_event_usr clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
+	struct pmu_event_usr clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
+	UINT8 clk_events_num;
+	UINT8 clkdiv2_events_num;
+} DMCReadOut;

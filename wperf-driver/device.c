@@ -81,79 +81,6 @@ static KEVENT SyncPMCEnc;
 static HANDLE pmc_resource_handle = NULL;
 static UINT8 has_long_event_support = 0;
 
-enum pmu_ctl_action
-{
-    PMU_CTL_START,
-    PMU_CTL_STOP,
-    PMU_CTL_RESET,
-    PMU_CTL_QUERY_HW_CFG,
-    PMU_CTL_QUERY_SUPP_EVENTS,
-    PMU_CTL_ASSIGN_EVENTS,
-    PMU_CTL_READ_COUNTING,
-    DSU_CTL_INIT,
-    DSU_CTL_READ_COUNTING,
-    DMC_CTL_INIT,
-    DMC_CTL_READ_COUNTING,
-};
-
-struct PMUCtlHdr
-{
-    enum pmu_ctl_action action;
-    UINT32 core_idx;
-    UINT8 dmc_idx;
-#define CTL_FLAG_CORE (0x1 << 0)
-#define CTL_FLAG_DSU  (0x1 << 1)
-#define CTL_FLAG_DMC  (0x1 << 2)
-    UINT32 flags;
-};
-
-struct DSUCtlHdr
-{
-    enum pmu_ctl_action action;
-    UINT16 cluster_num;
-    UINT16 cluster_size;
-};
-
-#pragma warning(push)
-#pragma warning(disable:4200)
-struct DMCCtlHdr
-{
-    enum pmu_ctl_action action;
-    UINT8 dmc_num;
-    UINT64 addr[0];
-};
-#pragma warning(pop)
-
-struct PMUCtlEvtAssignHdr
-{
-    enum pmu_ctl_action action;
-    UINT32 core_idx;
-    UINT8 dmc_idx;
-    UINT64 filter_bits;
-};
-
-struct pmu_event_usr
-{
-    UINT32 event_idx;
-    UINT64 filter_bits;
-    UINT64 value;
-    UINT64 scheduled;
-};
-
-typedef struct read_counting_out
-{
-    UINT32 evt_num;
-    UINT64 round;
-    struct pmu_event_usr evts[MAX_MANAGED_CORE_EVENTS];
-} ReadOut;
-
-typedef struct dsu_read_counting_out
-{
-    UINT32 evt_num;
-    UINT64 round;
-    struct pmu_event_usr evts[MAX_MANAGED_DSU_EVENTS];
-} DSUReadOut;
-
 CoreInfo* core_info;
 
 struct hw_cfg
@@ -178,14 +105,6 @@ struct dmc_desc
     UINT8 clk_events_num;
     UINT8 clkdiv2_events_num;
 };
-
-typedef struct dmc_read_counting_out
-{
-    struct pmu_event_usr clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
-    struct pmu_event_usr clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
-    UINT8 clk_events_num;
-    UINT8 clkdiv2_events_num;
-} DMCReadOut;
 
 static struct dmc_desc* dmcs;
 static UINT8 dmc_num;
@@ -923,14 +842,14 @@ NTSTATUS deviceControl(
     case PMU_CTL_STOP:
     case PMU_CTL_RESET:
     {
-        struct PMUCtlHdr* ctl_req = (struct PMUCtlHdr*)pBuffer;
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         UINT8 dmc_ch_base = 0, dmc_ch_end = 0, dmc_idx = ALL_DMC_CHANNEL;
         UINT32 core_base, core_end;
         UINT32 ctl_flags = ctl_req->flags;
         UINT32 core_idx = ctl_req->core_idx;
         UINT32 dmc_core_idx = ALL_CORE;
 
-        if (inputSize != sizeof(struct PMUCtlHdr))
+        if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for action %d\n", inputSize, action);
             status = STATUS_INVALID_PARAMETER;
@@ -1192,7 +1111,7 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_ASSIGN_EVENTS:
     {
-        struct PMUCtlEvtAssignHdr* ctl_req = (struct PMUCtlEvtAssignHdr*)pBuffer;
+        struct pmu_ctl_evt_assign_hdr* ctl_req = (struct pmu_ctl_evt_assign_hdr*)pBuffer;
         UINT64 filter_bits = ctl_req->filter_bits;
         UINT32 core_idx = ctl_req->core_idx;
         UINT32 core_base, core_end;
@@ -1208,8 +1127,8 @@ NTSTATUS deviceControl(
             core_end = core_idx + 1;
         }
 
-        ULONG avail_sz = inputSize - sizeof(struct PMUCtlEvtAssignHdr);
-        UINT8* payload_addr = (UINT8*)pBuffer + sizeof(struct PMUCtlEvtAssignHdr);
+        ULONG avail_sz = inputSize - sizeof(struct pmu_ctl_evt_assign_hdr);
+        UINT8* payload_addr = (UINT8*)pBuffer + sizeof(struct pmu_ctl_evt_assign_hdr);
 
         for (ULONG consumed_sz = 0; consumed_sz < avail_sz;)
         {
@@ -1292,10 +1211,10 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_READ_COUNTING:
     {
-        struct PMUCtlHdr* ctl_req = (struct PMUCtlHdr*)pBuffer;
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         UINT32 core_idx = ctl_req->core_idx;
 
-        if (inputSize != sizeof(struct PMUCtlHdr))
+        if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_READ_COUNTING\n", inputSize);
             status = STATUS_INVALID_PARAMETER;
@@ -1369,9 +1288,9 @@ NTSTATUS deviceControl(
     }
     case DSU_CTL_INIT:
     {
-        struct DSUCtlHdr* ctl_req = (struct DSUCtlHdr*)pBuffer;
+        struct dsu_ctl_hdr* ctl_req = (struct dsu_ctl_hdr*)pBuffer;
 
-        if (inputSize != sizeof(struct DSUCtlHdr))
+        if (inputSize != sizeof(struct dsu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DSU_CTL_INIT\n", inputSize);
             status = STATUS_INVALID_PARAMETER;
@@ -1408,10 +1327,10 @@ NTSTATUS deviceControl(
     }
     case DSU_CTL_READ_COUNTING:
     {
-        struct PMUCtlHdr* ctl_req = (struct PMUCtlHdr*)pBuffer;
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         UINT32 core_idx = ctl_req->core_idx;
 
-        if (inputSize != sizeof(struct PMUCtlHdr))
+        if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DSU_CTL_READ_COUNTING\n", inputSize);
             status = STATUS_INVALID_PARAMETER;
@@ -1483,11 +1402,11 @@ NTSTATUS deviceControl(
     }
     case DMC_CTL_INIT:
     {
-        struct DMCCtlHdr* ctl_req = (struct DMCCtlHdr*)pBuffer;
+        struct dmc_ctl_hdr* ctl_req = (struct dmc_ctl_hdr*)pBuffer;
         ULONG expected_size;
 
         dmc_num = ctl_req->dmc_num;
-        expected_size = sizeof(struct DMCCtlHdr) + dmc_num * sizeof(UINT64) * 2;
+        expected_size = sizeof(struct dmc_ctl_hdr) + dmc_num * sizeof(UINT64) * 2;
 
         if (inputSize != expected_size)
         {
@@ -1549,10 +1468,10 @@ NTSTATUS deviceControl(
     }
     case DMC_CTL_READ_COUNTING:
     {
-        struct PMUCtlHdr* ctl_req = (struct PMUCtlHdr*)pBuffer;
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         UINT8 dmc_idx = ctl_req->dmc_idx;
 
-        if (inputSize != sizeof(struct PMUCtlHdr))
+        if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DMC_CTL_READ_COUNTING\n", inputSize);
             status = STATUS_INVALID_PARAMETER;

@@ -904,54 +904,11 @@ private:
 class pmu_device
 {
 public:
-    enum pmu_ctl_action
-    {
-        PMU_CTL_START,
-        PMU_CTL_STOP,
-        PMU_CTL_RESET,
-        PMU_CTL_QUERY_HW_CFG,
-        PMU_CTL_QUERY_SUPP_EVENTS,
-        PMU_CTL_ASSIGN_EVENTS,
-        PMU_CTL_READ_COUNTING,
-        DSU_CTL_INIT,
-        DSU_CTL_READ_COUNTING,
-        DMC_CTL_INIT,
-        DMC_CTL_READ_COUNTING,
-    };
-
-    struct pmu_ctl_hdr
-    {
-        enum pmu_ctl_action action;
-        uint32_t core_idx;
-        uint8_t dmc_idx;
-#define CTL_FLAG_CORE (0x1 << 0)
-#define CTL_FLAG_DSU  (0x1 << 1)
-#define CTL_FLAG_DMC  (0x1 << 2)
-        uint32_t flags;
-    };
-
-    struct dsu_ctl_hdr
-    {
-        enum pmu_ctl_action action;
-        uint16_t cluster_num;
-        uint16_t cluster_size;
-    };
-
     struct dsu_cfg
     {
         uint8_t fpc_num;
         uint8_t gpc_num;
     };
-
-#pragma warning(push)
-#pragma warning(disable:4200)
-    struct dmc_ctl_hdr
-    {
-        enum pmu_ctl_action action;
-        uint8_t dmc_num;
-        uint64_t addr[0];
-    };
-#pragma warning(pop)
 
     struct dmc_cfg
     {
@@ -960,47 +917,6 @@ public:
         uint8_t clkdiv2_fpc_num;
         uint8_t clkdiv2_gpc_num;
     };
-
-    struct pmu_ctl_evt_assign_hdr
-    {
-        enum pmu_ctl_action action;
-        uint32_t core_idx;
-        uint8_t dmc_idx;
-        uint64_t filter_bits;
-    };
-
-    struct pmu_event_usr
-    {
-        uint32_t event_idx;
-        uint64_t filter_bits;
-        uint64_t value;
-        uint64_t scheduled;
-    };
-
-    typedef struct pmu_event_read_out
-    {
-        uint32_t evt_num;
-        uint64_t round;
-        struct pmu_event_usr evts[MAX_MANAGED_CORE_EVENTS];
-    } ReadOut;
-
-#define MAX_MANAGED_DSU_EVENTS  32
-    typedef struct dsu_pmu_event_read_out
-    {
-        uint32_t evt_num;
-        uint64_t round;
-        struct pmu_event_usr evts[MAX_MANAGED_DSU_EVENTS];
-    } DSUReadOut;
-
-#define MAX_MANAGED_DMC_CLK_EVENTS      4
-#define MAX_MANAGED_DMC_CLKDIV2_EVENTS  8
-    typedef struct dmc_pmu_event_read_out
-    {
-        struct pmu_event_usr clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
-        struct pmu_event_usr clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
-        uint8_t clk_events_num;
-        uint8_t clkdiv2_events_num;
-    } DMCReadOut;
 
     struct hw_cfg
     {
