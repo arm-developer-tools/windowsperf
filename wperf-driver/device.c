@@ -83,19 +83,6 @@ static UINT8 has_long_event_support = 0;
 
 CoreInfo* core_info;
 
-struct hw_cfg
-{
-    UINT8   pmu_ver;
-    UINT8   fpc_num;
-    UINT8   gpc_num;
-    UINT8   vendor_id;
-    UINT8   variant_id;
-    UINT8   arch_id;
-    UINT8   rev_id;
-    UINT16  part_id;
-    UINT16  core_num;
-};
-
 struct dmc_desc
 {
     UINT64 iomem_start;

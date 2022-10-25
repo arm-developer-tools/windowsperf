@@ -48,6 +48,19 @@ struct evt_hdr
     UINT16 num;
 };
 
+struct hw_cfg
+{
+    UINT8   pmu_ver;
+    UINT8   fpc_num;
+    UINT8   gpc_num;
+    UINT8   vendor_id;
+    UINT8   variant_id;
+    UINT8   arch_id;
+    UINT8   rev_id;
+    UINT16  part_id;
+    UINT16  core_num;
+};
+
 //
 // PMU communication
 //
@@ -110,6 +123,38 @@ struct dsu_ctl_hdr
     UINT16 cluster_size;
 };
 
+typedef struct dsu_read_counting_out
+{
+    UINT32 evt_num;
+    UINT64 round;
+    struct pmu_event_usr evts[MAX_MANAGED_DSU_EVENTS];
+} DSUReadOut;
+
+struct dsu_cfg
+{
+    UINT8   fpc_num;
+    UINT8   gpc_num;
+};
+
+//
+// DMC communication
+//
+struct dmc_cfg
+{
+    UINT8   clk_fpc_num;
+    UINT8   clk_gpc_num;
+    UINT8   clkdiv2_fpc_num;
+    UINT8   clkdiv2_gpc_num;
+};
+
+typedef struct dmc_pmu_event_read_out
+{
+	struct pmu_event_usr clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
+	struct pmu_event_usr clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
+	UINT8 clk_events_num;
+	UINT8 clkdiv2_events_num;
+} DMCReadOut;
+
 #pragma warning(push)
 #pragma warning(disable:4200)
 struct dmc_ctl_hdr
@@ -120,20 +165,3 @@ struct dmc_ctl_hdr
 };
 #pragma warning(pop)
 
-typedef struct dsu_read_counting_out
-{
-    UINT32 evt_num;
-    UINT64 round;
-    struct pmu_event_usr evts[MAX_MANAGED_DSU_EVENTS];
-} DSUReadOut;
-
-//
-// DMC communication
-//
-typedef struct dmc_pmu_event_read_out
-{
-	struct pmu_event_usr clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
-	struct pmu_event_usr clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
-	UINT8 clk_events_num;
-	UINT8 clkdiv2_events_num;
-} DMCReadOut;

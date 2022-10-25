@@ -43,14 +43,6 @@
 #define CLUSTERPMCR_N_SHIFT         0x0B
 #define CLUSTERPMCR_N_MASK          0x1F
 
-struct dsu_cfg
-{
-    UINT8   fpc_num;
-    UINT8   gpc_num;
-    //UINT32  evt_mask_lo;
-    //UINT32  evt_mask_hi;
-};
-
 //
 // DSU public interface
 //

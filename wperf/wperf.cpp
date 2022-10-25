@@ -904,33 +904,6 @@ private:
 class pmu_device
 {
 public:
-    struct dsu_cfg
-    {
-        uint8_t fpc_num;
-        uint8_t gpc_num;
-    };
-
-    struct dmc_cfg
-    {
-        uint8_t clk_fpc_num;
-        uint8_t clk_gpc_num;
-        uint8_t clkdiv2_fpc_num;
-        uint8_t clkdiv2_gpc_num;
-    };
-
-    struct hw_cfg
-    {
-        uint8_t pmu_ver;
-        uint8_t fpc_num;
-        uint8_t gpc_num;
-        uint8_t vendor_id;
-        uint8_t variant_id;
-        uint8_t arch_id;
-        uint8_t rev_id;
-        uint16_t part_id;
-        uint16_t core_num;
-    };
-
     pmu_device(HANDLE hDevice) : handle(hDevice), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
         has_dmc(false), dmc_num(0), enc_bits(0)
     {

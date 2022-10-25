@@ -75,11 +75,3 @@ enum dmc_clk_event
     DMC_CLK_UPLOAD_STALL,
     DMC_CLK_EVT_NUM,
 };
-
-struct dmc_cfg
-{
-    UINT8   clk_fpc_num;
-    UINT8   clk_gpc_num;
-    UINT8   clkdiv2_fpc_num;
-    UINT8   clkdiv2_gpc_num;
-};
