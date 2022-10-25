@@ -931,15 +931,6 @@ public:
         uint16_t core_num;
     };
 
-//
-// Port Begin
-//
-#define FILE_ANY_ACCESS                 0
-#define METHOD_BUFFERED                 0
-//
-// Port End
-//
-
     pmu_device(HANDLE hDevice) : handle(hDevice), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
         has_dmc(false), dmc_num(0), enc_bits(0)
     {
