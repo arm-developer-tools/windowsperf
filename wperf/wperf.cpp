@@ -2778,9 +2778,8 @@ wmain(
 
                 for (auto b : a.second)
                     std::wcout << "  " << std::left << std::setw(50) << std::wstring(prefix) + std::wstring(get_event_name(b, a.first))
-                    << L"0x" << std::setw(10) << std::hex << b
+                    << L"0x" << std::setw(10) << std::hex << unsigned(b)
                     << std::setw(32) << std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") << std::endl;
-
             }
 
             std::wcout << L"\nList of supported metrics (to be used in -m)\n";
