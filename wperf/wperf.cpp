@@ -43,6 +43,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "debug.h"
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
+#include "wperf-common\iorequest.h"
 
 //
 // Port start
@@ -122,22 +123,6 @@ enum evt_type
     EVT_METRIC_GROUPED,
     EVT_PADDING,
     EVT_HDR,
-};
-
-enum evt_class
-{
-    EVT_CLASS_FIRST,
-    EVT_CORE = EVT_CLASS_FIRST,
-    EVT_DSU,
-    EVT_DMC_CLK,
-    EVT_DMC_CLKDIV2,
-    EVT_CLASS_NUM,
-};
-
-struct evt_hdr
-{
-    enum evt_class evt_class;
-    UINT16 num;
 };
 
 static const wchar_t* evt_class_name[EVT_CLASS_NUM] =
@@ -919,126 +904,6 @@ private:
 class pmu_device
 {
 public:
-    enum pmu_ctl_action
-    {
-        PMU_CTL_START,
-        PMU_CTL_STOP,
-        PMU_CTL_RESET,
-        PMU_CTL_QUERY_HW_CFG,
-        PMU_CTL_QUERY_SUPP_EVENTS,
-        PMU_CTL_ASSIGN_EVENTS,
-        PMU_CTL_READ_COUNTING,
-        DSU_CTL_INIT,
-        DSU_CTL_READ_COUNTING,
-        DMC_CTL_INIT,
-        DMC_CTL_READ_COUNTING,
-    };
-
-    struct pmu_ctl_hdr
-    {
-        enum pmu_ctl_action action;
-        uint32_t core_idx;
-        uint8_t dmc_idx;
-#define CTL_FLAG_CORE (0x1 << 0)
-#define CTL_FLAG_DSU  (0x1 << 1)
-#define CTL_FLAG_DMC  (0x1 << 2)
-        uint32_t flags;
-    };
-
-    struct dsu_ctl_hdr
-    {
-        enum pmu_ctl_action action;
-        uint16_t cluster_num;
-        uint16_t cluster_size;
-    };
-
-    struct dsu_cfg
-    {
-        uint8_t fpc_num;
-        uint8_t gpc_num;
-    };
-
-#pragma warning(push)
-#pragma warning(disable:4200)
-    struct dmc_ctl_hdr
-    {
-        enum pmu_ctl_action action;
-        uint8_t dmc_num;
-        uint64_t addr[0];
-    };
-#pragma warning(pop)
-
-    struct dmc_cfg
-    {
-        uint8_t clk_fpc_num;
-        uint8_t clk_gpc_num;
-        uint8_t clkdiv2_fpc_num;
-        uint8_t clkdiv2_gpc_num;
-    };
-
-    struct pmu_ctl_evt_assign_hdr
-    {
-        enum pmu_ctl_action action;
-        uint32_t core_idx;
-        uint8_t dmc_idx;
-        uint64_t filter_bits;
-    };
-
-    struct pmu_event_usr
-    {
-        uint32_t event_idx;
-        uint64_t filter_bits;
-        uint64_t value;
-        uint64_t scheduled;
-    };
-
-    typedef struct pmu_event_read_out
-    {
-        uint32_t evt_num;
-        uint64_t round;
-        struct pmu_event_usr evts[MAX_MANAGED_CORE_EVENTS];
-    } ReadOut;
-
-#define MAX_MANAGED_DSU_EVENTS  32
-    typedef struct dsu_pmu_event_read_out
-    {
-        uint32_t evt_num;
-        uint64_t round;
-        struct pmu_event_usr evts[MAX_MANAGED_DSU_EVENTS];
-    } DSUReadOut;
-
-#define MAX_MANAGED_DMC_CLK_EVENTS      4
-#define MAX_MANAGED_DMC_CLKDIV2_EVENTS  8
-    typedef struct dmc_pmu_event_read_out
-    {
-        struct pmu_event_usr clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
-        struct pmu_event_usr clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
-        uint8_t clk_events_num;
-        uint8_t clkdiv2_events_num;
-    } DMCReadOut;
-
-    struct hw_cfg
-    {
-        uint8_t pmu_ver;
-        uint8_t fpc_num;
-        uint8_t gpc_num;
-        uint8_t vendor_id;
-        uint8_t variant_id;
-        uint8_t arch_id;
-        uint8_t rev_id;
-        uint16_t part_id;
-        uint16_t core_num;
-    };
-
-//
-// Port Begin
-//
-#define FILE_ANY_ACCESS                 0
-#define METHOD_BUFFERED                 0
-//
-// Port End
-//
-
     pmu_device(HANDLE hDevice) : handle(hDevice), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
         has_dmc(false), dmc_num(0), enc_bits(0)
     {
