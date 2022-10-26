@@ -1200,6 +1200,66 @@ NTSTATUS deviceControl(
         return_size = sizeof(struct evt_hdr);
         return_size += sizeof(armv8_arch_core_events);
 
+		if (dsu_numGPC)
+		{
+			hdr = (struct evt_hdr *)out;
+			hdr->evt_class = EVT_DSU;
+			UINT16 dsu_evt_num = 0;
+
+			out = (UINT16 *)((UINT8 *)out + sizeof(struct evt_hdr));
+
+			for (UINT16 i = 0; i < 32; i++)
+			{
+				if (dsu_evt_mask_lo & (1 << i))
+					out[dsu_evt_num++]  = i;
+			}
+
+			for (UINT16 i = 0; i < 32; i++)
+			{
+				if (dsu_evt_mask_hi & (1 << i))
+					out[dsu_evt_num++]  = 32 + i;
+			}
+
+			hdr->num = dsu_evt_num;
+
+			return_size += sizeof(struct evt_hdr);
+			return_size += dsu_evt_num * sizeof(UINT16);
+
+			out = out + dsu_evt_num;
+		}
+
+		if (dmcs)
+		{
+			hdr = (struct evt_hdr *)out;
+			hdr->evt_class = EVT_DMC_CLK;
+			UINT16 dmc_evt_num = 0;
+
+			out = (UINT16 *)((UINT8 *)out + sizeof(struct evt_hdr));
+
+			for (UINT16 evt_idx = 0; evt_idx < DMC_CLK_EVT_NUM; evt_idx++)
+				out[dmc_evt_num++]  = evt_idx;
+
+			hdr->num = dmc_evt_num;
+
+			return_size += sizeof(struct evt_hdr);
+			return_size += dmc_evt_num * sizeof(UINT16);
+			out = out + dmc_evt_num;
+
+			hdr = (struct evt_hdr *)out;
+			hdr->evt_class = EVT_DMC_CLKDIV2;
+			dmc_evt_num = 0;
+			out = (UINT16 *)((UINT8 *)out + sizeof(struct evt_hdr));
+
+			for (UINT16 evt_idx = 0; evt_idx < DMC_CLKDIV2_EVT_NUM; evt_idx++)
+				out[dmc_evt_num++]  = evt_idx;
+
+			hdr->num = dmc_evt_num;
+
+			return_size += sizeof(struct evt_hdr);
+			return_size += dmc_evt_num * sizeof(UINT16);
+			out = out + dmc_evt_num;
+		}
+
         *outputSize = return_size;
         break;
     }
