@@ -41,6 +41,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <assert.h>
 #include "wperf.h"
 #include "debug.h"
+#include "prettytable.h"
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
@@ -2589,28 +2590,52 @@ wmain(
     {
         if (request.do_list)
         {
-            std::map<enum evt_class, std::vector<uint16_t>> events;
-            pmu_device.events_query(events);
-            std::wcout << L"List of pre-defined events (to be used in -e )\n";
-            std::wcout << L"==============================================\n";
-            std::wcout << "  " << std::left << std::setw(50) << L"Alias Name"
-                << std::setw(12) << L"Raw Index" <<
-                std::setw(32) << "Event Type" << std::endl;
-
-            for (auto a : events)
+            // Print pre-defined events
             {
-                const wchar_t* prefix = evt_name_prefix[a.first];
+                // Query for available events
+                std::map<enum evt_class, std::vector<uint16_t>> events;
+                pmu_device.events_query(events);
 
-                for (auto b : a.second)
-                    std::wcout << "  " << std::left << std::setw(50) << std::wstring(prefix) + std::wstring(get_event_name(b, a.first))
-                    << L"0x" << std::setw(10) << std::hex << unsigned(b)
-                    << std::setw(32) << std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") << std::endl;
+                PrettyTable ptable;
+                std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
+
+                std::wcout << std::endl
+                           << L"List of pre-defined events (to be used in -e )"
+                           << std::endl << std::endl;
+
+                for (auto a : events)
+                {
+                    const wchar_t* prefix = evt_name_prefix[a.first];
+                    for (auto b : a.second) {
+                        col_alias_name.push_back(std::wstring(prefix) + std::wstring(get_event_name(b, a.first)));
+                        col_raw_index.push_back(PrettyTable::IntToHex(b, 2));
+                        col_event_type.push_back(L"[" + std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") + L"]");
+                    }
+                }
+
+                ptable.AddColumn(L"Alias Name", col_alias_name);
+                ptable.AddColumn(L"Raw Index", col_raw_index, PrettyTable::RIGHT);
+                ptable.AddColumn(L"Event Type", col_event_type);
+                ptable.Print();
             }
 
-            std::wcout << L"\nList of supported metrics (to be used in -m)\n";
-            std::wcout << L"============================================\n";
-            for (const auto& [key, value] : request.metrics)
-                std::wcout << L"  " << std::left << std::setw(16) << key << value.raw_str << std::endl;
+            // Print supported metrics
+            {
+                PrettyTable ptable;
+                std::vector<std::wstring> col_metric, col_events;
+
+                std::wcout << std::endl
+                           << L"List of supported metrics (to be used in -m)"
+                           << std::endl << std::endl;
+
+                for (const auto& [key, value] : request.metrics) {
+                    col_metric.push_back(key);
+                    col_events.push_back(value.raw_str);
+                }
+                ptable.AddColumn(L"Metric", col_metric);
+                ptable.AddColumn(L"Events", col_events);
+                ptable.Print();
+            }
             return 0;
         }
 

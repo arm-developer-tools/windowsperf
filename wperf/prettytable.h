@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -86,12 +87,24 @@ public:
 	/// Define if you want to underline column headers with '='
 	/// </summary>
 	/// <param name="value">TRUE if underline (default), FALSE to disable underline</param>
-	void SetHeaderUnderline(bool value) {
-		m_header_underline = value;
+	void SetHeaderUnderline(bool Value) {
+		m_header_underline = Value;
 	}
 
 	void AddColumn(std::wstring ColumnName, std::vector<std::wstring> ColumnValues, enum ColumnAlign Align = LEFT);
 	void Print();
+
+	/// <summary>
+	/// Converts integert VALUE to hex string, e.g. 100 -> "0x0064" where
+	/// WIDTH is total digit count (excluding 0x).
+	/// </summary>
+	/// <param name="Value">Value to convert to hex string</param>
+	/// <param name="Width">Total digits to fill with</param>
+	static std::wstring IntToHex(int Value, size_t Width = 4) {
+		std::wstringstream ss;
+		ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
+		return ss.str();
+	}
 
 private:
 	/// <summary>
