@@ -1564,7 +1564,7 @@ public:
                     ptable.AddColumn(L"event name", col_event_name);
                     ptable.AddColumn(L"event idx", col_event_idx);
                     ptable.AddColumn(L"event note", col_event_note);
-                    ptable.AddColumn(L"multiplexed", col_multiplexed);
+                    ptable.AddColumn(L"multiplexed", col_multiplexed, PrettyTable::RIGHT);
                     ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
                 }
                 else
