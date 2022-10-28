@@ -12,9 +12,9 @@
 /// Simple implementation of table with columns and rows.
 /// This implementation focuses on displaying `wperf stat`
 /// outputs.
-/// 
+///
 /// Example usage:
-/// 
+///
 /// WindowsPerfPrettyTable table;
 /// table.AddColumn(L"counter value", { L"48759549",  L"460333515", L"433565",
 ///										L"4584058", L"428984802", L"411258067",
@@ -38,8 +38,8 @@
 /// table.Print();
 ///
 ///
-/// On-screen output:: 
-/// 
+/// On-screen output::
+///
 ///              +--------------------------------------+-------------+---- PrettyTable::RIGHT
 ///              |                                      |             |
 ///        counter value  event name     event idx  multiplexd  scaled value		<--- m_header
@@ -53,15 +53,15 @@
 ///             49864771  st_spec        0x71            13/17      12900085
 ///            410906825  br_immed_spec  0x78            12/17      15451335
 ///                 4361  crypto_spec    0x77            12/17           511
-/// 
+///
 ///                       |___________|
 ///                             |
-///	                            +--- table.AddColumn("event name", 
+///	                            +--- table.AddColumn("event name",
 ///													 {{L"cycle", L"inst_spec", L"vfp_spec",
 ///													   L"ase_spec", L"dp_spec", L"ld_spec",
 ///                                                    L"st_spec", L"br_immed_spec", L"crypto_spec"});
-/// 
-/// 
+///
+///
 /// </summary>
 class PrettyTable
 {
@@ -103,6 +103,18 @@ public:
 	static std::wstring IntToHex(int Value, size_t Width = 4) {
 		std::wstringstream ss;
 		ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
+		return ss.str();
+	}
+
+	/// <summary>
+	/// Converts double to WSTRING. Function is using fixed format
+	/// and default precision set to 2.
+	/// </summary>
+	/// <param name="Value">Value to convert</param>
+	/// <param name="Precision">Precision</param>
+	static std::wstring DoubleToString(double Value, int Precision = 2) {
+		std::wstringstream ss;
+		ss << std::fixed << std::setprecision(Precision) << Value;
 		return ss.str();
 	}
 
