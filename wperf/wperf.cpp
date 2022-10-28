@@ -1591,35 +1591,11 @@ public:
             return;
         }
 
-        std::wcout << std::endl;
+        std::wcout << std::endl
+                   << L"System-wide Overall:" << std::endl;
 
-        std::wcout << L"System-wide Overall:" << std::endl;
-
-        if (multiplexing)
-        {
-            std::wcout << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note"
-                << L" " << std::setw(20) << L"scaled value" << std::endl;
-            std::wcout << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============"
-                << L" " << std::setw(20) << L"============" << std::endl;
-
-        }
-        else
-        {
-            std::wcout << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note" << std::endl;
-            std::wcout << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============" << std::endl;
-        }
+        std::vector<std::wstring> col_counter_value, col_event_idx, col_event_name,
+                                  col_scaled_value, col_event_note;
 
         int32_t evt_num = core_outs[core_base].evt_num;
 
@@ -1631,35 +1607,57 @@ public:
             struct agg_entry* entry = overall + j;
             if (multiplexing)
             {
-                if (entry->event_idx == CYCLE_EVT_IDX)
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << std::setw(10) << std::left << L" fixed"
-                    << std::setw(13) << std::left << L" e"
-                    << L" " << std::setw(20) << std::dec
-                    << entry->scaled_value
-                    << std::endl;
-                else
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                    << L" " << std::setw(12) << std::left << events[j - 1].note
-                    << L" " << std::setw(20) << std::dec << entry->scaled_value
-                    << std::endl;
+                if (entry->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                    col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                }
+                else {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_note.push_back(events[j - 1].note);
+                    col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                }
             }
             else
             {
-                if (entry->event_idx == CYCLE_EVT_IDX)
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << std::setw(10) << std::left << L" fixed"
-                    << std::setw(13) << std::left << L" e" << std::endl;
-                else
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                    << L" " << std::setw(12) << std::left << events[j - 1].note << std::endl;
+                if (entry->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                }
+                else {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_note.push_back(events[j - 1].note);
+                }
             }
+        }
+
+        // Print System-wide Overall
+        {
+            PrettyTable ptable;
+            if (multiplexing)
+            {
+                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                ptable.AddColumn(L"event name", col_event_name);
+                ptable.AddColumn(L"event idx", col_event_idx);
+                ptable.AddColumn(L"event note", col_event_note);
+                ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+            }
+            else {
+                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                ptable.AddColumn(L"event name", col_event_name);
+                ptable.AddColumn(L"event idx", col_event_idx);
+                ptable.AddColumn(L"event note", col_event_note);
+            }
+
+            ptable.Print();
         }
 
         delete[] overall;
