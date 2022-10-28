@@ -1830,8 +1830,11 @@ public:
         {
             if (!timeline_mode && report_l3_metric)
             {
-                std::wcout << std::endl << L"L3 cache metrics:" << std::endl;
+                std::wcout << std::endl
+                           << L"L3 cache metrics:" << std::endl;
                 std::wcout << L"  cluster  read_bandwidth  miss_rate" << std::endl;
+
+                std::vector<std::wstring> col_cluster, col_read_bandwith, col_miss_rate;
 
                 for (uint32_t i = core_base; i < core_end; i += dsu_cluster_size)
                 {
@@ -1854,7 +1857,18 @@ public:
                         }
                     }
 
-                    std::wcout << std::setw(9) << std::right << i / dsu_cluster_size << std::setw(14) << std::right << std::fixed << std::setprecision(2) << ((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0 << L"MB" << std::setw(10) << std::right << ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100 << L"%" << std::endl;
+                    col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
+                    col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+                    col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
+                }
+
+                {
+                    PrettyTable ptable;
+                    ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"read_bandwidth", col_miss_rate, PrettyTable::RIGHT);
+
+                    ptable.Print();
                 }
             }
 
