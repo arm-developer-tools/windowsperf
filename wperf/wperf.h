@@ -40,6 +40,8 @@
 
 #define MAX_DEVPATH_LENGTH              256
 
+#define CYCLE_EVT_IDX 					0xffffffff
+
 BOOLEAN G_PerformAsyncIo;
 BOOLEAN G_LimitedLoops;
 ULONG G_AsyncIoLoopsNum;

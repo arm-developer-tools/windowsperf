@@ -1529,7 +1529,6 @@ public:
 
                 if (multiplexing)
                 {
-#define CYCLE_EVT_IDX 0xffffffff
                     if (timeline_mode)
                     {
                         timeline_outfiles[EVT_CORE] << evt->value << L"," << evt->scheduled << L",";
@@ -1642,7 +1641,6 @@ public:
             struct agg_entry* entry = overall + j;
             if (multiplexing)
             {
-#define CYCLE_EVT_IDX 0xffffffff
                 if (entry->event_idx == CYCLE_EVT_IDX)
                     std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
                     << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
@@ -1780,7 +1778,6 @@ public:
 
                 if (multiplexing)
                 {
-#define CYCLE_EVT_IDX 0xffffffff
                     if (timeline_mode)
                     {
                         timeline_outfiles[EVT_DSU] << evt->value << L"," << evt->scheduled << L",";
@@ -1925,7 +1922,6 @@ public:
             struct agg_entry* entry = overall + j;
             if (multiplexing)
             {
-#define CYCLE_EVT_IDX 0xffffffff
                 if (entry->event_idx == CYCLE_EVT_IDX)
                     std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
                     << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
