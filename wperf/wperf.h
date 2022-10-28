@@ -32,12 +32,6 @@
 //
 // Port End
 //
-#define NUM_ASYNCH_IO                   100
-#define BUFFER_SIZE                     (40*1024)
-
-#define READER_TYPE                     1
-#define WRITER_TYPE                     2
-
 #define MAX_DEVPATH_LENGTH              256
 
 #define CYCLE_EVT_IDX 					0xffffffff
