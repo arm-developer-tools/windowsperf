@@ -36,7 +36,7 @@
 //
 // Set timer period in ms
 //
-#define TIMER_PERIOD     500
+#define TIMER_PERIOD     16
 
 //
 // This is the context that can be placed per queue
