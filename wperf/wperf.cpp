@@ -652,41 +652,17 @@ public:
             const wchar_t* chars_try = event.c_str();
             uint16_t raw_event;
 
-            if (chars_try[0] == L'/' &&
-                chars_try[1] == L'd' &&
-                chars_try[2] == L's' &&
-                chars_try[3] == L'u' &&
-                chars_try[4] == L'/')
+            if (wcsncmp(chars_try, L"/dsu/", 5) == 0)
             {
                 e_class = EVT_DSU;
                 event.erase(0, 5);
             }
-            else if (chars_try[0] == L'/' &&
-                chars_try[1] == L'd' &&
-                chars_try[2] == L'm' &&
-                chars_try[3] == L'c' &&
-                chars_try[4] == L'_' &&
-                chars_try[5] == L'c' &&
-                chars_try[6] == L'l' &&
-                chars_try[7] == L'k' &&
-                chars_try[8] == L'/')
+            else if (wcsncmp(chars_try, L"/dmc_clk/", 9) == 0)
             {
                 e_class = EVT_DMC_CLK;
                 event.erase(0, 9);
             }
-            else if (chars_try[0] == L'/' &&
-                chars_try[1] == L'd' &&
-                chars_try[2] == L'm' &&
-                chars_try[3] == L'c' &&
-                chars_try[4] == L'_' &&
-                chars_try[5] == L'c' &&
-                chars_try[6] == L'l' &&
-                chars_try[7] == L'k' &&
-                chars_try[8] == L'd' &&
-                chars_try[9] == L'i' &&
-                chars_try[10] == L'v' &&
-                chars_try[11] == L'2' &&
-                chars_try[12] == L'/')
+            else if (wcsncmp(chars_try, L"/dmc_clkdiv2/", 13) == 0)
             {
                 e_class = EVT_DMC_CLKDIV2;
                 event.erase(0, 13);
@@ -696,11 +672,7 @@ public:
 
             if (std::iswdigit(chars[0]))
             {
-                if (event.length() > 1 && chars[0] == L'0' &&
-                    (chars[1] == L'x' || chars[1] == L'X'))
-                    raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 16));
-                else
-                    raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 10));
+                raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
 
                 if (group_size)
                 {
@@ -747,11 +719,7 @@ public:
                     chars = strip_str.c_str();
                     if (std::iswdigit(chars[0]))
                     {
-                        if (strip_str.length() > 1 && chars[0] == L'0' &&
-                            (chars[1] == L'x' || chars[1] == L'X'))
-                            raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 16));
-                        else
-                            raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 10));
+                        raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
                     }
                     else
                     {
@@ -782,11 +750,7 @@ public:
                     chars = event.c_str();
                     if (std::iswdigit(chars[0]))
                     {
-                        if (event.length() > 1 && chars[0] == L'0' &&
-                            (chars[1] == L'x' || chars[1] == L'X'))
-                            raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 16));
-                        else
-                            raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 10));
+                        raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
                     }
                     else
                     {
