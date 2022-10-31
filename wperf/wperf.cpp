@@ -348,16 +348,16 @@ public:
                 {
                     if (metrics.find(metric) == metrics.end())
                     {
-                        std::wcout << L"metric '" << metric << "' not supported" << std::endl;
+                        std::wcerr << L"metric '" << metric << "' not supported" << std::endl;
                         if (metrics.size())
                         {
-                            std::wcout << L"supported metrics:" << std::endl;
+                            std::wcerr << L"supported metrics:" << std::endl;
                             for (const auto& [key, value] : metrics)
-                                std::wcout << L"  " << key << std::endl;
+                                std::wcerr << L"  " << key << std::endl;
                         }
                         else
                         {
-                            std::wcout << L"no metric registered" << std::endl;
+                            std::wcerr << L"no metric registered" << std::endl;
                         }
 
                         exit(-1);
@@ -581,7 +581,7 @@ public:
 
         if (!config_file.is_open())
         {
-            std::wcout << L"open config file '" << config_name << "' failed" << std::endl;
+            std::wcerr << L"open config file '" << config_name << "' failed" << std::endl;
             exit(-1);
         }
 
@@ -611,7 +611,7 @@ public:
                 }
                 else
                 {
-                    std::wcout << L"unrecognized config component '"
+                    std::wcerr << L"unrecognized config component '"
                         << component << L"'" << std::endl;
                     exit(-1);
                 }
@@ -701,7 +701,7 @@ public:
                 {
                     if (group_size)
                     {
-                        std::wcout << L"nested group is not supported " << event << std::endl;
+                        std::wcerr << L"nested group is not supported " << event << std::endl;
                         exit(-1);
                     }
 
@@ -727,7 +727,7 @@ public:
 
                         if (idx < 0)
                         {
-                            std::wcout << L"unknown event name: " << strip_str << std::endl;
+                            std::wcerr << L"unknown event name: " << strip_str << std::endl;
                             exit(-1);
                         }
 
@@ -738,7 +738,7 @@ public:
                 {
                     if (!group_size)
                     {
-                        std::wcout << L"missing '{' for event group " << event << std::endl;
+                        std::wcerr << L"missing '{' for event group " << event << std::endl;
                         exit(-1);
                     }
 
@@ -758,7 +758,7 @@ public:
 
                         if (idx < 0)
                         {
-                            std::wcout << L"unknown event name: " << event << std::endl;
+                            std::wcerr << L"unknown event name: " << event << std::endl;
                             exit(-1);
                         }
 
@@ -773,7 +773,7 @@ public:
 
                     if (idx < 0)
                     {
-                        std::wcout << L"unknown event name: " << event << std::endl;
+                        std::wcerr << L"unknown event name: " << event << std::endl;
                         exit(-1);
                     }
 
@@ -793,7 +793,7 @@ public:
                 {
                     if (group_size > gpc_nums[e_class])
                     {
-                        std::wcout << L"event group size(" << group_size
+                        std::wcerr << L"event group size(" << group_size
                             << ") exceeds number of hardware PMU counter("
                             << gpc_nums[e_class] << ")" << std::endl;
                         exit(-1);
@@ -979,13 +979,13 @@ public:
             BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
             if (!status)
             {
-                std::wcout << L"DSU_CTL_INIT failed" << std::endl;
+                std::wcerr << L"DSU_CTL_INIT failed" << std::endl;
                 exit(1);
             }
 
             if (res_len != sizeof(struct dsu_cfg))
             {
-                std::wcout << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
+                std::wcerr << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
                 exit(1);
             }
 
@@ -1035,7 +1035,7 @@ public:
             BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
             if (!status)
             {
-                std::wcout << L"DMC_CTL_INIT failed" << std::endl;
+                std::wcerr << L"DMC_CTL_INIT failed" << std::endl;
                 exit(1);
             }
 
@@ -2465,7 +2465,7 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
         return TRUE;
     case CTRL_BREAK_EVENT:
     default:
-        std::wcout << L"unsupported dwCtrlType " << dwCtrlType << std::endl;
+        std::wcerr << L"unsupported dwCtrlType " << dwCtrlType << std::endl;
         return FALSE;
     }
 }
@@ -2624,7 +2624,7 @@ wmain(
         {
             if (!request.has_events())
             {
-                std::wcout << "no event specified\n";
+                std::wcerr << "no event specified\n";
                 return -1;
             }
             else if (request.do_verbose)
