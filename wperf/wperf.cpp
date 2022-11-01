@@ -2140,8 +2140,10 @@ public:
         {
             if (!timeline_mode && report_ddr_bw_metric)
             {
-                std::wcout << std::endl << L"ddr metrics:" << std::endl;
-                std::wcout << L"  channel  rw_bandwidth" << std::endl;
+                std::vector<std::wstring> col_channel, col_rw_bandwidth;
+
+                std::wcout << std::endl
+                           << L"ddr metrics:" << std::endl;
 
                 for (uint32_t i = ch_base; i < ch_end; i++)
                 {
@@ -2155,8 +2157,14 @@ public:
                             ddr_rd_num = evts[j].value;
                     }
 
-                    std::wcout << std::setw(9) << std::right << i << std::setw(12) << std::right << std::fixed << std::setprecision(2) << ((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0 << L"MB" << std::endl;
+                    col_channel.push_back(std::to_wstring(i));
+                    col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
                 }
+
+                PrettyTable ptable;
+                ptable.AddColumn(L"channel", col_channel, PrettyTable::RIGHT);
+                ptable.AddColumn(L"rw_bandwidth", col_rw_bandwidth, PrettyTable::RIGHT);
+                ptable.Print();
             }
             return;
         }
