@@ -2063,21 +2063,8 @@ public:
             ch_end = dmc_idx + 1;
         }
 
-        if (!timeline_mode)
-        {
-            std::wcout << std::endl;
-
-            std::wcout << std::right << std::setw(8) << L"pmu id"
-                << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note" << std::endl;
-            std::wcout << std::right << std::setw(8) << L"======"
-                << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============" << std::endl;
-        }
+        std::vector<std::wstring> col_pmu_id, col_counter_value, col_event_name,
+                                  col_event_idx, col_event_note;
 
         for (uint32_t i = ch_base; i < ch_end; i++)
         {
@@ -2093,11 +2080,11 @@ public:
                 }
                 else
                 {
-                    std::wcout << std::right << std::setw(7) << L"dmc " << std::left << std::setw(1) << i
-                        << std::right << std::setw(20) << std::dec << evt->value
-                        << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK)
-                        << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                        << L" " << std::setw(12) << std::left << clk_events[j].note << std::endl;
+                    col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
+                    col_counter_value.push_back(std::to_wstring(evt->value));
+                    col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK));
+                    col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                    col_event_note.push_back(clk_events[j].note);
                 }
 
                 if (overall_clk)
@@ -2116,16 +2103,29 @@ public:
                 }
                 else
                 {
-                    std::wcout << std::right << std::setw(7) << L"dmc " << std::left << std::setw(1) << i
-                        << std::right << std::setw(20) << std::dec << evt->value
-                        << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2)
-                        << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                        << L" " << std::setw(12) << std::left << clkdiv2_events[j].note << std::endl;
+                    col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
+                    col_counter_value.push_back(std::to_wstring(evt->value));
+                    col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2));
+                    col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                    col_event_note.push_back(clkdiv2_events[j].note);
                 }
 
                 if (overall_clkdiv2)
                     overall_clkdiv2[j].counter_value += evt->value;
             }
+        }
+
+        if (!timeline_mode)
+        {
+            std::wcout << std::endl;
+
+            PrettyTable ptable;
+            ptable.AddColumn(L"pmu id", col_pmu_id, PrettyTable::RIGHT);
+            ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+            ptable.AddColumn(L"event name", col_event_name);
+            ptable.AddColumn(L"event idx", col_event_idx);
+            ptable.AddColumn(L"event note", col_event_note);
+            ptable.Print();
         }
 
         if (timeline_mode)
