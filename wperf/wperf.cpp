@@ -1103,7 +1103,7 @@ public:
             filename = prefix + filename + suffix + std::string(".csv");
             if (!length)
             {
-                std::cout << L"timeline output file name: " << filename << std::endl;
+                std::cout << "timeline output file name: " << filename << std::endl;
                 throw fatal_exception("open timeline output file failed");
             }
 
