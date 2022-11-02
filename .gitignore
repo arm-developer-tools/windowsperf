@@ -5,6 +5,7 @@
 
 *.tmp
 *.bak
+*.sw[a-z]
 
 tags
 
