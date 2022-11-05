@@ -876,11 +876,8 @@ public:
         pmu_ver = hw_cfg.pmu_ver;
 
         vendor_name = get_vendor_name(hw_cfg.vendor_id);
-        core_outs = new ReadOut[core_num];
-        if (!core_outs)
-            throw fatal_exception("new managed events failed");
-
-        memset(core_outs, 0, sizeof(ReadOut) * core_num);
+        core_outs = std::make_unique<ReadOut[]>(core_num);
+        memset(core_outs.get(), 0, sizeof(ReadOut) * core_num);
 
         // Only support metrics based on Arm's default core implementation
         if ((hw_cfg.vendor_id == 0x41 || hw_cfg.vendor_id == 0x51) && gpc_num >= 5)
@@ -984,11 +981,8 @@ public:
             gpc_nums[EVT_DSU] = cfg.gpc_num;
             fpc_nums[EVT_DSU] = cfg.fpc_num;
 
-            dsu_outs = new DSUReadOut[dsu_cluster_num];
-            if (!dsu_outs)
-                throw fatal_exception("new managed events failed");
-
-            memset(dsu_outs, 0, sizeof(DSUReadOut) * dsu_cluster_num);
+            dsu_outs = std::make_unique<DSUReadOut[]>(dsu_cluster_num);
+            memset(dsu_outs.get(), 0, sizeof(DSUReadOut)* dsu_cluster_num);
 
             metric_desc mdesc;
             mdesc.raw_str = L"/dsu/l3d_cache,/dsu/l3d_cache_refill";
@@ -997,21 +991,15 @@ public:
             mdesc.events.clear();
             mdesc.groups.clear();
         }
-        else
-        {
-            dsu_outs = NULL;
-        }
 
         // unCore PMU - DDR controller
         has_dmc = detect_armh_dma();
         if (has_dmc)
         {
             size_t len = sizeof(dmc_ctl_hdr) + dmc_regions.size() * sizeof(uint64_t) * 2;
-            uint8_t* buf = new uint8_t[len];
-            if (!buf)
-                throw fatal_exception("new DMC_CTL_HDR failed");
+            std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(len);
 
-            struct dmc_ctl_hdr* ctl = (struct dmc_ctl_hdr*)buf;
+            struct dmc_ctl_hdr* ctl = (struct dmc_ctl_hdr*)buf.get();
             struct dmc_cfg cfg;
             DWORD res_len;
 
@@ -1036,11 +1024,8 @@ public:
             gpc_nums[EVT_DMC_CLKDIV2] = cfg.clkdiv2_gpc_num;
             fpc_nums[EVT_DMC_CLKDIV2] = 0;
 
-            dmc_outs = new DMCReadOut[ctl->dmc_num];
-            if (!dmc_outs)
-                throw fatal_exception("new managed events failed");
-
-            memset(dmc_outs, 0, sizeof(DMCReadOut) * ctl->dmc_num);
+            dmc_outs = std::make_unique<DMCReadOut[]>(ctl->dmc_num);
+            memset(dmc_outs.get(), 0, sizeof(DMCReadOut)* ctl->dmc_num);
 
             metric_desc mdesc;
             mdesc.raw_str = L"/dmc_clkdiv2/rdwr";
@@ -1048,10 +1033,6 @@ public:
             builtin_metrics[L"ddr_bw"] = mdesc;
             mdesc.events.clear();
             mdesc.groups.clear();
-        }
-        else
-        {
-            dmc_outs = NULL;
         }
     }
 
@@ -1113,9 +1094,6 @@ public:
         }
 
         CloseHandle(handle);
-        delete[] core_outs;
-        if (dsu_outs)
-            delete[] dsu_outs;
     }
 
     void start(uint32_t flags = CTL_FLAG_CORE)
@@ -1180,18 +1158,18 @@ public:
 
         acc_sz += sizeof(struct pmu_ctl_evt_assign_hdr);
 
-        uint8_t* buf = new uint8_t[acc_sz];
+        std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(acc_sz);
 
         DWORD res_len;
         struct pmu_ctl_evt_assign_hdr* ctl =
-            reinterpret_cast<struct pmu_ctl_evt_assign_hdr*>(buf);
+            reinterpret_cast<struct pmu_ctl_evt_assign_hdr*>(buf.get());
         ctl->action = PMU_CTL_ASSIGN_EVENTS;
         ctl->core_idx = core_idx;
         ctl->dmc_idx = dmc_idx;
         count_kernel = include_kernel;
         ctl->filter_bits = include_kernel ? 0 : FILTER_BIT_EXCL_EL1;
         uint16_t* ctl2 =
-            reinterpret_cast<uint16_t*>(buf + sizeof(struct pmu_ctl_evt_assign_hdr));
+            reinterpret_cast<uint16_t*>(buf.get() + sizeof(struct pmu_ctl_evt_assign_hdr));
 
         for (auto a : events)
         {
@@ -1208,11 +1186,9 @@ public:
             ctl2 = payload;
         }
 
-        BOOL status = DeviceAsyncIoControl(handle, buf, (DWORD)acc_sz, NULL, 0, &res_len);
+        BOOL status = DeviceAsyncIoControl(handle, buf.get(), (DWORD)acc_sz, NULL, 0, &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_ASSIGN_EVENTS failed");
-
-        delete[] buf;
 
         if (!timeline_mode)
             return;
@@ -1345,7 +1321,7 @@ public:
         ctl.action = PMU_CTL_READ_COUNTING;
         ctl.core_idx = core_idx;
 
-        LPVOID out_buf = core_idx == ALL_CORE ? core_outs : &core_outs[core_idx];
+        LPVOID out_buf = core_idx == ALL_CORE ? core_outs.get() : core_outs.get() + core_idx;
         size_t out_buf_len = core_idx == ALL_CORE ? (sizeof(ReadOut) * core_num) : sizeof(ReadOut);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
         if (!status)
@@ -1360,7 +1336,7 @@ public:
         ctl.action = DSU_CTL_READ_COUNTING;
         ctl.core_idx = core_idx;
 
-        LPVOID out_buf = core_idx == ALL_CORE ? dsu_outs : &dsu_outs[core_idx / dsu_cluster_size];
+        LPVOID out_buf = core_idx == ALL_CORE ? dsu_outs.get() : dsu_outs.get() + core_idx/dsu_cluster_size;
         size_t out_buf_len = core_idx == ALL_CORE ? (sizeof(DSUReadOut) * dsu_cluster_num) : sizeof(DSUReadOut);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
         if (!status)
@@ -1375,7 +1351,7 @@ public:
         ctl.action = DMC_CTL_READ_COUNTING;
         ctl.dmc_idx = dmc_idx;
 
-        LPVOID out_buf = dmc_idx == ALL_DMC_CHANNEL ? dmc_outs : &dmc_outs[dmc_idx];
+        LPVOID out_buf = dmc_idx == ALL_DMC_CHANNEL ? dmc_outs.get() : dmc_outs.get() + dmc_idx;
         size_t out_buf_len = dmc_idx == ALL_DMC_CHANNEL ? (sizeof(DMCReadOut) * dmc_regions.size()) : sizeof(DMCReadOut);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
         if (!status)
@@ -1391,15 +1367,15 @@ public:
 
         // Armv8's architecture defined + vendor defined events should be within 2K at the moment.
         auto buf_size = 2048 * sizeof(uint16_t);
-        uint8_t* buf = new uint8_t[buf_size];
-        BOOL status = DeviceAsyncIoControl(handle, &action, (DWORD)sizeof(enum pmu_ctl_action), buf, (DWORD)buf_size, &res_len);
+        std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(buf_size);
+        BOOL status = DeviceAsyncIoControl(handle, &action, (DWORD)sizeof(enum pmu_ctl_action), buf.get(), (DWORD)buf_size, &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_QUERY_SUPP_EVENTS failed");
 
         DWORD consumed_sz = 0;
         for (; consumed_sz < res_len;)
         {
-            struct evt_hdr* hdr = reinterpret_cast<struct evt_hdr*>(buf + consumed_sz);
+            struct evt_hdr* hdr = reinterpret_cast<struct evt_hdr*>(buf.get() + consumed_sz);
             enum evt_class evt_class = hdr->evt_class;
             uint16_t evt_num = hdr->num;
             uint16_t* events = reinterpret_cast<uint16_t*>(hdr + 1);
@@ -1409,8 +1385,6 @@ public:
 
             consumed_sz += sizeof(struct evt_hdr) + evt_num * sizeof(uint16_t);
         }
-
-        delete[] buf;
     }
 
     void print_core_stat(std::vector<struct evt_noted>& events)
@@ -1435,17 +1409,15 @@ public:
         };
 
         uint32_t core_base, core_end;
-        struct agg_entry* overall = NULL;
+        std::unique_ptr<agg_entry[]> overall;
 
         if (core_idx == ALL_CORE)
         {
             core_base = 0;
             core_end = core_num;
 
-            overall = new agg_entry[core_outs[core_base].evt_num];
-            if (!overall)
-                throw fatal_exception("new OVERALL storage failed");
-            memset(overall, 0, sizeof(agg_entry) * core_outs[core_base].evt_num);
+            overall = std::make_unique<agg_entry[]>(core_outs[core_base].evt_num);
+            memset(overall.get(), 0, sizeof(agg_entry)* core_outs[core_base].evt_num);
 
             for (uint32_t i = 0; i < core_outs[core_base].evt_num; i++)
                 overall[i].event_idx = core_outs[core_base].evts[i].event_idx;
@@ -1577,10 +1549,7 @@ public:
             return;
 
         if (timeline_mode)
-        {
-            delete[] overall;
             return;
-        }
 
         std::wcout << std::endl
                    << L"System-wide Overall:" << std::endl;
@@ -1595,7 +1564,7 @@ public:
             if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                 continue;
 
-            struct agg_entry* entry = overall + j;
+            struct agg_entry* entry = overall.get() + j;
             if (multiplexing)
             {
                 if (entry->event_idx == CYCLE_EVT_IDX) {
@@ -1650,8 +1619,6 @@ public:
 
             ptable.Print();
         }
-
-        delete[] overall;
     }
 
     void print_dsu_stat(std::vector<struct evt_noted>& events, bool report_l3_metric)
@@ -1676,17 +1643,15 @@ public:
         };
 
         uint32_t core_base, core_end;
-        struct agg_entry* overall = NULL;
+        std::unique_ptr<agg_entry[]> overall;
 
         if (core_idx == ALL_CORE)
         {
             core_base = 0;
             core_end = core_num;
 
-            overall = new agg_entry[dsu_outs[core_base].evt_num];
-            if (!overall)
-                throw fatal_exception("new OVERALL storage failed");
-            memset(overall, 0, sizeof(agg_entry) * dsu_outs[core_base].evt_num);
+            overall = std::make_unique<agg_entry[]>(dsu_outs[core_base].evt_num);
+            memset(overall.get(), 0, sizeof(agg_entry)* dsu_outs[core_base].evt_num);
 
             for (uint32_t i = 0; i < dsu_outs[core_base].evt_num; i++)
                 overall[i].event_idx = dsu_outs[core_base].evts[i].event_idx;
@@ -1865,10 +1830,7 @@ public:
         }
 
         if (timeline_mode)
-        {
-            delete[] overall;
             return;
-        }
 
         std::wcout << std::endl;
 
@@ -1884,7 +1846,7 @@ public:
             if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                 continue;
 
-            struct agg_entry* entry = overall + j;
+            struct agg_entry* entry = overall.get() + j;
             if (multiplexing)
             {
                 if (entry->event_idx == CYCLE_EVT_IDX) {
@@ -1979,7 +1941,7 @@ public:
                 if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                     continue;
 
-                struct agg_entry* entry = overall + j;
+                struct agg_entry* entry = overall.get() + j;
                 if (entry->event_idx == PMU_EVENT_L3D_CACHE)
                 {
                     acc_l3_cache_access_num = entry->counter_value;
@@ -2002,8 +1964,6 @@ public:
                 ptable.Print();
             }
         }
-
-        delete[] overall;
     }
 
     void print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::vector<struct evt_noted>& clkdiv2_events, bool report_ddr_bw_metric)
@@ -2014,7 +1974,7 @@ public:
             uint64_t counter_value;
         };
 
-        struct agg_entry* overall_clk = NULL, * overall_clkdiv2 = NULL;
+        std::unique_ptr<agg_entry[]> overall_clk, overall_clkdiv2;
         auto clkdiv2_events_num = clkdiv2_events.size();
         auto clk_events_num = clk_events.size();
         uint8_t ch_base, ch_end;
@@ -2028,10 +1988,8 @@ public:
 
             if (clk_events_num)
             {
-                overall_clk = new agg_entry[clk_events_num];
-                if (!overall_clk)
-                    throw fatal_exception("new OVERALL_CLK storage failed");
-                memset(overall_clk, 0, sizeof(agg_entry) * clk_events_num);
+                overall_clk = std::make_unique<agg_entry[]>(clk_events_num);
+                memset(overall_clk.get(), 0, sizeof(agg_entry)* clk_events_num);
 
                 for (uint32_t i = 0; i < clk_events_num; i++)
                     overall_clk[i].event_idx = dmc_outs[ch_base].clk_events[i].event_idx;
@@ -2039,10 +1997,8 @@ public:
 
             if (clkdiv2_events_num)
             {
-                overall_clkdiv2 = new agg_entry[clkdiv2_events_num];
-                if (!overall_clkdiv2)
-                    throw fatal_exception("new OVERALL_CLKDIV2 storage failed");
-                memset(overall_clkdiv2, 0, sizeof(agg_entry) * clkdiv2_events_num);
+                overall_clkdiv2 = std::make_unique<agg_entry[]>(clkdiv2_events_num);
+                memset(overall_clkdiv2.get(), 0, sizeof(agg_entry)* clkdiv2_events_num);
 
                 for (uint32_t i = 0; i < clkdiv2_events_num; i++)
                     overall_clkdiv2[i].event_idx = dmc_outs[ch_base].clkdiv2_events[i].event_idx;
@@ -2108,7 +2064,7 @@ public:
 
         for (int j = 0; j < clk_events_num; j++)
         {
-            struct agg_entry* entry = overall_clk + j;
+            struct agg_entry* entry = overall_clk.get() + j;
             col_pmu_id.push_back(L"overall");
             col_counter_value.push_back(std::to_wstring(entry->counter_value));
             col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
@@ -2118,7 +2074,7 @@ public:
 
         for (int j = 0; j < clkdiv2_events_num; j++)
         {
-            struct agg_entry* entry = overall_clkdiv2 + j;
+            struct agg_entry* entry = overall_clkdiv2.get() + j;
             col_pmu_id.push_back(L"overall");
             col_counter_value.push_back(std::to_wstring(entry->counter_value));
             col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
@@ -2181,11 +2137,7 @@ public:
         }
 
         if (timeline_mode)
-        {
-            delete[] overall_clk;
-            delete[] overall_clkdiv2;
             return;
-        }
 
         if (report_ddr_bw_metric)
         {
@@ -2215,7 +2167,7 @@ public:
 
             for (int j = 0; j < evt_num; j++)
             {
-                struct agg_entry* entry = overall_clkdiv2 + j;
+                struct agg_entry* entry = overall_clkdiv2.get() + j;
                 if (entry->event_idx == DMC_EVENT_RDWR)
                     ddr_rd_num = entry->counter_value;
             }
@@ -2228,9 +2180,6 @@ public:
             ptable.AddColumn(L"rw_bandwidth", col_rw_bandwidth, PrettyTable::RIGHT);
             ptable.Print();
         }
-
-        delete[] overall_clk;
-        delete[] overall_clkdiv2;
     }
 
     uint32_t core_num;
@@ -2373,7 +2322,6 @@ private:
                 RES_DES prev_resdes = (RES_DES)config;
                 RES_DES resdes = 0;
                 ULONG data_size;
-                PBYTE resdes_data;
 
                 while (CM_Get_Next_Res_Des(&resdes, prev_resdes, ResType_Mem, NULL, 0) == CR_SUCCESS)
                 {
@@ -2384,20 +2332,14 @@ private:
                     if (CM_Get_Res_Des_Data_Size(&data_size, resdes, 0) != CR_SUCCESS)
                         continue;
 
-                    resdes_data = new BYTE[data_size];
-                    if (!resdes_data)
+                    std::unique_ptr<BYTE[]> resdes_data = std::make_unique<BYTE[]>(data_size);
+
+                    if (CM_Get_Res_Des_Data(resdes, resdes_data.get(), data_size, 0) != CR_SUCCESS)
                         continue;
 
-                    if (CM_Get_Res_Des_Data(resdes, resdes_data, data_size, 0) != CR_SUCCESS)
-                    {
-                        delete[] resdes_data;
-                        continue;
-                    }
-
-                    PMEM_RESOURCE mem_data = (PMEM_RESOURCE)resdes_data;
+                    PMEM_RESOURCE mem_data = (PMEM_RESOURCE)resdes_data.get();
                     if (mem_data->MEM_Header.MD_Alloc_End - mem_data->MEM_Header.MD_Alloc_Base + 1)
                         dmc_regions.push_back(std::make_pair(mem_data->MEM_Header.MD_Alloc_Base, mem_data->MEM_Header.MD_Alloc_End));
-                    delete[] resdes_data;
                 }
 
                 LOG_CONF config2;
@@ -2454,9 +2396,9 @@ private:
     const wchar_t* vendor_name;
     uint32_t core_idx;
     uint8_t dmc_idx;
-    ReadOut* core_outs;
-    DSUReadOut* dsu_outs;
-    DMCReadOut* dmc_outs;
+    std::unique_ptr<ReadOut[]> core_outs;
+    std::unique_ptr<DSUReadOut[]> dsu_outs;
+    std::unique_ptr<DMCReadOut[]> dmc_outs;
     bool multiplexings[EVT_CLASS_NUM];
     bool timeline_mode;
     bool count_kernel;
