@@ -2115,12 +2115,32 @@ public:
             }
         }
 
+        for (int j = 0; j < clk_events_num; j++)
+        {
+            struct agg_entry* entry = overall_clk + j;
+            col_pmu_id.push_back(L"overall");
+            col_counter_value.push_back(std::to_wstring(entry->counter_value));
+            col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
+            col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+            col_event_note.push_back(clk_events[j].note);
+        }
+
+        for (int j = 0; j < clkdiv2_events_num; j++)
+        {
+            struct agg_entry* entry = overall_clkdiv2 + j;
+            col_pmu_id.push_back(L"overall");
+            col_counter_value.push_back(std::to_wstring(entry->counter_value));
+            col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
+            col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+            col_event_note.push_back(clkdiv2_events[j].note);
+        }
+
         if (!timeline_mode)
         {
             std::wcout << std::endl;
 
             PrettyTable ptable;
-            ptable.AddColumn(L"pmu id", col_pmu_id, PrettyTable::RIGHT);
+            ptable.AddColumn(L"pmu id", col_pmu_id);
             ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
             ptable.AddColumn(L"event name", col_event_name);
             ptable.AddColumn(L"event idx", col_event_idx);
@@ -2174,26 +2194,6 @@ public:
             delete[] overall_clk;
             delete[] overall_clkdiv2;
             return;
-        }
-
-        for (int j = 0; j < clk_events_num; j++)
-        {
-            struct agg_entry* entry = overall_clk + j;
-            std::wcout << std::right << std::setw(8) << L"overall"
-                << std::right << std::setw(20) << std::dec << entry->counter_value
-                << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK)
-                << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                << L" " << std::setw(12) << std::left << clk_events[j].note << std::endl;
-        }
-
-        for (int j = 0; j < clkdiv2_events_num; j++)
-        {
-            struct agg_entry* entry = overall_clkdiv2 + j;
-            std::wcout << std::right << std::setw(8) << L"overall"
-                << std::right << std::setw(20) << std::dec << entry->counter_value
-                << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2)
-                << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                << L" " << std::setw(12) << std::left << clkdiv2_events[j].note << std::endl;
         }
 
         if (report_ddr_bw_metric)
