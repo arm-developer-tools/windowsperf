@@ -389,7 +389,7 @@ public:
             if (waiting_dmc_idx)
             {
                 int val = _wtoi(a.c_str());
-                assert(val > UCHAR_MAX);
+                assert(val <= UCHAR_MAX);
                 dmc_idx = (uint8_t)val;
                 waiting_dmc_idx = false;
                 continue;
@@ -972,8 +972,8 @@ public:
             DWORD res_len;
 
             ctl.action = DSU_CTL_INIT;
-            assert(dsu_cluster_num > USHRT_MAX);
-            assert(dsu_cluster_size > USHRT_MAX);
+            assert(dsu_cluster_num <= USHRT_MAX);
+            assert(dsu_cluster_size <= USHRT_MAX);
             ctl.cluster_num = (uint16_t)dsu_cluster_num;
             ctl.cluster_size = (uint16_t)dsu_cluster_size;
             BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
@@ -1030,7 +1030,7 @@ public:
             }
 
             ctl->action = DMC_CTL_INIT;
-            assert(dmc_regions.size() > UCHAR_MAX);
+            assert(dmc_regions.size() <= UCHAR_MAX);
             ctl->dmc_num = (uint8_t)dmc_regions.size();
             BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
             if (!status)
