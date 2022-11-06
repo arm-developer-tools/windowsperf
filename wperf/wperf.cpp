@@ -41,6 +41,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <assert.h>
 #include "wperf.h"
 #include "debug.h"
+#include "prettytable.h"
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
@@ -1468,57 +1469,25 @@ public:
         {
             if (!timeline_mode)
             {
-                std::wcout << std::endl;
+                std::wcout << std::endl
+                           << L"Performance counter stats for core " << std::dec << i
+                           << (multiplexing ? L", multiplexed" : L", no multiplexing")
+                           << (count_kernel ? L", kernel mode excluded" : L", kernel mode included")
+                           << L", on " << vendor_name << L" core implementation:"
+                           << std::endl;
 
-                std::wcout << L"Performance counter stats for core " << std::dec << i;
-
-                if (multiplexing)
-                    std::wcout << L", multiplexed";
-                else
-                    std::wcout << L", no multiplexing";
-
-                if (count_kernel)
-                    std::wcout << L", kernel mode excluded";
-                else
-                    std::wcout << L", kernel mode included";
-
-                std::wcout << L", on " << vendor_name << L" core implementation:" << std::endl;
-                std::wcout << L"note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it" << std::endl;
-
-                std::wcout << L"" << std::endl;
-
-                if (multiplexing)
-                {
-                    std::wcout << std::right << std::setw(20) << L"counter value"
-                        << L" " << std::setw(32) << std::left << L"event name"
-                        << L" " << std::setw(9) << L"event idx"
-                        << L" " << std::setw(12) << L"event note"
-                        << L" " << std::setw(11) << L"multiplexed"
-                        << L" " << std::setw(20) << L"scaled value" << std::endl;
-                    std::wcout << std::right << std::setw(20) << L"============="
-                        << L" " << std::setw(32) << std::left << L"=========="
-                        << L" " << std::setw(9) << L"========="
-                        << L" " << std::setw(12) << L"============"
-                        << L" " << std::setw(11) << L"==========="
-                        << L" " << std::setw(20) << L"============" << std::endl;
-
-                }
-                else
-                {
-                    std::wcout << std::right << std::setw(20) << L"counter value"
-                        << L" " << std::setw(32) << std::left << L"event name"
-                        << L" " << std::setw(9) << L"event idx"
-                        << L" " << std::setw(12) << L"event note" << std::endl;
-                    std::wcout << std::right << std::setw(20) << L"============="
-                        << L" " << std::setw(32) << std::left << L"=========="
-                        << L" " << std::setw(9) << L"========="
-                        << L" " << std::setw(12) << L"============" << std::endl;
-                }
+                std::wcout << L"note: 'e' - normal event, 'gN' - grouped event with group number N, "
+                              L"metric name will be appended if 'e' or 'g' comes from it"
+                              << std::endl
+                              << std::endl;
             }
 
             int32_t evt_num = core_outs[i].evt_num;
             struct pmu_event_usr* evts = core_outs[i].evts;
             uint64_t round = core_outs[i].round;
+
+            std::vector<std::wstring> col_counter_value, col_event_name, col_event_idx,
+                                      col_multiplexed, col_scaled_value, col_event_note;
 
             for (int j = 0; j < evt_num; j++)
             {
@@ -1529,33 +1498,28 @@ public:
 
                 if (multiplexing)
                 {
-#define CYCLE_EVT_IDX 0xffffffff
                     if (timeline_mode)
                     {
                         timeline_outfiles[EVT_CORE] << evt->value << L"," << evt->scheduled << L",";
                     }
                     else
                     {
-                        if (evt->event_idx == CYCLE_EVT_IDX)
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << std::setw(10) << std::left << L" fixed"
-                            << std::setw(13) << std::left << L" e"
-                            << std::dec << std::right << std::setw(5) << evt->scheduled << L"/"
-                            << std::setw(5) << std::left << round
-                            << L" " << std::setw(20) << std::dec
-                            << (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))
-                            << std::endl;
-                        else
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                            << L" " << std::setw(12) << std::left << events[j - 1].note
-                            << std::dec << std::right << std::setw(5) << evt->scheduled << L"/"
-                            << std::setw(5) << std::left << round
-                            << L" " << std::setw(20) << std::dec
-                            << (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))
-                            << std::endl;
+                        if (evt->event_idx == CYCLE_EVT_IDX) {
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(L"fixed");
+                            col_event_note.push_back(L"e");
+                            col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
+                            col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        }
+                        else {
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx, 2));
+                            col_event_note.push_back(events[j - 1].note);
+                            col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
+                            col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        }
                     }
 
                     if (overall)
@@ -1572,21 +1536,46 @@ public:
                     }
                     else
                     {
-                        if (evt->event_idx == CYCLE_EVT_IDX)
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << std::setw(10) << std::left << L" fixed"
-                            << std::setw(13) << std::left << L" e" << std::endl;
-                        else
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                            << L" " << std::setw(12) << std::left << events[j - 1].note << std::endl;
+                        if (evt->event_idx == CYCLE_EVT_IDX) {
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(L"fixed");
+                            col_event_note.push_back(L"e");
+                        }
+                        else {
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx, 2));
+                            col_event_note.push_back(events[j - 1].note);
+                        }
                     }
 
                     if (overall)
                         overall[j].counter_value += evt->value;
                 }
+            }
+
+            if (!timeline_mode) {
+                PrettyTable ptable;
+
+                if (multiplexing)
+                {
+                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"event name", col_event_name);
+                    ptable.AddColumn(L"event idx", col_event_idx);
+                    ptable.AddColumn(L"event note", col_event_note);
+                    ptable.AddColumn(L"multiplexed", col_multiplexed, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+                }
+                else
+                {
+                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"event name", col_event_name);
+                    ptable.AddColumn(L"event idx", col_event_idx);
+                    ptable.AddColumn(L"event note", col_event_note);
+                }
+
+                ptable.Print();
             }
         }
 
@@ -1602,35 +1591,11 @@ public:
             return;
         }
 
-        std::wcout << std::endl;
+        std::wcout << std::endl
+                   << L"System-wide Overall:" << std::endl;
 
-        std::wcout << L"System-wide Overall:" << std::endl;
-
-        if (multiplexing)
-        {
-            std::wcout << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note"
-                << L" " << std::setw(20) << L"scaled value" << std::endl;
-            std::wcout << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============"
-                << L" " << std::setw(20) << L"============" << std::endl;
-
-        }
-        else
-        {
-            std::wcout << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note" << std::endl;
-            std::wcout << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============" << std::endl;
-        }
+        std::vector<std::wstring> col_counter_value, col_event_idx, col_event_name,
+                                  col_scaled_value, col_event_note;
 
         int32_t evt_num = core_outs[core_base].evt_num;
 
@@ -1642,36 +1607,57 @@ public:
             struct agg_entry* entry = overall + j;
             if (multiplexing)
             {
-#define CYCLE_EVT_IDX 0xffffffff
-                if (entry->event_idx == CYCLE_EVT_IDX)
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << std::setw(10) << std::left << L" fixed"
-                    << std::setw(13) << std::left << L" e"
-                    << L" " << std::setw(20) << std::dec
-                    << entry->scaled_value
-                    << std::endl;
-                else
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                    << L" " << std::setw(12) << std::left << events[j - 1].note
-                    << L" " << std::setw(20) << std::dec << entry->scaled_value
-                    << std::endl;
+                if (entry->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                    col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                }
+                else {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_note.push_back(events[j - 1].note);
+                    col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                }
             }
             else
             {
-                if (entry->event_idx == CYCLE_EVT_IDX)
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << std::setw(10) << std::left << L" fixed"
-                    << std::setw(13) << std::left << L" e" << std::endl;
-                else
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                    << L" " << std::setw(12) << std::left << events[j - 1].note << std::endl;
+                if (entry->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                }
+                else {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_note.push_back(events[j - 1].note);
+                }
             }
+        }
+
+        // Print System-wide Overall
+        {
+            PrettyTable ptable;
+            if (multiplexing)
+            {
+                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                ptable.AddColumn(L"event name", col_event_name);
+                ptable.AddColumn(L"event idx", col_event_idx);
+                ptable.AddColumn(L"event note", col_event_note);
+                ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+            }
+            else {
+                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                ptable.AddColumn(L"event name", col_event_name);
+                ptable.AddColumn(L"event idx", col_event_idx);
+                ptable.AddColumn(L"event note", col_event_note);
+            }
+
+            ptable.Print();
         }
 
         delete[] overall;
@@ -1724,52 +1710,26 @@ public:
         {
             if (!timeline_mode)
             {
-                std::wcout << std::endl;
+                std::wcout << std::endl
+                           << L"Performance counter stats for DSU cluster "
+                           << (i / dsu_cluster_size)
+                           << (multiplexing ? L", multiplexed" : L", no multiplexing")
+                           << L", on " << vendor_name
+                           << L" core implementation:"
+                           << std::endl;
 
-                std::wcout << L"Performance counter stats for DSU cluster " << std::dec << i / dsu_cluster_size;
-
-                if (multiplexing)
-                    std::wcout << L", multiplexed";
-                else
-                    std::wcout << L", no multiplexing";
-
-                std::wcout << L", on " << vendor_name << L" core implementation:" << std::endl;
-                std::wcout << L"note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it" << std::endl;
-
-                std::wcout << L"" << std::endl;
-
-                if (multiplexing)
-                {
-                    std::wcout << std::right << std::setw(20) << L"counter value"
-                        << L" " << std::setw(32) << std::left << L"event name"
-                        << L" " << std::setw(9) << L"event idx"
-                        << L" " << std::setw(12) << L"event note"
-                        << L" " << std::setw(11) << L"multiplexed"
-                        << L" " << std::setw(20) << L"scaled value" << std::endl;
-                    std::wcout << std::right << std::setw(20) << L"============="
-                        << L" " << std::setw(32) << std::left << L"=========="
-                        << L" " << std::setw(9) << L"========="
-                        << L" " << std::setw(12) << L"============"
-                        << L" " << std::setw(11) << L"==========="
-                        << L" " << std::setw(20) << L"============" << std::endl;
-
-                }
-                else
-                {
-                    std::wcout << std::right << std::setw(20) << L"counter value"
-                        << L" " << std::setw(32) << std::left << L"event name"
-                        << L" " << std::setw(9) << L"event idx"
-                        << L" " << std::setw(12) << L"event note" << std::endl;
-                    std::wcout << std::right << std::setw(20) << L"============="
-                        << L" " << std::setw(32) << std::left << L"=========="
-                        << L" " << std::setw(9) << L"========="
-                        << L" " << std::setw(12) << L"============" << std::endl;
-                }
+                std::wcout << L"note: 'e' - normal event, 'gN' - grouped event with group number N, "
+                              L"metric name will be appended if 'e' or 'g' comes from it"
+                              << std::endl
+                              << std::endl;
             }
 
             int32_t evt_num = dsu_outs[i / dsu_cluster_size].evt_num;
             struct pmu_event_usr* evts = dsu_outs[i / dsu_cluster_size].evts;
             uint64_t round = dsu_outs[i / dsu_cluster_size].round;
+
+            std::vector<std::wstring> col_counter_value, col_event_idx,  col_event_name,
+                                      col_multiplexed, col_scaled_value, col_event_note;
 
             for (int j = 0; j < evt_num; j++)
             {
@@ -1780,33 +1740,29 @@ public:
 
                 if (multiplexing)
                 {
-#define CYCLE_EVT_IDX 0xffffffff
                     if (timeline_mode)
                     {
                         timeline_outfiles[EVT_DSU] << evt->value << L"," << evt->scheduled << L",";
                     }
                     else
                     {
-                        if (evt->event_idx == CYCLE_EVT_IDX)
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << std::setw(10) << std::left << L" fixed"
-                            << std::setw(13) << std::left << L" e"
-                            << std::dec << std::right << std::setw(5) << evt->scheduled << L"/"
-                            << std::setw(5) << std::left << round
-                            << L" " << std::setw(20) << std::dec
-                            << (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))
-                            << std::endl;
-                        else
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                            << L" " << std::setw(12) << std::left << events[j - 1].note
-                            << std::dec << std::right << std::setw(5) << evt->scheduled << L"/"
-                            << std::setw(5) << std::left << round
-                            << L" " << std::setw(20) << std::dec
-                            << (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))
-                            << std::endl;
+                        if (evt->event_idx == CYCLE_EVT_IDX) {
+
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(L"fixed");
+                            col_event_note.push_back(L"e");
+                            col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
+                            col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        }
+                        else {
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                            col_event_note.push_back(events[j - 1].note);
+                            col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
+                            col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        }
                     }
 
                     if (overall)
@@ -1823,21 +1779,47 @@ public:
                     }
                     else
                     {
-                        if (evt->event_idx == CYCLE_EVT_IDX)
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << std::setw(10) << std::left << L" fixed"
-                            << std::setw(13) << std::left << L" e" << std::endl;
-                        else
-                            std::wcout << std::right << std::setw(20) << std::dec << evt->value
-                            << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx)
-                            << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                            << L" " << std::setw(12) << std::left << events[j - 1].note << std::endl;
+                        if (evt->event_idx == CYCLE_EVT_IDX) {
+
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(L"fixed");
+                            col_event_note.push_back(L"e");
+                        }
+                        else {
+                            col_counter_value.push_back(std::to_wstring(evt->value));
+                            col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                            col_event_note.push_back(events[j - 1].note);
+                        }
                     }
 
                     if (overall)
                         overall[j].counter_value += evt->value;
                 }
+            }
+
+            // Print performance counter stats for DSU cluster
+            {
+                PrettyTable ptable;
+                if (multiplexing)
+                {
+                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"event name", col_event_name);
+                    ptable.AddColumn(L"event idx", col_event_idx);
+                    ptable.AddColumn(L"event note", col_event_note);
+                    ptable.AddColumn(L"multiplexed", col_multiplexed, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+                }
+                else
+                {
+                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"event name", col_event_name);
+                    ptable.AddColumn(L"event idx", col_event_idx);
+                    ptable.AddColumn(L"event note", col_event_note);
+                }
+
+                ptable.Print();
             }
         }
 
@@ -1848,8 +1830,10 @@ public:
         {
             if (!timeline_mode && report_l3_metric)
             {
-                std::wcout << std::endl << L"L3 cache metrics:" << std::endl;
-                std::wcout << L"  cluster  read_bandwidth  miss_rate" << std::endl;
+                std::wcout << std::endl
+                           << L"L3 cache metrics:" << std::endl;
+
+                std::vector<std::wstring> col_cluster, col_read_bandwith, col_miss_rate;
 
                 for (uint32_t i = core_base; i < core_end; i += dsu_cluster_size)
                 {
@@ -1872,7 +1856,17 @@ public:
                         }
                     }
 
-                    std::wcout << std::setw(9) << std::right << i / dsu_cluster_size << std::setw(14) << std::right << std::fixed << std::setprecision(2) << ((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0 << L"MB" << std::setw(10) << std::right << ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100 << L"%" << std::endl;
+                    col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
+                    col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+                    col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
+                }
+
+                {
+                    PrettyTable ptable;
+                    ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"miss_rate", col_miss_rate, PrettyTable::RIGHT);
+                    ptable.Print();
                 }
             }
 
@@ -1889,33 +1883,10 @@ public:
 
         std::wcout << L"System-wide Overall:" << std::endl;
 
-        if (multiplexing)
-        {
-            std::wcout << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note"
-                << L" " << std::setw(20) << L"scaled value" << std::endl;
-            std::wcout << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============"
-                << L" " << std::setw(20) << L"============" << std::endl;
-
-        }
-        else
-        {
-            std::wcout << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note" << std::endl;
-            std::wcout << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============" << std::endl;
-        }
-
         int32_t evt_num = dsu_outs[core_base / dsu_cluster_size].evt_num;
+
+        std::vector<std::wstring> col_counter_value, col_event_name, col_event_idx,
+                                  col_event_note, col_scaled_value;
 
         for (int j = 0; j < evt_num; j++)
         {
@@ -1925,42 +1896,64 @@ public:
             struct agg_entry* entry = overall + j;
             if (multiplexing)
             {
-#define CYCLE_EVT_IDX 0xffffffff
-                if (entry->event_idx == CYCLE_EVT_IDX)
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << std::setw(10) << std::left << L" fixed"
-                    << std::setw(13) << std::left << L" e"
-                    << L" " << std::setw(20) << std::dec
-                    << entry->scaled_value
-                    << std::endl;
-                else
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                    << L" " << std::setw(12) << std::left << events[j - 1].note
-                    << L" " << std::setw(20) << std::dec << entry->scaled_value
-                    << std::endl;
+                if (entry->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                    col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                }
+                else {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_note.push_back(events[j - 1].note);
+                    col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                }
             }
             else
             {
-                if (entry->event_idx == CYCLE_EVT_IDX)
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << std::setw(10) << std::left << L" fixed"
-                    << std::setw(13) << std::left << L" e" << std::endl;
-                else
-                    std::wcout << std::right << std::setw(20) << std::dec << entry->counter_value
-                    << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx)
-                    << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                    << L" " << std::setw(12) << std::left << events[j - 1].note << std::endl;
+                if (entry->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                }
+                else {
+                    col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                    col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_note.push_back(events[j - 1].note);
+                }
             }
+        }
+
+        {
+            PrettyTable ptable;
+            if (multiplexing)
+            {
+                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                ptable.AddColumn(L"event name", col_event_name);
+                ptable.AddColumn(L"event idx", col_event_idx);
+                ptable.AddColumn(L"event note", col_event_note);
+                ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+            }
+            else
+            {
+                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+                ptable.AddColumn(L"event name", col_event_name);
+                ptable.AddColumn(L"event idx", col_event_idx);
+                ptable.AddColumn(L"event note", col_event_note, PrettyTable::RIGHT);
+            }
+            ptable.Print();
         }
 
         if (report_l3_metric)
         {
-            std::wcout << std::endl << L"L3 cache metrics:" << std::endl;
-            std::wcout << L"  cluster  read_bandwidth  miss_rate" << std::endl;
+            std::wcout << std::endl
+                       << L"L3 cache metrics:" << std::endl;
+
+            std::vector<std::wstring> col_cluster, col_read_bandwith, col_miss_rate;
 
             for (uint32_t i = core_base; i < core_end; i += dsu_cluster_size)
             {
@@ -1983,7 +1976,9 @@ public:
                     }
                 }
 
-                std::wcout << std::setw(9) << std::right << std::dec << i / dsu_cluster_size << std::setw(14) << std::right << std::fixed << std::setprecision(2) << ((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0 << L"MB" << std::setw(10) << std::right << ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100 << L"%" << std::endl;
+                col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
+                col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+                col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
             }
 
             uint64_t evt_num2 = dsu_outs[core_base / dsu_cluster_size].evt_num;
@@ -2004,8 +1999,17 @@ public:
                 }
             }
 
-            std::wcout << std::setw(9) << std::right << L"all" << std::setw(14) << std::right << std::fixed << std::setprecision(2) << ((double)(acc_l3_cache_access_num * 64)) / 1024.0 / 1024.0 << L"MB" << std::setw(10) << std::right << ((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100 << L"%" << std::endl;
+            col_cluster.push_back(L"all");
+            col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(acc_l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+            col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100) + L"%");
 
+            {
+                PrettyTable ptable;
+                ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
+                ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
+                ptable.AddColumn(L"miss_rate", col_miss_rate, PrettyTable::RIGHT);
+                ptable.Print();
+            }
         }
 
         delete[] overall;
@@ -2059,21 +2063,8 @@ public:
             ch_end = dmc_idx + 1;
         }
 
-        if (!timeline_mode)
-        {
-            std::wcout << std::endl;
-
-            std::wcout << std::right << std::setw(8) << L"pmu id"
-                << std::right << std::setw(20) << L"counter value"
-                << L" " << std::setw(32) << std::left << L"event name"
-                << L" " << std::setw(9) << L"event idx"
-                << L" " << std::setw(12) << L"event note" << std::endl;
-            std::wcout << std::right << std::setw(8) << L"======"
-                << std::right << std::setw(20) << L"============="
-                << L" " << std::setw(32) << std::left << L"=========="
-                << L" " << std::setw(9) << L"========="
-                << L" " << std::setw(12) << L"============" << std::endl;
-        }
+        std::vector<std::wstring> col_pmu_id, col_counter_value, col_event_name,
+                                  col_event_idx, col_event_note;
 
         for (uint32_t i = ch_base; i < ch_end; i++)
         {
@@ -2089,11 +2080,11 @@ public:
                 }
                 else
                 {
-                    std::wcout << std::right << std::setw(7) << L"dmc " << std::left << std::setw(1) << i
-                        << std::right << std::setw(20) << std::dec << evt->value
-                        << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK)
-                        << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                        << L" " << std::setw(12) << std::left << clk_events[j].note << std::endl;
+                    col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
+                    col_counter_value.push_back(std::to_wstring(evt->value));
+                    col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK));
+                    col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                    col_event_note.push_back(clk_events[j].note);
                 }
 
                 if (overall_clk)
@@ -2112,16 +2103,49 @@ public:
                 }
                 else
                 {
-                    std::wcout << std::right << std::setw(7) << L"dmc " << std::left << std::setw(1) << i
-                        << std::right << std::setw(20) << std::dec << evt->value
-                        << L" " << std::setw(32) << std::left << get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2)
-                        << L" 0x" << std::setw(7) << std::left << std::hex << evt->event_idx
-                        << L" " << std::setw(12) << std::left << clkdiv2_events[j].note << std::endl;
+                    col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
+                    col_counter_value.push_back(std::to_wstring(evt->value));
+                    col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2));
+                    col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                    col_event_note.push_back(clkdiv2_events[j].note);
                 }
 
                 if (overall_clkdiv2)
                     overall_clkdiv2[j].counter_value += evt->value;
             }
+        }
+
+        for (int j = 0; j < clk_events_num; j++)
+        {
+            struct agg_entry* entry = overall_clk + j;
+            col_pmu_id.push_back(L"overall");
+            col_counter_value.push_back(std::to_wstring(entry->counter_value));
+            col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
+            col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+            col_event_note.push_back(clk_events[j].note);
+        }
+
+        for (int j = 0; j < clkdiv2_events_num; j++)
+        {
+            struct agg_entry* entry = overall_clkdiv2 + j;
+            col_pmu_id.push_back(L"overall");
+            col_counter_value.push_back(std::to_wstring(entry->counter_value));
+            col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
+            col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+            col_event_note.push_back(clkdiv2_events[j].note);
+        }
+
+        if (!timeline_mode)
+        {
+            std::wcout << std::endl;
+
+            PrettyTable ptable;
+            ptable.AddColumn(L"pmu id", col_pmu_id);
+            ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
+            ptable.AddColumn(L"event name", col_event_name);
+            ptable.AddColumn(L"event idx", col_event_idx);
+            ptable.AddColumn(L"event note", col_event_note);
+            ptable.Print();
         }
 
         if (timeline_mode)
@@ -2136,8 +2160,10 @@ public:
         {
             if (!timeline_mode && report_ddr_bw_metric)
             {
-                std::wcout << std::endl << L"ddr metrics:" << std::endl;
-                std::wcout << L"  channel  rw_bandwidth" << std::endl;
+                std::vector<std::wstring> col_channel, col_rw_bandwidth;
+
+                std::wcout << std::endl
+                           << L"ddr metrics:" << std::endl;
 
                 for (uint32_t i = ch_base; i < ch_end; i++)
                 {
@@ -2151,8 +2177,14 @@ public:
                             ddr_rd_num = evts[j].value;
                     }
 
-                    std::wcout << std::setw(9) << std::right << i << std::setw(12) << std::right << std::fixed << std::setprecision(2) << ((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0 << L"MB" << std::endl;
+                    col_channel.push_back(std::to_wstring(i));
+                    col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
                 }
+
+                PrettyTable ptable;
+                ptable.AddColumn(L"channel", col_channel, PrettyTable::RIGHT);
+                ptable.AddColumn(L"rw_bandwidth", col_rw_bandwidth, PrettyTable::RIGHT);
+                ptable.Print();
             }
             return;
         }
@@ -2164,30 +2196,12 @@ public:
             return;
         }
 
-        for (int j = 0; j < clk_events_num; j++)
-        {
-            struct agg_entry* entry = overall_clk + j;
-            std::wcout << std::right << std::setw(8) << L"overall"
-                << std::right << std::setw(20) << std::dec << entry->counter_value
-                << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK)
-                << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                << L" " << std::setw(12) << std::left << clk_events[j].note << std::endl;
-        }
-
-        for (int j = 0; j < clkdiv2_events_num; j++)
-        {
-            struct agg_entry* entry = overall_clkdiv2 + j;
-            std::wcout << std::right << std::setw(8) << L"overall"
-                << std::right << std::setw(20) << std::dec << entry->counter_value
-                << L" " << std::setw(32) << std::left << get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2)
-                << L" 0x" << std::setw(7) << std::left << std::hex << entry->event_idx
-                << L" " << std::setw(12) << std::left << clkdiv2_events[j].note << std::endl;
-        }
-
         if (report_ddr_bw_metric)
         {
-            std::wcout << std::endl << L"ddr metrics:" << std::endl;
-            std::wcout << L"  channel  rw_bandwidth" << std::endl;
+            std::wcout << std::endl
+                       << L"ddr metrics:" << std::endl;
+
+            std::vector<std::wstring> col_channel, col_rw_bandwidth;
 
             for (uint32_t i = ch_base; i < ch_end; i++)
             {
@@ -2201,7 +2215,8 @@ public:
                         ddr_rd_num = evts[j].value;
                 }
 
-                std::wcout << std::setw(9) << std::right << i << std::setw(12) << std::right << std::fixed << std::setprecision(2) << ((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0 << L"MB" << std::endl;
+                col_channel.push_back(std::to_wstring(i));
+                col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
             }
 
             uint64_t evt_num = dmc_outs[ch_base].clkdiv2_events_num;
@@ -2214,7 +2229,13 @@ public:
                     ddr_rd_num = entry->counter_value;
             }
 
-            std::wcout << std::setw(9) << std::right << L"all" << std::setw(12) << std::right << std::fixed << std::setprecision(2) << ((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0 << L"MB" << std::endl;
+            col_channel.push_back(L"all");
+            col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
+
+            PrettyTable ptable;
+            ptable.AddColumn(L"channel", col_channel, PrettyTable::RIGHT);
+            ptable.AddColumn(L"rw_bandwidth", col_rw_bandwidth, PrettyTable::RIGHT);
+            ptable.Print();
         }
 
         delete[] overall_clk;
@@ -2593,28 +2614,52 @@ wmain(
     {
         if (request.do_list)
         {
-            std::map<enum evt_class, std::vector<uint16_t>> events;
-            pmu_device.events_query(events);
-            std::wcout << L"List of pre-defined events (to be used in -e )\n";
-            std::wcout << L"==============================================\n";
-            std::wcout << "  " << std::left << std::setw(50) << L"Alias Name"
-                << std::setw(12) << L"Raw Index" <<
-                std::setw(32) << "Event Type" << std::endl;
-
-            for (auto a : events)
+            // Print pre-defined events
             {
-                const wchar_t* prefix = evt_name_prefix[a.first];
+                // Query for available events
+                std::map<enum evt_class, std::vector<uint16_t>> events;
+                pmu_device.events_query(events);
 
-                for (auto b : a.second)
-                    std::wcout << "  " << std::left << std::setw(50) << std::wstring(prefix) + std::wstring(get_event_name(b, a.first))
-                    << L"0x" << std::setw(10) << std::hex << unsigned(b)
-                    << std::setw(32) << std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") << std::endl;
+                PrettyTable ptable;
+                std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
+
+                std::wcout << std::endl
+                           << L"List of pre-defined events (to be used in -e )"
+                           << std::endl << std::endl;
+
+                for (auto a : events)
+                {
+                    const wchar_t* prefix = evt_name_prefix[a.first];
+                    for (auto b : a.second) {
+                        col_alias_name.push_back(std::wstring(prefix) + std::wstring(get_event_name(b, a.first)));
+                        col_raw_index.push_back(PrettyTable::IntToHex(b, 2));
+                        col_event_type.push_back(L"[" + std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") + L"]");
+                    }
+                }
+
+                ptable.AddColumn(L"Alias Name", col_alias_name);
+                ptable.AddColumn(L"Raw Index", col_raw_index, PrettyTable::RIGHT);
+                ptable.AddColumn(L"Event Type", col_event_type);
+                ptable.Print();
             }
 
-            std::wcout << L"\nList of supported metrics (to be used in -m)\n";
-            std::wcout << L"============================================\n";
-            for (const auto& [key, value] : request.metrics)
-                std::wcout << L"  " << std::left << std::setw(16) << key << value.raw_str << std::endl;
+            // Print supported metrics
+            {
+                PrettyTable ptable;
+                std::vector<std::wstring> col_metric, col_events;
+
+                std::wcout << std::endl
+                           << L"List of supported metrics (to be used in -m)"
+                           << std::endl << std::endl;
+
+                for (const auto& [key, value] : request.metrics) {
+                    col_metric.push_back(key);
+                    col_events.push_back(value.raw_str);
+                }
+                ptable.AddColumn(L"Metric", col_metric);
+                ptable.AddColumn(L"Events", col_events);
+                ptable.Print();
+            }
             return 0;
         }
 
@@ -2666,7 +2711,7 @@ wmain(
                 int progress_map_index = 0;
                 wchar_t progress_map[] = { L'/', L'|', L'\\', L'-' };
                 int64_t t_count1 = counting_duration_iter;
-               
+
                 while (t_count1 > 0 && no_ctrl_c)
                 {
                     std::wcout << L'\b' << progress_map[progress_map_index % 4];
