@@ -170,7 +170,7 @@ static VOID dmc_enable_event(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx)
     __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
 }
 
-#define ARMV8_PMCR_MASK         0x3f
+#define ARMV8_PMCR_MASK         0xff
 #define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
 #define ARMV8_PMCR_P            (1 << 1) /*  Reset all counters */
 #define ARMV8_PMCR_C            (1 << 2) /*  Cycle counter reset */
