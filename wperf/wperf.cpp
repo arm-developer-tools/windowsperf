@@ -272,15 +272,6 @@ private:
     const char* exception_msg;
 };
 
-class warn_exception : public std::exception
-{
-public:
-    warn_exception(const char* msg) : exception_msg(msg) {}
-    virtual const char* what() const throw() { return exception_msg; }
-private:
-    const char* exception_msg;
-};
-
 class user_request
 {
 public:
