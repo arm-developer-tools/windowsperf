@@ -230,6 +230,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="device.c" />
+    <ClCompile Include="dmc.c" />
     <ClCompile Include="driver.c" />
     <ClCompile Include="dsu.c" />
     <ClCompile Include="queue.c" />

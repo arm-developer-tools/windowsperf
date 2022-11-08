@@ -62,6 +62,9 @@ EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND WindowsPerfEvtDeviceSelfManagedIoSuspend;
 //
 
 static VOID(*dsu_ctl_funcs[3])(VOID) = { DSUCounterStart, DSUCounterStop, DSUCounterReset };
+static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8, struct dmcs_desc*) = { DmcCounterStart, DmcCounterStop, DmcCounterReset };
+
+static struct dmcs_desc dmc_array;
 
 static UINT8 dsu_numGPC;
 static UINT16 dsu_numCluster;
@@ -82,93 +85,6 @@ static HANDLE pmc_resource_handle = NULL;
 static UINT8 has_long_event_support = 0;
 
 CoreInfo* core_info;
-
-struct dmc_desc
-{
-    UINT64 iomem_start;
-    UINT64 iomem_len;
-    struct pmu_event_pseudo clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
-    struct pmu_event_pseudo clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
-    UINT8 clk_events_num;
-    UINT8 clkdiv2_events_num;
-};
-
-static struct dmc_desc* dmcs;
-static UINT8 dmc_num;
-
-static VOID dmc_counter_start(UINT8 ch_idx, UINT8 counter_idx)
-{
-    UINT64 op_base = dmcs[ch_idx].iomem_start;
-
-    __int32 value = __iso_volatile_load32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET));
-    __dmb(_ARM64_BARRIER_LD);
-
-    value |= DMC_CTL_BIT_ENABLE;
-
-    __dmb(_ARM64_BARRIER_ST);
-    __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
-}
-
-static VOID dmc_counter_stop(UINT8 ch_idx, UINT8 counter_idx)
-{
-    UINT64 op_base = dmcs[ch_idx].iomem_start;
-
-    __int32 value = __iso_volatile_load32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET));
-    __dmb(_ARM64_BARRIER_LD);
-
-    value &= ~((__int32)DMC_CTL_BIT_ENABLE);
-
-    __dmb(_ARM64_BARRIER_ST);
-    __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
-}
-
-static VOID dmc_counter_reset(UINT8 ch_idx, UINT8 counter_idx)
-{
-    UINT64 op_base = dmcs[ch_idx].iomem_start;
-
-    __int32 value = 0;
-    __dmb(_ARM64_BARRIER_ST);
-    __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_VAL_OFFSET), value);
-}
-
-static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8) = { dmc_counter_start, dmc_counter_stop, dmc_counter_reset };
-
-static UINT64 dmc_counter_read(UINT8 ch_idx, UINT16 counter_idx)
-{
-    UINT64 op_base = dmcs[ch_idx].iomem_start;
-
-    __int32 value = __iso_volatile_load32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_VAL_OFFSET));
-    __dmb(_ARM64_BARRIER_LD);
-
-    return (UINT64)((UINT32)value);
-}
-
-static dmc_channel_iterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8))
-{
-    for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
-    {
-        struct dmc_desc* dmc = dmcs + ch_idx;
-
-        for (UINT8 counter_idx = 0; counter_idx < dmc->clk_events_num; counter_idx++)
-            do_func(ch_idx, DMC_CLKDIV2_NUMGPC + counter_idx);
-        for (UINT8 counter_idx = 0; counter_idx < dmc->clkdiv2_events_num; counter_idx++)
-            do_func(ch_idx, counter_idx);
-    }
-}
-
-static VOID dmc_enable_event(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx)
-{
-    UINT64 op_base = dmcs[ch_idx].iomem_start;
-
-    __int32 value = __iso_volatile_load32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET));
-    __dmb(_ARM64_BARRIER_LD);
-
-    value &= ~((__int32)DMC_CTL_BIT_EMUX);
-    value |= (event_idx << 2) & DMC_CTL_BIT_EMUX;
-
-    __dmb(_ARM64_BARRIER_ST);
-    __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
-}
 
 #define ARMV8_PMCR_MASK         0xff
 #define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
@@ -417,7 +333,7 @@ static VOID update_dmc_counting(UINT8 dmc_ch)
     if (dmc_ch == ALL_DMC_CHANNEL)
     {
         ch_base = 0;
-        ch_end = dmc_num;
+        ch_end = dmc_array.dmc_num;
     }
     else
     {
@@ -425,28 +341,28 @@ static VOID update_dmc_counting(UINT8 dmc_ch)
         ch_end = dmc_ch + 1;
     }
 
-    dmc_channel_iterator(ch_base, ch_end, dmc_counter_stop);
+    DmcChannelIterator(ch_base, ch_end, DmcCounterStop, &dmc_array);
 
     for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
     {
-        struct dmc_desc* dmc = dmcs + ch_idx;
+        struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
         struct pmu_event_pseudo* events = dmc->clk_events;
         for (UINT8 i = 0; i < dmc->clk_events_num; i++)
         {
-            events[i].value += dmc_counter_read(ch_idx, DMC_CLKDIV2_EVT_NUM + i);
+            events[i].value += DmcCounterRead(ch_idx, DMC_CLKDIV2_EVT_NUM + i, &dmc_array);
             events[i].scheduled += 1;
         }
 
         events = dmc->clkdiv2_events;
         for (UINT8 i = 0; i < dmc->clkdiv2_events_num; i++)
         {
-            events[i].value += dmc_counter_read(ch_idx, i);
+            events[i].value += DmcCounterRead(ch_idx, i, &dmc_array);
             events[i].scheduled += 1;
         }
     }
 
-    dmc_channel_iterator(ch_base, ch_end, dmc_counter_reset);
-    dmc_channel_iterator(ch_base, ch_end, dmc_counter_start);
+    DmcChannelIterator(ch_base, ch_end, DmcCounterReset, &dmc_array);
+    DmcChannelIterator(ch_base, ch_end, DmcCounterStart, &dmc_array);
 }
 
 static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
@@ -847,7 +763,7 @@ NTSTATUS deviceControl(
 
         VOID(*core_func)(VOID) = NULL;
         VOID(*dsu_func)(VOID) = NULL;
-        VOID(*dmc_func)(UINT8, UINT8) = NULL;
+        VOID(*dmc_func)(UINT8, UINT8, struct dmcs_desc*) = NULL;
 
         if (ctl_flags & CTL_FLAG_CORE)
             core_func = core_ctl_funcs[action];
@@ -886,7 +802,7 @@ NTSTATUS deviceControl(
             if (dmc_idx == ALL_DMC_CHANNEL)
             {
                 dmc_ch_base = 0;
-                dmc_ch_end = dmc_num;
+                dmc_ch_end = dmc_array.dmc_num;
             }
             else
             {
@@ -894,7 +810,7 @@ NTSTATUS deviceControl(
                 dmc_ch_end = dmc_idx + 1;
             }
 
-            dmc_channel_iterator(dmc_ch_base, dmc_ch_end, dmc_func);
+            DmcChannelIterator(dmc_ch_base, dmc_ch_end, dmc_func, &dmc_array);
             dmc_core_idx = core_idx == ALL_CORE ? (numCores - 1) : core_idx;
         }
 
@@ -1000,7 +916,7 @@ NTSTATUS deviceControl(
             {
                 for (UINT8 ch_idx = dmc_ch_base; ch_idx < dmc_ch_end; ch_idx++)
                 {
-                    struct dmc_desc* dmc = dmcs + ch_idx;
+                    struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
                     struct pmu_event_pseudo* events = dmc->clk_events;
                     UINT8 events_num = dmc->clk_events_num;
                     for (UINT8 j = 0; j < events_num; j++)
@@ -1121,7 +1037,7 @@ NTSTATUS deviceControl(
 			out = out + dsu_evt_num;
 		}
 
-		if (dmcs)
+		if (dmc_array.dmcs)
 		{
 			hdr = (struct evt_hdr *)out;
 			hdr->evt_class = EVT_DMC_CLK;
@@ -1204,7 +1120,7 @@ NTSTATUS deviceControl(
                 if (dmc_idx == ALL_DMC_CHANNEL)
                 {
                     ch_base = 0;
-                    ch_end = dmc_num;
+                    ch_end = dmc_array.dmc_num;
                 }
                 else
                 {
@@ -1214,7 +1130,7 @@ NTSTATUS deviceControl(
 
                 for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
                 {
-                    struct dmc_desc* dmc = dmcs + ch_idx;
+                    struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
                     dmc->clk_events_num = 0;
                     dmc->clkdiv2_events_num = 0;
                     RtlSecureZeroMemory(dmc->clk_events, sizeof(struct pmu_event_pseudo) * MAX_MANAGED_DMC_CLK_EVENTS);
@@ -1245,7 +1161,7 @@ NTSTATUS deviceControl(
                         // clk event counters start after clkdiv2 counters
                         to_event->counter_idx = counter_adj + i;
                         to_event->value = 0;
-                        dmc_enable_event(ch_idx, counter_adj + i, raw_evts[i]);
+                        DmcEnableEvent(ch_idx, counter_adj + i, raw_evts[i], &dmc_array);
                     }
                 }
             }
@@ -1452,8 +1368,8 @@ NTSTATUS deviceControl(
         struct dmc_ctl_hdr* ctl_req = (struct dmc_ctl_hdr*)pBuffer;
         ULONG expected_size;
 
-        dmc_num = ctl_req->dmc_num;
-        expected_size = sizeof(struct dmc_ctl_hdr) + dmc_num * sizeof(UINT64) * 2;
+        dmc_array.dmc_num = ctl_req->dmc_num;
+        expected_size = sizeof(struct dmc_ctl_hdr) + dmc_array.dmc_num * sizeof(UINT64) * 2;
 
         if (inputSize != expected_size)
         {
@@ -1462,10 +1378,10 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if (!dmcs)
+        if (!dmc_array.dmcs)
         {
-            dmcs = (struct dmc_desc*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(struct dmc_desc) * ctl_req->dmc_num, 'DMCR');
-            if (!dmcs)
+            dmc_array.dmcs = (struct dmc_desc*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(struct dmc_desc) * ctl_req->dmc_num, 'DMCR');
+            if (!dmc_array.dmcs)
             {
                 WindowsPerfKdPrintInfo("DMC_CTL_INIT: allocate dmcs failed\n");
                 status = STATUS_INVALID_PARAMETER;
@@ -1473,21 +1389,21 @@ NTSTATUS deviceControl(
             }
 
 
-            for (UINT8 i = 0; i < dmc_num; i++)
+            for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
             {
                 UINT64 iomem_len = ctl_req->addr[2 * i + 1] - ctl_req->addr[2 * i] + 1;
                 PHYSICAL_ADDRESS phy_addr;
                 phy_addr.QuadPart = ctl_req->addr[2 * i];
-                dmcs[i].iomem_start = (UINT64)MmMapIoSpace(phy_addr, iomem_len, MmNonCached);
-                if (!dmcs[i].iomem_start)
+                dmc_array.dmcs[i].iomem_start = (UINT64)MmMapIoSpace(phy_addr, iomem_len, MmNonCached);
+                if (!dmc_array.dmcs[i].iomem_start)
                 {
                     WindowsPerfKdPrintInfo("IOCTL: MmMapIoSpace failed\n");
                     status = STATUS_INVALID_PARAMETER;
                     break;
                 }
-                dmcs[i].iomem_len = iomem_len;
-                dmcs[i].clk_events_num = 0;
-                dmcs[i].clkdiv2_events_num = 0;
+                dmc_array.dmcs[i].iomem_len = iomem_len;
+                dmc_array.dmcs[i].clk_events_num = 0;
+                dmc_array.dmcs[i].clkdiv2_events_num = 0;
             }
             if (status != STATUS_SUCCESS)
                 break;
@@ -1525,7 +1441,7 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if (dmc_idx != ALL_DMC_CHANNEL && dmc_idx >= dmc_num)
+        if (dmc_idx != ALL_DMC_CHANNEL && dmc_idx >= dmc_array.dmc_num)
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid dmc_idx %d for DMC_CTL_READ_COUNTING\n", dmc_idx);
             status = STATUS_INVALID_PARAMETER;
@@ -1536,7 +1452,7 @@ NTSTATUS deviceControl(
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (dmc_idx == ALL_DMC_CHANNEL)
-            outputSizeExpect = sizeof(DMCReadOut) * dmc_num;
+            outputSizeExpect = sizeof(DMCReadOut) * dmc_array.dmc_num;
         else
             outputSizeExpect = sizeof(DMCReadOut);
 
@@ -1554,7 +1470,7 @@ NTSTATUS deviceControl(
         if (dmc_idx == ALL_DMC_CHANNEL)
         {
             dmc_ch_base = 0;
-            dmc_ch_end = dmc_num;
+            dmc_ch_end = dmc_array.dmc_num;
         }
         else
         {
@@ -1565,7 +1481,7 @@ NTSTATUS deviceControl(
         outputSizeReturned = 0;
         for (UINT8 i = dmc_ch_base; i < dmc_ch_end; i++)
         {
-            struct dmc_desc* dmc = dmcs + i;
+            struct dmc_desc* dmc = dmc_array.dmcs + i;
             DMCReadOut* out = (DMCReadOut*)((UINT8*)pBuffer + sizeof(DMCReadOut) * (i - dmc_ch_base));
             UINT8 clk_events_num = dmc->clk_events_num;
             UINT8 clkdiv2_events_num = dmc->clkdiv2_events_num;
@@ -1615,13 +1531,13 @@ VOID WindowsPerfDeviceUnload()
     free_pmu_resource();
     ExFreePoolWithTag(core_info, 'CORE');
 
-    if (dmcs)
+    if (dmc_array.dmcs)
     {
-        for (UINT8 i = 0; i < dmc_num; i++)
-            MmUnmapIoSpace((PVOID)dmcs[i].iomem_start, dmcs[i].iomem_len);
+        for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
+            MmUnmapIoSpace((PVOID)dmc_array.dmcs[i].iomem_start, dmc_array.dmcs[i].iomem_len);
 
-        ExFreePoolWithTag(dmcs, 'DMCR');
-        dmcs = NULL;
+        ExFreePoolWithTag(dmc_array.dmcs, 'DMCR');
+        dmc_array.dmcs = NULL;
     }
 }
 
