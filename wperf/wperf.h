@@ -36,6 +36,8 @@
 
 #define CYCLE_EVT_IDX 					0xffffffff
 
+#define FILTER_BIT_EXCL_EL1             (1U << 31)
+
 BOOLEAN G_PerformAsyncIo;
 BOOLEAN G_LimitedLoops;
 ULONG G_AsyncIoLoopsNum;

@@ -1138,7 +1138,7 @@ public:
             throw fatal_exception("PMU_CTL_RESET failed");
     }
 
-#define FILTER_BIT_EXCL_EL1 (1U << 31)
+
 
     void events_assign(std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel)
     {
