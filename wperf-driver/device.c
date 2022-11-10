@@ -33,6 +33,7 @@
 #include "debug.h"
 #include "dmc.h"
 #include "dsu.h"
+#include "core.h"
 #include "pmu.h"
 #include "coreinfo.h"
 #include "sysregs.h"
@@ -82,18 +83,8 @@ static UINT64 midr_value;
 static KEVENT SyncPMCEnc;
 // not sure if MSVC zero globals
 static HANDLE pmc_resource_handle = NULL;
-static UINT8 has_long_event_support = 0;
 
 CoreInfo* core_info;
-
-#define ARMV8_PMCR_MASK         0xff
-#define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
-#define ARMV8_PMCR_P            (1 << 1) /*  Reset all counters */
-#define ARMV8_PMCR_C            (1 << 2) /*  Cycle counter reset */
-#define ARMV8_PMCR_LC           (1 << 6) /*  Overflow on 64-bit cycle counter*/
-#define ARMV8_PMCR_LP           (1 << 7) /*  Long event counter enable */
-#define	FILTER_EXCL_EL1	(1U << 31)
-#define ARMV8_EVTYPE_MASK   0xc800ffff  // Mask for writable bits
 
 enum
 {
@@ -109,113 +100,18 @@ static UINT16 armv8_arch_core_events[] =
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
-static UINT32 core_pmcr_get(VOID)
-{
-    return (UINT32)_ReadStatusReg(PMCR_EL0);
-}
-
-static VOID core_pmcr_set(UINT32 val)
-{
-    val &= ARMV8_PMCR_MASK;
-    __isb(_ARM64_BARRIER_SY);
-    _WriteStatusReg(PMCR_EL0, (__int64)val);
-}
-
-static VOID core_counter_disable(UINT32 mask)
-{
-    _WriteStatusReg(PMCNTENCLR_EL0, (__int64)mask);
-    __isb(_ARM64_BARRIER_SY);
-}
-
-static VOID core_counter_enable(UINT32 mask)
-{
-    __isb(_ARM64_BARRIER_SY);
-    _WriteStatusReg(PMCNTENSET_EL0, (__int64)mask);
-}
-
-static VOID core_counter_irq_disable(UINT32 mask)
-{
-    _WriteStatusReg(PMINTENCLR_EL1, (__int64)mask);
-    __isb(_ARM64_BARRIER_SY);
-    _WriteStatusReg(PMOVSCLR_EL0, (__int64)mask);
-    __isb(_ARM64_BARRIER_SY);
-}
-
-static VOID core_counter_reset(VOID)
-{
-    UINT32 pmcr = ARMV8_PMCR_P | ARMV8_PMCR_C | ARMV8_PMCR_LC;
-    if (has_long_event_support)
-        pmcr |= ARMV8_PMCR_LP;
-
-    core_pmcr_set(pmcr);
-}
-
-static VOID core_counter_start(VOID)
-{
-    core_pmcr_set(core_pmcr_get() | ARMV8_PMCR_E);
-}
-
-static VOID core_counter_stop(VOID)
-{
-    core_pmcr_set(core_pmcr_get() & ~ARMV8_PMCR_E);
-}
-
 // must sync with enum pmu_ctl_action
-static VOID(*core_ctl_funcs[3])(VOID) = { core_counter_start, core_counter_stop, core_counter_reset };
+static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
 
 /* Enable/Disable the counter associated with the event */
 static VOID event_enable_counter(struct pmu_event_kernel* event)
 {
-    core_counter_enable(1U << event->counter_idx);
+    CoreCounterEnable(1U << event->counter_idx);
 }
 
 static VOID event_disable_counter(struct pmu_event_kernel* event)
 {
-    core_counter_disable(1U << event->counter_idx);
-}
-
-#define SET_COUNTER_TYPE(N) case N: _WriteStatusReg(PMEVTYPER##N##_EL0, evtype_val); break
-static VOID core_couter_set_type(UINT32 counter_idx, __int64 evtype_val)
-{
-    evtype_val &= ARMV8_EVTYPE_MASK;
-    // can't do lookup table as _WriteStatusReg takes contant register number
-    switch (counter_idx)
-    {
-        SET_COUNTER_TYPE(0);
-        SET_COUNTER_TYPE(1);
-        SET_COUNTER_TYPE(2);
-        SET_COUNTER_TYPE(3);
-        SET_COUNTER_TYPE(4);
-        SET_COUNTER_TYPE(5);
-        SET_COUNTER_TYPE(6);
-        SET_COUNTER_TYPE(7);
-        SET_COUNTER_TYPE(8);
-        SET_COUNTER_TYPE(9);
-        SET_COUNTER_TYPE(10);
-        SET_COUNTER_TYPE(11);
-        SET_COUNTER_TYPE(12);
-        SET_COUNTER_TYPE(13);
-        SET_COUNTER_TYPE(14);
-        SET_COUNTER_TYPE(15);
-        SET_COUNTER_TYPE(16);
-        SET_COUNTER_TYPE(17);
-        SET_COUNTER_TYPE(18);
-        SET_COUNTER_TYPE(19);
-        SET_COUNTER_TYPE(20);
-        SET_COUNTER_TYPE(21);
-        SET_COUNTER_TYPE(22);
-        SET_COUNTER_TYPE(23);
-        SET_COUNTER_TYPE(24);
-        SET_COUNTER_TYPE(25);
-        SET_COUNTER_TYPE(26);
-        SET_COUNTER_TYPE(27);
-        SET_COUNTER_TYPE(28);
-        SET_COUNTER_TYPE(29);
-        SET_COUNTER_TYPE(30);
-    default:
-        WindowsPerfKdPrintInfo("Warn: Invalid PMEVTYPE index: %d\n", counter_idx);
-        break;
-    }
+    CoreCounterDisable(1U << event->counter_idx);
 }
 
 static VOID event_config_type(struct pmu_event_kernel* event)
@@ -225,7 +121,7 @@ static VOID event_config_type(struct pmu_event_kernel* event)
     if (event_idx == CYCLE_EVENT_IDX)
         _WriteStatusReg(PMCCFILTR_EL0, (__int64)event->filter_bits);
     else
-        core_couter_set_type(event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
+        CoreCouterSetType(event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
 }
 
 static VOID core_counter_enable_irq(UINT32 mask)
@@ -240,7 +136,7 @@ static VOID event_enable_irq(struct pmu_event_kernel* event)
 
 static VOID event_disable_irq(struct pmu_event_kernel* event)
 {
-    core_counter_irq_disable(1U << event->counter_idx);
+    CoreCounterIrqDisable(1U << event->counter_idx);
 }
 
 static VOID event_enable(struct pmu_event_kernel* event)
@@ -255,50 +151,6 @@ static VOID event_enable(struct pmu_event_kernel* event)
     event_enable_counter(event);
 }
 
-#define READ_COUNTER(N) case N: return (UINT64)_ReadStatusReg(PMEVCNTR##N##_EL0)
-static UINT64 core_read_counter(UINT32 counter_idx)
-{
-    switch (counter_idx)
-    {
-        READ_COUNTER(0);
-        READ_COUNTER(1);
-        READ_COUNTER(2);
-        READ_COUNTER(3);
-        READ_COUNTER(4);
-        READ_COUNTER(5);
-        READ_COUNTER(6);
-        READ_COUNTER(7);
-        READ_COUNTER(8);
-        READ_COUNTER(9);
-        READ_COUNTER(10);
-        READ_COUNTER(11);
-        READ_COUNTER(12);
-        READ_COUNTER(13);
-        READ_COUNTER(14);
-        READ_COUNTER(15);
-        READ_COUNTER(16);
-        READ_COUNTER(17);
-        READ_COUNTER(18);
-        READ_COUNTER(19);
-        READ_COUNTER(20);
-        READ_COUNTER(21);
-        READ_COUNTER(22);
-        READ_COUNTER(23);
-        READ_COUNTER(24);
-        READ_COUNTER(25);
-        READ_COUNTER(26);
-        READ_COUNTER(27);
-        READ_COUNTER(28);
-        READ_COUNTER(29);
-        READ_COUNTER(30);
-    default:
-        WindowsPerfKdPrintInfo("Warn: Invalid PMEVTYPE index: %d\n", counter_idx);
-        break;
-    }
-
-    return 0xcafedead;
-}
-
 static UINT64 event_get_counting(struct pmu_event_kernel* event)
 {
     UINT32 event_idx = event->event_idx;
@@ -306,7 +158,7 @@ static UINT64 event_get_counting(struct pmu_event_kernel* event)
     if (event_idx == CYCLE_EVENT_IDX)
         return _ReadStatusReg(PMCCNTR_EL0);
 
-    return core_read_counter(event->counter_idx);
+    return CoreReadCounter(event->counter_idx);
 }
 
 static VOID update_core_counting(CoreInfo* core)
@@ -314,7 +166,7 @@ static VOID update_core_counting(CoreInfo* core)
     UINT32 events_num = core->events_num;
     struct pmu_event_pseudo* events = core->events;
 
-    core_counter_stop();
+    CoreCounterStop();
 
     for (UINT32 i = 0; i < events_num; i++)
     {
@@ -322,8 +174,8 @@ static VOID update_core_counting(CoreInfo* core)
         events[i].scheduled += 1;
     }
 
-    core_counter_reset();
-    core_counter_start();
+    CoreCounterReset();
+    CoreCounterStart();
 }
 
 static VOID update_dmc_counting(UINT8 dmc_ch)
@@ -387,7 +239,7 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
         UINT32 event_start_idx1 = (numGPC * round) % (events_num - numFPC);
         UINT32 event_start_idx2 = (numGPC * new_round) % (events_num - numFPC);
 
-        core_counter_stop();
+        CoreCounterStop();
 
         //Only one FPC, cycle counter
         //We will improve the logic handling FPC later
@@ -397,11 +249,11 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
         for (UINT32 i = 0; i < numGPC; i++)
         {
             UINT32 adjusted_idx = (event_start_idx1 + i) % (events_num - numFPC);
-            events[adjusted_idx + numFPC].value += core_read_counter(i);
+            events[adjusted_idx + numFPC].value += CoreReadCounter(i);
             events[adjusted_idx + numFPC].scheduled += 1;
         }
 
-        core_counter_reset();
+        CoreCounterReset();
 
         struct pmu_event_kernel cycle_event;
         cycle_event.event_idx = CYCLE_EVENT_IDX;
@@ -420,7 +272,7 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
             event_enable(&event);
         }
 
-        core_counter_start();
+        CoreCounterStart();
     }
 
     if (core->prof_dsu == PROF_NORMAL)
@@ -543,13 +395,13 @@ static VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
 
-    core_counter_reset();
+    CoreCounterReset();
 
     UINT32 up_limit = numGPC + numFPC;
     for (UINT32 i = 0; i < up_limit; i++)
         event_enable(default_events + i);
 
-    core_counter_start();
+    CoreCounterStart();
 
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
     WindowsPerfKdPrintInfo("core %d PMC enabled\n", core_idx);
@@ -1646,9 +1498,9 @@ WindowsPerfDeviceCreate(
         arch_num, implementer, variant, part_num, revision);
 
     if (pmu_ver == 0x6 || pmu_ver == 0x7)
-        has_long_event_support = 1;
+        CpuHasLongEventSupportSet(1);
 
-    UINT32 pmcr = core_pmcr_get();
+    UINT32 pmcr = CorePmcrGet();
     numGPC = (pmcr >> 11) & 0xf;
     WindowsPerfKdPrintInfo("%d general purpose hardware counters detected\n", numGPC);
 
