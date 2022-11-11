@@ -123,7 +123,7 @@ enum evt_type
     EVT_METRIC_NORMAL,
     EVT_METRIC_GROUPED,
     EVT_PADDING,
-    EVT_HDR,
+    EVT_HDR,                //!< Used to make beginning of a new group. Not real event
 };
 
 static const wchar_t* evt_class_name[EVT_CLASS_NUM] =
@@ -500,6 +500,14 @@ public:
                 auto total_size = a.second.size();
                 enum evt_class e_class = a.first;
 
+                // We start with group_start === 1 because at "a" index [0] there is a EVT_HDR event.
+                // This event is not "an event". It is a placeholder which stores following group event size.
+                // Please note that we will read EVT_HDR.index for event group size here.
+                //
+                //  a.second vector contains:
+                //
+                //      EVT_HDR(m), EVT_m1, EVT_m2, ..., EVT_HDR(n), EVT_n1, EVT_n2, ...
+                //
                 for (uint16_t group_start = 1, group_size = a.second[0].index, group_num = 0; group_start < total_size; group_num++)
                 {
                     for (uint16_t elem_idx = group_start; elem_idx < (group_start + group_size); elem_idx++)
@@ -507,9 +515,14 @@ public:
 
                     padding_ioctl_events(e_class, events[e_class]);
 
-                    uint16_t temp = a.second[group_start + group_size].index;
+                    // Make sure we are not reading beyond last element in a.second vector.
+                    // Here if there's another event we want to read next EVT_HDR to know next group size.
+                    const uint16_t next_evt_hdr_idx = group_start + group_size;
+                    if (next_evt_hdr_idx >= total_size)
+                        break;
+                    uint16_t next_evt_group_size = a.second[next_evt_hdr_idx].index;
                     group_start += group_size + 1;
-                    group_size = temp;
+                    group_size = next_evt_group_size;
                 }
             }
         }
@@ -635,7 +648,7 @@ public:
     {
         std::wistringstream event_stream(events_str);
         std::wstring event;
-        int group_size = 0;
+        uint16_t group_size = 0;
 
         while (std::getline(event_stream, event, L','))
         {
@@ -791,8 +804,10 @@ public:
                         exit(-1);
                     }
 
+                    // Insert EVT_HDR in front of group we've just added. This entity
+                    // will store information about following group of events.
                     auto it = groups[e_class].end();
-                    groups[e_class].insert(std::prev(it, group_size), { static_cast<uint16_t>(group_size), EVT_HDR, note });
+                    groups[e_class].insert(std::prev(it, group_size), { group_size, EVT_HDR, note });
                     group_size = 0;
                 }
             }
