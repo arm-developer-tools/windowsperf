@@ -163,3 +163,29 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
                1.106 seconds time elapsed
 ```
+
+## You can create your own metrics and enable them via custom configuration file. Provide customized config file which describes metrics with -C <filename> command line option.
+## Create a config file named "customized_config", and add metric(s):
+```
+>cat customized_config 
+customizedmetric:{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}
+```
+## Use command line options -C <filename> to select metrics configuration file and option -m to use new metric, see:
+```
+> wperf stat -C customized_config -m customizedmetric -c 0 sleep 1
+counting ... done
+
+Performance counter stats for core 0, no multiplexing, kernel mode included, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+             69080156  cycle       fixed      e
+             40601284  inst_spec   0x1b       g0,customizedmetric
+             24713551  dp_spec     0x73       g0,customizedmetric
+             22479115  vfp_spec    0x75       g0,customizedmetric
+               640582  ase_spec    0x74       g0,customizedmetric
+             11362693  ldst_spec   0x72       g0,customizedmetric
+
+                1.17 seconds time elapsed
+```

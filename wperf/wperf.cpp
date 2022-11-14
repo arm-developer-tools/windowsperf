@@ -897,74 +897,20 @@ public:
         // Only support metrics based on Arm's default core implementation
         if ((hw_cfg.vendor_id == 0x41 || hw_cfg.vendor_id == 0x51) && gpc_num >= 5)
         {
+            
             if (gpc_num == 5)
             {
-                metric_desc mdesc;
-
-                mdesc.raw_str = L"{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"imix");
-                builtin_metrics[L"imix"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"icache");
-                builtin_metrics[L"icache"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1d_cache,l1d_cache_refill,l2d_cache,l2d_cache_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"dcache");
-                builtin_metrics[L"dcache"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"itlb");
-                builtin_metrics[L"itlb"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"dtlb");
-                builtin_metrics[L"dtlb"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
+                set_builtin_metrics(L"imix", L"{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}");
             }
-            else if (gpc_num > 5)
+            else
             {
-                metric_desc mdesc;
-
-                mdesc.raw_str = L"{inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"imix");
-                builtin_metrics[L"imix"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"icache");
-                builtin_metrics[L"icache"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1d_cache,l1d_cache_refill,l2d_cache,l2d_cache_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"dcache");
-                builtin_metrics[L"dcache"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"itlb");
-                builtin_metrics[L"itlb"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
-
-                mdesc.raw_str = L"{l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}";
-                user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"dtlb");
-                builtin_metrics[L"dtlb"] = mdesc;
-                mdesc.events.clear();
-                mdesc.groups.clear();
+                set_builtin_metrics(L"imix", L"{inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec}");
             }
+
+            set_builtin_metrics(L"icache", L"{l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired}");
+            set_builtin_metrics(L"dcache", L"{l1d_cache,l1d_cache_refill,l2d_cache,l2d_cache_refill,inst_retired}");
+            set_builtin_metrics(L"itlb",   L"{l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,inst_retired}");
+            set_builtin_metrics(L"dtlb",   L"{l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}");
         }
 
         // Detect unCore PMU from Arm Ltd - System Cache
@@ -999,12 +945,7 @@ public:
             dsu_outs = std::make_unique<DSUReadOut[]>(dsu_cluster_num);
             memset(dsu_outs.get(), 0, sizeof(DSUReadOut)* dsu_cluster_num);
 
-            metric_desc mdesc;
-            mdesc.raw_str = L"/dsu/l3d_cache,/dsu/l3d_cache_refill";
-            user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"l3_cache");
-            builtin_metrics[L"l3_cache"] = mdesc;
-            mdesc.events.clear();
-            mdesc.groups.clear();
+            set_builtin_metrics(L"l3_cache", L"/dsu/l3d_cache,/dsu/l3d_cache_refill");
         }
 
         // unCore PMU - DDR controller
@@ -1042,12 +983,7 @@ public:
             dmc_outs = std::make_unique<DMCReadOut[]>(ctl->dmc_num);
             memset(dmc_outs.get(), 0, sizeof(DMCReadOut)* ctl->dmc_num);
 
-            metric_desc mdesc;
-            mdesc.raw_str = L"/dmc_clkdiv2/rdwr";
-            user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, L"ddr_bw");
-            builtin_metrics[L"ddr_bw"] = mdesc;
-            mdesc.events.clear();
-            mdesc.groups.clear();
+            set_builtin_metrics(L"ddr_bw", L"/dmc_clkdiv2/rdwr");
         }
     }
 
@@ -1110,6 +1046,18 @@ public:
 
         CloseHandle(handle);
     }
+
+
+    void set_builtin_metrics(std::wstring key, std::wstring raw_str)
+    {
+        metric_desc mdesc;
+        mdesc.raw_str = raw_str;
+        user_request::parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, key);
+        builtin_metrics[key] = mdesc;
+        mdesc.events.clear();
+        mdesc.groups.clear();
+    }
+
 
     void start(uint32_t flags = CTL_FLAG_CORE)
     {
