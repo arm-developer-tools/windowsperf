@@ -61,6 +61,13 @@ struct hw_cfg
     UINT16  core_num;
 };
 
+struct version_info
+{
+    UINT8 major;
+    UINT8 minor;
+    UINT8 patch;
+};
+
 //
 // PMU communication
 //
@@ -71,12 +78,19 @@ enum pmu_ctl_action
 	PMU_CTL_RESET,
 	PMU_CTL_QUERY_HW_CFG,
 	PMU_CTL_QUERY_SUPP_EVENTS,
+	PMU_CTL_QUERY_VERSION,
 	PMU_CTL_ASSIGN_EVENTS,
 	PMU_CTL_READ_COUNTING,
 	DSU_CTL_INIT,
 	DSU_CTL_READ_COUNTING,
 	DMC_CTL_INIT,
 	DMC_CTL_READ_COUNTING,
+};
+
+struct pmu_ctl_ver_hdr
+{
+    enum pmu_ctl_action action;
+    struct version_info version;
 };
 
 struct pmu_ctl_hdr

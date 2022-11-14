@@ -1321,6 +1321,24 @@ public:
             throw fatal_exception("DMC_CTL_READ_COUNTING failed");
     }
 
+    void version_query(version_info& driver_ver)
+    {
+        struct pmu_ctl_ver_hdr ctl;
+        DWORD res_len;
+
+        ctl.action = PMU_CTL_QUERY_VERSION;
+        ctl.version.major = MAJOR;
+        ctl.version.minor = MINOR;
+        ctl.version.patch = PATCH;
+
+        BOOL status = DeviceAsyncIoControl(
+            handle, &ctl, (DWORD)sizeof(struct pmu_ctl_ver_hdr), &driver_ver,
+            (DWORD)sizeof(struct version_info), &res_len);
+
+        if (!status)
+            throw fatal_exception("PMU_CTL_QUERY_VERSION failed");
+    }
+
     void events_query(std::map<enum evt_class, std::vector<uint16_t>>& events_out)
     {
         events_out.clear();
@@ -2480,7 +2498,8 @@ wmain(
 
     if (request.do_version)
     {
-        std::wcout << L"Version: " << VERSION << "\n";
+        std::wcout << L"wperf version " << MAJOR << "." << MINOR << "."
+                   << PATCH << "\n";
         return 0;
     }
 
@@ -2504,6 +2523,19 @@ wmain(
             std::wcout << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
             return 0;
         }
+    }
+
+    version_info driver_ver;
+    pmu_device.version_query(driver_ver);
+    if (driver_ver.major != MAJOR || driver_ver.minor != MINOR
+        || driver_ver.patch != PATCH)
+    {
+        std::wcerr << L"Version mismatch between wperf-driver and wperf.\n";
+        std::wcerr << L"wperf-driver version: " << driver_ver.major << "."
+                   << driver_ver.minor << "." << driver_ver.patch << "\n";
+        std::wcerr << L"wperf version: " << MAJOR << "." << MINOR << "."
+                   << PATCH << "\n";
+        return -1;
     }
 
     try
