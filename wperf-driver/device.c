@@ -924,6 +924,39 @@ NTSTATUS deviceControl(
         *outputSize = return_size;
         break;
     }
+    case PMU_CTL_QUERY_VERSION:
+    {
+        if (inputSize != sizeof(struct pmu_ctl_ver_hdr))
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_VERSION\n",
+                                   inputSize);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        WindowsPerfKdPrintInfo("IOCTL: QUERY_VERSION\n");
+
+        struct pmu_ctl_ver_hdr* ctl_req = (struct pmu_ctl_ver_hdr*)pBuffer;
+        if (ctl_req->version.major != MAJOR || ctl_req->version.minor != MINOR
+            || ctl_req->version.patch != PATCH)
+        {
+            WindowsPerfKdPrintInfo("IOCTL: version mismatch bewteen wperf-driver and wperf\n");
+            WindowsPerfKdPrintInfo("IOCTL: wperf-driver version: %d.%d.%d\n",
+                                   MAJOR, MINOR, PATCH);
+            WindowsPerfKdPrintInfo("IOCTL: wperf version: %d.%d.%d\n",
+                                   ctl_req->version.major,
+                                   ctl_req->version.minor,
+                                   ctl_req->version.patch);
+        }
+
+        struct version_info* ver_info = (struct version_info*)pBuffer;
+        ver_info->major = MAJOR;
+        ver_info->minor = MINOR;
+        ver_info->patch = PATCH;
+
+        *outputSize = sizeof(struct version_info);
+        break;
+    }
     case PMU_CTL_ASSIGN_EVENTS:
     {
         struct pmu_ctl_evt_assign_hdr* ctl_req = (struct pmu_ctl_evt_assign_hdr*)pBuffer;
