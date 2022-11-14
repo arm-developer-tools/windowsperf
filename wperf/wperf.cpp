@@ -45,6 +45,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
+#include "utils.h"
 
 //
 // Port start
@@ -132,14 +133,6 @@ static const wchar_t* evt_class_name[EVT_CLASS_NUM] =
     L"dsu",
     L"dmc_clk",
     L"dmc_clkdiv2",
-};
-
-static const char* evt_class_nameA[EVT_CLASS_NUM] =
-{
-    "core",
-    "dsu",
-    "dmc_clk",
-    "dmc_clkdiv2",
 };
 
 static const wchar_t* evt_name_prefix[EVT_CLASS_NUM] =
@@ -1023,7 +1016,9 @@ public:
             else
                 snprintf(buf, sizeof(buf), "wperf_core_%d_", core_idx);
             std::string prefix(buf);
-            std::string suffix(evt_class_nameA[e]);
+
+            std::string suffix = MultiByteFromWideString(evt_class_name[e]);
+
             filename = prefix + filename + suffix + std::string(".csv");
             if (!length)
             {
