@@ -549,7 +549,7 @@ public:
         {
             std::wcout << L"  " << std::setw(18) << evt_class_name[a.first] << L":";
             for (auto b : a.second)
-                std::wcout << " 0x" << std::hex << b.index;
+                std::wcout << L" " << IntToHexWideString(b.index);
             std::wcout << std::endl;
         }
     }
