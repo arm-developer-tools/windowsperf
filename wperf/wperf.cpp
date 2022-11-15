@@ -1454,7 +1454,7 @@ public:
                         else {
                             col_counter_value.push_back(std::to_wstring(evt->value));
                             col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
-                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx, 2));
+                            col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
                             col_event_note.push_back(events[j - 1].note);
                             col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
                             col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
@@ -1484,7 +1484,7 @@ public:
                         else {
                             col_counter_value.push_back(std::to_wstring(evt->value));
                             col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
-                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx, 2));
+                            col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
                             col_event_note.push_back(events[j - 1].note);
                         }
                     }
@@ -1553,7 +1553,7 @@ public:
                 else {
                     col_counter_value.push_back(std::to_wstring(entry->counter_value));
                     col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
-                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                     col_event_note.push_back(events[j - 1].note);
                     col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
                 }
@@ -1569,7 +1569,7 @@ public:
                 else {
                     col_counter_value.push_back(std::to_wstring(entry->counter_value));
                     col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
-                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                     col_event_note.push_back(events[j - 1].note);
                 }
             }
@@ -1690,7 +1690,7 @@ public:
                         else {
                             col_counter_value.push_back(std::to_wstring(evt->value));
                             col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
-                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                            col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                             col_event_note.push_back(events[j - 1].note);
                             col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
                             col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
@@ -1721,7 +1721,7 @@ public:
                         else {
                             col_counter_value.push_back(std::to_wstring(evt->value));
                             col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
-                            col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                            col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                             col_event_note.push_back(events[j - 1].note);
                         }
                     }
@@ -1789,8 +1789,8 @@ public:
                     }
 
                     col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
-                    col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
-                    col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
+                    col_read_bandwith.push_back(DoubleToWideString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+                    col_miss_rate.push_back(DoubleToWideString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
                 }
 
                 {
@@ -1835,7 +1835,7 @@ public:
                 else {
                     col_counter_value.push_back(std::to_wstring(entry->counter_value));
                     col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
-                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                     col_event_note.push_back(events[j - 1].note);
                     col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
                 }
@@ -1851,7 +1851,7 @@ public:
                 else {
                     col_counter_value.push_back(std::to_wstring(entry->counter_value));
                     col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
-                    col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                     col_event_note.push_back(events[j - 1].note);
                 }
             }
@@ -1906,8 +1906,8 @@ public:
                 }
 
                 col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
-                col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
-                col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
+                col_read_bandwith.push_back(DoubleToWideString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+                col_miss_rate.push_back(DoubleToWideString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
             }
 
             uint64_t evt_num2 = dsu_outs[core_base / dsu_cluster_size].evt_num;
@@ -1929,8 +1929,8 @@ public:
             }
 
             col_cluster.push_back(L"all");
-            col_read_bandwith.push_back(PrettyTable::DoubleToString(((double)(acc_l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
-            col_miss_rate.push_back(PrettyTable::DoubleToString(((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100) + L"%");
+            col_read_bandwith.push_back(DoubleToWideString(((double)(acc_l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
+            col_miss_rate.push_back(DoubleToWideString(((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100) + L"%");
 
             {
                 PrettyTable ptable;
@@ -2006,7 +2006,7 @@ public:
                     col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
                     col_counter_value.push_back(std::to_wstring(evt->value));
                     col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK));
-                    col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                     col_event_note.push_back(clk_events[j].note);
                 }
 
@@ -2029,7 +2029,7 @@ public:
                     col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
                     col_counter_value.push_back(std::to_wstring(evt->value));
                     col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2));
-                    col_event_idx.push_back(PrettyTable::IntToHex(evt->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                     col_event_note.push_back(clkdiv2_events[j].note);
                 }
 
@@ -2044,7 +2044,7 @@ public:
             col_pmu_id.push_back(L"overall");
             col_counter_value.push_back(std::to_wstring(entry->counter_value));
             col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
-            col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+            col_event_idx.push_back(IntToHexWideString(entry->event_idx));
             col_event_note.push_back(clk_events[j].note);
         }
 
@@ -2054,7 +2054,7 @@ public:
             col_pmu_id.push_back(L"overall");
             col_counter_value.push_back(std::to_wstring(entry->counter_value));
             col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
-            col_event_idx.push_back(PrettyTable::IntToHex(entry->event_idx));
+            col_event_idx.push_back(IntToHexWideString(entry->event_idx));
             col_event_note.push_back(clkdiv2_events[j].note);
         }
 
@@ -2101,7 +2101,7 @@ public:
                     }
 
                     col_channel.push_back(std::to_wstring(i));
-                    col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
+                    col_rw_bandwidth.push_back(DoubleToWideString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
                 }
 
                 PrettyTable ptable;
@@ -2135,7 +2135,7 @@ public:
                 }
 
                 col_channel.push_back(std::to_wstring(i));
-                col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
+                col_rw_bandwidth.push_back(DoubleToWideString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
             }
 
             uint64_t evt_num = dmc_outs[ch_base].clkdiv2_events_num;
@@ -2149,7 +2149,7 @@ public:
             }
 
             col_channel.push_back(L"all");
-            col_rw_bandwidth.push_back(PrettyTable::DoubleToString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
+            col_rw_bandwidth.push_back(DoubleToWideString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
 
             PrettyTable ptable;
             ptable.AddColumn(L"channel", col_channel, PrettyTable::RIGHT);
@@ -2555,7 +2555,7 @@ wmain(
                     const wchar_t* prefix = evt_name_prefix[a.first];
                     for (auto b : a.second) {
                         col_alias_name.push_back(std::wstring(prefix) + std::wstring(get_event_name(b, a.first)));
-                        col_raw_index.push_back(PrettyTable::IntToHex(b, 2));
+                        col_raw_index.push_back(IntToHexWideString(b, 2));
                         col_event_type.push_back(L"[" + std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") + L"]");
                     }
                 }

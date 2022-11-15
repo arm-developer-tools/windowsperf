@@ -28,10 +28,40 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
-
+#include <iomanip>
 #include <string>
+#include <sstream>
+#include <stringapiset.h>
+#include "utils.h"
 
-std::string MultiByteFromWideString(const wchar_t* wstr);
-std::wstring IntToHexWideString(int Value, size_t Width = 4);
-std::wstring DoubleToWideString(double Value, int Precision = 2);
+std::string MultiByteFromWideString(const wchar_t* wstr)
+{
+    int required_size = WideCharToMultiByte(CP_ACP, 0, wstr, -1, NULL, 0, NULL, NULL);
+    std::shared_ptr<char[]> str_raw(new char[required_size]);
+    WideCharToMultiByte(CP_ACP, 0, wstr, -1, str_raw.get(), required_size, NULL, NULL);
+    return std::string(str_raw.get());
+}
+
+/// <summary>
+/// Converts integer VALUE to hex WSTRING, e.g. 100 -> "0x0064" where
+/// WIDTH is total digit count (excluding 0x).
+/// </summary>
+/// <param name="Value">Value to convert to hex string</param>
+/// <param name="Width">Total digits to fill with</param>
+std::wstring IntToHexWideString(int Value, size_t Width) {
+    std::wstringstream ss;
+    ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
+    return std::wstring(ss.str());
+}
+
+/// <summary>
+/// Converts double to WSTRING. Function is using fixed format
+/// and default precision set to 2.
+/// </summary>
+/// <param name="Value">Value to convert</param>
+/// <param name="Precision">Precision</param>
+std::wstring DoubleToWideString(double Value, int Precision) {
+    std::wstringstream ss;
+    ss << std::fixed << std::setprecision(Precision) << Value;
+    return std::wstring(ss.str());
+}

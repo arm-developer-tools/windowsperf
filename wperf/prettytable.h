@@ -1,10 +1,37 @@
 #pragma once
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, Arm Limited
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
-#include <iomanip>
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -93,30 +120,6 @@ public:
 
 	void AddColumn(std::wstring ColumnName, std::vector<std::wstring> ColumnValues, enum ColumnAlign Align = LEFT);
 	void Print();
-
-	/// <summary>
-	/// Converts integert VALUE to hex string, e.g. 100 -> "0x0064" where
-	/// WIDTH is total digit count (excluding 0x).
-	/// </summary>
-	/// <param name="Value">Value to convert to hex string</param>
-	/// <param name="Width">Total digits to fill with</param>
-	static std::wstring IntToHex(int Value, size_t Width = 4) {
-		std::wstringstream ss;
-		ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
-		return ss.str();
-	}
-
-	/// <summary>
-	/// Converts double to WSTRING. Function is using fixed format
-	/// and default precision set to 2.
-	/// </summary>
-	/// <param name="Value">Value to convert</param>
-	/// <param name="Precision">Precision</param>
-	static std::wstring DoubleToString(double Value, int Precision = 2) {
-		std::wstringstream ss;
-		ss << std::fixed << std::setprecision(Precision) << Value;
-		return ss.str();
-	}
 
 private:
 	/// <summary>
