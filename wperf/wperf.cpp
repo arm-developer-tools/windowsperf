@@ -2547,7 +2547,7 @@ wmain(
                 std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
 
                 std::wcout << std::endl
-                           << L"List of pre-defined events (to be used in -e )"
+                           << L"List of pre-defined events (to be used in -e)"
                            << std::endl << std::endl;
 
                 for (auto a : events)

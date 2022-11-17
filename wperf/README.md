@@ -40,7 +40,7 @@ Options:
 ## List available PMU events
 ```
 > wperf list
-List of pre-defined events (to be used in -e ):
+List of pre-defined events (to be used in -e):
 
 Alias Name                    Raw Index   Event Type
 sw_incr                       0x0         hardware core event
