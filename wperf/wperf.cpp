@@ -271,7 +271,7 @@ public:
     user_request(wstr_vec& raw_args, uint32_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
         : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
         do_sample(false), do_version(false), do_verbose(false),
-        do_help(false), core_idx(_UI32_MAX), dmc_idx(_UI8_MAX), count_duration(-1.0),
+        do_help(false), core_idx(ALL_CORE), dmc_idx(_UI8_MAX), count_duration(-1.0),
         count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false)
     {
         bool waiting_events = false;
@@ -486,7 +486,7 @@ public:
             std::wcout << L"warning: unexpected arg '" << a << L"' ignored\n";
         }
 
-        if (core_idx >= core_num)
+        if (core_idx >= core_num && core_idx != ALL_CORE)
         {
             std::wcerr << L"core index " << core_idx << L" not allowed. Use 0-" << (core_num - 1)
                        << L", see option -c <n>" << std::endl;
