@@ -1788,9 +1788,13 @@ public:
                         }
                     }
 
+                    double miss_rate_pct = (l3_cache_access_num != 0 )
+                        ? ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100
+                        : 100.0;
+
                     col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
                     col_read_bandwith.push_back(DoubleToWideString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
-                    col_miss_rate.push_back(DoubleToWideString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
+                    col_miss_rate.push_back(DoubleToWideString(miss_rate_pct) + L"%");
                 }
 
                 {
@@ -1905,9 +1909,13 @@ public:
                     }
                 }
 
+                double miss_rate_pct = (l3_cache_access_num != 0 )
+                    ? ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100
+                    : 100.0;
+
                 col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
                 col_read_bandwith.push_back(DoubleToWideString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
-                col_miss_rate.push_back(DoubleToWideString(((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100) + L"%");
+                col_miss_rate.push_back(DoubleToWideString(miss_rate_pct) + L"%");
             }
 
             uint64_t evt_num2 = dsu_outs[core_base / dsu_cluster_size].evt_num;
