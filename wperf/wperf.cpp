@@ -268,7 +268,7 @@ private:
 class user_request
 {
 public:
-    user_request(wstr_vec& raw_args, std::map<std::wstring, metric_desc>& builtin_metrics)
+    user_request(wstr_vec& raw_args, uint32_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
         : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
         do_sample(false), do_version(false), do_verbose(false),
         do_help(false), core_idx(_UI32_MAX), dmc_idx(_UI8_MAX), count_duration(-1.0),
@@ -484,6 +484,13 @@ public:
             }
 
             std::wcout << L"warning: unexpected arg '" << a << L"' ignored\n";
+        }
+
+        if (core_idx >= core_num)
+        {
+            std::wcerr << L"core index " << core_idx << L" not allowed. Use 0-" << (core_num - 1)
+                       << L", see option -c <n>" << std::endl;
+            exit(-1);
         }
 
         if (groups.size())
@@ -2491,7 +2498,7 @@ wmain(
     for (int i = 1; i < argc; i++)
         raw_args.push_back(argv[i]);
 
-    user_request request(raw_args, pmu_device.builtin_metrics);
+    user_request request(raw_args, pmu_device.core_num, pmu_device.builtin_metrics);
 
     if (request.do_help)
     {
