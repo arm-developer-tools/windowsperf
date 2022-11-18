@@ -268,11 +268,12 @@ private:
 class user_request
 {
 public:
-    user_request(wstr_vec& raw_args, uint32_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
-        : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
+    user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
         do_sample(false), do_version(false), do_verbose(false),
         do_help(false), core_idx(ALL_CORE), dmc_idx(_UI8_MAX), count_duration(-1.0),
-        count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false)
+        count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
+
+    void init(wstr_vec& raw_args, uint32_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
     {
         bool waiting_events = false;
         bool waiting_metrics = false;
@@ -345,7 +346,7 @@ public:
                             std::wcerr << L"no metric registered" << std::endl;
                         }
 
-                        exit(-1);
+                        throw fatal_exception("ERROR_METRIC");
                     }
 
                     metric_desc desc = metrics[metric];
@@ -587,7 +588,7 @@ public:
         if (!config_file.is_open())
         {
             std::wcerr << L"open config file '" << config_name << "' failed" << std::endl;
-            exit(-1);
+            throw fatal_exception("ERROR_CONFIG_FILE");
         }
 
         std::wstring line;
@@ -618,7 +619,7 @@ public:
                 {
                     std::wcerr << L"unrecognized config component '"
                         << component << L"'" << std::endl;
-                    exit(-1);
+                    throw fatal_exception("ERROR_CONFIG_COMPONENT");
                 }
                 i++;
             }
@@ -707,7 +708,7 @@ public:
                     if (group_size)
                     {
                         std::wcerr << L"nested group is not supported " << event << std::endl;
-                        exit(-1);
+                        throw fatal_exception("ERROR_UNSUPPORTED");
                     }
 
                     std::wstring strip_str = event.substr(1);
@@ -733,7 +734,7 @@ public:
                         if (idx < 0)
                         {
                             std::wcerr << L"unknown event name: " << strip_str << std::endl;
-                            exit(-1);
+                            throw fatal_exception("ERROR_EVENT");
                         }
 
                         raw_event = static_cast<uint16_t>(idx);
@@ -744,7 +745,7 @@ public:
                     if (!group_size)
                     {
                         std::wcerr << L"missing '{' for event group " << event << std::endl;
-                        exit(-1);
+                        throw fatal_exception("ERROR_EVENT");
                     }
 
                     push_group = true;
@@ -764,7 +765,7 @@ public:
                         if (idx < 0)
                         {
                             std::wcerr << L"unknown event name: " << event << std::endl;
-                            exit(-1);
+                            throw fatal_exception("ERROR_EVENT");
                         }
 
                         raw_event = static_cast<uint16_t>(idx);
@@ -779,7 +780,7 @@ public:
                     if (idx < 0)
                     {
                         std::wcerr << L"unknown event name: " << event << std::endl;
-                        exit(-1);
+                        throw fatal_exception("ERROR_EVENT");
                     }
 
                     raw_event = static_cast<uint16_t>(idx);
@@ -801,7 +802,7 @@ public:
                         std::wcerr << L"event group size(" << group_size
                             << ") exceeds number of hardware PMU counter("
                             << gpc_nums[e_class] << ")" << std::endl;
-                        exit(-1);
+                        throw fatal_exception("ERROR_GROUP");
                     }
 
                     // Insert EVT_HDR in front of group we've just added. This entity
@@ -875,11 +876,16 @@ private:
 class pmu_device
 {
 public:
-    pmu_device(HANDLE hDevice) : handle(hDevice), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
-        has_dmc(false), dmc_num(0), enc_bits(0)
+    pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
+        has_dmc(false), dmc_num(0), enc_bits(0), core_idx(0), core_num(0), dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0)
     {
         for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
             multiplexings[e] = false;
+    }
+
+    void init(HANDLE hDevice)
+    {
+        handle = hDevice;
 
         struct hw_cfg hw_cfg;
         query_hw_cfg(hw_cfg);
@@ -930,13 +936,13 @@ public:
             if (!status)
             {
                 std::wcerr << L"DSU_CTL_INIT failed" << std::endl;
-                exit(1);
+                throw fatal_exception("ERROR_PMU_INIT");
             }
 
             if (res_len != sizeof(struct dsu_cfg))
             {
                 std::wcerr << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
-                exit(1);
+                throw fatal_exception("ERROR_PMU_INIT");
             }
 
             gpc_nums[EVT_DSU] = cfg.gpc_num;
@@ -972,7 +978,7 @@ public:
             if (!status)
             {
                 std::wcerr << L"DMC_CTL_INIT failed" << std::endl;
-                exit(1);
+                throw fatal_exception("ERROR_PMU_INIT");
             }
 
             gpc_nums[EVT_DMC_CLK] = cfg.clk_gpc_num;
@@ -1029,7 +1035,7 @@ public:
             filename = prefix + filename + suffix + std::string(".csv");
             if (!length)
             {
-                std::cout << "timeline output file name: " << filename << std::endl;
+                std::cerr << "timeline output file name: " << filename << std::endl;
                 throw fatal_exception("open timeline output file failed");
             }
 
@@ -2451,8 +2457,6 @@ static void print_help()
 //
 // Port End
 //
-
-
 int __cdecl
 wmain(
     _In_ int argc,
@@ -2460,13 +2464,21 @@ wmain(
     )
 {
     HANDLE hDevice = INVALID_HANDLE_VALUE;
+    auto exit_code = EXIT_SUCCESS;
+
+    if (argc < 2)
+    {
+        print_help();
+        return EXIT_SUCCESS;
+    }
 
     if ( !GetDevicePath(
             (LPGUID) &GUID_DEVINTERFACE_WINDOWSPERF,
             G_DevicePath,
             sizeof(G_DevicePath)/sizeof(G_DevicePath[0])) )
     {
-        return FALSE;
+        WindowsPerfDbgPrint("Failed to find device path. Error %d\n", GetLastError());
+        return EXIT_FAILURE;
     }
 
     hDevice = CreateFile(G_DevicePath,
@@ -2479,38 +2491,45 @@ wmain(
 
     if (hDevice == INVALID_HANDLE_VALUE) {
         WindowsPerfDbgPrint("Failed to open device. Error %d\n",GetLastError());
-        return FALSE;
+        return EXIT_FAILURE;
     }
 
     //
     // Port Begin
     //
+    user_request request;
+    pmu_device pmu_device;
+    wstr_vec raw_args;
 
-    if (argc < 2)
-    {
-        print_help();
-        return 0;
+    try{
+        pmu_device.init(hDevice);
+    } catch(std::exception&) {
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
     }
 
-    pmu_device pmu_device(hDevice);
-
-    wstr_vec raw_args;
     for (int i = 1; i < argc; i++)
         raw_args.push_back(argv[i]);
 
-    user_request request(raw_args, pmu_device.core_num, pmu_device.builtin_metrics);
+    try{
+        request.init(raw_args, pmu_device.core_num, pmu_device.builtin_metrics);
+    } catch(std::exception&)
+    {
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
+    }
 
     if (request.do_help)
     {
         print_help();
-        return 0;
+        goto clean_exit;
     }
 
     if (request.do_version)
     {
         std::wcout << L"wperf version " << MAJOR << "." << MINOR << "."
                    << PATCH << "\n";
-        return 0;
+        goto clean_exit;
     }
 
     uint32_t enable_bits = 0;
@@ -2530,8 +2549,8 @@ wmain(
         }
         else
         {
-            std::wcout << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
-            return 0;
+            std::wcerr << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
+            goto clean_exit;
         }
     }
 
@@ -2545,7 +2564,8 @@ wmain(
                    << driver_ver.minor << "." << driver_ver.patch << "\n";
         std::wcerr << L"wperf version: " << MAJOR << "." << MINOR << "."
                    << PATCH << "\n";
-        return -1;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
     }
 
     try
@@ -2598,7 +2618,7 @@ wmain(
                 ptable.AddColumn(L"Events", col_events);
                 ptable.Print();
             }
-            return 0;
+            goto clean_exit;
         }
 
         pmu_device.post_init(request.core_idx, request.dmc_idx, request.do_timeline, enable_bits);
@@ -2718,18 +2738,19 @@ wmain(
 	catch (fatal_exception& e)
 	{
 		std::cerr << e.what() << std::endl;
-		return -1;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
 	}
 
     //
     // Port End
     //
-
+clean_exit:
     if (hDevice != INVALID_HANDLE_VALUE) {
         CloseHandle(hDevice);
     }
 
-    return 0;
+    return exit_code;
 }
 
 BOOL
