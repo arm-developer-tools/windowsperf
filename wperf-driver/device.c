@@ -580,14 +580,8 @@ NTSTATUS deviceControl(
 {
     NTSTATUS status = STATUS_SUCCESS; 
 
-    WindowsPerfKdPrint("IOCTL: pBuffer=%p \n", pBuffer);
     WindowsPerfKdPrint("IOCTL: inputSize=%d \n", inputSize);
-
-    for (ULONG i = 0; i < inputSize; i++)
-    {
-        BYTE* p = (BYTE*)pBuffer;
-        WindowsPerfKdPrint("IOCTL: pBuffer[%d]=%d \n", i, p[i]);
-    }
+    WindowsPerfKdPrintBuffer((BYTE*)pBuffer, inputSize);
 
     enum pmu_ctl_action action = *(enum pmu_ctl_action*)pBuffer;
 

@@ -27,9 +27,36 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+
+#include <stdio.h>
 
 //
 // Declare some Kernel-Mode debug macros helpers
 //
 #define WindowsPerfKdPrint(format, ...)			DbgPrint("WindowsPerf: "format, __VA_ARGS__);
 #define WindowsPerfKdPrintInfo(format, ...)     DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WindowsPerf: "format, __VA_ARGS__);
+
+inline void WindowsPerfKdPrintBuffer(unsigned char *pBuffer, unsigned long inputSize)
+{
+    if (!pBuffer)
+        return;
+
+    char str[128] = { 0 };
+    const unsigned long str_size = sizeof(str) / sizeof(str[0]);
+    const int elems_in_line = 8;
+
+    unsigned long i, index = 0;
+    for (i = 0; i < inputSize; i++)
+    {
+        unsigned char* p = (unsigned char*)pBuffer;
+        if (i && !(i % elems_in_line))
+        {
+            WindowsPerfKdPrint("pBuffer[%4d]=%s\n", i, str);
+            index = 0;
+            str[0] = '\0';
+        }
+        index += sprintf_s(str + index, str_size - index, "%02x ", p[i]);
+    }
+    WindowsPerfKdPrint("pBuffer[%4d]=%s\n", i, str);
+}
