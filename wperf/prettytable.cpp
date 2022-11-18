@@ -100,7 +100,7 @@ void PrettyTable::Print() {
 			j++;
 		}
 		i++;
-		std::wcout << std::endl;
+		std::wcout  << std::flush << std::endl;
 	}
 }
 

@@ -1284,34 +1284,68 @@ public:
         }
     }
 
-    void core_events_read(void)
+    void core_events_read_nth(uint32_t core_no)
     {
         struct pmu_ctl_hdr ctl;
         DWORD res_len;
 
         ctl.action = PMU_CTL_READ_COUNTING;
-        ctl.core_idx = core_idx;
+        ctl.core_idx = core_no;
 
-        LPVOID out_buf = core_idx == ALL_CORE ? core_outs.get() : core_outs.get() + core_idx;
-        size_t out_buf_len = core_idx == ALL_CORE ? (sizeof(ReadOut) * core_num) : sizeof(ReadOut);
+        LPVOID out_buf = core_outs.get() + core_no;
+        size_t out_buf_len = sizeof(ReadOut);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_READ_COUNTING failed");
     }
 
-    void dsu_events_read(void)
+    void core_events_read(void)
+    {
+        uint32_t core_begin = core_idx;
+        uint32_t core_end = core_idx + 1;
+
+        if (core_idx == ALL_CORE)
+        {
+            core_begin = 0;
+            core_end = core_num;
+        }
+
+        for (uint32_t core_no = core_begin; core_no < core_end; core_no++)
+        {
+            core_events_read_nth(core_no);
+        }
+    }
+
+    void dsu_events_read_nth(uint32_t core_no)
     {
         struct pmu_ctl_hdr ctl;
         DWORD res_len;
 
         ctl.action = DSU_CTL_READ_COUNTING;
-        ctl.core_idx = core_idx;
+        ctl.core_idx = core_no;
 
-        LPVOID out_buf = core_idx == ALL_CORE ? dsu_outs.get() : dsu_outs.get() + core_idx/dsu_cluster_size;
-        size_t out_buf_len = core_idx == ALL_CORE ? (sizeof(DSUReadOut) * dsu_cluster_num) : sizeof(DSUReadOut);
+        LPVOID out_buf = dsu_outs.get() + core_no/dsu_cluster_size;
+        size_t out_buf_len = sizeof(DSUReadOut);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
         if (!status)
             throw fatal_exception("DSU_CTL_READ_COUNTING failed");
+    }
+
+    void dsu_events_read(void)
+    {
+        uint32_t core_begin = core_idx;
+        uint32_t core_end = core_idx + 1;
+
+        if (core_idx == ALL_CORE)
+        {
+            core_begin = 0;
+            core_end = core_num;
+        }
+
+        for (uint32_t core_no = core_begin; core_no < core_end; core_no += dsu_cluster_size)
+        {
+            dsu_events_read_nth(core_no);
+        }
     }
 
     void dmc_events_read(void)
