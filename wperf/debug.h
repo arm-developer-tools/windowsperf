@@ -32,4 +32,4 @@
 //
 // Declare some debug macros helpers
 //
-#define WindowsPerfDbgPrint(format, ...)			fprintf(stderr, "%s: "format, __func__, __VA_ARGS__);
+#define WindowsPerfDbgPrint(format, ...)			fprintf(stderr, "%s: " format, __func__, __VA_ARGS__);
