@@ -32,44 +32,100 @@
 # Makefile (GNU Make 3.81)
 #
 
-.PHONY: all clean docs wperf wperf-driver wperf-test
+.PHONY: all clean docs test wperf wperf-driver wperf-test
 
 #
-# By default we vuild for ARM64 target. Define arch variable to change defalt
+# *** INTRODUCTION ***
+#
+# Now when we have unit testing project `wperf-test` we depend on x64
+# wperf build to link tests with unit test project. This change makes sure
+# we build `wperf-test` for arch=x64. This will build `wperf` and
+# `wperf-test` (later depends on `wperf`).
+#
+# So `make all` will:
+#
+#     1) Build `wperf` arch=x64
+#     2) Build `wperf-test` arch=x64
+#     3) Rebuild solution for `config` and `arch` (default ARM64)
+#
+# Please note we are building:
+#
+#     * cross x64 -> ARM64 for WindowsPerf suite and
+#     * x64 -> x64 `wperf` and its unit tests.
+#
+# *** HOW TO SWITCH BETWEEN Debug/Release AND ARM64/x64 ***
+#
+# Use 'config' to switch between `Debug` and `Release`.
+# Use 'arch' to switch between `ARM64` and `x64`.
+#
+# Note: `wperf-test` project require `wperf` project to be built first.
+# Currently WindowsPerf solution defines this build dependency and you can
+# just straight build `make ... wperf-test` and dependencies will build.
+#
+# Examples:
+#
+#     make config=Release all
+#     make config=Debug all
+#
+#     make config=Release arch=x64 wperf-test
+#     make config=Debug arch=x64 wperf-test
+#
+# *** BUITDING UNIT TESTS ***
+#
+# Note: You can currently build unit tests only on x64 host!
+#
+#     make test                                          (Default Debug/x64)
+#     make config=Release test                           (Release/x64)
+#
+# or more verbose version of above:
+#
+#     make wperf-test wperf-test-run                     (Default Debug/x64)
+#     make config=Release wperf-test wperf-test-run      (Release/x64)
+#
+
+# By default we build for ARM64 target. Define arch variable to change defalt
 # value.
-#
-# 	> make arch=x64 all
-#
 make_arch=ARM64
+
+# By default we build with Debug configuration. Define config variable to change defalt
+# value.
+make_config=Debug
 
 ifdef arch
 	make_arch=$(arch)
 endif
 
+ifdef config
+	make_config=$(config)
+endif
+
 #
 # Building rules
 #
-all:
-	devenv windowsperf.sln /Rebuild "Debug|$(make_arch)" 2>&1
+all: wperf-test
+	devenv windowsperf.sln /Rebuild "$(make_config)|$(make_arch)" 2>&1
 
 wperf:
-	devenv windowsperf.sln /Rebuild "Debug|${make_arch}" /Project wperf\wperf.vcxproj 2>&1
+	devenv windowsperf.sln /Rebuild "$(make_config)|${make_arch}" /Project wperf\wperf.vcxproj 2>&1
 
 wperf-driver:
-	devenv windowsperf.sln /Rebuild "Debug|$(make_arch)" /Project wperf-driver\wperf-driver.vcxproj 2>&1
+	devenv windowsperf.sln /Rebuild "$(make_config)|$(make_arch)" /Project wperf-driver\wperf-driver.vcxproj 2>&1
 
 wperf-test:
-	devenv windowsperf.sln /Rebuild "Debug|x64" /Project wperf-test\wperf-test.vcxproj 2>&1
+	devenv windowsperf.sln /Rebuild "$(make_config)|x64" /Project wperf-test\wperf-test.vcxproj 2>&1
 
 wperf-test-run:
-	vstest.console x64\Debug\wperf-test.dll
+	vstest.console x64\$(make_config)\wperf-test.dll
+
+test: wperf-test wperf-test-run
 
 clean:
-	devenv windowsperf.sln /Clean "Debug|$(make_arch)" 2>&1
+	devenv windowsperf.sln /Clean "$(make_config)|$(make_arch)" 2>&1
 
 purge:
-	rm -rf wperf/ARM64 wperf/x64 wperf/Debug
-	rm -rf wperf-driver/ARM64 wperf-driver/x64 wperf-driver/Debug
+	rm -rf wperf/ARM64 wperf/x64
+	rm -rf wperf-driver/ARM64 wperf-driver/x64
+	rm -rf wperf-test/x64
 
 docs:
 	doxygen
