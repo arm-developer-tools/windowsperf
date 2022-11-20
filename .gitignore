@@ -6,6 +6,7 @@
 *.tmp
 *.bak
 *.sw[a-z]
+*.log
 
 tags
 
@@ -14,6 +15,10 @@ wperf/ARM64/
 wperf/ARM64/*
 wperf/Debug/*
 wperf/x64/*
+
+# Unit test directory
+wperf-test/x64/*
+x64/*
 
 # Driver build directory
 wperf-driver/ARM64/

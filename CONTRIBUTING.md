@@ -26,6 +26,7 @@ Good commit message examples can be found [here](https://wiki.openstack.org/wiki
 | -------------- | ----------- |
 | `wperf` 			| Changes to files in `WindowsPerf\wperf` directory. |
 | `wperf-driver` 	| Changes to files in `WindowsPerf\wperf-driver` directory. |
+| `wperf-test` 	    | Changes to files in `WindowsPerf\wperf-test` directory. |
 | `common` 			| Changes to files in `WindowsPerf\wperf-common` directory. |
 | `docs`  			| Changes to documentation (E.g.: `README.md`). |
 | `sln` 			| Changes to solution files `windowsperf.sln`. |

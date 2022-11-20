@@ -32,7 +32,7 @@
 # Makefile (GNU Make 3.81)
 #
 
-.PHONY: all clean docs wperf wperf-driver
+.PHONY: all clean docs wperf wperf-driver wperf-test
 
 #
 # By default we vuild for ARM64 target. Define arch variable to change defalt
@@ -57,6 +57,12 @@ wperf:
 
 wperf-driver:
 	devenv windowsperf.sln /Rebuild "Debug|$(make_arch)" /Project wperf-driver\wperf-driver.vcxproj 2>&1
+
+wperf-test:
+	devenv windowsperf.sln /Rebuild "Debug|x64" /Project wperf-test\wperf-test.vcxproj 2>&1
+
+wperf-test-run:
+	vstest.console x64\Debug\wperf-test.dll
 
 clean:
 	devenv windowsperf.sln /Clean "Debug|$(make_arch)" 2>&1

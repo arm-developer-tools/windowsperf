@@ -28,42 +28,45 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <iomanip>
-#include <string>
-#include <sstream>
-#include <stringapiset.h>
-#include "utils.h"
+#include "pch.h"
+#include "CppUnitTest.h"
 
-std::string MultiByteFromWideString(const wchar_t* wstr)
+#include "wperf/utils.h"
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+namespace wperftest
 {
-    if (!wstr)
-        return std::string();
-    int required_size = WideCharToMultiByte(CP_ACP, 0, wstr, -1, NULL, 0, NULL, NULL);
-    std::shared_ptr<char[]> str_raw(new char[required_size]);
-    WideCharToMultiByte(CP_ACP, 0, wstr, -1, str_raw.get(), required_size, NULL, NULL);
-    return std::string(str_raw.get());
-}
+	TEST_CLASS(wperftest)
+	{
+	public:
+		
+		TEST_METHOD(test_MultiByteFromWideString)
+		{
+			Assert::AreEqual(MultiByteFromWideString(L"core"), std::string("core"));
+			Assert::AreEqual(MultiByteFromWideString(L"dsu"), std::string("dsu"));
+			Assert::AreEqual(MultiByteFromWideString(L"/dsu/"), std::string("/dsu/"));
+			Assert::AreEqual(MultiByteFromWideString(L"!@#$%^&*(){}:~\"<>?,./"), std::string("!@#$%^&*(){}:~\"<>?,./"));
+			Assert::AreEqual(MultiByteFromWideString(L""), std::string());
+			Assert::AreEqual(MultiByteFromWideString(0), std::string());
+		}
 
-/// <summary>
-/// Converts integer VALUE to hex WSTRING, e.g. 100 -> "0x0064" where
-/// WIDTH is total digit count (excluding 0x).
-/// </summary>
-/// <param name="Value">Value to convert to hex string</param>
-/// <param name="Width">Total digits to fill with</param>
-std::wstring IntToHexWideString(int Value, size_t Width) {
-    std::wstringstream ss;
-    ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
-    return std::wstring(ss.str());
-}
+		TEST_METHOD(test_IntToHexWideString)
+		{
+			Assert::AreEqual(IntToHexWideString(0, 4), std::wstring(L"0x0000"));
+			Assert::AreEqual(IntToHexWideString(1, 4), std::wstring(L"0x0001"));
+			Assert::AreEqual(IntToHexWideString(256, 4), std::wstring(L"0x0100"));
+		}
 
-/// <summary>
-/// Converts double to WSTRING. Function is using fixed format
-/// and default precision set to 2.
-/// </summary>
-/// <param name="Value">Value to convert</param>
-/// <param name="Precision">Precision</param>
-std::wstring DoubleToWideString(double Value, int Precision) {
-    std::wstringstream ss;
-    ss << std::fixed << std::setprecision(Precision) << Value;
-    return std::wstring(ss.str());
+		TEST_METHOD(test_DoubleToWideString)
+		{
+			Assert::AreEqual(DoubleToWideString(0.0, 2), std::wstring(L"0.00"));
+			Assert::AreEqual(DoubleToWideString(1.1, 2), std::wstring(L"1.10"));
+			Assert::AreEqual(DoubleToWideString(99.99, 2), std::wstring(L"99.99"));
+
+			Assert::AreEqual(DoubleToWideString(0.0, 4), std::wstring(L"0.0000"));
+			Assert::AreEqual(DoubleToWideString(1.1, 4), std::wstring(L"1.1000"));
+			Assert::AreEqual(DoubleToWideString(99.99, 4), std::wstring(L"99.9900"));
+		}
+	};
 }
