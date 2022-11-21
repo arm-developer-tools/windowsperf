@@ -1,5 +1,18 @@
 # Contributing Guidelines
 
+* [Contributing Guidelines](#contributing-guidelines)
+* [Basic guidelines](#basic-guidelines)
+* [Commits in your merge requests should](#commits-in-your-merge-requests-should)
+  * [Description prefixed](#description-prefixed)
+* [Advice on merge requests](#advice-on-merge-requests)
+* [If you have commit access](#if-you-have-commit-access)
+* [Creating Reliable Kernel-Mode Drivers](#creating-reliable-kernel-mode-drivers)
+* [Code style preferences](#code-style-preferences)
+* [Reporting Bugs](#reporting-bugs)
+  * [What we want](#what-we-want)
+  * [What we do not want](#what-we-do-not-want)
+* [Common LICENSE tags](#common-license-tags)
+
 # Basic guidelines
 
 All changes you commit or submit by merge request should follow these simple guidelines:

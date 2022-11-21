@@ -1,3 +1,16 @@
+# wperf-driver
+
+* [Build wperf-driver](#build-wperf-driver)
+* [Kernel Driver Installation](#kernel-driver-installation)
+  * [DevCon Install](#devcon-install)
+  * [DevCon Remove](#devcon-remove)
+  * [DevCon Status](#devcon-status)
+* [DevCon Device Console (devcon.exe)](#devcon-device-console-devconexe)
+  * [Extra step (installing non-signed driver)](#extra-step-installing-non-signed-driver)
+    * [You must first enable test-signed code](#you-must-first-enable-test-signed-code)
+    * [Second, Disable BitLocker on Windows 11](#second-disable-bitlocker-on-windows-11)
+    * [Third, Disable Secure Boot on your machine](#third-disable-secure-boot-on-your-machine)
+
 # Build wperf-driver
 
 You can build `wperf-driver` project from command line:

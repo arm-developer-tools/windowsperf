@@ -1,5 +1,22 @@
 # WindowsPerf
 
+* [WindowsPerf](#windowsperf)
+  * [Introduction](#introduction)
+  * [Modules](#modules)
+  * [Contributing](#contributing)
+  * [Project resources](#project-resources)
+* [Building WindowsPerf project](#building-windowsperf-project)
+  * [Project requirements](#project-requirements)
+    * [Toolchain and software kits](#toolchain-and-software-kits)
+    * [Codebase](#codebase)
+    * [Debugging Kernel-Mode driver](#debugging-kernel-mode-driver)
+    * [Creating Reliable Kernel-Mode Drivers](#creating-reliable-kernel-mode-drivers)
+  * [Build solution from command line](#build-solution-from-command-line)
+  * [Build specific project in the solution](#build-specific-project-in-the-solution)
+  * [Makefile](#makefile)
+    * [Below few useful commands](#below-few-useful-commands)
+* [Reference](#reference)
+
 ## Introduction
 
 Take the Linux perf tool and port it to Windows on Arm with the same command line interface so that you can do deep performance analysis.
@@ -94,7 +111,10 @@ Please note that for documentation generation you would need `Doxygen` installed
 | Rebuild whole solution | `> make all` |
 | Rebuild `wperf` project | `> make wperf` |
 | Rebuild `wperf-driver` project | `> make wperf-driver`  |
+| Rebuild `wperf-test` project | `> make wperf-test`  |
+| Rebuild `wperf`, `wperf-test` projects and run unit tests  | `> make test`  |
 | Solution clean up | `> make clean`  |
+| Remove all build directories (deep clean)  | `> make purge`  |
 
 # Reference
 

@@ -1,3 +1,15 @@
+# wperf
+
+* [Build wperf CLI](#build-wperf-cli)
+* [Usage of wperf](#usage-of-wperf)
+* [Examples](#examples)
+  * [List available PMU events](#list-available-pmu-events)
+  * [Counting core 0 (Ctrl-C to stop counting)](#counting-core-0-ctrl-c-to-stop-counting)
+  * [Counting core 0 for 1 second](#counting-core-0-for-1-second)
+  * [Specify up to 127 events, they will get multiplexed automatically, for example:](#specify-up-to-127-events-they-will-get-multiplexed-automatically-for-example)
+  * [Count using event group](#count-using-event-group)
+  * [Count using pre-defined metrics, metric could be used together with -e, no restriction](#count-using-pre-defined-metrics-metric-could-be-used-together-with--e-no-restriction)
+
 # Build wperf CLI
 
 You can build `wperf` project from command line:
