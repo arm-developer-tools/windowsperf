@@ -2257,7 +2257,37 @@ public:
     uint32_t dsu_cluster_num;
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;
+
 private:
+    /// <summary>
+    /// This two dimentional array stores names of cores (DeviceDesc) for all (DSU clusers) x (cluster core no)
+    ///
+    /// You can access them like this:
+    ///
+    ///     [dsu_cluster_num][core_num_idx] -> WSTRING(DeviceDesc)
+    ///
+    /// Where (example for 80 core ARMv8 CPU:
+    ///
+    ///     dsu_cluster_num - number of DSU clusters, e.g. 0-39 (40 clusters)
+    ///     core_num_idx    - index of core in DSU clusters, e.g. 0-1 (2 cores per cluster)
+    ///
+    /// You can print it like this:
+    ///
+    /// int i = 0;
+    /// for (const auto& a : m_dsu_cluster_makeup)
+    /// {
+    ///     int j = 0;
+    ///     for (const auto& b : a)
+    ///     {
+    ///         std::wcout << L"[" << i << L"]" << L"[" << j << L"]" << b << std::endl;
+    ///         j++;
+    ///     }
+    ///     i++;
+    /// }
+    ///
+    /// </summary>
+    std::vector <std::vector < std::wstring >> m_dsu_cluster_makeup;
+
     bool all_cores_p() {
         return cores_idx.size() > 1;
     }
@@ -2296,6 +2326,7 @@ private:
             goto fail0;
         }
 
+        dsu_cluster_num = 0;
         for (CurrentDevice = DeviceList; *CurrentDevice; CurrentDevice += wcslen(CurrentDevice) + 1, dsu_cluster_num++)
         {
             cr = CM_Locate_DevNodeW(&Devinst, CurrentDevice, CM_LOCATE_DEVNODE_NORMAL);
@@ -2314,8 +2345,12 @@ private:
                 goto fail0;
             }
 
+            std::vector < std::wstring > siblings;
             uint32_t core_num_idx = 0;
-            for (PWSTR sibling = DeviceDesc; *sibling; sibling += wcslen(sibling) + 1, core_num_idx++);
+            for (PWSTR sibling = DeviceDesc; *sibling; sibling += wcslen(sibling) + 1, core_num_idx++)
+                siblings.push_back(std::wstring(sibling));
+
+            m_dsu_cluster_makeup.push_back(siblings);
 
             if (dsu_cluster_size)
             {
