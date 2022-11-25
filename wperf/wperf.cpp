@@ -2491,7 +2491,7 @@ private:
     {
         if (arm64_vendor_names.count(vendor_id))
             return arm64_vendor_names[vendor_id];
-        return L"UnKnown";
+        return L"Unknown Vendor";
     }
 
     // Use this function to print to wcerr runtime warnings in verbose mode.
