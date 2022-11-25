@@ -90,6 +90,11 @@ VOID CoreCounterStop(VOID)
     CorePmcrSet(CorePmcrGet() & ~ARMV8_PMCR_E);
 }
 
+VOID CoreCounterEnableIrq(UINT32 mask)
+{
+    _WriteStatusReg(PMINTENSET_EL1, (__int64)mask);
+}
+
 #define SET_COUNTER_TYPE(N) case N: _WriteStatusReg(PMEVTYPER##N##_EL0, evtype_val); break
 VOID CoreCouterSetType(UINT32 counter_idx, __int64 evtype_val)
 {

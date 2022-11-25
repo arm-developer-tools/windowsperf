@@ -52,5 +52,6 @@ VOID CoreCounterReset(VOID);
 VOID CoreCounterIrqDisable(UINT32 mask);
 VOID CoreCounterStart(VOID);
 VOID CoreCounterStop(VOID);
+VOID CoreCounterEnableIrq(UINT32 mask);
 VOID CoreCouterSetType(UINT32 counter_idx, __int64 evtype_val);
 UINT64 CoreReadCounter(UINT32 counter_idx);

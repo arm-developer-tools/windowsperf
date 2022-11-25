@@ -102,3 +102,42 @@ VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx, struct d
     __dmb(_ARM64_BARRIER_ST);
     __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
 }
+
+VOID UpdateDmcCounting(UINT8 dmc_ch, struct dmcs_desc *dmc_array)
+{
+    UINT8 ch_base, ch_end;
+
+    if (dmc_ch == ALL_DMC_CHANNEL)
+    {
+        ch_base = 0;
+        ch_end = dmc_array->dmc_num;
+    }
+    else
+    {
+        ch_base = dmc_ch;
+        ch_end = dmc_ch + 1;
+    }
+
+    DmcChannelIterator(ch_base, ch_end, DmcCounterStop, dmc_array);
+
+    for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
+    {
+        struct dmc_desc* dmc = dmc_array->dmcs + ch_idx;
+        struct pmu_event_pseudo* events = dmc->clk_events;
+        for (UINT8 i = 0; i < dmc->clk_events_num; i++)
+        {
+            events[i].value += DmcCounterRead(ch_idx, DMC_CLKDIV2_EVT_NUM + i, dmc_array);
+            events[i].scheduled += 1;
+        }
+
+        events = dmc->clkdiv2_events;
+        for (UINT8 i = 0; i < dmc->clkdiv2_events_num; i++)
+        {
+            events[i].value += DmcCounterRead(ch_idx, i, dmc_array);
+            events[i].scheduled += 1;
+        }
+    }
+
+    DmcChannelIterator(ch_base, ch_end, DmcCounterReset, dmc_array);
+    DmcChannelIterator(ch_base, ch_end, DmcCounterStart, dmc_array);
+}

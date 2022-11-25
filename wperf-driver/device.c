@@ -83,7 +83,7 @@ static UINT64 midr_value;
 static KEVENT SyncPMCEnc;
 static HANDLE pmc_resource_handle = NULL;
 
-CoreInfo* core_info;
+static CoreInfo* core_info;
 
 enum
 {
@@ -123,14 +123,9 @@ static VOID event_config_type(struct pmu_event_kernel* event)
         CoreCouterSetType(event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
 }
 
-static VOID core_counter_enable_irq(UINT32 mask)
-{
-    _WriteStatusReg(PMINTENSET_EL1, (__int64)mask);
-}
-
 static VOID event_enable_irq(struct pmu_event_kernel* event)
 {
-    core_counter_enable_irq(1U << event->counter_idx);
+    CoreCounterEnableIrq(1U << event->counter_idx);
 }
 
 static VOID event_disable_irq(struct pmu_event_kernel* event)
@@ -175,45 +170,6 @@ static VOID update_core_counting(CoreInfo* core)
 
     CoreCounterReset();
     CoreCounterStart();
-}
-
-static VOID update_dmc_counting(UINT8 dmc_ch)
-{
-    UINT8 ch_base, ch_end;
-
-    if (dmc_ch == ALL_DMC_CHANNEL)
-    {
-        ch_base = 0;
-        ch_end = dmc_array.dmc_num;
-    }
-    else
-    {
-        ch_base = dmc_ch;
-        ch_end = dmc_ch + 1;
-    }
-
-    DmcChannelIterator(ch_base, ch_end, DmcCounterStop, &dmc_array);
-
-    for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
-    {
-        struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
-        struct pmu_event_pseudo* events = dmc->clk_events;
-        for (UINT8 i = 0; i < dmc->clk_events_num; i++)
-        {
-            events[i].value += DmcCounterRead(ch_idx, DMC_CLKDIV2_EVT_NUM + i, &dmc_array);
-            events[i].scheduled += 1;
-        }
-
-        events = dmc->clkdiv2_events;
-        for (UINT8 i = 0; i < dmc->clkdiv2_events_num; i++)
-        {
-            events[i].value += DmcCounterRead(ch_idx, i, &dmc_array);
-            events[i].scheduled += 1;
-        }
-    }
-
-    DmcChannelIterator(ch_base, ch_end, DmcCounterReset, &dmc_array);
-    DmcChannelIterator(ch_base, ch_end, DmcCounterStart, &dmc_array);
 }
 
 static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
@@ -321,8 +277,7 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
     }
 
     if (core->prof_dmc != PROF_DISABLED)
-        update_dmc_counting(core->dmc_ch);
-
+        UpdateDmcCounting(core->dmc_ch, &dmc_array);
 
     core->timer_round = new_round;
 }
@@ -344,7 +299,7 @@ static VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys
         DSUUpdateDSUCounting(core);
 
     if (core->prof_dmc != PROF_DISABLED)
-        update_dmc_counting(core->dmc_ch);
+        UpdateDmcCounting(core->dmc_ch, &dmc_array);
 
     core->timer_round++;
 }
