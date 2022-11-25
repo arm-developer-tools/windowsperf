@@ -29,9 +29,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//
-// Port End
-//
 #define MAX_DEVPATH_LENGTH              256
 
 #define CYCLE_EVT_IDX 					0xffffffff
@@ -49,7 +46,3 @@ GetDevicePath(
     _Out_writes_(BufLen) PWCHAR DevicePath,
     _In_ size_t BufLen
 );
-
-//
-// Port Start
-//

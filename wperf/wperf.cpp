@@ -553,7 +553,6 @@ public:
         {
             for (auto a : events)
             {
-                //auto event_size = a.second.size();
                 enum evt_class e_class = a.first;
 
                 for (auto e : a.second)
@@ -2052,8 +2051,6 @@ public:
             ch_base = 0;
             ch_end = (uint8_t)dmc_regions.size();
 
-            //auto clk_events_num = clk_events.size();  /* hides previous declaration. */
-
             if (clk_events_num)
             {
                 overall_clk = std::make_unique<agg_entry[]>(clk_events_num);
@@ -2391,11 +2388,8 @@ private:
     {
         ULONG DeviceListLength = 0;
         CONFIGRET cr = CR_SUCCESS;
-        //DEVPROPTYPE PropertyType;
         PWSTR DeviceList = NULL;
-        //WCHAR DeviceDesc[512];
         PWSTR CurrentDevice;
-        //ULONG PropertySize;
         DEVINST Devinst;
 
         cr = CM_Get_Device_ID_List_Size(&DeviceListLength, NULL, CM_GETIDLIST_FILTER_PRESENT);

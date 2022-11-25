@@ -81,7 +81,6 @@ static UINT8 numGPC;
 static UINT64 dfr0_value;
 static UINT64 midr_value;
 static KEVENT SyncPMCEnc;
-// not sure if MSVC zero globals
 static HANDLE pmc_resource_handle = NULL;
 
 CoreInfo* core_info;
@@ -805,16 +804,6 @@ NTSTATUS deviceControl(
             break;
         }
 
-        /*
-        ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
-        if (outputSize != sizeof(struct hw_cfg))
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid outputsize %ld for PMU_CTL_QUERY_HW_CFG\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
-
         WindowsPerfKdPrintInfo("IOCTL: QUERY_HW_CFG\n");
 
         struct hw_cfg* out = (struct hw_cfg*)pBuffer;
@@ -839,16 +828,6 @@ NTSTATUS deviceControl(
             status = STATUS_INVALID_PARAMETER;
             break;
         }
-
-        /*
-        ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
-        if (outputSize != (2048 * sizeof(UINT16)))
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid outputsize %ld for PMU_CTL_QUERY_SUPP_EVENTS\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
 
         WindowsPerfKdPrintInfo("IOCTL: QUERY_SUPP_EVENTS\n");
 
@@ -1066,7 +1045,7 @@ NTSTATUS deviceControl(
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
-        UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This quesry supports only 1 core
+        UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This query supports only 1 core
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -1095,16 +1074,6 @@ NTSTATUS deviceControl(
             outputSizeExpect = sizeof(ReadOut) * numCores;
         else
             outputSizeExpect = sizeof(ReadOut);
-
-        /*
-        if (outputSize != outputSizeExpect)
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
-                "IOCTL: invalid outputsize %ld for PMU_CTL_READ_COUNTING\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
 
         UINT32 core_base, core_end;
         if (core_idx == ALL_CORE)
@@ -1160,16 +1129,6 @@ NTSTATUS deviceControl(
         dsu_numCluster = ctl_req->cluster_num;
         dsu_sizeCluster = ctl_req->cluster_size;
 
-        /*
-        ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
-        if (outputSize != sizeof(struct dsu_cfg))
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid outputsize %ld for DSU_CTL_INIT\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
-
         WindowsPerfKdPrintInfo("IOCTL: DSU_CTL_INIT\n");
 
         DSUProbePMU(&dsu_numGPC, &dsu_evt_mask_lo, &dsu_evt_mask_hi);
@@ -1179,8 +1138,6 @@ NTSTATUS deviceControl(
         struct dsu_cfg* out = (struct dsu_cfg*)pBuffer;
         out->fpc_num = dsu_numFPC;
         out->gpc_num = dsu_numGPC;
-        //out->evt_mask_lo = dsu_evt_mask_lo;
-        //out->evt_mask_hi = dsu_evt_mask_hi;
 
         *outputSize = sizeof(struct dsu_cfg);
         break;
@@ -1189,7 +1146,7 @@ NTSTATUS deviceControl(
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
-        UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This quesry supports only 1 core
+        UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This query supports only 1 core
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -1218,15 +1175,6 @@ NTSTATUS deviceControl(
             outputSizeExpect = sizeof(DSUReadOut) * (numCores / dsu_sizeCluster);
         else
             outputSizeExpect = sizeof(DSUReadOut);
-
-        /*
-        if (outputSize != outputSizeExpect)
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid outputsize %ld for DSU_CTL_READ_COUNTING\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
 
         UINT32 core_base, core_end;
         if (core_idx == ALL_CORE)
@@ -1313,16 +1261,6 @@ NTSTATUS deviceControl(
                 break;
         }
 
-        /*
-        ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
-        if (outputSize != sizeof(struct dmc_cfg))
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid outputsize %ld for DMC_CTL_INIT\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
-
         WindowsPerfKdPrintInfo("IOCTL: DMC_CTL_INIT\n");
 
         struct dmc_cfg* out = (struct dmc_cfg*)pBuffer;
@@ -1352,22 +1290,12 @@ NTSTATUS deviceControl(
             break;
         }
 
-        //ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (dmc_idx == ALL_DMC_CHANNEL)
             outputSizeExpect = sizeof(DMCReadOut) * dmc_array.dmc_num;
         else
             outputSizeExpect = sizeof(DMCReadOut);
-
-        /*
-        if (outputSize != outputSizeExpect)
-        {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid outputsize %ld for DMC_CTL_READ_COUNTING\n", outputSize));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        */
 
         UINT8 dmc_ch_base, dmc_ch_end;
 
@@ -1711,4 +1639,3 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
 
     return STATUS_SUCCESS;
 }
-
