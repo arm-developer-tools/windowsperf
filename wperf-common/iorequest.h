@@ -93,10 +93,16 @@ struct pmu_ctl_ver_hdr
     struct version_info version;
 };
 
+struct pmu_ctl_cores_count_hdr
+{
+    size_t cores_count;                         //!< How many cores are stored in cores_idx. Values: 0...CORE_NUM
+    UINT8  cores_no[MAX_PMU_CTL_CORES_COUNT];   //!< List of core NOs, indexed from 0 to cores_count-1
+};
+
 struct pmu_ctl_hdr
 {
 	enum pmu_ctl_action action;
-	UINT32 core_idx;
+    struct pmu_ctl_cores_count_hdr cores_idx;
 	UINT8 dmc_idx;
 #define CTL_FLAG_CORE (0x1 << 0)
 #define CTL_FLAG_DSU  (0x1 << 1)

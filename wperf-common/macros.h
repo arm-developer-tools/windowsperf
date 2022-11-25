@@ -39,6 +39,8 @@
 
 #define CYCLE_COUNTER_IDX   				31
 
+#define MAX_PMU_CTL_CORES_COUNT     		128
+
 #define MAX_MANAGED_CORE_EVENTS     		128
 #define MAX_MANAGED_DSU_EVENTS      		32
 

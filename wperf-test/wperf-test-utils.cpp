@@ -37,7 +37,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
 {
-	TEST_CLASS(wperftest)
+	TEST_CLASS(wperftest_utils)
 	{
 	public:
 		
@@ -67,6 +67,57 @@ namespace wperftest
 			Assert::AreEqual(DoubleToWideString(0.0, 4), std::wstring(L"0.0000"));
 			Assert::AreEqual(DoubleToWideString(1.1, 4), std::wstring(L"1.1000"));
 			Assert::AreEqual(DoubleToWideString(99.99, 4), std::wstring(L"99.9900"));
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_error)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsFalse(TokenizeWideStringOfInts(L"a", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0a", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0,a", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0,1,2a", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0, 1, 2", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0 , 1,2", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0,1,2 ", L',', Output));
+			Assert::IsFalse(TokenizeWideStringOfInts(L"0,-1,2", L',', Output));
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_empty)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsTrue(TokenizeWideStringOfInts(L"", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)0);
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_clear_output)
+		{
+			std::vector<uint32_t> Output = {0, 1, 2, 4, 5, 6};
+			Assert::IsTrue(TokenizeWideStringOfInts(L"", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)0);
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_0)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsTrue(TokenizeWideStringOfInts(L"0", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)1);
+			Assert::IsTrue(Output == std::vector<uint32_t>{0});
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_012)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,2", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)3);
+			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 2});
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_fibb)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,1,2,3,5,8,13,21,34,55,89,144,233", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)14);
+			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233});
 		}
 	};
 }

@@ -578,7 +578,7 @@ NTSTATUS deviceControl(
     _Out_   PULONG  outputSize
 )
 {
-    NTSTATUS status = STATUS_SUCCESS; 
+    NTSTATUS status = STATUS_SUCCESS;
 
     WindowsPerfKdPrint("IOCTL: inputSize=%d \n", inputSize);
     WindowsPerfKdPrintBuffer((BYTE*)pBuffer, inputSize);
@@ -593,10 +593,16 @@ NTSTATUS deviceControl(
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
         UINT8 dmc_ch_base = 0, dmc_ch_end = 0, dmc_idx = ALL_DMC_CHANNEL;
-        UINT32 core_base, core_end;
         UINT32 ctl_flags = ctl_req->flags;
-        UINT32 core_idx = ctl_req->core_idx;
-        UINT32 dmc_core_idx = ALL_CORE;
+        size_t cores_count = ctl_req->cores_idx.cores_count;
+        int dmc_core_idx = ALL_CORE;
+
+        if (cores_count == 0)
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for action %d\n", cores_count, action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -616,24 +622,18 @@ NTSTATUS deviceControl(
         if (ctl_flags & CTL_FLAG_DSU)
             dsu_func = dsu_ctl_funcs[action];
 
-        if (core_idx == ALL_CORE)
+        int last_cluster = -1;
+        for (auto k = 0; k < cores_count; k++)
         {
-            core_base = 0;
-            core_end = numCores;
-        }
-        else
-        {
-            core_base = core_idx;
-            core_end = core_idx + 1;
-        }
-
-        for (ULONG i = core_base; i < core_end; i++)
-        {
-            UINT8 dsu_cluster_head = !(i & (dsu_sizeCluster - 1));
+            int i = ctl_req->cores_idx.cores_no[k];
+            int cluster_no = i / dsu_sizeCluster;
             VOID(*dsu_func2)(VOID) = dsu_func;
 
-            // Only call on cluster head.
-            if (core_idx == ALL_CORE && !dsu_cluster_head)
+            // This works only if ctl_req->cores_idx.cores_no[] is sorted
+            // We will only cofigure one core in cluster with per_core_exec
+            if (last_cluster != cluster_no)
+                last_cluster = cluster_no;
+            else
                 dsu_func2 = NULL;
 
             if (core_func || dsu_func2)
@@ -657,13 +657,15 @@ NTSTATUS deviceControl(
             }
 
             DmcChannelIterator(dmc_ch_base, dmc_ch_end, dmc_func, &dmc_array);
-            dmc_core_idx = core_idx == ALL_CORE ? (numCores - 1) : core_idx;
+            // Use last core from all used.
+            dmc_core_idx = ctl_req->cores_idx.cores_no[cores_count - 1];
         }
 
         if (action == PMU_CTL_START)
         {
-            for (UINT32 i = core_base; i < core_end; i++)
+            for (auto k = 0; k < cores_count; k++)
             {
+                int i = ctl_req->cores_idx.cores_no[k];
                 CoreInfo* core = &core_info[i];
                 if (core->timer_running)
                 {
@@ -687,7 +689,7 @@ NTSTATUS deviceControl(
                 if (ctl_flags & CTL_FLAG_DSU)
                 {
                     UINT8 dsu_cluster_head = !(i & (dsu_sizeCluster - 1));
-                    if (core_idx != ALL_CORE || dsu_cluster_head)
+                    if (cores_count != numCores || dsu_cluster_head)
                     {
                         UINT8 do_dsu_multiplex = !!(core->dsu_events_num > (UINT32)(dsu_numGPC + dsu_numFPC));
                         core->prof_dsu = do_dsu_multiplex ? PROF_MULTIPLEX : PROF_NORMAL;
@@ -725,8 +727,9 @@ NTSTATUS deviceControl(
         }
         else if (action == PMU_CTL_STOP)
         {
-            for (UINT32 i = core_base; i < core_end; i++)
+            for (auto k = 0; k < cores_count; k++)
             {
+                int i = ctl_req->cores_idx.cores_no[k];
                 CoreInfo* core = &core_info[i];
                 if (core->timer_running)
                 {
@@ -737,8 +740,9 @@ NTSTATUS deviceControl(
         }
         else if (action == PMU_CTL_RESET)
         {
-            for (UINT32 i = core_base; i < core_end; i++)
+            for (auto k = 0; k < cores_count; k++)
             {
+                int i = ctl_req->cores_idx.cores_no[k];
                 CoreInfo* core = &core_info[i];
                 core->timer_round = 0;
                 struct pmu_event_pseudo* events = &core->events[0];
@@ -840,7 +844,7 @@ NTSTATUS deviceControl(
         */
 
         WindowsPerfKdPrintInfo("IOCTL: QUERY_SUPP_EVENTS\n");
-        
+
         struct evt_hdr* hdr = (struct evt_hdr*)pBuffer;
         hdr->evt_class = EVT_CORE;
         UINT16 core_evt_num = sizeof(armv8_arch_core_events) / sizeof(armv8_arch_core_events[0]);
@@ -1054,7 +1058,15 @@ NTSTATUS deviceControl(
     case PMU_CTL_READ_COUNTING:
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
-        UINT32 core_idx = ctl_req->core_idx;
+        size_t cores_count = ctl_req->cores_idx.cores_count;
+        UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This quesry supports only 1 core
+
+        if (cores_count != 1)
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -1081,7 +1093,7 @@ NTSTATUS deviceControl(
         /*
         if (outputSize != outputSizeExpect)
         {
-            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, 
+            WindowsPerfKdPrintInfo((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
                 "IOCTL: invalid outputsize %ld for PMU_CTL_READ_COUNTING\n", outputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
@@ -1170,7 +1182,15 @@ NTSTATUS deviceControl(
     case DSU_CTL_READ_COUNTING:
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pBuffer;
-        UINT32 core_idx = ctl_req->core_idx;
+        size_t cores_count = ctl_req->cores_idx.cores_count;
+        UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This quesry supports only 1 core
+
+        if (cores_count != 1)
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -1502,7 +1522,7 @@ WindowsPerfDeviceCreate(
 
     //
     // Port Begin
-    // 
+    //
 
     dfr0_value = _ReadStatusReg(ID_DFR0_EL1);
     int pmu_ver = (dfr0_value >> 8) & 0xf;

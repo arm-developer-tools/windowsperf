@@ -29,9 +29,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iomanip>
+#include <iostream>
 #include <string>
 #include <sstream>
 #include <stringapiset.h>
+#include <vector>
 #include "utils.h"
 
 std::string MultiByteFromWideString(const wchar_t* wstr)

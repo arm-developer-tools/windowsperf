@@ -36,9 +36,11 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <windows.h>
 #include <strsafe.h>
 #include <cfgmgr32.h>
+#include <set>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <numeric>
 #include "wperf.h"
 #include "debug.h"
 #include "prettytable.h"
@@ -270,10 +272,10 @@ class user_request
 public:
     user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
         do_sample(false), do_version(false), do_verbose(false),
-        do_help(false), core_idx(ALL_CORE), dmc_idx(_UI8_MAX), count_duration(-1.0),
+        do_help(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
         count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
 
-    void init(wstr_vec& raw_args, uint32_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
+    void init(wstr_vec& raw_args, uint8_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
     {
         bool waiting_events = false;
         bool waiting_metrics = false;
@@ -284,6 +286,11 @@ public:
         bool waiting_config = false;
         std::map<enum evt_class, std::deque<struct evt_noted>> events;
         std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+
+        // Fill cores_idx with {0, ... core_num}
+        cores_idx.clear();
+        cores_idx.resize(core_num);
+        std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
 
         for (auto a : raw_args)
         {
@@ -367,7 +374,21 @@ public:
 
             if (waiting_core_idx)
             {
-                core_idx = _wtoi(a.c_str());
+                if (TokenizeWideStringOfInts(a.c_str(), L',', cores_idx) == false)
+                {
+                    std::wcerr << L"option -c format not supported, use comma separated list of integers"
+                               << std::endl;
+                    throw fatal_exception("ERROR_CORES");
+                }
+
+                if (cores_idx.size() > MAX_PMU_CTL_CORES_COUNT)
+                {
+                    std::wcerr << L"you can specify up to " << int(MAX_PMU_CTL_CORES_COUNT)
+                               << L"cores with -c <cpu_list> option"
+                               << std::endl;
+                    throw fatal_exception("ERROR_CORES");
+                }
+
                 waiting_core_idx = false;
                 continue;
             }
@@ -487,12 +508,12 @@ public:
             std::wcout << L"warning: unexpected arg '" << a << L"' ignored\n";
         }
 
-        if (core_idx >= core_num && core_idx != ALL_CORE)
-        {
-            std::wcerr << L"core index " << core_idx << L" not allowed. Use 0-" << (core_num - 1)
-                       << L", see option -c <n>" << std::endl;
-            exit(-1);
-        }
+        for (uint32_t core_idx : cores_idx)
+            if (core_idx >= core_num) {
+                std::wcerr << L"core index " << core_idx << L" not allowed. Use 0-" << (core_num - 1)
+                    << L", see option -c <n>" << std::endl;
+                throw fatal_exception("ERROR_CORES");
+            }
 
         if (groups.size())
         {
@@ -638,7 +659,7 @@ public:
     bool do_help;
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;
-    uint32_t core_idx;
+    std::vector<uint8_t> cores_idx;
     uint8_t dmc_idx;
     double count_duration;
     double count_interval;
@@ -822,6 +843,10 @@ public:
         }
     }
 private:
+    bool all_cores_p() {
+        return cores_idx.size() > 1;
+    }
+
     std::wstring trim(const std::wstring& str,
         const std::wstring& whitespace = L" \t")
     {
@@ -877,7 +902,7 @@ class pmu_device
 {
 public:
     pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
-        has_dmc(false), dmc_num(0), enc_bits(0), core_idx(0), core_num(0), dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0)
+        has_dmc(false), dmc_num(0), enc_bits(0), core_num(0), dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0)
     {
         for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
             multiplexings[e] = false;
@@ -890,7 +915,8 @@ public:
         struct hw_cfg hw_cfg;
         query_hw_cfg(hw_cfg);
 
-        core_num = hw_cfg.core_num;
+        assert(hw_cfg.core_num <= UCHAR_MAX);
+        core_num = (UINT8)hw_cfg.core_num;
         fpc_nums[EVT_CORE] = hw_cfg.fpc_num;
         uint8_t gpc_num = hw_cfg.gpc_num;
         gpc_nums[EVT_CORE] = gpc_num;
@@ -903,7 +929,7 @@ public:
         // Only support metrics based on Arm's default core implementation
         if ((hw_cfg.vendor_id == 0x41 || hw_cfg.vendor_id == 0x51) && gpc_num >= 5)
         {
-            
+
             if (gpc_num == 5)
             {
                 set_builtin_metrics(L"imix", L"{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}");
@@ -993,13 +1019,25 @@ public:
         }
     }
 
-    void post_init(uint32_t core_idx_init, uint32_t dmc_idx_init, bool timeline_mode_init, uint32_t enable_bits)
+    // post_init members
+    void post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx_init, bool timeline_mode_init, uint32_t enable_bits)
     {
-        // post_init members
-        core_idx = core_idx_init;
+        // Initliaze core numbers, please note we are sorting cores ascending
+        // because we may relay in ascending order for some simple algorithms.
+        // For example in wperf-driver::deviceControl() we only init one core
+        // per DSU cluster.
+        cores_idx = cores_idx_init;
+        std::sort(cores_idx.begin(), cores_idx.end());  // Keep this sorting!
+        // We want to keep only unique cores
+        cores_idx.erase(unique(cores_idx.begin(), cores_idx.end()), cores_idx.end());
+
         dmc_idx = (uint8_t)dmc_idx_init;
         timeline_mode = timeline_mode_init;
         enc_bits = enable_bits;
+
+        // Gather all DSU numbers for specified core in set of unique DSU numbers
+        for (uint32_t i : cores_idx)
+            dsu_cores.insert(i / dsu_cluster_size);
 
         if (!timeline_mode_init)
             return;
@@ -1024,10 +1062,10 @@ public:
             char buf[256];
             size_t length = strftime(buf, sizeof(buf), "%Y_%m_%d_%H_%M_%S.", &timeinfo);
             std::string filename = std::string(buf, buf + strlen(buf));
-            if (core_idx == ALL_CORE)
+            if (all_cores_p())
                 snprintf(buf, sizeof(buf), "wperf_system_side_");
             else
-                snprintf(buf, sizeof(buf), "wperf_core_%d_", core_idx);
+                snprintf(buf, sizeof(buf), "wperf_core_%d_", cores_idx[0]);
             std::string prefix(buf);
 
             std::string suffix = MultiByteFromWideString(evt_class_name[e]);
@@ -1066,14 +1104,15 @@ public:
         mdesc.groups.clear();
     }
 
-
     void start(uint32_t flags = CTL_FLAG_CORE)
     {
         struct pmu_ctl_hdr ctl;
         DWORD res_len;
 
         ctl.action = PMU_CTL_START;
-        ctl.core_idx = core_idx;
+        ctl.cores_idx.cores_count = cores_idx.size();
+        std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
+
         ctl.dmc_idx = dmc_idx;
         ctl.flags = flags;
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
@@ -1087,9 +1126,11 @@ public:
         DWORD res_len;
 
         ctl.action = PMU_CTL_STOP;
-        ctl.core_idx = core_idx;
+        ctl.cores_idx.cores_count = cores_idx.size();
+        std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
         ctl.dmc_idx = dmc_idx;
         ctl.flags = flags;
+
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_STOP failed");
@@ -1101,7 +1142,8 @@ public:
         DWORD res_len;
 
         ctl.action = PMU_CTL_RESET;
-        ctl.core_idx = core_idx;
+        ctl.cores_idx.cores_count = cores_idx.size();
+        std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
         ctl.dmc_idx = dmc_idx;
         ctl.flags = flags;
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
@@ -1109,9 +1151,7 @@ public:
             throw fatal_exception("PMU_CTL_RESET failed");
     }
 
-
-
-    void events_assign(std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel)
+    void events_assign(uint32_t core_idx, std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel)
     {
         size_t acc_sz = 0;
 
@@ -1134,6 +1174,7 @@ public:
         DWORD res_len;
         struct pmu_ctl_evt_assign_hdr* ctl =
             reinterpret_cast<struct pmu_ctl_evt_assign_hdr*>(buf.get());
+
         ctl->action = PMU_CTL_ASSIGN_EVENTS;
         ctl->core_idx = core_idx;
         ctl->dmc_idx = dmc_idx;
@@ -1284,13 +1325,14 @@ public:
         }
     }
 
-    void core_events_read_nth(uint32_t core_no)
+    void core_events_read_nth(uint8_t core_no)
     {
         struct pmu_ctl_hdr ctl;
         DWORD res_len;
 
         ctl.action = PMU_CTL_READ_COUNTING;
-        ctl.core_idx = core_no;
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = core_no;
 
         LPVOID out_buf = core_outs.get() + core_no;
         size_t out_buf_len = sizeof(ReadOut);
@@ -1299,32 +1341,24 @@ public:
             throw fatal_exception("PMU_CTL_READ_COUNTING failed");
     }
 
-    void core_events_read(void)
+    void core_events_read()
     {
-        uint32_t core_begin = core_idx;
-        uint32_t core_end = core_idx + 1;
-
-        if (core_idx == ALL_CORE)
-        {
-            core_begin = 0;
-            core_end = core_num;
-        }
-
-        for (uint32_t core_no = core_begin; core_no < core_end; core_no++)
+        for (uint8_t core_no : cores_idx)
         {
             core_events_read_nth(core_no);
         }
     }
 
-    void dsu_events_read_nth(uint32_t core_no)
+    void dsu_events_read_nth(uint8_t core_no)
     {
         struct pmu_ctl_hdr ctl;
         DWORD res_len;
 
         ctl.action = DSU_CTL_READ_COUNTING;
-        ctl.core_idx = core_no;
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = core_no;
 
-        LPVOID out_buf = dsu_outs.get() + core_no/dsu_cluster_size;
+        LPVOID out_buf = dsu_outs.get() + (core_no / dsu_cluster_size);
         size_t out_buf_len = sizeof(DSUReadOut);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
         if (!status)
@@ -1333,16 +1367,7 @@ public:
 
     void dsu_events_read(void)
     {
-        uint32_t core_begin = core_idx;
-        uint32_t core_end = core_idx + 1;
-
-        if (core_idx == ALL_CORE)
-        {
-            core_begin = 0;
-            core_end = core_num;
-        }
-
-        for (uint32_t core_no = core_begin; core_no < core_end; core_no += dsu_cluster_size)
+        for (uint8_t core_no : cores_idx)
         {
             dsu_events_read_nth(core_no);
         }
@@ -1431,27 +1456,20 @@ public:
             uint64_t scaled_value;
         };
 
-        uint32_t core_base, core_end;
+        uint32_t core_base = cores_idx[0];
         std::unique_ptr<agg_entry[]> overall;
 
-        if (core_idx == ALL_CORE)
+        if (all_cores_p())
         {
-            core_base = 0;
-            core_end = core_num;
-
+            // TODO: This will work only if we are counting EXACTLY same events for N cores
             overall = std::make_unique<agg_entry[]>(core_outs[core_base].evt_num);
             memset(overall.get(), 0, sizeof(agg_entry)* core_outs[core_base].evt_num);
 
             for (uint32_t i = 0; i < core_outs[core_base].evt_num; i++)
                 overall[i].event_idx = core_outs[core_base].evts[i].event_idx;
         }
-        else
-        {
-            core_base = core_idx;
-            core_end = core_idx + 1;
-        }
 
-        for (uint32_t i = core_base; i < core_end; i++)
+        for (uint32_t i : cores_idx)
         {
             if (!timeline_mode)
             {
@@ -1665,33 +1683,28 @@ public:
             uint64_t scaled_value;
         };
 
-        uint32_t core_base, core_end;
         std::unique_ptr<agg_entry[]> overall;
 
-        if (core_idx == ALL_CORE)
+        if (all_cores_p())
         {
-            core_base = 0;
-            core_end = core_num;
+            // TODO: because now all DSU cores count same events we use first core
+            //       to gather events info.
+            uint32_t dsu_core_0 = *(dsu_cores.begin());
 
-            overall = std::make_unique<agg_entry[]>(dsu_outs[core_base].evt_num);
-            memset(overall.get(), 0, sizeof(agg_entry)* dsu_outs[core_base].evt_num);
+            overall = std::make_unique<agg_entry[]>(dsu_outs[dsu_core_0].evt_num);
+            memset(overall.get(), 0, sizeof(agg_entry)* dsu_outs[dsu_core_0].evt_num);
 
-            for (uint32_t i = 0; i < dsu_outs[core_base].evt_num; i++)
-                overall[i].event_idx = dsu_outs[core_base].evts[i].event_idx;
-        }
-        else
-        {
-            core_base = core_idx;
-            core_end = core_idx + 1;
+            for (uint32_t i = 0; i < dsu_outs[dsu_core_0].evt_num; i++)
+                overall[i].event_idx = dsu_outs[dsu_core_0].evts[i].event_idx;
         }
 
-        for (uint32_t i = core_base; i < core_end; i += dsu_cluster_size)
+        for (uint32_t dsu_core : dsu_cores)
         {
             if (!timeline_mode)
             {
                 std::wcout << std::endl
                            << L"Performance counter stats for DSU cluster "
-                           << (i / dsu_cluster_size)
+                           << dsu_core
                            << (multiplexing ? L", multiplexed" : L", no multiplexing")
                            << L", on " << vendor_name
                            << L" core implementation:"
@@ -1703,9 +1716,9 @@ public:
                               << std::endl;
             }
 
-            int32_t evt_num = dsu_outs[i / dsu_cluster_size].evt_num;
-            struct pmu_event_usr* evts = dsu_outs[i / dsu_cluster_size].evts;
-            uint64_t round = dsu_outs[i / dsu_cluster_size].round;
+            int32_t evt_num = dsu_outs[dsu_core].evt_num;
+            struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
+            uint64_t round = dsu_outs[dsu_core].round;
 
             std::vector<std::wstring> col_counter_value, col_event_idx,  col_event_name,
                                       col_multiplexed, col_scaled_value, col_event_note;
@@ -1812,12 +1825,12 @@ public:
                 std::wcout << std::endl
                            << L"L3 cache metrics:" << std::endl;
 
-                std::vector<std::wstring> col_cluster, col_read_bandwith, col_miss_rate;
+                std::vector<std::wstring> col_cluster, col_cores, col_read_bandwith, col_miss_rate;
 
-                for (uint32_t i = core_base; i < core_end; i += dsu_cluster_size)
+                for (uint32_t dsu_core : dsu_cores)
                 {
-                    int32_t evt_num = dsu_outs[i / dsu_cluster_size].evt_num;
-                    struct pmu_event_usr* evts = dsu_outs[i / dsu_cluster_size].evts;
+                    int32_t evt_num = dsu_outs[dsu_core].evt_num;
+                    struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
                     uint64_t l3_cache_access_num = 0, l3_cache_refill_num = 0;
 
                     for (int j = 0; j < evt_num; j++)
@@ -1839,7 +1852,16 @@ public:
                         ? ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100
                         : 100.0;
 
-                    col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
+                    std::wstring core_list;
+                    for (uint8_t core_idx : cores_idx)
+                        if ((core_idx / dsu_cluster_size) == (uint8_t)dsu_core)
+                            if (core_list.empty())
+                                core_list = L"" + std::to_wstring(core_idx);
+                            else
+                                core_list += L", " + std::to_wstring(core_idx);
+
+                    col_cluster.push_back(std::to_wstring(dsu_core));
+                    col_cores.push_back(core_list);
                     col_read_bandwith.push_back(DoubleToWideString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
                     col_miss_rate.push_back(DoubleToWideString(miss_rate_pct) + L"%");
                 }
@@ -1847,6 +1869,7 @@ public:
                 {
                     PrettyTable ptable;
                     ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
+                    ptable.AddColumn(L"cores", col_cores, PrettyTable::RIGHT);
                     ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
                     ptable.AddColumn(L"miss_rate", col_miss_rate, PrettyTable::RIGHT);
                     ptable.Print();
@@ -1863,7 +1886,8 @@ public:
 
         std::wcout << L"System-wide Overall:" << std::endl;
 
-        int32_t evt_num = dsu_outs[core_base / dsu_cluster_size].evt_num;
+        uint32_t dsu_core_0 = *(dsu_cores.begin());
+        int32_t evt_num = dsu_outs[dsu_core_0].evt_num;
 
         std::vector<std::wstring> col_counter_value, col_event_name, col_event_idx,
                                   col_event_note, col_scaled_value;
@@ -1933,12 +1957,12 @@ public:
             std::wcout << std::endl
                        << L"L3 cache metrics:" << std::endl;
 
-            std::vector<std::wstring> col_cluster, col_read_bandwith, col_miss_rate;
+            std::vector<std::wstring> col_cluster, col_cores, col_read_bandwith, col_miss_rate;
 
-            for (uint32_t i = core_base; i < core_end; i += dsu_cluster_size)
+            for (uint32_t dsu_core : dsu_cores)
             {
-                int32_t evt_num2 = dsu_outs[i / dsu_cluster_size].evt_num;
-                struct pmu_event_usr* evts = dsu_outs[i / dsu_cluster_size].evts;
+                int32_t evt_num2 = dsu_outs[dsu_core].evt_num;
+                struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
                 uint64_t l3_cache_access_num = 0, l3_cache_refill_num = 0;
 
                 for (int j = 0; j < evt_num2; j++)
@@ -1960,12 +1984,22 @@ public:
                     ? ((double)(l3_cache_refill_num)) / ((double)(l3_cache_access_num)) * 100
                     : 100.0;
 
-                col_cluster.push_back(std::to_wstring(i / dsu_cluster_size));
+                std::wstring core_list;
+                for (uint8_t core_idx : cores_idx)
+                    if ((core_idx / dsu_cluster_size) == (uint8_t)dsu_core)
+                        if (core_list.empty())
+                            core_list = L"" + std::to_wstring(core_idx);
+                        else
+                            core_list += L", " + std::to_wstring(core_idx);
+
+                col_cluster.push_back(std::to_wstring(dsu_core));
+                col_cores.push_back(core_list);
                 col_read_bandwith.push_back(DoubleToWideString(((double)(l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
                 col_miss_rate.push_back(DoubleToWideString(miss_rate_pct) + L"%");
             }
 
-            uint64_t evt_num2 = dsu_outs[core_base / dsu_cluster_size].evt_num;
+            uint32_t dsu_core = *dsu_cores.begin();
+            uint64_t evt_num2 = dsu_outs[dsu_core].evt_num;
             uint64_t acc_l3_cache_access_num = 0, acc_l3_cache_refill_num = 0;
             for (int j = 0; j < evt_num2; j++)
             {
@@ -1984,12 +2018,14 @@ public:
             }
 
             col_cluster.push_back(L"all");
+            col_cores.push_back(L"all");
             col_read_bandwith.push_back(DoubleToWideString(((double)(acc_l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
             col_miss_rate.push_back(DoubleToWideString(((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100) + L"%");
 
             {
                 PrettyTable ptable;
                 ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
+                ptable.AddColumn(L"cores", col_cores, PrettyTable::RIGHT);
                 ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
                 ptable.AddColumn(L"miss_rate", col_miss_rate, PrettyTable::RIGHT);
                 ptable.Print();
@@ -2213,7 +2249,7 @@ public:
         }
     }
 
-    uint32_t core_num;
+    uint8_t core_num;
     std::map<std::wstring, metric_desc> builtin_metrics;
     bool has_dsu;
     bool has_dmc;
@@ -2221,6 +2257,10 @@ public:
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;
 private:
+    bool all_cores_p() {
+        return cores_idx.size() > 1;
+    }
+
     bool detect_armh_dsu()
     {
         ULONG DeviceListLength = 0;
@@ -2425,7 +2465,8 @@ private:
     HANDLE handle;
     uint32_t pmu_ver;
     const wchar_t* vendor_name;
-    uint32_t core_idx;
+    std::vector<uint8_t> cores_idx;                     // Cores
+    std::set<uint32_t, std::less<uint32_t>> dsu_cores;  // DSU used by cores in 'cores_idx'
     uint8_t dmc_idx;
     std::unique_ptr<ReadOut[]> core_outs;
     std::unique_ptr<DSUReadOut[]> dsu_outs;
@@ -2457,35 +2498,37 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
 
 static void print_help()
 {
-    std::wcout << "Usage:\n";
-    std::wcout << "  wperf [options]\n";
-    std::wcout << "\n";
-    std::wcout << "Options:\n";
-    std::wcout << "  list                   List supported events and metrics\n";
-    std::wcout << "  stat                   Count events. If -e is not specified, then count default events\n";
-    std::wcout << "  -e e1,e2...            Specify events to count. Event eN could be a symbolic name or in raw number.\n";
-    std::wcout << "                         Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,\n";
-    std::wcout << "                         XXXX is hex value of the number without '0x' prefix\n";
-    std::wcout << "  -m m1,m2...            Specify metrics to count. \"imix\", \"icache\", \"dcache\", \"itlb\", \"dtlb\" supported\n";
-    std::wcout << "  -d N                   Specify counting duration (in s). The accuracy is 0.1s\n";
-    std::wcout << "  sleep N                Like -d, for compatibility with Linux perf\n";
-    std::wcout << "  -i N                   Specify counting interval (in s). To be used with -t\n";
-    std::wcout << "  -t                     Enable timeline mode. It specifies -i 60 -d 1 implicitly.\n";
-    std::wcout << "                         Means counting 1 second after every 60 second, and the result\n";
-    std::wcout << "                         is in .csv file in the same folder where wperf is invoked. \n";
-    std::wcout << "                         You can use -i and -d to change counting duration and interval. \n";
-    std::wcout << "  -C config_file         Provide customized config file which describes metrics etc.\n";
-    std::wcout << "  -c core_idx            Profile on the specified core\n";
-    std::wcout << "                         CORE_INDEX could be a number or 'ALL' (default if -c not specified)\n";
-    std::wcout << "  -dmc dmc_idx           Profile on the specified DDR controller\n";
-    std::wcout << "                         DMC_INDEX could be a number or 'ALL' (default if -dmc not specified)\n";
-    std::wcout << "  -k                     Count kernel model as well (disabled at default)\n";
-    std::wcout << "  -h                     Show tool help\n";
-    std::wcout << "  -l                     Alias of 'list'\n";
-    std::wcout << "  -verbose               Enable verbose output\n";
-    std::wcout << "  -v                     Alias of '-verbose'\n";
-    std::wcout << "  -version               Show tool version\n";
-    std::wcout << "\n";
+    const wchar_t* wsHelp = LR"(
+Usage:
+wperf[options]
+
+    Options:
+    list              List supported events and metrics.
+    stat              Count events.If - e is not specified, then count default events.
+    -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
+                      Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
+                      XXXX is hex value of the number without '0x' prefix.
+    -m m1, m2...      Specify metrics to count. \"imix\", \"icache\", \"dcache\", \"itlb\", \"dtlb\" supported.
+    -d N              Specify counting duration(in s).The accuracy is 0.1s.
+    sleep N           Like -d, for compatibility with Linux perf.
+    -i N              Specify counting interval(in s).To be used with -t.
+    -t                Enable timeline mode.It specifies -i 60 -d 1 implicitly.
+                      Means counting 1 second after every 60 second, and the result
+                      is in.csv file in the same folder where wperf is invoked.
+                      You can use -i and -d to change counting duration and interval.
+    -C config_file    Provide customized config file which describes metrics etc.
+    -c core_idx       Profile on the specified core. Skip -c to count on all cores.
+    -c cpu_list       Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
+    -dmc dmc_idx      Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
+    -k                Count kernel model as well (disabled by default).
+    -h                Show tool help.
+    -l                Alias of 'list'.
+    -verbose          Enable verbose output.
+    -v                Alias of '-verbose'.
+    -version          Show tool version.
+)";
+
+    std::wcout << wsHelp << std::endl;
 }
 
 //
@@ -2655,7 +2698,7 @@ wmain(
             goto clean_exit;
         }
 
-        pmu_device.post_init(request.core_idx, request.dmc_idx, request.do_timeline, enable_bits);
+        pmu_device.post_init(request.cores_idx, request.dmc_idx, request.do_timeline, enable_bits);
 
         if (request.do_count)
         {
@@ -2672,7 +2715,6 @@ wmain(
             if (SetConsoleCtrlHandler(&ctrl_handler, TRUE) == FALSE)
                 throw fatal_exception("SetConsoleCtrlHandler failed");
 
-
             uint32_t stop_bits = CTL_FLAG_CORE;
             if (pmu_device.has_dsu)
                 stop_bits |= CTL_FLAG_DSU;
@@ -2681,7 +2723,8 @@ wmain(
 
             pmu_device.stop(stop_bits);
 
-            pmu_device.events_assign(request.ioctl_events, request.do_kernel);
+            for (uint32_t core_idx : request.cores_idx)
+                pmu_device.events_assign(core_idx, request.ioctl_events, request.do_kernel);
 
             int64_t counting_duration_iter = request.count_duration > 0 ?
                 static_cast<int64_t>(request.count_duration * 10) : _I64_MAX;

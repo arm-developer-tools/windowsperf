@@ -30,8 +30,39 @@
 
 #pragma once
 
+#include <algorithm>
 #include <string>
+#include <vector>
 
 std::string MultiByteFromWideString(const wchar_t* wstr);
 std::wstring IntToHexWideString(int Value, size_t Width = 4);
 std::wstring DoubleToWideString(double Value, int Precision = 2);
+
+/// <summary>
+/// Function tokenizes string and returns vector in INT values.
+/// Example string input:
+///
+///    L"0,2,3,5"
+///
+/// </summary>
+/// <param name="Input">Input WSTRING</param>
+/// <param name="Delimiter">Delimeter used to tokenize INPUT</param>
+/// <param name="Output">Vector with tokenized values (is cleared by function)</param>
+/// <returns>Count of elements tokenized</returns>
+template<typename T>
+bool TokenizeWideStringOfInts(_In_ std::wstring Input, _In_  const wchar_t Delimiter, _Out_ std::vector<T>& Output) {
+    static_assert(std::is_integral<T>::value, "Integral type required in Output<T>");
+
+    std::wstring token;
+    std::wistringstream ss(Input);
+
+    Output.clear();
+    while (std::getline(ss, token, Delimiter)) {
+        if (std::all_of(token.begin(), token.end(), ::isdigit))
+            Output.push_back((T)_wtoi(token.c_str()));
+        else
+            return false;
+    }
+
+    return true;
+}

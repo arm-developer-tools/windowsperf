@@ -9,6 +9,7 @@
   * [Specify up to 127 events, they will get multiplexed automatically, for example:](#specify-up-to-127-events-they-will-get-multiplexed-automatically-for-example)
   * [Count using event group](#count-using-event-group)
   * [Count using pre-defined metrics, metric could be used together with -e, no restriction](#count-using-pre-defined-metrics-metric-could-be-used-together-with--e-no-restriction)
+  * [Count on multiple cores simultaneously with -c](#count-on-multiple-cores-simultaneously-with--c)
 
 # Build wperf CLI
 
@@ -202,4 +203,91 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
              11362693  ldst_spec   0x72       g0,customizedmetric
 
                 1.17 seconds time elapsed
+```
+
+## Count on multiple cores simultaneously with -c
+
+In below example we specify events with `-e` and schedule counting on cores 0, 1, 6 and 7. This is done with `-c 0,1,6,7 ` command line option.
+Skip `-c` to count on all cores.
+
+Note: when you specify more than one core overall summary will be also printed. See last table with counted events in below listing.
+
+```
+>wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0,1,6,7 sleep 1
+counting ... done
+
+Performance counter stats for core 0, multiplexed, kernel mode included, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name     event idx  event note  multiplexed  scaled value
+        =============  ==========     =========  ==========  ===========  ============
+            459768620  cycle          fixed      e                 11/11     459768620
+             20149697  inst_spec      0x1b       e                  9/11      24627407
+            345630022  vfp_spec       0x75       e                  9/11     422436693
+            129948697  ase_spec       0x74       e                  8/11     178679458
+             61383968  dp_spec        0x73       e                  8/11      84402956
+            183535105  ld_spec        0x70       e                  8/11     252360769
+               811588  st_spec        0x71       e                  8/11       1115933
+                58576  br_immed_spec  0x78       e                  8/11         80542
+                  266  crypto_spec    0x77       e                  8/11           365
+
+Performance counter stats for core 1, multiplexed, kernel mode included, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name     event idx  event note  multiplexed  scaled value
+        =============  ==========     =========  ==========  ===========  ============
+            562807691  cycle          fixed      e                 11/11     562807691
+           1107009142  inst_spec      0x1b       e                  9/11    1353011173
+               155230  vfp_spec       0x75       e                  9/11        189725
+             11943376  ase_spec       0x74       e                  8/11      16422142
+            497478218  dp_spec        0x73       e                  8/11     684032549
+            175669868  ld_spec        0x70       e                  8/11     241546068
+             75332147  st_spec        0x71       e                  8/11     103581702
+                42596  br_immed_spec  0x78       e                  8/11         58569
+                    0  crypto_spec    0x77       e                  8/11             0
+
+Performance counter stats for core 6, multiplexed, kernel mode included, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name     event idx  event note  multiplexed  scaled value
+        =============  ==========     =========  ==========  ===========  ============
+              1368553  cycle          fixed      e                 11/11       1368553
+               211413  inst_spec      0x1b       e                  9/11        258393
+                    0  vfp_spec       0x75       e                  9/11             0
+              1424127  ase_spec       0x74       e                  8/11       1958174
+              1424127  dp_spec        0x73       e                  8/11       1958174
+              1424127  ld_spec        0x70       e                  8/11       1958174
+              1424127  st_spec        0x71       e                  8/11       1958174
+                    0  br_immed_spec  0x78       e                  8/11             0
+                    0  crypto_spec    0x77       e                  8/11             0
+
+Performance counter stats for core 7, multiplexed, kernel mode included, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name     event idx  event note  multiplexed  scaled value
+        =============  ==========     =========  ==========  ===========  ============
+                    0  cycle          fixed      e                 11/11             0
+                    0  inst_spec      0x1b       e                  9/11             0
+                    0  vfp_spec       0x75       e                  9/11             0
+                    0  ase_spec       0x74       e                  8/11             0
+                    0  dp_spec        0x73       e                  8/11             0
+                    0  ld_spec        0x70       e                  8/11             0
+                    0  st_spec        0x71       e                  8/11             0
+                    0  br_immed_spec  0x78       e                  8/11             0
+                    0  crypto_spec    0x77       e                  8/11             0
+
+System-wide Overall:
+        counter value  event name     event idx  event note  scaled value
+        =============  ==========     =========  ==========  ============
+           1023944864  cycle          fixed      e             1023944864
+           1127370252  inst_spec      0x001b     e             1377896973
+            345785252  vfp_spec       0x0075     e              422626418
+            143316200  ase_spec       0x0074     e              197059774
+            560286313  dp_spec        0x0073     e              770393679
+            360629100  ld_spec        0x0070     e              495865011
+             77567862  st_spec        0x0071     e              106655809
+               101172  br_immed_spec  0x0078     e                 139111
+                  266  crypto_spec    0x0077     e                    365
+
+               1.134 seconds time elapsed
 ```
