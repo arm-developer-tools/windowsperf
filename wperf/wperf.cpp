@@ -900,16 +900,18 @@ private:
 class pmu_device
 {
 public:
-    pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0), dsu_cluster_size(0),
-        has_dmc(false), dmc_num(0), enc_bits(0), core_num(0), dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0)
+    pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0),
+	    dsu_cluster_size(0), has_dmc(false), dmc_num(0), enc_bits(0), core_num(0),
+		dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0), do_verbose(false)
     {
         for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
             multiplexings[e] = false;
     }
 
-    void init(HANDLE hDevice)
+    void init(HANDLE hDevice, bool verbose = false)
     {
         handle = hDevice;
+		do_verbose = verbose;
 
         struct hw_cfg hw_cfg;
         query_hw_cfg(hw_cfg);
@@ -2303,7 +2305,7 @@ private:
         cr = CM_Get_Device_ID_List_Size(&DeviceListLength, NULL, CM_GETIDLIST_FILTER_PRESENT);
         if (cr != CR_SUCCESS)
         {
-            //std::wcout << "warning: detect uncore: failed CM_Get_Device_ID_List_Size, cancel unCore support" << std::endl;
+			warning(L"warning: detect uncore: failed CM_Get_Device_ID_List_Size, cancel unCore support");
             goto fail0;
         }
 
@@ -2311,7 +2313,7 @@ private:
             DeviceListLength * sizeof(WCHAR));
         if (!DeviceList)
         {
-            //std::wcout << "warning: detect uncore: failed HeapAlloc for DeviceList, cancel unCore support" << std::endl;
+			warning(L"detect uncore: failed HeapAlloc for DeviceList, cancel unCore support");
             goto fail0;
         }
 
@@ -2319,7 +2321,7 @@ private:
             CM_GETIDLIST_FILTER_PRESENT | CM_GETIDLIST_FILTER_ENUMERATOR);
         if (cr != CR_SUCCESS)
         {
-            //std::wcout << "warning: detect uncore: failed CM_Get_Device_ID_ListW, cancel unCore support" << std::endl;
+			warning(L"warning: detect uncore: failed CM_Get_Device_ID_ListW, cancel unCore support");
             goto fail0;
         }
 
@@ -2329,7 +2331,7 @@ private:
             cr = CM_Locate_DevNodeW(&Devinst, CurrentDevice, CM_LOCATE_DEVNODE_NORMAL);
             if (cr != CR_SUCCESS)
             {
-                //std::wcout << "warning: detect uncore: failed CM_Locate_DevNodeW, cancel unCore support" << std::endl;
+				warning(L"warning: detect uncore: failed CM_Locate_DevNodeW, cancel unCore support");
                 goto fail0;
             }
 
@@ -2338,7 +2340,7 @@ private:
                 (PBYTE)DeviceDesc, &PropertySize, 0);
             if (cr != CR_SUCCESS)
             {
-                //std::wcout << "warning: detect uncore: failed CM_Get_DevNode_PropertyW, cancel unCore support" << std::endl;
+				warning(L"warning: detect uncore: failed CM_Get_DevNode_PropertyW, cancel unCore support");
                 goto fail0;
             }
 
@@ -2353,7 +2355,7 @@ private:
             {
                 if (core_num_idx != dsu_cluster_size)
                 {
-                    //std::wcout << "warning: detect uncore: failed CM_Get_DevNode_PropertyW, cancel unCore support" << std::endl;
+					warning(L"detect uncore: failed CM_Get_DevNode_PropertyW, cancel unCore support");
                     goto fail0;
                 }
             }
@@ -2365,13 +2367,13 @@ private:
 
         if (!dsu_cluster_num)
         {
-            //std::wcout << "warning: detect uncore: failed finding cluster, cancel unCore support" << std::endl;
+            warning(L"detect uncore: failed finding cluster, cancel unCore support");
             goto fail0;
         }
 
         if (!dsu_cluster_size)
         {
-            //std::wcout << "warning: detect uncore: failed finding core inside cluster, cancel unCore support" << std::endl;
+            warning(L"warning: detect uncore: failed finding core inside cluster, cancel unCore support");
             goto fail0;
         }
 
@@ -2492,6 +2494,14 @@ private:
         return L"UnKnown";
     }
 
+    // Use this function to print to wcerr runtime warnings in verbose mode.
+    // Do not use this function for debug. Instead use WindowsPerfDbgPrint().
+	void warning(const std::wstring wrn)
+	{
+		if (do_verbose)
+			std::wcerr << L"warning: " << wrn << std::endl;
+	}
+
     HANDLE handle;
     uint32_t pmu_ver;
     const wchar_t* vendor_name;
@@ -2504,6 +2514,7 @@ private:
     bool multiplexings[EVT_CLASS_NUM];
     bool timeline_mode;
     bool count_kernel;
+    bool do_verbose;
     uint32_t enc_bits;
     std::wofstream timeline_outfiles[EVT_CLASS_NUM];
     std::vector<std::pair<uint64_t, uint64_t>> dmc_regions;
@@ -2609,7 +2620,7 @@ wmain(
     wstr_vec raw_args;
 
     try{
-        pmu_device.init(hDevice);
+        pmu_device.init(hDevice, request.do_verbose);
     } catch(std::exception&) {
         exit_code = EXIT_FAILURE;
         goto clean_exit;
