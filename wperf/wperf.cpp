@@ -1486,14 +1486,14 @@ public:
                               << std::endl;
             }
 
-            int32_t evt_num = core_outs[i].evt_num;
+            UINT32 evt_num = core_outs[i].evt_num;
             struct pmu_event_usr* evts = core_outs[i].evts;
             uint64_t round = core_outs[i].round;
 
             std::vector<std::wstring> col_counter_value, col_event_name, col_event_idx,
                                       col_multiplexed, col_scaled_value, col_event_note;
 
-            for (int j = 0; j < evt_num; j++)
+            for (size_t j = 0; j < evt_num; j++)
             {
                 if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                     continue;
@@ -1598,9 +1598,9 @@ public:
         std::vector<std::wstring> col_counter_value, col_event_idx, col_event_name,
                                   col_scaled_value, col_event_note;
 
-        int32_t evt_num = core_outs[core_base].evt_num;
+        UINT32 evt_num = core_outs[core_base].evt_num;
 
-        for (int j = 0; j < evt_num; j++)
+        for (size_t j = 0; j < evt_num; j++)
         {
             if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                 continue;
@@ -1716,14 +1716,14 @@ public:
                               << std::endl;
             }
 
-            int32_t evt_num = dsu_outs[dsu_core].evt_num;
+            UINT32 evt_num = dsu_outs[dsu_core].evt_num;
             struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
             uint64_t round = dsu_outs[dsu_core].round;
 
             std::vector<std::wstring> col_counter_value, col_event_idx,  col_event_name,
                                       col_multiplexed, col_scaled_value, col_event_note;
 
-            for (int j = 0; j < evt_num; j++)
+            for (size_t j = 0; j < evt_num; j++)
             {
                 if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                     continue;
@@ -1829,11 +1829,11 @@ public:
 
                 for (uint32_t dsu_core : dsu_cores)
                 {
-                    int32_t evt_num = dsu_outs[dsu_core].evt_num;
+                    UINT32 evt_num = dsu_outs[dsu_core].evt_num;
                     struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
                     uint64_t l3_cache_access_num = 0, l3_cache_refill_num = 0;
 
-                    for (int j = 0; j < evt_num; j++)
+                    for (size_t j = 0; j < evt_num; j++)
                     {
                         if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                             continue;
@@ -1887,12 +1887,12 @@ public:
         std::wcout << L"System-wide Overall:" << std::endl;
 
         uint32_t dsu_core_0 = *(dsu_cores.begin());
-        int32_t evt_num = dsu_outs[dsu_core_0].evt_num;
+        UINT32 evt_num = dsu_outs[dsu_core_0].evt_num;
 
         std::vector<std::wstring> col_counter_value, col_event_name, col_event_idx,
                                   col_event_note, col_scaled_value;
 
-        for (int j = 0; j < evt_num; j++)
+        for (size_t j = 0; j < evt_num; j++)
         {
             if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                 continue;
@@ -1961,11 +1961,11 @@ public:
 
             for (uint32_t dsu_core : dsu_cores)
             {
-                int32_t evt_num2 = dsu_outs[dsu_core].evt_num;
+                UINT32 evt_num2 = dsu_outs[dsu_core].evt_num;
                 struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
                 uint64_t l3_cache_access_num = 0, l3_cache_refill_num = 0;
 
-                for (int j = 0; j < evt_num2; j++)
+                for (size_t j = 0; j < evt_num2; j++)
                 {
                     if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                         continue;
@@ -1999,9 +1999,10 @@ public:
             }
 
             uint32_t dsu_core = *dsu_cores.begin();
-            uint64_t evt_num2 = dsu_outs[dsu_core].evt_num;
+            UINT32 evt_num2 = dsu_outs[dsu_core].evt_num;
             uint64_t acc_l3_cache_access_num = 0, acc_l3_cache_refill_num = 0;
-            for (int j = 0; j < evt_num2; j++)
+
+            for (size_t j = 0; j < evt_num2; j++)
             {
                 if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                     continue;
