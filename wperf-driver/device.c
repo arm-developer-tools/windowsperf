@@ -571,7 +571,6 @@ static VOID per_core_exec(UINT32 core_idx, VOID(*do_func)(VOID), VOID(*do_func2)
     KeRevertToUserGroupAffinityThread(&old_affinity);
 }
 
-
 NTSTATUS deviceControl(
     _In_    PVOID   pBuffer,
     _In_    ULONG   inputSize,
@@ -597,16 +596,24 @@ NTSTATUS deviceControl(
         size_t cores_count = ctl_req->cores_idx.cores_count;
         int dmc_core_idx = ALL_CORE;
 
-        if (cores_count == 0)
+        if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for action %d\n", cores_count, action);
+            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for action %d\n", inputSize, action);
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        if (inputSize != sizeof(struct pmu_ctl_hdr))
+        if (cores_count == 0 || cores_count >= MAX_PMU_CTL_CORES_COUNT)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for action %d\n", inputSize, action);
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1-%d) for action %d\n",
+                                   cores_count, MAX_PMU_CTL_CORES_COUNT, action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1061,13 +1068,6 @@ NTSTATUS deviceControl(
         size_t cores_count = ctl_req->cores_idx.cores_count;
         UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This quesry supports only 1 core
 
-        if (cores_count != 1)
-        {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count);
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_READ_COUNTING\n", inputSize);
@@ -1075,14 +1075,20 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if (core_idx != ALL_CORE && core_idx >= numCores)
+        if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid core_idx %d for PMU_CTL_READ_COUNTING\n", core_idx);
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count);
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        //ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
+        if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (core_idx == ALL_CORE)
@@ -1185,13 +1191,6 @@ NTSTATUS deviceControl(
         size_t cores_count = ctl_req->cores_idx.cores_count;
         UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This quesry supports only 1 core
 
-        if (cores_count != 1)
-        {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count);
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DSU_CTL_READ_COUNTING\n", inputSize);
@@ -1199,14 +1198,20 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if (core_idx != ALL_CORE && core_idx >= numCores)
+        if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid core_idx %d for DSU_CTL_READ_COUNTING\n", core_idx);
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count);
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        //ULONG outputSize = IrpStackLocation->Parameters.DeviceIoControl.OutputBufferLength;
+        if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (core_idx == ALL_CORE)
