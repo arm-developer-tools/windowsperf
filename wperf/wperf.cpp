@@ -82,7 +82,7 @@ BOOL DeviceAsyncIoControl(
     {
         if (!WriteFile(hDevice, lpBuffer, nNumberOfBytesToWrite, &numberOfBytesWritten, NULL))
         {
-            WindowsPerfDbgPrint("WriteFile failed: Error %d\n", GetLastError());
+            WindowsPerfDbgPrint("Error: WriteFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
     }
@@ -91,7 +91,7 @@ BOOL DeviceAsyncIoControl(
     {
         if (!ReadFile(hDevice, lpOutBuffer, nOutBufferSize, lpBytesReturned, NULL))
         {
-            WindowsPerfDbgPrint("ReadFile failed: Error %d\n", GetLastError());
+            WindowsPerfDbgPrint("Error: ReadFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
     }
@@ -2595,7 +2595,7 @@ wmain(
             G_DevicePath,
             sizeof(G_DevicePath)/sizeof(G_DevicePath[0])) )
     {
-        WindowsPerfDbgPrint("Failed to find device path. Error %d\n", GetLastError());
+        WindowsPerfDbgPrint("Error: Failed to find device path. GetLastError=%d\n", GetLastError());
         return EXIT_FAILURE;
     }
 
@@ -2608,7 +2608,7 @@ wmain(
                          NULL );
 
     if (hDevice == INVALID_HANDLE_VALUE) {
-        WindowsPerfDbgPrint("Failed to open device. Error %d\n",GetLastError());
+        WindowsPerfDbgPrint("Error: Failed to open device. GetLastError=%d\n",GetLastError());
         return EXIT_FAILURE;
     }
 
@@ -2891,20 +2891,20 @@ GetDevicePath(
                 NULL,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
-        WindowsPerfDbgPrint("Error 0x%x retrieving device interface list size.\n", cr);
+        WindowsPerfDbgPrint("Error: 0x%x retrieving device interface list size.\n", cr);
         goto clean0;
     }
 
     if (deviceInterfaceListLength <= 1) {
         bRet = FALSE;
         WindowsPerfDbgPrint("Error: No active device interfaces found.\n"
-            " Is the sample driver loaded?");
+                            "       Is the sample driver loaded?");
         goto clean0;
     }
 
     deviceInterfaceList = (PWSTR)malloc(deviceInterfaceListLength * sizeof(WCHAR));
     if (deviceInterfaceList == NULL) {
-        WindowsPerfDbgPrint("Error allocating memory for device interface list.\n");
+        WindowsPerfDbgPrint("Error: Allocating memory for device interface list.\n");
         goto clean0;
     }
     ZeroMemory(deviceInterfaceList, deviceInterfaceListLength * sizeof(WCHAR));
@@ -2916,14 +2916,14 @@ GetDevicePath(
                 deviceInterfaceListLength,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
-        WindowsPerfDbgPrint("Error 0x%x retrieving device interface list.\n", cr);
+        WindowsPerfDbgPrint("Error: 0x%x retrieving device interface list.\n", cr);
         goto clean0;
     }
 
     nextInterface = deviceInterfaceList + wcslen(deviceInterfaceList) + 1;
     if (*nextInterface != UNICODE_NULL) {
         WindowsPerfDbgPrint("Warning: More than one device interface instance found. \n"
-            "Selecting first matching device.\n\n");
+                            "         Selecting first matching device.\n\n");
     }
 
     hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
