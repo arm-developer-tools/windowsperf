@@ -38,6 +38,8 @@
 #define ARMV8_PMCR_C            (1 << 2) /*  Cycle counter reset */
 #define ARMV8_PMCR_LC           (1 << 6) /*  Overflow on 64-bit cycle counter*/
 #define ARMV8_PMCR_LP           (1 << 7) /*  Long event counter enable */
+#define ARMV8_PMCR_N_SHIFT         0x0B  /*  The number of event counters implemented */
+#define ARMV8_PMCR_N_MASK          0x1F  
 #define	FILTER_EXCL_EL1	(1U << 31)
 #define ARMV8_EVTYPE_MASK   0xc800ffff  // Mask for writable bits
 

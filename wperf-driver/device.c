@@ -1528,7 +1528,7 @@ WindowsPerfDeviceCreate(
         CpuHasLongEventSupportSet(1);
 
     UINT32 pmcr = CorePmcrGet();
-    numGPC = (pmcr >> 11) & 0xf;
+    numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;
     WindowsPerfKdPrintInfo("%d general purpose hardware counters detected\n", numGPC);
 
     numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
