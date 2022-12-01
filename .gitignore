@@ -16,6 +16,9 @@ wperf/ARM64/*
 wperf/Debug/*
 wperf/x64/*
 
+# Release package directory
+release/
+
 # Unit test directory
 wperf-test/x64/*
 x64/*

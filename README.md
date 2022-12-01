@@ -114,6 +114,7 @@ Please note that for documentation generation you would need `Doxygen` installed
 | Rebuild `wperf-test` project | `> make wperf-test`  |
 | Rebuild `wperf`, `wperf-test` projects and run unit tests  | `> make test`  |
 | Solution clean up | `> make clean`  |
+| Create binary release packages | `> make release`  |
 | Remove all build directories (deep clean)  | `> make purge`  |
 
 # Reference

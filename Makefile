@@ -70,7 +70,7 @@
 #     make config=Release arch=x64 wperf-test
 #     make config=Debug arch=x64 wperf-test
 #
-# *** BUITDING UNIT TESTS ***
+# *** BUILDING UNIT TESTS ***
 #
 # Note: You can currently build unit tests only on x64 host!
 #
@@ -81,6 +81,10 @@
 #
 #     make wperf-test wperf-test-run                     (Default Debug/x64)
 #     make config=Release wperf-test wperf-test-run      (Release/x64)
+#
+# *** RELEASE BINARY PACKAGING ***
+#
+# Use `make config=Release release` to package `wperf` and `wperf-driver`.
 #
 
 # By default we build for ARM64 target. Define arch variable to change defalt
@@ -118,6 +122,14 @@ wperf-test-run:
 	vstest.console x64\$(make_config)\wperf-test.dll
 
 test: wperf-test wperf-test-run
+
+release:
+	mkdir release
+	tar zcf release/WinodwsPerf.tar.gz wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
+	tar acf release/WinodwsPerf.zip wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
+	tar jcf release/WinodwsPerf.tar.bz2 wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
+	tar Jcf release/WinodwsPerf.tar.xz wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
+	tar cf release/WinodwsPerf.tar wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
 
 clean:
 	devenv windowsperf.sln /Clean "$(make_config)|$(make_arch)" 2>&1
