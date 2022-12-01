@@ -2044,37 +2044,37 @@ public:
         };
 
         std::unique_ptr<agg_entry[]> overall_clk, overall_clkdiv2;
-        auto clkdiv2_events_num = clkdiv2_events.size();
-        auto clk_events_num = clk_events.size();
-        uint8_t ch_base, ch_end;
+        size_t clkdiv2_events_num = clkdiv2_events.size();
+        size_t clk_events_num = clk_events.size();
+        uint8_t ch_base = 0, ch_end = 0;
 
         if (dmc_idx == ALL_DMC_CHANNEL)
         {
             ch_base = 0;
             ch_end = (uint8_t)dmc_regions.size();
-
-            if (clk_events_num)
-            {
-                overall_clk = std::make_unique<agg_entry[]>(clk_events_num);
-                memset(overall_clk.get(), 0, sizeof(agg_entry)* clk_events_num);
-
-                for (uint32_t i = 0; i < clk_events_num; i++)
-                    overall_clk[i].event_idx = dmc_outs[ch_base].clk_events[i].event_idx;
-            }
-
-            if (clkdiv2_events_num)
-            {
-                overall_clkdiv2 = std::make_unique<agg_entry[]>(clkdiv2_events_num);
-                memset(overall_clkdiv2.get(), 0, sizeof(agg_entry)* clkdiv2_events_num);
-
-                for (uint32_t i = 0; i < clkdiv2_events_num; i++)
-                    overall_clkdiv2[i].event_idx = dmc_outs[ch_base].clkdiv2_events[i].event_idx;
-            }
         }
         else
         {
             ch_base = dmc_idx;
             ch_end = dmc_idx + 1;
+        }
+
+        if (clk_events_num)
+        {
+            overall_clk = std::make_unique<agg_entry[]>(clk_events_num);
+            memset(overall_clk.get(), 0, sizeof(agg_entry) * clk_events_num);
+
+            for (uint32_t i = 0; i < clk_events_num; i++)
+                overall_clk[i].event_idx = dmc_outs[ch_base].clk_events[i].event_idx;
+        }
+
+        if (clkdiv2_events_num)
+        {
+            overall_clkdiv2 = std::make_unique<agg_entry[]>(clkdiv2_events_num);
+            memset(overall_clkdiv2.get(), 0, sizeof(agg_entry) * clkdiv2_events_num);
+
+            for (uint32_t i = 0; i < clkdiv2_events_num; i++)
+                overall_clkdiv2[i].event_idx = dmc_outs[ch_base].clkdiv2_events[i].event_idx;
         }
 
         std::vector<std::wstring> col_pmu_id, col_counter_value, col_event_name,
@@ -2083,6 +2083,7 @@ public:
         for (uint32_t i = ch_base; i < ch_end; i++)
         {
             int32_t evt_num = dmc_outs[i].clk_events_num;
+
             struct pmu_event_usr* evts = dmc_outs[i].clk_events;
             for (int j = 0; j < evt_num; j++)
             {
@@ -2129,7 +2130,7 @@ public:
             }
         }
 
-        for (int j = 0; j < clk_events_num; j++)
+        for (size_t j = 0; j < clk_events_num; j++)
         {
             struct agg_entry* entry = overall_clk.get() + j;
             col_pmu_id.push_back(L"overall");
@@ -2139,7 +2140,7 @@ public:
             col_event_note.push_back(clk_events[j].note);
         }
 
-        for (int j = 0; j < clkdiv2_events_num; j++)
+        for (size_t j = 0; j < clkdiv2_events_num; j++)
         {
             struct agg_entry* entry = overall_clkdiv2.get() + j;
             col_pmu_id.push_back(L"overall");
@@ -2152,7 +2153,6 @@ public:
         if (!timeline_mode)
         {
             std::wcout << std::endl;
-
             PrettyTable ptable;
             ptable.AddColumn(L"pmu id", col_pmu_id);
             ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
