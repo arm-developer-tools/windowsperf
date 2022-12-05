@@ -1316,7 +1316,8 @@ NTSTATUS deviceControl(
 VOID WindowsPerfDeviceUnload()
 {
     free_pmu_resource();
-    ExFreePoolWithTag(core_info, 'CORE');
+    if (core_info)
+        ExFreePoolWithTag(core_info, 'CORE');
 
     if (dmc_array.dmcs)
     {
