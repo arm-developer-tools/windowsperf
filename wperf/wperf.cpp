@@ -271,7 +271,7 @@ class user_request
 {
 public:
     user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
-        do_sample(false), do_version(false), do_verbose(false),
+        do_sample(false), do_version(false), do_verbose(false), do_test(false),
         do_help(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
         count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
 
@@ -505,6 +505,12 @@ public:
                 continue;
             }
 
+            if (a == L"test")
+            {
+                do_test = true;
+                continue;
+            }
+
             std::wcout << L"warning: unexpected arg '" << a << L"' ignored\n";
         }
 
@@ -656,6 +662,7 @@ public:
     bool do_version;
     bool do_verbose;
     bool do_help;
+    bool do_test;
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;
     std::vector<uint8_t> cores_idx;
@@ -2249,6 +2256,74 @@ public:
         }
     }
 
+    void do_test(uint32_t enable_bits)
+    {
+        PrettyTable ptable;
+        std::vector<std::wstring> col_test_name, col_test_result;
+
+        // Tests for request.ioctl_events
+        col_test_name.push_back(L"request.ioctl_events [EVT_CORE]");
+        col_test_result.push_back(enable_bits & CTL_FLAG_CORE ? L"True" : L"False");
+        col_test_name.push_back(L"request.ioctl_events [EVT_DSU]");
+        col_test_result.push_back(enable_bits & CTL_FLAG_DSU ? L"True" : L"False");
+        col_test_name.push_back(L"request.ioctl_events [EVT_DMC_CLK/EVT_DMC_CLKDIV2]");
+        col_test_result.push_back(enable_bits & CTL_FLAG_DMC ? L"True" : L"False");
+
+        // Test for pmu_device.vendor_name
+        col_test_name.push_back(L"pmu_device.vendor_name");
+        col_test_result.push_back(vendor_name);
+
+        // Tests for pmu_device.events_query(events)
+        std::map<enum evt_class, std::vector<uint16_t>> events;
+        events_query(events);
+        col_test_name.push_back(L"pmu_device.events_query(events) [EVT_CORE]");
+        if (events.count(EVT_CORE))
+            col_test_result.push_back(std::to_wstring(events[EVT_CORE].size()));
+        else
+            col_test_result.push_back(L"0");
+        col_test_name.push_back(L"pmu_device.events_query(events) [EVT_DSU]");
+        if (events.count(EVT_DSU))
+            col_test_result.push_back(std::to_wstring(events[EVT_DSU].size()));
+        else
+            col_test_result.push_back(L"0");
+        col_test_name.push_back(L"pmu_device.events_query(events) [EVT_DMC_CLK]");
+        if (events.count(EVT_DMC_CLK))
+            col_test_result.push_back(std::to_wstring(events[EVT_DMC_CLK].size()));
+        else
+            col_test_result.push_back(L"0");
+        col_test_name.push_back(L"pmu_device.events_query(events) [EVT_DMC_CLKDIV2]");
+        if (events.count(EVT_DMC_CLKDIV2))
+            col_test_result.push_back(std::to_wstring(events[EVT_DMC_CLKDIV2].size()));
+        else
+            col_test_result.push_back(L"0");
+
+        // Tests for PMU_CTL_QUERY_HW_CFG
+        struct hw_cfg hw_cfg;
+        query_hw_cfg(hw_cfg);
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [arch_id]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.arch_id));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [core_num]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.core_num));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [fpc_num]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.fpc_num));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [gpc_num]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.gpc_num));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [part_id]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.part_id));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [pmu_ver]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.pmu_ver));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [rev_id]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.rev_id));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [variant_id]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.variant_id));
+        col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [vendor_id]");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.vendor_id));
+
+        ptable.AddColumn(L"Test Name", col_test_name);
+        ptable.AddColumn(L"Result", col_test_result);
+        ptable.Print();
+    }
+
     uint8_t core_num;
     std::map<std::wstring, metric_desc> builtin_metrics;
     bool has_dsu;
@@ -2683,6 +2758,12 @@ wmain(
         std::wcerr << L"wperf version: " << MAJOR << "." << MINOR << "."
                    << PATCH << "\n";
         exit_code = EXIT_FAILURE;
+        goto clean_exit;
+    }
+
+    if (request.do_test)
+    {
+        pmu_device.do_test(enable_bits);
         goto clean_exit;
     }
 
