@@ -21,31 +21,34 @@ You can build `wperf` project from command line:
 
 # Usage of wperf
 ```
-  > wperf [options]
+> wperf -h
 
-Options:
-  list                   List supported events and metrics
-  stat                   Count events. If -e is not specified, then count default events
-  -e e1,e2...            Specify events to count. Event eN could be a symbolic name or in raw number.
-                         Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
-                         XXXX is hex value of the number without '0x' prefix
-  -m m1,m2...            Specify metrics to count. "imix", "icache", "dcache", "itlb", "dtlb" supported
-  -d N                   Specify counting duration (in s). The accuracy is 0.1s
-  sleep N                Like -d, for compatability with Linux perf
-  -i N                   Specify counting interval (in s). To be used with -t
-  -t                     Enable timeline mode. It specifies -i 60 -d 1 implicitly.
-                         Means counting 1 second after every 60 second, and the result
-                         is in .csv file in the same folder where wperf is invoked.
-                         You can use -i and -d to change counting duration and interval.
-  -C config_file         Provide customized config file which describes metrics etc.
-  -c core_idx            Profile on the specified core
-                         CORE_INDEX could be a number or 'ALL' (default if -c not specified)
-  -k                     Count kernel model as well (disabled at default)
-  -h                     Show tool help
-  -l                     Alias of 'list'
-  -verbose               Enable verbose output
-  -v                     Alias of '-verbose'
-  -version               Show tool version
+usage: wperf [options]
+
+    Options:
+    list              List supported events and metrics.
+    stat              Count events.If - e is not specified, then count default events.
+    -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
+                      Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
+                      XXXX is hex value of the number without '0x' prefix.
+    -m m1, m2...      Specify metrics to count. \"imix\", \"icache\", \"dcache\", \"itlb\", \"dtlb\" supported.
+    -d N              Specify counting duration(in s).The accuracy is 0.1s.
+    sleep N           Like -d, for compatibility with Linux perf.
+    -i N              Specify counting interval(in s).To be used with -t.
+    -t                Enable timeline mode.It specifies -i 60 -d 1 implicitly.
+                      Means counting 1 second after every 60 second, and the result
+                      is in.csv file in the same folder where wperf is invoked.
+                      You can use -i and -d to change counting duration and interval.
+    -C config_file    Provide customized config file which describes metrics etc.
+    -c core_idx       Profile on the specified core. Skip -c to count on all cores.
+    -c cpu_list       Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
+    -dmc dmc_idx      Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
+    -k                Count kernel model as well (disabled by default).
+    -h                Show tool help.
+    -l                Alias of 'list'.
+    -verbose          Enable verbose output.
+    -v                Alias of '-verbose'.
+    -version          Show tool version.
 ```
 
 # Examples

@@ -2615,8 +2615,7 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
 static void print_help()
 {
     const wchar_t* wsHelp = LR"(
-Usage:
-wperf[options]
+usage: wperf [options]
 
     Options:
     list              List supported events and metrics.
