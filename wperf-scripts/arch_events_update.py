@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""this script prompts a user to merge the pmu events stored in \
+   https://github.com/ARM-software/data/blob/master/pmu/ to a file by cpu """
 
 # BSD 3-Clause License
 #
@@ -36,102 +38,111 @@ import urllib.error
 import socket
 import re
 import os
-import wget
 import tempfile
 import argparse
 import json
-import shutil
+import wget
 
-url = "https://github.com/ARM-software/data/blob/master/pmu/"
-url_raw = "https://raw.githubusercontent.com/ARM-software/data/master/pmu/"
 
-class arch_events_update:
+
+
+URL = "https://github.com/ARM-software/data/blob/master/pmu/"
+URL_RAW = "https://raw.githubusercontent.com/ARM-software/data/master/pmu/"
+
+class ArchEventsUpdate:
+    """update the pmu events into a new file"""
     wperf_arch_events = "WPERF_ARMV8_ARCH_EVENTS"
     tempdir = ""
 
     def __init__(self, argv):
         self.tempdir = tempfile.gettempdir() + "/"
-        if argv.list_cpu == True:
+        if argv.list_cpu is True:
             self.list_cpu()
 
-        if argv.cpu != None:
+        if argv.cpu is not None:
             self.update(argv)
 
     def list_cpu(self):
+        """get all cpus from URL"""
         target_file = self.tempdir + "temp"
-        self.get_webpage(url, target_file)
-        f = open(target_file,"r",encoding='utf-8')
-        content = f.read()
-        cpus = re.findall('(?<=title=").*(?=.json" )',content)
-        for item in cpus:
-            print(item)
-        f.close()
+        self.get_webpage(URL, target_file)
+        with open(target_file,"r",encoding='utf-8') as fhandle:
+            content = fhandle.read()
+            cpus = re.findall('(?<=title=").*(?=.json" )',content)
+            for item in cpus:
+                print(item)
 
+    def parse_jsonfile(self, json_file):
+        """parse pmu events in jsonfile to local"""
+        line_output = ""
+        with open(json_file,"r",encoding='utf-8') as fjson:
+            data = json.load(fjson)
+            for event in data['events']:
+                line_output = line_output + (self.wperf_arch_events + "(" \
+                    + (event['name'] + ',').ljust(50,' ')  \
+                    + '0x' + (hex(int(event['code']))[2:]).rjust(4,'0') \
+                    + ', \"' + event['name'].lower() + '\")\n')
+        return line_output
 
 
     def update(self,argv):
-        url_temp = url_raw + argv.cpu + '.json'
+        """update the pmu events info from URL_RAM by core"""
+        url_temp = URL_RAW + argv.cpu + '.json'
         target_file = self.get_webfile(url_temp)
-
-        if argv.output != None:
-            foutput = open(argv.output, 'w')
-            if argv.license != None:
-                self.add_license(argv.license,foutput)
-
-        with open(target_file,"r",encoding='utf-8') as f:
-            data = json.load(f)
-            for event in data['events']:
-                line_output = (self.wperf_arch_events + "(" + (event['name'] + ',').ljust(50,' ')  \
-                    + '0x' + (hex(int(event['code']))[2:]).rjust(4,'0') \
-                    + ', \"' + event['name'].lower() + '\")\n')
-
-                if argv.output != None:
-                    foutput.write(line_output)
-                    continue
-                print(line_output,end="")
-
+        lines = self.parse_jsonfile(target_file)
         os.remove(target_file)
-        if argv.output != None:
-            foutput.close()
+
+        if argv.output is not None:
+            with open(argv.output, 'w',encoding='utf-8') as foutput:
+                if argv.license is not None:
+                    self.add_license(argv.license,foutput)
+                foutput.write(lines)
+        else:
+            for i in lines:
+                print(i,end="")
 
 
-    def add_license(self, license_file, f):
-        with open(license_file,"r") as file:
+    def add_license(self, license_file, ftarget):
+        """add license to the file header"""
+        with open(license_file,"r",encoding='utf-8') as file:
             for line in file.readlines():
                 line = "// " + line
-                f.write(line)
-            f.write("\n")
+                ftarget.write(line)
+            ftarget.write("\n")
 
 
     def get_webpage(self, url_temp,target_file):
+        """get info from a webpage"""
         try:
             request.urlretrieve(url_temp, target_file)
         except (socket.gaierror, urllib.error.URLError):
-            print("Some error happen! May be the network instability, Please check it and try again!")
+            print("Some error happen! May be the network instability, \
+                  Please check it and try again!")
             sys.exit()
 
     def get_webfile(self,url_temp):
+        """get a webfile from a url"""
         try:
             file_name = wget.download(url_temp,bar=None)
-        except:
-            print("Some error happen! May be the network instability, Please check it and try again!")
+        except (socket.gaierror, urllib.error.URLError):
+            print("Some error happen! May be the network instability, \
+                  Please check it and try again!")
             sys.exit()
         return file_name
 
 
 def main(argv):
-    update_class = arch_events_update(argv)
+    """the entry for arch events update"""
+    ArchEventsUpdate(argv)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="update the cpu's pmu events file!")
-    parser.add_argument("-l","--list_cpu", action = "store_true", help="list all cpus in " + url)
+    parser.add_argument("-l","--list_cpu", action = "store_true", help="list all cpus in " + URL)
     parser.add_argument("-c","--cpu", type=str,help="cpu type that to update")
     parser.add_argument("-o","--output", type=str,help="pmu events file for wperf")
     parser.add_argument("--license", type=str,help="license file added to the script header")
-    argv = parser.parse_args()
-    if argv.list_cpu == False and argv.cpu == None:
+    args = parser.parse_args()
+    if args.list_cpu is False and args.cpu is None:
         parser.print_help()
         sys.exit()
-    main(argv)
-
-
+    main(args)
