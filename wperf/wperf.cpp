@@ -1043,9 +1043,10 @@ public:
         timeline_mode = timeline_mode_init;
         enc_bits = enable_bits;
 
-        // Gather all DSU numbers for specified core in set of unique DSU numbers
-        for (uint32_t i : cores_idx)
-            dsu_cores.insert(i / dsu_cluster_size);
+        if (has_dsu)
+            // Gather all DSU numbers for specified core in set of unique DSU numbers
+            for (uint32_t i : cores_idx)
+                dsu_cores.insert(i / dsu_cluster_size);
 
         if (!timeline_mode_init)
             return;

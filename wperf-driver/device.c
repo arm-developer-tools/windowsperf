@@ -587,15 +587,19 @@ NTSTATUS deviceControl(
         for (auto k = 0; k < cores_count; k++)
         {
             int i = ctl_req->cores_idx.cores_no[k];
-            int cluster_no = i / dsu_sizeCluster;
             VOID(*dsu_func2)(VOID) = dsu_func;
 
-            // This works only if ctl_req->cores_idx.cores_no[] is sorted
-            // We will only cofigure one core in cluster with per_core_exec
-            if (last_cluster != cluster_no)
-                last_cluster = cluster_no;
-            else
-                dsu_func2 = NULL;
+            if (ctl_flags & CTL_FLAG_DSU)
+            {
+                int cluster_no = i / dsu_sizeCluster;
+
+                // This works only if ctl_req->cores_idx.cores_no[] is sorted
+                // We will only cofigure one core in cluster with per_core_exec
+                if (last_cluster != cluster_no)
+                    last_cluster = cluster_no;
+                else
+                    dsu_func2 = NULL;
+            }
 
             if (core_func || dsu_func2)
                 per_core_exec(i, core_func, dsu_func2);
