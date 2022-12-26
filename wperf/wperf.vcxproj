@@ -264,7 +264,6 @@
     </DriverSign>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="prettytable.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="wperf.cpp" />
   </ItemGroup>

@@ -43,11 +43,13 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <numeric>
 #include "wperf.h"
 #include "debug.h"
-#include "prettytable.h"
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
 #include "utils.h"
+#include "output.h"
+
+using namespace WPerfOutput;
 
 //
 // Port start
@@ -284,6 +286,7 @@ public:
         bool waiting_duration = false;
         bool waiting_interval = false;
         bool waiting_config = false;
+        bool waiting_filename = false;
         std::map<enum evt_class, std::deque<struct evt_noted>> events;
         std::map<enum evt_class, std::vector<struct evt_noted>> groups;
 
@@ -332,6 +335,14 @@ public:
                 continue;
             }
 
+            if (waiting_filename)
+            {
+                waiting_filename = false;
+                m_out.m_filename = a;
+                m_out.m_shouldWriteToFile = true;
+                continue;
+            }
+
             if (waiting_metrics)
             {
                 std::wistringstream metric_stream(a);
@@ -341,16 +352,16 @@ public:
                 {
                     if (metrics.find(metric) == metrics.end())
                     {
-                        std::wcerr << L"metric '" << metric << "' not supported" << std::endl;
+                        m_out.GetErrorOutputStream() << L"metric '" << metric << "' not supported" << std::endl;
                         if (metrics.size())
                         {
-                            std::wcerr << L"supported metrics:" << std::endl;
+                            m_out.GetErrorOutputStream() << L"supported metrics:" << std::endl;
                             for (const auto& [key, value] : metrics)
-                                std::wcerr << L"  " << key << std::endl;
+                                m_out.GetErrorOutputStream() << L"  " << key << std::endl;
                         }
                         else
                         {
-                            std::wcerr << L"no metric registered" << std::endl;
+                            m_out.GetErrorOutputStream() << L"no metric registered" << std::endl;
                         }
 
                         throw fatal_exception("ERROR_METRIC");
@@ -376,16 +387,16 @@ public:
             {
                 if (TokenizeWideStringOfInts(a.c_str(), L',', cores_idx) == false)
                 {
-                    std::wcerr << L"option -c format not supported, use comma separated list of integers"
-                               << std::endl;
+                    m_out.GetErrorOutputStream() << L"option -c format not supported, use comma separated list of integers"
+                                                 << std::endl;
                     throw fatal_exception("ERROR_CORES");
                 }
 
                 if (cores_idx.size() > MAX_PMU_CTL_CORES_COUNT)
                 {
-                    std::wcerr << L"you can specify up to " << int(MAX_PMU_CTL_CORES_COUNT)
-                               << L"cores with -c <cpu_list> option"
-                               << std::endl;
+                    m_out.GetErrorOutputStream() << L"you can specify up to " << int(MAX_PMU_CTL_CORES_COUNT)
+                                                 << L"cores with -c <cpu_list> option"
+                                                 << std::endl;
                     throw fatal_exception("ERROR_CORES");
                 }
 
@@ -453,6 +464,13 @@ public:
                 continue;
             }
 
+            if (a == L"--output")
+            {
+                waiting_filename = true;
+                m_outputType = TableOutputL::ALL;
+                continue;
+            }
+
             if (a == L"-k")
             {
                 do_kernel = true;
@@ -505,18 +523,31 @@ public:
                 continue;
             }
 
+            if (a == L"-q")
+            {
+                m_out.m_isQuiet = true;
+                continue;
+            }
+
+            if (a == L"-json")
+            {
+                if(m_outputType != TableOutputL::ALL)
+                    m_outputType = TableOutputL::JSON;
+                continue;
+            }
+
             if (a == L"test")
             {
                 do_test = true;
                 continue;
             }
 
-            std::wcout << L"warning: unexpected arg '" << a << L"' ignored\n";
+            m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
         }
 
         for (uint32_t core_idx : cores_idx)
             if (core_idx >= core_num) {
-                std::wcerr << L"core index " << core_idx << L" not allowed. Use 0-" << (core_num - 1)
+                m_out.GetErrorOutputStream() << L"core index " << core_idx << L" not allowed. Use 0-" << (core_num - 1)
                     << L", see option -c <n>" << std::endl;
                 throw fatal_exception("ERROR_CORES");
             }
@@ -577,14 +608,14 @@ public:
 
     void show_events()
     {
-        std::wcout << L"events to be counted:" << std::endl;
+        m_out.GetOutputStream() << L"events to be counted:" << std::endl;
 
         for (auto a : ioctl_events)
         {
-            std::wcout << L"  " << std::setw(18) << evt_class_name[a.first] << L":";
+            m_out.GetOutputStream() << L"  " << std::setw(18) << evt_class_name[a.first] << L":";
             for (auto b : a.second)
-                std::wcout << L" " << IntToHexWideString(b.index);
-            std::wcout << std::endl;
+                m_out.GetOutputStream() << L" " << IntToHexWideString(b.index);
+            m_out.GetOutputStream() << std::endl;
         }
     }
 
@@ -613,7 +644,7 @@ public:
 
         if (!config_file.is_open())
         {
-            std::wcerr << L"open config file '" << config_name << "' failed" << std::endl;
+            m_out.GetErrorOutputStream() << L"open config file '" << config_name << "' failed" << std::endl;
             throw fatal_exception("ERROR_CONFIG_FILE");
         }
 
@@ -643,7 +674,7 @@ public:
                 }
                 else
                 {
-                    std::wcerr << L"unrecognized config component '"
+                    m_out.GetErrorOutputStream() << L"unrecognized config component '"
                         << component << L"'" << std::endl;
                     throw fatal_exception("ERROR_CONFIG_COMPONENT");
                 }
@@ -734,7 +765,7 @@ public:
                 {
                     if (group_size)
                     {
-                        std::wcerr << L"nested group is not supported " << event << std::endl;
+                        m_out.GetErrorOutputStream() << L"nested group is not supported " << event << std::endl;
                         throw fatal_exception("ERROR_UNSUPPORTED");
                     }
 
@@ -760,7 +791,7 @@ public:
 
                         if (idx < 0)
                         {
-                            std::wcerr << L"unknown event name: " << strip_str << std::endl;
+                            m_out.GetErrorOutputStream() << L"unknown event name: " << strip_str << std::endl;
                             throw fatal_exception("ERROR_EVENT");
                         }
 
@@ -771,7 +802,7 @@ public:
                 {
                     if (!group_size)
                     {
-                        std::wcerr << L"missing '{' for event group " << event << std::endl;
+                        m_out.GetErrorOutputStream() << L"missing '{' for event group " << event << std::endl;
                         throw fatal_exception("ERROR_EVENT");
                     }
 
@@ -791,7 +822,7 @@ public:
 
                         if (idx < 0)
                         {
-                            std::wcerr << L"unknown event name: " << event << std::endl;
+                            m_out.GetErrorOutputStream() << L"unknown event name: " << event << std::endl;
                             throw fatal_exception("ERROR_EVENT");
                         }
 
@@ -806,7 +837,7 @@ public:
 
                     if (idx < 0)
                     {
-                        std::wcerr << L"unknown event name: " << event << std::endl;
+                        m_out.GetErrorOutputStream() << L"unknown event name: " << event << std::endl;
                         throw fatal_exception("ERROR_EVENT");
                     }
 
@@ -826,7 +857,7 @@ public:
                 {
                     if (group_size > gpc_nums[e_class])
                     {
-                        std::wcerr << L"event group size(" << group_size
+                        m_out.GetErrorOutputStream() << L"event group size(" << group_size
                             << ") exceeds number of hardware PMU counter("
                             << gpc_nums[e_class] << ")" << std::endl;
                         throw fatal_exception("ERROR_GROUP");
@@ -969,13 +1000,13 @@ public:
             BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
             if (!status)
             {
-                std::wcerr << L"DSU_CTL_INIT failed" << std::endl;
+                m_out.GetErrorOutputStream() << L"DSU_CTL_INIT failed" << std::endl;
                 throw fatal_exception("ERROR_PMU_INIT");
             }
 
             if (res_len != sizeof(struct dsu_cfg))
             {
-                std::wcerr << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
+                m_out.GetErrorOutputStream() << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
                 throw fatal_exception("ERROR_PMU_INIT");
             }
 
@@ -1011,7 +1042,7 @@ public:
             BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
             if (!status)
             {
-                std::wcerr << L"DMC_CTL_INIT failed" << std::endl;
+                m_out.GetErrorOutputStream() << L"DMC_CTL_INIT failed" << std::endl;
                 throw fatal_exception("ERROR_PMU_INIT");
             }
 
@@ -1482,14 +1513,14 @@ public:
         {
             if (!timeline_mode)
             {
-                std::wcout << std::endl
+                m_out.GetOutputStream() << std::endl
                            << L"Performance counter stats for core " << std::dec << i
                            << (multiplexing ? L", multiplexed" : L", no multiplexing")
                            << (count_kernel ? L", kernel mode excluded" : L", kernel mode included")
                            << L", on " << vendor_name << L" core implementation:"
                            << std::endl;
 
-                std::wcout << L"note: 'e' - normal event, 'gN' - grouped event with group number N, "
+                m_out.GetOutputStream() << L"note: 'e' - normal event, 'gN' - grouped event with group number N, "
                               L"metric name will be appended if 'e' or 'g' comes from it"
                               << std::endl
                               << std::endl;
@@ -1569,26 +1600,26 @@ public:
             }
 
             if (!timeline_mode) {
-                PrettyTable ptable;
+                TableOutputL table(m_outputType);
 
                 if (multiplexing)
                 {
-                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"event name", col_event_name);
-                    ptable.AddColumn(L"event idx", col_event_idx);
-                    ptable.AddColumn(L"event note", col_event_note);
-                    ptable.AddColumn(L"multiplexed", col_multiplexed, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+                    table.PresetHeaders<PerformanceCounterOutputTraitsL<true>>();
+                    table.SetAlignment(0, ColumnAlignL::RIGHT);
+                    table.SetAlignment(4, ColumnAlignL::RIGHT);
+                    table.SetAlignment(5, ColumnAlignL::RIGHT);
+                    table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note, col_multiplexed, col_scaled_value);
                 }
                 else
                 {
-                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"event name", col_event_name);
-                    ptable.AddColumn(L"event idx", col_event_idx);
-                    ptable.AddColumn(L"event note", col_event_note);
+                    table.PresetHeaders<PerformanceCounterOutputTraitsL<false>>();
+                    table.SetAlignment(0, ColumnAlignL::RIGHT);
+                    table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note);
                 }
 
-                ptable.Print();
+                m_out.Print(table);
+                table.m_core = GlobalStringType(std::to_wstring(i));
+                m_globalJSON.m_corePerformanceTables.push_back(table);
             }
         }
 
@@ -1601,8 +1632,8 @@ public:
         if (timeline_mode)
             return;
 
-        std::wcout << std::endl
-                   << L"System-wide Overall:" << std::endl;
+        m_out.GetOutputStream() << std::endl
+                << L"System-wide Overall:" << std::endl;
 
         std::vector<std::wstring> col_counter_value, col_event_idx, col_event_name,
                                   col_scaled_value, col_event_note;
@@ -1651,23 +1682,22 @@ public:
 
         // Print System-wide Overall
         {
-            PrettyTable ptable;
+            TableOutputL table(m_outputType);
             if (multiplexing)
             {
-                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                ptable.AddColumn(L"event name", col_event_name);
-                ptable.AddColumn(L"event idx", col_event_idx);
-                ptable.AddColumn(L"event note", col_event_note);
-                ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+                table.PresetHeaders<SystemwidePerformanceCounterOutputTraitsL<true>>();
+                table.SetAlignment(0, ColumnAlignL::RIGHT);
+                table.SetAlignment(4, ColumnAlignL::RIGHT);
+                table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note, col_scaled_value);
             }
             else {
-                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                ptable.AddColumn(L"event name", col_event_name);
-                ptable.AddColumn(L"event idx", col_event_idx);
-                ptable.AddColumn(L"event note", col_event_note);
+                table.PresetHeaders<SystemwidePerformanceCounterOutputTraitsL<false>>();
+                table.SetAlignment(0, ColumnAlignL::RIGHT);
+                table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note);
             }
 
-            ptable.Print();
+            m_out.Print(table);
+            m_globalJSON.m_coreOverall = table;
         }
     }
 
@@ -1711,7 +1741,7 @@ public:
         {
             if (!timeline_mode)
             {
-                std::wcout << std::endl
+                m_out.GetOutputStream() << std::endl
                            << L"Performance counter stats for DSU cluster "
                            << dsu_core
                            << (multiplexing ? L", multiplexed" : L", no multiplexing")
@@ -1719,7 +1749,7 @@ public:
                            << L" core implementation:"
                            << std::endl;
 
-                std::wcout << L"note: 'e' - normal event, 'gN' - grouped event with group number N, "
+                m_out.GetOutputStream() << L"note: 'e' - normal event, 'gN' - grouped event with group number N, "
                               L"metric name will be appended if 'e' or 'g' comes from it"
                               << std::endl
                               << std::endl;
@@ -1802,25 +1832,28 @@ public:
 
             // Print performance counter stats for DSU cluster
             {
-                PrettyTable ptable;
+                TableOutputL table(m_outputType);
+
                 if (multiplexing)
                 {
-                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"event name", col_event_name);
-                    ptable.AddColumn(L"event idx", col_event_idx);
-                    ptable.AddColumn(L"event note", col_event_note);
-                    ptable.AddColumn(L"multiplexed", col_multiplexed, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+                    table.PresetHeaders<PerformanceCounterOutputTraitsL<true>>();
+                    table.SetAlignment(0, ColumnAlignL::RIGHT);
+                    table.SetAlignment(4, ColumnAlignL::RIGHT);
+                    table.SetAlignment(5, ColumnAlignL::RIGHT);
+                    table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note, col_multiplexed, col_scaled_value);
                 }
                 else
                 {
-                    ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"event name", col_event_name);
-                    ptable.AddColumn(L"event idx", col_event_idx);
-                    ptable.AddColumn(L"event note", col_event_note);
+                    table.PresetHeaders<PerformanceCounterOutputTraitsL<false>>();
+                    table.SetAlignment(0, ColumnAlignL::RIGHT);
+                    table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note);
                 }
 
-                ptable.Print();
+                table.m_core = GlobalStringType(std::to_wstring(dsu_core));
+                m_globalJSON.m_DSUPerformanceTables.push_back(table);
+
+                m_out.Print(table);
+
             }
         }
 
@@ -1831,7 +1864,7 @@ public:
         {
             if (!timeline_mode && report_l3_metric)
             {
-                std::wcout << std::endl
+                m_out.GetOutputStream() << std::endl
                            << L"L3 cache metrics:" << std::endl;
 
                 std::vector<std::wstring> col_cluster, col_cores, col_read_bandwith, col_miss_rate;
@@ -1876,12 +1909,15 @@ public:
                 }
 
                 {
-                    PrettyTable ptable;
-                    ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"cores", col_cores, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
-                    ptable.AddColumn(L"miss_rate", col_miss_rate, PrettyTable::RIGHT);
-                    ptable.Print();
+                    TableOutputL table(m_outputType);
+                    table.PresetHeaders<L3CacheMetricOutputTraitsL>();
+                    table.SetAlignment(0, ColumnAlignL::RIGHT);
+                    table.SetAlignment(1, ColumnAlignL::RIGHT);
+                    table.SetAlignment(2, ColumnAlignL::RIGHT);
+                    table.SetAlignment(3, ColumnAlignL::RIGHT);
+                    table.Insert(col_cluster, col_cores, col_read_bandwith, col_miss_rate);
+                    m_globalJSON.m_DSUL3metric = table;
+                    m_out.Print(table);
                 }
             }
 
@@ -1891,9 +1927,9 @@ public:
         if (timeline_mode)
             return;
 
-        std::wcout << std::endl;
+        m_out.GetOutputStream() << std::endl;
 
-        std::wcout << L"System-wide Overall:" << std::endl;
+        m_out.GetOutputStream() << L"System-wide Overall:" << std::endl;
 
         uint32_t dsu_core_0 = *(dsu_cores.begin());
         UINT32 evt_num = dsu_outs[dsu_core_0].evt_num;
@@ -1942,28 +1978,27 @@ public:
         }
 
         {
-            PrettyTable ptable;
+            TableOutputL table(m_outputType);
             if (multiplexing)
             {
-                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                ptable.AddColumn(L"event name", col_event_name);
-                ptable.AddColumn(L"event idx", col_event_idx);
-                ptable.AddColumn(L"event note", col_event_note);
-                ptable.AddColumn(L"scaled value", col_scaled_value, PrettyTable::RIGHT);
+                table.PresetHeaders<SystemwidePerformanceCounterOutputTraitsL<true>>();
+                table.SetAlignment(0, ColumnAlignL::RIGHT);
+                table.SetAlignment(4, ColumnAlignL::RIGHT);
+                table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note, col_scaled_value);
             }
-            else
-            {
-                ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-                ptable.AddColumn(L"event name", col_event_name);
-                ptable.AddColumn(L"event idx", col_event_idx);
-                ptable.AddColumn(L"event note", col_event_note, PrettyTable::RIGHT);
+            else {
+                table.PresetHeaders<SystemwidePerformanceCounterOutputTraitsL<false>>();
+                table.SetAlignment(0, ColumnAlignL::RIGHT);
+                table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note);
             }
-            ptable.Print();
+
+            m_globalJSON.m_DSUOverall = table;
+            m_out.Print(table);
         }
 
         if (report_l3_metric)
         {
-            std::wcout << std::endl
+            m_out.GetOutputStream() << std::endl
                        << L"L3 cache metrics:" << std::endl;
 
             std::vector<std::wstring> col_cluster, col_cores, col_read_bandwith, col_miss_rate;
@@ -2033,12 +2068,15 @@ public:
             col_miss_rate.push_back(DoubleToWideString(((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100) + L"%");
 
             {
-                PrettyTable ptable;
-                ptable.AddColumn(L"cluster", col_cluster, PrettyTable::RIGHT);
-                ptable.AddColumn(L"cores", col_cores, PrettyTable::RIGHT);
-                ptable.AddColumn(L"read_bandwidth", col_read_bandwith, PrettyTable::RIGHT);
-                ptable.AddColumn(L"miss_rate", col_miss_rate, PrettyTable::RIGHT);
-                ptable.Print();
+                TableOutputL table(m_outputType);
+                table.PresetHeaders<L3CacheMetricOutputTraitsL>();
+                table.SetAlignment(0, ColumnAlignL::RIGHT);
+                table.SetAlignment(1, ColumnAlignL::RIGHT);
+                table.SetAlignment(2, ColumnAlignL::RIGHT);
+                table.SetAlignment(3, ColumnAlignL::RIGHT);
+                table.Insert(col_cluster, col_cores, col_read_bandwith, col_miss_rate);
+                m_globalJSON.m_DSUL3metric = table;
+                m_out.Print(table);
             }
         }
     }
@@ -2160,14 +2198,16 @@ public:
 
         if (!timeline_mode)
         {
-            std::wcout << std::endl;
-            PrettyTable ptable;
-            ptable.AddColumn(L"pmu id", col_pmu_id);
-            ptable.AddColumn(L"counter value", col_counter_value, PrettyTable::RIGHT);
-            ptable.AddColumn(L"event name", col_event_name);
-            ptable.AddColumn(L"event idx", col_event_idx);
-            ptable.AddColumn(L"event note", col_event_note);
-            ptable.Print();
+            m_out.GetOutputStream() << std::endl;
+
+            TableOutputL table(m_outputType);
+            table.PresetHeaders<PMUPerformanceCounterOutputTraitsL>();
+            table.SetAlignment(1, ColumnAlignL::RIGHT);
+            table.Insert(col_pmu_id, col_counter_value, col_event_name, col_event_idx, col_event_note);
+
+            m_globalJSON.m_pmu = table;
+            m_out.Print(table);
+
         }
 
         if (timeline_mode)
@@ -2184,7 +2224,7 @@ public:
             {
                 std::vector<std::wstring> col_channel, col_rw_bandwidth;
 
-                std::wcout << std::endl
+                m_out.GetOutputStream() << std::endl
                            << L"ddr metrics:" << std::endl;
 
                 for (uint32_t i = ch_base; i < ch_end; i++)
@@ -2203,10 +2243,15 @@ public:
                     col_rw_bandwidth.push_back(DoubleToWideString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
                 }
 
-                PrettyTable ptable;
-                ptable.AddColumn(L"channel", col_channel, PrettyTable::RIGHT);
-                ptable.AddColumn(L"rw_bandwidth", col_rw_bandwidth, PrettyTable::RIGHT);
-                ptable.Print();
+                TableOutputL table(m_outputType);
+                table.PresetHeaders<DDRMetricOutputTraitsL>();
+                table.SetAlignment(0, ColumnAlignL::RIGHT);
+                table.SetAlignment(1, ColumnAlignL::RIGHT);
+                table.Insert(col_channel, col_rw_bandwidth);
+
+                m_globalJSON.m_DMCDDDR = table;
+                m_out.Print(table);
+
             }
             return;
         }
@@ -2216,7 +2261,7 @@ public:
 
         if (report_ddr_bw_metric)
         {
-            std::wcout << std::endl
+            m_out.GetOutputStream() << std::endl
                        << L"ddr metrics:" << std::endl;
 
             std::vector<std::wstring> col_channel, col_rw_bandwidth;
@@ -2250,16 +2295,20 @@ public:
             col_channel.push_back(L"all");
             col_rw_bandwidth.push_back(DoubleToWideString(((double)(ddr_rd_num * 128)) / 1000.0 / 1000.0) + L"MB");
 
-            PrettyTable ptable;
-            ptable.AddColumn(L"channel", col_channel, PrettyTable::RIGHT);
-            ptable.AddColumn(L"rw_bandwidth", col_rw_bandwidth, PrettyTable::RIGHT);
-            ptable.Print();
+            TableOutputL table(m_outputType);
+            table.PresetHeaders<DDRMetricOutputTraitsL>();
+            table.SetAlignment(0, ColumnAlignL::RIGHT);
+            table.SetAlignment(1, ColumnAlignL::RIGHT);
+            table.Insert(col_channel, col_rw_bandwidth);
+
+            m_globalJSON.m_DMCDDDR = table;
+            m_out.Print(table);
+
         }
     }
 
     void do_test(uint32_t enable_bits)
     {
-        PrettyTable ptable;
         std::vector<std::wstring> col_test_name, col_test_result;
 
         // Tests for request.ioctl_events
@@ -2320,9 +2369,10 @@ public:
         col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [vendor_id]");
         col_test_result.push_back(IntToHexWideString(hw_cfg.vendor_id));
 
-        ptable.AddColumn(L"Test Name", col_test_name);
-        ptable.AddColumn(L"Result", col_test_result);
-        ptable.Print();
+        TableOutputL table(m_outputType);
+        table.PresetHeaders<TestOutputTraitsL>();
+        table.Insert(col_test_name, col_test_result);
+        m_out.Print(table);
     }
 
     uint8_t core_num;
@@ -2575,7 +2625,7 @@ private:
 	void warning(const std::wstring wrn)
 	{
 		if (do_verbose)
-			std::wcerr << L"warning: " << wrn << std::endl;
+			m_out.GetErrorOutputStream() << L"warning: " << wrn << std::endl;
 	}
 
     HANDLE handle;
@@ -2604,11 +2654,11 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
     {
     case CTRL_C_EVENT:
         no_ctrl_c = false;
-        std::wcout << L"Ctrl-C received, quit counting...";
+        m_out.GetOutputStream() << L"Ctrl-C received, quit counting...";
         return TRUE;
     case CTRL_BREAK_EVENT:
     default:
-        std::wcerr << L"unsupported dwCtrlType " << dwCtrlType << std::endl;
+        m_out.GetErrorOutputStream() << L"unsupported dwCtrlType " << dwCtrlType << std::endl;
         return FALSE;
     }
 }
@@ -2638,13 +2688,16 @@ usage: wperf [options]
     -dmc dmc_idx      Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
     -k                Count kernel model as well (disabled by default).
     -h                Show tool help.
+    --output          Enable JSON output to file.
+    -q                Quiet mode, no output is produced.
+    -json             Define output type as JSON.
     -l                Alias of 'list'.
     -verbose          Enable verbose output.
     -v                Alias of '-verbose'.
     -version          Show tool version.
 )";
 
-    std::wcout << wsHelp << std::endl;
+    m_out.GetOutputStream() << wsHelp << std::endl;
 }
 
 //
@@ -2720,7 +2773,7 @@ wmain(
 
     if (request.do_version)
     {
-        std::wcout << L"wperf version " << MAJOR << "." << MINOR << "."
+        m_out.GetOutputStream() << L"wperf version " << MAJOR << "." << MINOR << "."
                    << PATCH << "\n";
         goto clean_exit;
     }
@@ -2742,7 +2795,7 @@ wmain(
         }
         else
         {
-            std::wcerr << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
+            m_out.GetErrorOutputStream() << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
             goto clean_exit;
         }
     }
@@ -2752,10 +2805,10 @@ wmain(
     if (driver_ver.major != MAJOR || driver_ver.minor != MINOR
         || driver_ver.patch != PATCH)
     {
-        std::wcerr << L"Version mismatch between wperf-driver and wperf.\n";
-        std::wcerr << L"wperf-driver version: " << driver_ver.major << "."
+        m_out.GetErrorOutputStream() << L"Version mismatch between wperf-driver and wperf.\n";
+        m_out.GetErrorOutputStream() << L"wperf-driver version: " << driver_ver.major << "."
                    << driver_ver.minor << "." << driver_ver.patch << "\n";
-        std::wcerr << L"wperf version: " << MAJOR << "." << MINOR << "."
+        m_out.GetErrorOutputStream() << L"wperf version: " << MAJOR << "." << MINOR << "."
                    << PATCH << "\n";
         exit_code = EXIT_FAILURE;
         goto clean_exit;
@@ -2776,11 +2829,9 @@ wmain(
                 // Query for available events
                 std::map<enum evt_class, std::vector<uint16_t>> events;
                 pmu_device.events_query(events);
-
-                PrettyTable ptable;
                 std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
 
-                std::wcout << std::endl
+                m_out.GetOutputStream() << std::endl
                            << L"List of pre-defined events (to be used in -e)"
                            << std::endl << std::endl;
 
@@ -2794,18 +2845,23 @@ wmain(
                     }
                 }
 
-                ptable.AddColumn(L"Alias Name", col_alias_name);
-                ptable.AddColumn(L"Raw Index", col_raw_index, PrettyTable::RIGHT);
-                ptable.AddColumn(L"Event Type", col_event_type);
-                ptable.Print();
+                TableOutputL table(m_outputType);
+                table.PresetHeaders<PredefinedEventsOutputTraitsL>();
+                table.SetAlignment(1, ColumnAlignL::RIGHT);
+                table.Insert(col_alias_name, col_raw_index, col_event_type);
+
+                m_globalListJSON.m_Events = table;
+                m_out.Print(table);
+
             }
 
             // Print supported metrics
             {
-                PrettyTable ptable;
+                
+
                 std::vector<std::wstring> col_metric, col_events;
 
-                std::wcout << std::endl
+                m_out.GetOutputStream() << std::endl
                            << L"List of supported metrics (to be used in -m)"
                            << std::endl << std::endl;
 
@@ -2813,10 +2869,17 @@ wmain(
                     col_metric.push_back(key);
                     col_events.push_back(value.raw_str);
                 }
-                ptable.AddColumn(L"Metric", col_metric);
-                ptable.AddColumn(L"Events", col_events);
-                ptable.Print();
+                
+                TableOutputL table(m_outputType);
+                table.PresetHeaders<MetricOutputTraitsL>();
+                table.Insert(col_metric, col_events);
+
+                m_globalListJSON.m_Metrics = table;
+                m_out.Print(table);
             }
+
+            m_out.Print(m_globalListJSON);
+
             goto clean_exit;
         }
 
@@ -2826,7 +2889,7 @@ wmain(
         {
             if (!request.has_events())
             {
-                std::wcerr << "no event specified\n";
+                m_out.GetErrorOutputStream() << "no event specified\n";
                 return -1;
             }
             else if (request.do_verbose)
@@ -2863,7 +2926,7 @@ wmain(
 
                 pmu_device.start(enable_bits);
 
-                std::wcout << L"counting ... -";
+                m_out.GetOutputStream() << L"counting ... -";
 
                 int progress_map_index = 0;
                 wchar_t progress_map[] = { L'/', L'|', L'\\', L'-' };
@@ -2871,12 +2934,12 @@ wmain(
 
                 while (t_count1 > 0 && no_ctrl_c)
                 {
-                    std::wcout << L'\b' << progress_map[progress_map_index % 4];
+                    m_out.GetOutputStream() << L'\b' << progress_map[progress_map_index % 4];
                     t_count1--;
                     Sleep(100);
                     progress_map_index++;
                 }
-                std::wcout << L'\b' << "done\n";
+                m_out.GetOutputStream() << L'\b' << "done\n";
 
                 pmu_device.stop(enable_bits);
 
@@ -2900,6 +2963,10 @@ wmain(
                     pmu_device.dmc_events_read();
                     pmu_device.print_dmc_stat(request.ioctl_events[EVT_DMC_CLK], request.ioctl_events[EVT_DMC_CLKDIV2], request.report_ddr_bw_metric);
                 }
+                if(m_outputType == TableOutputL::JSON || m_outputType == TableOutputL::ALL)
+                {
+                    m_out.Print(m_globalJSON);
+                }
 
                 ULARGE_INTEGER li_a, li_b;
                 FILETIME time_a, time_b;
@@ -2913,22 +2980,22 @@ wmain(
 
                 if (!request.do_timeline)
                 {
-                    std::wcout << std::endl;
-                    std::wcout << std::right << std::setw(20)
+                    m_out.GetOutputStream() << std::endl;
+                    m_out.GetOutputStream() << std::right << std::setw(20)
                         << (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0
                         << L" seconds time elapsed" << std::endl;
                 }
                 else
                 {
-                    std::wcout << L"sleeping ... -";
+                    m_out.GetOutputStream() << L"sleeping ... -";
                     int64_t t_count2 = counting_interval_iter;
                     for (; t_count2 > 0 && no_ctrl_c; t_count2--)
                     {
-                        std::wcout << L'\b' << progress_map[t_count2 % 4];
+                        m_out.GetOutputStream() << L'\b' << progress_map[t_count2 % 4];
                         Sleep(500);
                     }
 
-                    std::wcout << L'\b' << "done\n";
+                    m_out.GetOutputStream() << L'\b' << "done\n";
                 }
 
             } while (request.do_timeline && no_ctrl_c);

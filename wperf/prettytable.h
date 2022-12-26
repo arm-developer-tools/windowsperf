@@ -34,6 +34,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include "outpututil.h"
 
 /// <summary>
 /// Simple implementation of table with columns and rows.
@@ -88,10 +90,19 @@
 ///													   L"ase_spec", L"dp_spec", L"ld_spec",
 ///                                                    L"st_spec", L"br_immed_spec", L"crypto_spec"});
 ///
-///
+/// The template argument CharType defines if the string outputs will be done on normal or wide strings.
+/// 
 /// </summary>
+template <typename CharType=wchar_t>
 class PrettyTable
 {
+	/// String type to use based on current Char type template argument
+	typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+	/// Output Stream type to use based on current Char type template argument
+	typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
+	/// String Stream type to use based on current Char type template argument
+	typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
+
 public:
 	/// <summary>
 	/// Column text align (left or right)
@@ -101,7 +112,7 @@ public:
 		LEFT,		/// Align left std::wcout with std::left
 		RIGHT		/// Align left std::wcout with td::right
 	};
-
+    
 public:
 	/// <summary>
 	/// Constructor of pretty table
@@ -109,6 +120,17 @@ public:
 	PrettyTable()
 		: m_header_underline(true) {
 	};
+
+	/// operator<< overload to handle printing to stream output.
+	friend OutputStream& operator<<(OutputStream &os, PrettyTable& pt)
+	{
+		// Clearing out the stream before proceding. No need to clear bits as none are used here.
+		pt.m_out_stream.str(LITERALCONSTANTS_GET(""));
+		// Calculating the output.
+		pt.Print();
+		os << pt.m_out_stream.str();
+		return os;
+	}
 
 	/// <summary>
 	/// Define if you want to underline column headers with '='
@@ -118,22 +140,125 @@ public:
 		m_header_underline = Value;
 	}
 
-	void AddColumn(std::wstring ColumnName, std::vector<std::wstring> ColumnValues, enum ColumnAlign Align = LEFT);
-	void Print();
+	// Variadic function stop case.
+	template <int I = 0>
+	void Insert() {}
+
+	// Variadic function to insert arbitrary number of columns with column types. Currently this only handles StringTypes but will be expanded in the future.
+	template <int I = 0, typename T1, typename... Ts>
+	void Insert(T1 arg1, Ts... args)
+	{
+		if(m_header.size() > I)
+		{
+			m_table[m_header[I]] = arg1;
+			Insert<I+1>(args...);
+		}
+	}
+
+	// Individually set the Alignment of column ColumnIndex.
+	void SetAlignment(int ColumnIndex, enum ColumnAlign Align)
+	{
+		assert(ColumnIndex < m_columns_align.size());
+		m_columns_align[ColumnIndex] = Align;
+	}
+
+	// Add a column to the table with header and alignment only.
+	void AddColumn(StringType ColumnName, enum ColumnAlign Align = LEFT)
+	{
+		m_header.push_back(ColumnName);
+		m_columns_align.push_back(Align);
+	}
+
+	/// <summary>
+	/// Add column to the table. Columns will be added from left to right.
+	/// </summary>
+	/// <param name="ColumnName">Name of the column</param>
+	/// <param name="ColumnValues">VECTOR of WSTRING with column text values</param>
+	/// <param name="Align">Align whole column to LEFT or RIGHT</param>
+	void AddColumn(StringType ColumnName, std::vector<StringType> ColumnValues, enum ColumnAlign Align = LEFT)
+	{
+		m_header.push_back(ColumnName);
+		m_columns_align.push_back(Align);
+		m_table[ColumnName] = ColumnValues;
+	}
+
+	/// <summary>
+	/// Print pretty table on screen with std::wcout
+	/// </summary>
+	void Print()
+	{
+		PrintLeftMargin();
+
+		// Print colum names (headers)
+		size_t j = 0;	// Rows in column index
+		for (auto header : m_header) {
+			// minwindef.h define a macro called max making it impossible to use std::max without undefining the macro first
+			#undef max
+
+			// Calculate maximum width of each column
+			size_t max = GetColumnMaxWidth(m_table[header]);
+			m_columns_max_width.push_back(std::max(max, header.size()));
+
+			// Calculate length for each column
+			m_columns_length.push_back(m_table[header].size());
+
+			PrintColumnSeparator();
+			m_out_stream << std::setw(max);
+			PrintColumnAlign(m_columns_align[j]);
+			m_out_stream << header;
+			j++;
+		}
+		m_out_stream << std::endl;
+
+		// Print (if enabled) column name underline
+		if (m_header_underline) {
+			PrintLeftMargin();
+
+			j = 0;	// Rows in column index
+			for (auto header : m_header) {
+				PrintColumnSeparator();
+				m_out_stream << std::setw(m_columns_max_width[j]);
+				PrintColumnAlign(m_columns_align[j]);
+				m_out_stream << StringType(header.length(), LiteralConstants<CharType>::m_equal[0]);
+				j++;
+			}
+			m_out_stream << std::endl;
+		}
+
+		// Print columns
+		auto iterator = std::max_element(m_columns_length.begin(), m_columns_length.end());
+		size_t max = *iterator;		// How many rows in longest column
+		size_t i = 0;	// Rows in column
+
+		while (i < max) {
+			PrintLeftMargin();
+			j = 0;	// Index of column (from left)
+			for (auto header : m_header) {
+				auto column = m_table[header];
+				PrintColumnSeparator();
+				m_out_stream << std::setw(m_columns_max_width[j]);
+				PrintColumnAlign(m_columns_align[j]);
+				m_out_stream << column[i];
+				j++;
+			}
+			i++;
+			m_out_stream << std::flush << std::endl;
+		}
+	}
 
 private:
 	/// <summary>
 	/// Left margin for whole pretty table from beggining of the screen
 	/// </summary>
 	void PrintLeftMargin() {
-		std::wcout << std::wstring(m_LEFT_MARGIN, L' ');
+		m_out_stream << StringType(m_LEFT_MARGIN, LiteralConstants<CharType>::m_space[0]);
 	}
 
 	/// <summary>
 	/// Print white space column separation.
 	/// </summary>
 	void PrintColumnSeparator() {
-		std::wcout << std::wstring(m_COLUMN_SEPARATOR, L' ');
+		m_out_stream << StringType(m_COLUMN_SEPARATOR, LiteralConstants<CharType>::m_space[0]);
 	}
 
 	/// <summary>
@@ -142,8 +267,8 @@ private:
 	/// <param name="Align">LEFT or RIGHT</param>
 	void PrintColumnAlign(ColumnAlign Align) {
 		switch (Align) {
-		case LEFT:  std::wcout << std::left; break;
-		case RIGHT: std::wcout << std::right; break;
+		case LEFT:  m_out_stream << std::left; break;
+		case RIGHT: m_out_stream << std::right; break;
 		}
 	}
 
@@ -152,20 +277,26 @@ private:
 	/// column its width and get max of it.
 	/// </summary>
 	/// <param name="Column">VECTOR of WSTRINGS with rows</param>
-	/// <returns></returns>
-	size_t GetColumnMaxWidth(std::vector<std::wstring> Column);
+	/// <returns>Length of longest column cell in Column</returns>
+	size_t GetColumnMaxWidth(std::vector<StringType> Column)
+	{
+		auto max_len = std::max_element(Column.begin(), Column.end(), [](PrettyTable<CharType>::StringType a, PrettyTable<CharType>::StringType b) {
+			return a.length() < b.length();
+			});
+		return (*max_len).length();
+	}
 
 	// Consts
 	const size_t m_LEFT_MARGIN = 6;
 	const size_t m_COLUMN_SEPARATOR = 2;
 
 	// Class members
-	std::map<std::wstring,
-		     std::vector<std::wstring>> m_table;	// Table where key is column name and value is VECTOR of WSTRINGs
-	std::vector<std::wstring> m_header;				// VECTOR of column names (header) WSTRINGs
+	StringStream m_out_stream;
+	std::map<StringType,
+		     std::vector<StringType>> m_table;	// Table where key is column name and value is VECTOR of WSTRINGs
+	std::vector<StringType> m_header;				// VECTOR of column names (header) WSTRINGs
 	bool m_header_underline;						// Enable header underlining, default true
 	std::vector<size_t> m_columns_max_width;		// Max width of each column, index with int(rown number)
 	std::vector<size_t> m_columns_length;			// Length (how many rows) for each rows, index with int(rown number)
 	std::vector<ColumnAlign> m_columns_align;		// Column align (left, right), index with int(rown number)
 };
-
