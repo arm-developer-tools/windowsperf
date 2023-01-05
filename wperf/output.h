@@ -413,10 +413,28 @@ struct OutputControl
 
     void Print(TableOutput<CharType>& table)
     {
-        if(m_outputType == TableOutput<CharType>::PRETTY || m_outputType == TableOutput<CharType>::ALL)
+        if(m_outputType == TableOutput<CharType>::PRETTY)
         {
             StringType s = table.Print(TableOutput<CharType>::PRETTY).str();
             GetOutputStream() << s;
+        } else if (m_outputType == TableOutput<CharType>::JSON) {
+            StringType s = table.Print(TableOutput<CharType>::JSON).str();
+            if(!m_shouldWriteToFile)
+            {
+                Print_(s);
+            } else {
+                OutputToFile(s);
+            }
+        } else {
+            StringType s = table.Print(TableOutput<CharType>::JSON).str();
+            StringType sp = table.Print(TableOutput<CharType>::PRETTY).str();
+            GetOutputStream() << sp;
+            if(!m_shouldWriteToFile)
+            {
+                Print_(s);
+            } else {
+                OutputToFile(s);
+            }
         }
     }
 
