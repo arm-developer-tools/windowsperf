@@ -411,29 +411,18 @@ struct OutputControl
         }
     }
 
-    void Print(TableOutput<CharType>& table)
+    void Print(TableOutput<CharType>& table, bool printJson = false)
     {
-        if(m_outputType == TableOutput<CharType>::PRETTY)
+        StringType s = table.Print(TableOutput<CharType>::PRETTY).str();
+        GetOutputStream() << s;
+        if((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && printJson)
         {
-            StringType s = table.Print(TableOutput<CharType>::PRETTY).str();
-            GetOutputStream() << s;
-        } else if (m_outputType == TableOutput<CharType>::JSON) {
-            StringType s = table.Print(TableOutput<CharType>::JSON).str();
+            StringType sj = table.Print(TableOutput<CharType>::JSON).str();
             if(!m_shouldWriteToFile)
             {
-                Print_(s);
+                Print_(sj);
             } else {
-                OutputToFile(s);
-            }
-        } else {
-            StringType s = table.Print(TableOutput<CharType>::JSON).str();
-            StringType sp = table.Print(TableOutput<CharType>::PRETTY).str();
-            GetOutputStream() << sp;
-            if(!m_shouldWriteToFile)
-            {
-                Print_(s);
-            } else {
-                OutputToFile(s);
+                OutputToFile(sj);
             }
         }
     }

@@ -2375,7 +2375,7 @@ public:
         TableOutputL table(m_outputType);
         table.PresetHeaders<TestOutputTraitsL>();
         table.Insert(col_test_name, col_test_result);
-        m_out.Print(table);
+        m_out.Print(table, true);
     }
 
     uint8_t core_num;
