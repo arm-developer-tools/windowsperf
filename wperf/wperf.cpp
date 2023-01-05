@@ -532,7 +532,10 @@ public:
             if (a == L"-json")
             {
                 if(m_outputType != TableOutputL::ALL)
+                {
                     m_outputType = TableOutputL::JSON;
+                    m_out.m_isQuiet = true;
+                }
                 continue;
             }
 
