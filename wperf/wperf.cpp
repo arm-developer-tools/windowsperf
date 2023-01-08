@@ -2677,7 +2677,7 @@ usage: wperf [options]
     -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
                       Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
                       XXXX is hex value of the number without '0x' prefix.
-    -m m1, m2...      Specify metrics to count. \"imix\", \"icache\", \"dcache\", \"itlb\", \"dtlb\" supported.
+    -m m1, m2...      Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
     -d N              Specify counting duration(in s).The accuracy is 0.1s.
     sleep N           Like -d, for compatibility with Linux perf.
     -i N              Specify counting interval(in s).To be used with -t.
