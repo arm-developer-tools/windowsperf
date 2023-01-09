@@ -10,6 +10,10 @@
   * [Count using event group](#count-using-event-group)
   * [Count using pre-defined metrics, metric could be used together with -e, no restriction](#count-using-pre-defined-metrics-metric-could-be-used-together-with--e-no-restriction)
   * [Count on multiple cores simultaneously with -c](#count-on-multiple-cores-simultaneously-with--c)
+  * [JSON output](#json-output)
+    * [Emit JSON output for simple counting with -json](#emit-json-output-for-simple-counting-with--json)
+    * [Store counting results in JSON file](#store-counting-results-in-json-file)
+    * [Only store counting results in JSON file](#only-store-counting-results-in-json-file)
 
 # Build wperf CLI
 
@@ -45,6 +49,9 @@ usage: wperf [options]
     -dmc dmc_idx      Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
     -k                Count kernel model as well (disabled by default).
     -h                Show tool help.
+    --output          Enable JSON output to file.
+    -q                Quiet mode, no output is produced.
+    -json             Define output type as JSON.
     -l                Alias of 'list'.
     -verbose          Enable verbose output.
     -v                Alias of '-verbose'.
@@ -293,4 +300,55 @@ System-wide Overall:
                   266  crypto_spec    0x0077     e                    365
 
                1.134 seconds time elapsed
+```
+
+## JSON output
+
+You can output JSON instead of human readable tables with `wperf`. We've introduced three new command line flags which should help you emit JSON.
+Flag `-json` will emit JSON for tables with values.
+Quiet mode can be selected with `-q`. This will suppress human readable printouts. Please note that `-json` implies `-q`.
+You can also emit JSON to file directly with `--output <filename>`.
+
+Currently we support `-json` with `stat`, `list` and `test` commands.
+
+### Emit JSON output for simple counting with -json
+
+```
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 -json sleep 1
+```
+
+Will print on standard output:
+
+```json
+{
+"core": {
+"0":{"Performance_counter":[{"counter_value":"6062425","event_idx":"fixed","event_name":"cycle","event_note":"e"},{"counter_value":"6864612","event_idx":"0x1b","event_name":"inst_spec","event_note":"e"},{"counter_value":"10884","event_idx":"0x75","event_name":"vfp_spec","event_note":"e"},{"counter_value":"986671","event_idx":"0x74","event_name":"ase_spec","event_note":"e"},{"counter_value":"3081820","event_idx":"0x73","event_name":"dp_spec","event_note":"e"},{"counter_value":"1099973","event_idx":"0x70","event_name":"ld_spec","event_note":"e"},{"counter_value":"603607","event_idx":"0x71","event_name":"st_spec","event_note":"e"}]}
+,
+"overall": {}
+}
+,
+"dsu": {
+"l3metric": {},
+"overall": {}
+}
+,
+"dmc": {
+"pmu": {},
+"ddr": {}
+}
+}
+```
+
+### Store counting results in JSON file
+
+Print on standard output results of counting and at the same time store these results in JSON file `count.json`.
+```
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 --output count.json sleep 1
+```
+
+### Only store counting results in JSON file
+
+Store counting results in JSON file `count.json` and do not print anything on the screen. Printouts are suppressed with `-q` command line flag.
+```
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 --output count.json -q sleep 1
 ```
