@@ -2310,6 +2310,63 @@ public:
         }
     }
 
+    void do_list(const std::map<std::wstring, metric_desc> &metrics)
+    {
+        // Print pre-defined events
+        {
+            // Query for available events
+            std::map<enum evt_class, std::vector<uint16_t>> events;
+            events_query(events);
+            std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
+
+            m_out.GetOutputStream() << std::endl
+                       << L"List of pre-defined events (to be used in -e)"
+                       << std::endl << std::endl;
+
+            for (auto a : events)
+            {
+                const wchar_t* prefix = evt_name_prefix[a.first];
+                for (auto b : a.second) {
+                    col_alias_name.push_back(std::wstring(prefix) + std::wstring(get_event_name(b, a.first)));
+                    col_raw_index.push_back(IntToHexWideString(b, 2));
+                    col_event_type.push_back(L"[" + std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") + L"]");
+                }
+            }
+
+            TableOutputL table(m_outputType);
+            table.PresetHeaders<PredefinedEventsOutputTraitsL>();
+            table.SetAlignment(1, ColumnAlignL::RIGHT);
+            table.Insert(col_alias_name, col_raw_index, col_event_type);
+
+            m_globalListJSON.m_Events = table;
+            m_out.Print(table);
+
+        }
+
+        // Print supported metrics
+        {
+            std::vector<std::wstring> col_metric, col_events;
+
+            m_out.GetOutputStream() << std::endl
+                       << L"List of supported metrics (to be used in -m)"
+                       << std::endl << std::endl;
+
+            for (const auto& [key, value] : metrics) {
+                col_metric.push_back(key);
+                col_events.push_back(value.raw_str);
+            }
+
+            TableOutputL table(m_outputType);
+            table.PresetHeaders<MetricOutputTraitsL>();
+            table.Insert(col_metric, col_events);
+
+            m_globalListJSON.m_Metrics = table;
+            m_out.Print(table);
+        }
+
+        m_out.Print(m_globalListJSON);
+    }
+
     void do_test(uint32_t enable_bits)
     {
         std::vector<std::wstring> col_test_name, col_test_result;
@@ -2827,62 +2884,7 @@ wmain(
     {
         if (request.do_list)
         {
-            // Print pre-defined events
-            {
-                // Query for available events
-                std::map<enum evt_class, std::vector<uint16_t>> events;
-                pmu_device.events_query(events);
-                std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
-
-                m_out.GetOutputStream() << std::endl
-                           << L"List of pre-defined events (to be used in -e)"
-                           << std::endl << std::endl;
-
-                for (auto a : events)
-                {
-                    const wchar_t* prefix = evt_name_prefix[a.first];
-                    for (auto b : a.second) {
-                        col_alias_name.push_back(std::wstring(prefix) + std::wstring(get_event_name(b, a.first)));
-                        col_raw_index.push_back(IntToHexWideString(b, 2));
-                        col_event_type.push_back(L"[" + std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") + L"]");
-                    }
-                }
-
-                TableOutputL table(m_outputType);
-                table.PresetHeaders<PredefinedEventsOutputTraitsL>();
-                table.SetAlignment(1, ColumnAlignL::RIGHT);
-                table.Insert(col_alias_name, col_raw_index, col_event_type);
-
-                m_globalListJSON.m_Events = table;
-                m_out.Print(table);
-
-            }
-
-            // Print supported metrics
-            {
-                
-
-                std::vector<std::wstring> col_metric, col_events;
-
-                m_out.GetOutputStream() << std::endl
-                           << L"List of supported metrics (to be used in -m)"
-                           << std::endl << std::endl;
-
-                for (const auto& [key, value] : request.metrics) {
-                    col_metric.push_back(key);
-                    col_events.push_back(value.raw_str);
-                }
-                
-                TableOutputL table(m_outputType);
-                table.PresetHeaders<MetricOutputTraitsL>();
-                table.Insert(col_metric, col_events);
-
-                m_globalListJSON.m_Metrics = table;
-                m_out.Print(table);
-            }
-
-            m_out.Print(m_globalListJSON);
-
+            pmu_device.do_list(request.metrics);
             goto clean_exit;
         }
 
