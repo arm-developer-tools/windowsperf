@@ -116,6 +116,12 @@ def test_wperf_stat_json(events,cores,metric,sleep):
     stdout, _ = run_command(cmd)
     assert is_json(stdout)
 
+def test_wperf_stat_no_events():
+    """ Test for required -e for `wperf stat` """
+    cmd = "wperf stat -c 0 sleep 1"
+    _, stderr = run_command(cmd)
+    assert b'no event specified' in stderr
+
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
@@ -172,5 +178,12 @@ def test_wperf_stat(events,cores,metric,sleep):
     # Event names in pretty table
     if events:
         for event in events.split(b','):
-            assert re.search(b'[\\s]+%s[\\s]+' % event, stdout)
-        assert re.search(b'[\\s]+cycle[\\s]+', stdout)
+            assert re.search(b'[\\d]+[\\s]+%s[\\s]+0x[0-9a-f]+' % event, stdout)
+        assert re.search(b'[\\s]+cycle[\\s]+fixed', stdout)
+
+    # Overall summary header when more than one CPU count
+    # Note: if -c is not speciffied we count on all cores
+    if not cores or len(cores.split(',')) > 1:
+        assert b'System-wide Overall:' in stdout
+    elif len(cores.split(',')) == 1:
+        assert b'System-wide Overall:' not in stdout
