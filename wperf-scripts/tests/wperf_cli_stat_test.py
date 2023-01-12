@@ -41,47 +41,15 @@ Usage:
 
 """
 
-import json
 import os
 import re
-import subprocess
+from common import run_command, is_json, check_if_file_exists
 
 import pytest
 
 N_CORES = os.cpu_count()
 
-### Test runner code
-
-def is_json(str_to_test):
-    """ Test if string is in JSON format. """
-    try:
-        json.loads(str_to_test)
-    except ValueError:
-        return False
-    return True
-
-def run_command(args):
-    """ Run command and capture stdout and stderr for parsing. """
-    process = subprocess.Popen(args,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    return stdout, stderr
-
-
 ### Test cases
-
-def test_wperf_test_json():
-    """ Test `wperf test` JSON output  """
-    cmd = 'wperf test -json'
-    stdout, _ = run_command(cmd.split())
-    assert is_json(stdout)
-
-def test_wperf_list_json():
-    """ Test `wperf list` JSON output  """
-    cmd = 'wperf list -json'
-    stdout, _ = run_command(cmd.split())
-    assert is_json(stdout)
 
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
@@ -187,3 +155,69 @@ def test_wperf_stat(events,cores,metric,sleep):
         assert b'System-wide Overall:' in stdout
     elif len(cores.split(',')) == 1:
         assert b'System-wide Overall:' not in stdout
+
+@pytest.mark.parametrize("events,cores,metric,sleep",
+[
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0,1", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
+
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0,1", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
+]
+)
+def test_wperf_stat_json_file_output_exists(events, cores, metric, sleep, tmp_path):
+    """ Test `wperf stat` JSON output to file """
+    file_path = tmp_path / 'test.json'
+    cmd = 'wperf stat'.split()
+    if events:
+        cmd += ['-e', events]
+    if cores:
+        cmd += ['-c', cores]
+    if metric:
+        cmd += ['-m', metric]
+    if sleep:
+        cmd += ['sleep', str(sleep)]
+
+    cmd += ['--output', str(file_path)]
+
+    print(' '.join(str(c) for c in cmd))
+    stdout, _ = run_command(cmd)
+    print(stdout)
+    assert check_if_file_exists(str(file_path))
+
+@pytest.mark.parametrize("events,cores,metric,sleep",
+[
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0,1", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
+
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0,1", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
+]
+)
+def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_path):
+    """ Test `wperf stat` JSON output to file validity """
+    file_path = tmp_path / 'test.json'
+    cmd = 'wperf stat'.split()
+
+    if events:
+        cmd += ['-e', events]
+    if cores:
+        cmd += ['-c', cores]
+    if metric:
+        cmd += ['-m', metric]
+    if sleep:
+        cmd += ['sleep', str(sleep)]
+
+    cmd += ['--output', str(file_path)]
+    stdout, _ = run_command(cmd)
+    try:
+        f = open(file_path)
+        json = f.read()
+        f.close()
+        assert is_json(json)
+    except:
+        assert 0
