@@ -34,6 +34,8 @@ First change directory to directory where your `wperf-driver` files (`wperf-driv
 
 Use `DevCon Install` command to install driver and `DevCon Status` to check driver's status. You can also remove driver using `DevCon Remove` command. See examples below.
 
+Note: We've prepared wrapper scripts for installation, removal and status check of the driver. Please see [wperf-scripts/devcon](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/devcon).
+
 ## DevCon Install
 
 Creates a new, root-enumerated devnode for a non-Plug and Play device and installs its supporting software. Valid only on the local computer. See [DevCon Install](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/devcon-install) article for more details.
