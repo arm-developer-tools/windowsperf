@@ -1,10 +1,6 @@
 # wperf-test
 
-* [Introduction](#introduction)
-* [Building and running unit tests](#building-and-running-unit-tests)
-  * [Example make test output](#example-make-test-output)
-* [Writing tests](#writing-tests)
-* [Command line testing introduction](#command-line-testing-introduction)
+[[_TOC_]]
 
 # Introduction
 

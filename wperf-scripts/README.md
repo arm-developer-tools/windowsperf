@@ -1,7 +1,6 @@
 # Scripts
 
-* [Scripts](#scripts)
-* [arch_events_update.py](#arch_events_updatepy)
+[[_TOC_]]
 
 # arch_events_update.py
 

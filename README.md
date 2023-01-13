@@ -1,21 +1,6 @@
 # WindowsPerf
 
-* [WindowsPerf](#windowsperf)
-  * [Introduction](#introduction)
-  * [Modules](#modules)
-  * [Contributing](#contributing)
-  * [Project resources](#project-resources)
-* [Building WindowsPerf project](#building-windowsperf-project)
-  * [Project requirements](#project-requirements)
-    * [Toolchain and software kits](#toolchain-and-software-kits)
-    * [Codebase](#codebase)
-    * [Debugging Kernel-Mode driver](#debugging-kernel-mode-driver)
-    * [Creating Reliable Kernel-Mode Drivers](#creating-reliable-kernel-mode-drivers)
-  * [Build solution from command line](#build-solution-from-command-line)
-  * [Build specific project in the solution](#build-specific-project-in-the-solution)
-  * [Makefile](#makefile)
-    * [Below few useful commands](#below-few-useful-commands)
-* [Reference](#reference)
+[[_TOC_]]
 
 ## Introduction
 
