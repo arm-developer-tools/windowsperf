@@ -87,6 +87,33 @@ enum pmu_ctl_action
 	DSU_CTL_READ_COUNTING,
 	DMC_CTL_INIT,
 	DMC_CTL_READ_COUNTING,
+	PMU_CTL_SAMPLE_SET_SRC,
+	PMU_CTL_SAMPLE_START,
+	PMU_CTL_SAMPLE_STOP,
+	PMU_CTL_SAMPLE_GET,
+};
+
+typedef struct
+{
+    UINT32 event_src;
+    UINT32 interval;
+    UINT32 filter_bits;
+} SampleSrcDesc;
+
+#pragma warning(push)
+#pragma warning(disable:4200)
+typedef struct
+{
+    enum pmu_ctl_action action;
+    UINT32 core_idx;
+    SampleSrcDesc sources[0];
+} PMUSampleSetSrcHdr;
+#pragma warning(pop)
+
+struct PMUSampleSummary
+{
+    UINT64 sample_generated;
+    UINT64 sample_dropped;
 };
 
 struct pmu_ctl_ver_hdr

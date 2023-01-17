@@ -39,6 +39,20 @@ enum prof_action
     PROF_MULTIPLEX,
 };
 
+typedef struct
+{
+    UINT64 lr;
+    UINT64 pc;
+    UINT64 ov_flags;
+} FrameChain;
+
+#define FRAME_CHAIN_BUF_SIZE 128
+struct PMUCtlGetSampleHdr
+{
+    enum pmu_ctl_action action;
+    UINT32 core_idx;
+};
+
 typedef struct core_info
 {
     struct pmu_event_pseudo events[MAX_MANAGED_CORE_EVENTS];
@@ -53,4 +67,12 @@ typedef struct core_info
     enum prof_action prof_core;
     enum prof_action prof_dsu;
     enum prof_action prof_dmc;
+    KSPIN_LOCK SampleLock;
+    PIRP get_sample_irp;
+    FrameChain samples[SAMPLE_CHAIN_BUFFER_SIZE];
+    UINT16 sample_idx;
+    UINT64 sample_generated;
+    UINT64 sample_dropped;
+    UINT32 sample_interval[AARCH64_MAX_HWC_SUPP + numFPC];
+    UINT64 ov_mask;
 } CoreInfo;
