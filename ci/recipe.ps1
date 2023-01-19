@@ -28,35 +28,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-default:
-    tags:
-        - win-x64
-
-stages:
-- build
-- test
-
-sast:
-  stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
-
-build_and_test:
-  stage: build
-  script:
-    - cmd.exe /c "C:/wenv/x64/activate.bat" powershell -Command ./ci/recipe.ps1
-    - cmd.exe /c "C:/wenv/x64/activate.bat" powershell -Command "vstest.console.exe .\x64\Release\wperf-test.dll"
-  rules:
-      - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
-build_and_archive:
-  stage: build
-  script:
-    - cmd.exe /c "C:/wenv/x64/activate.bat" powershell -Command ./ci/recipe.ps1
-    - cmd.exe /c "C:/wenv/x64/activate.bat" powershell -Command "vstest.console.exe .\x64\Release\wperf-test.dll"
-  artifacts:
-    name: "$env:CI_JOB_STAGE-$env:CI_COMMIT_REF_NAME"
-    paths:
-      - release/
-  rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+MSBuild /p:Configuration=Release /p:Platform=x64
+MSBuild /p:Configuration=Release /p:Platform=ARM64
+mkdir release
+mkdir release/wperf-driver
+cp wperf/ARM64/Release/wperf.exe release
+cp wperf-driver/ARM64/Release/wperf-driver/* release/wperf-driver
