@@ -1777,6 +1777,9 @@ WindowsPerfDeviceCreate(
         RtlCopyMemory(core->events, default_events, sizeof(struct pmu_event_kernel) * ((size_t)numGPC + numFPC));
         core->events_num = numFPC + numGPC;
 
+        // Initialize fields for sampling;
+        KeInitializeSpinLock(&core->SampleLock);
+
         PRKDPC dpc = &core_info[i].dpc;
         KeInitializeDpc(dpc, arm64pmc_enable_default, NULL);
         status = KeSetTargetProcessorDpcEx(dpc, &ProcNumber);
@@ -1789,6 +1792,14 @@ WindowsPerfDeviceCreate(
     KeInitializeEvent(&SyncPMCEnc, NotificationEvent, FALSE);
     KeWaitForSingleObject(&SyncPMCEnc, Executive, KernelMode, 0, NULL);
     KeClearEvent(&SyncPMCEnc);
+
+    PMIHANDLER isr = arm64_pmi_handler;
+    status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);
+    if (status != STATUS_SUCCESS)
+    {
+        WindowsPerfKdPrintInfo("register sampling isr failed \n");
+        return status;
+    }
 
     WindowsPerfKdPrintInfo("loaded\n");
     //
