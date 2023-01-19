@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2022, Arm Limited
@@ -54,6 +55,8 @@ typedef struct _QUEUE_CONTEXT {
     // Virtual I/O
     WDFREQUEST  CurrentRequest;
     NTSTATUS    CurrentStatus;
+    size_t      Information;        // Sampling model virtual state
+
 
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 

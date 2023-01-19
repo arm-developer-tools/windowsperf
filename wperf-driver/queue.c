@@ -372,7 +372,8 @@ Return Value:
 NTSTATUS deviceControl(
     _In_    PVOID   pBuffer,
     _In_    ULONG   inputSize,
-    _Out_   PULONG  outputSize
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext
 );
 
 VOID
@@ -472,8 +473,13 @@ Return Value:
     // Port Begin
     //
     ULONG outputSize;
-    Status = deviceControl(queueContext->Buffer, (ULONG)Length, &outputSize);
-    if (!NT_SUCCESS(Status)) {
+    Status = deviceControl(queueContext->Buffer, (ULONG)Length, &outputSize, queueContext);
+    if (Status == STATUS_PENDING) {
+        KdPrint(("WindowsPerfEvtIoWrite deviceControl pending 0x%x\n", Status));
+        KdPrint(("WindowsPerfEvtIoWrite deviceControl pending information=%zu\n", queueContext->Information));
+        return;
+    }
+    else if (!NT_SUCCESS(Status)) {
         KdPrint(("WindowsPerfEvtIoWrite deviceControl failed 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
 

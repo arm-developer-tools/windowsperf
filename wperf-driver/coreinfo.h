@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pmu.h"
+#include "queue.h"
 #include "wperf-common\macros.h"
 
 enum prof_action
@@ -68,7 +69,7 @@ typedef struct core_info
     enum prof_action prof_dsu;
     enum prof_action prof_dmc;
     KSPIN_LOCK SampleLock;
-    PIRP get_sample_irp;
+    PQUEUE_CONTEXT get_sample_irp;
     FrameChain samples[SAMPLE_CHAIN_BUFFER_SIZE];
     UINT16 sample_idx;
     UINT64 sample_generated;

@@ -226,14 +226,14 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
 
     if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
     {
-        PIRP irp = core->get_sample_irp;
+        PQUEUE_CONTEXT irp = core->get_sample_irp;
 
         if (irp)
         {
-            irp->IoStatus.Status = STATUS_SUCCESS;
-            irp->IoStatus.Information = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
-            RtlCopyMemory(irp->AssociatedIrp.SystemBuffer, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
-            IoCompleteRequest(irp, IO_NO_INCREMENT);
+            irp->CurrentStatus = STATUS_SUCCESS;
+            irp->Information = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
+            RtlCopyMemory(irp->Buffer, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
+            //IoCompleteRequest(irp, IO_NO_INCREMENT);
             core->get_sample_irp = NULL;
             core->sample_idx = 0;
         }
@@ -644,7 +644,8 @@ static VOID per_core_exec(UINT32 core_idx, VOID(*do_func)(VOID), VOID(*do_func2)
 NTSTATUS deviceControl(
     _In_    PVOID   pBuffer,
     _In_    ULONG   inputSize,
-    _Out_   PULONG  outputSize
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext
 )
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -683,7 +684,8 @@ NTSTATUS deviceControl(
         core_info[core_idx].sample_generated = 0;
         core_info[core_idx].sample_idx = 0;
         per_core_exec(core_idx, CoreCounterStart, NULL);
-        Irp->IoStatus.Information = 0;
+        queueContext->Information = 0;
+        *outputSize = 0;
         break;
     }
     case PMU_CTL_SAMPLE_STOP:
@@ -730,15 +732,16 @@ NTSTATUS deviceControl(
             RtlCopyMemory(out, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
             core->sample_idx = 0;
             KeReleaseSpinLock(&core->SampleLock, oldIrql);
-            Irp->IoStatus.Status = STATUS_SUCCESS;
-            Irp->IoStatus.Information = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
-            IoCompleteRequest(Irp, IO_NO_INCREMENT);
+            queueContext->CurrentStatus = STATUS_SUCCESS;
+            queueContext->Information = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
+            *outputSize = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
+            //IoCompleteRequest(Irp, IO_NO_INCREMENT);
             core->get_sample_irp = NULL;
             return STATUS_SUCCESS;
         }
-        core->get_sample_irp = Irp;
+        core->get_sample_irp = queueContext;
         KeReleaseSpinLock(&core->SampleLock, oldIrql);
-        Irp->IoStatus.Status = STATUS_PENDING;
+        queueContext->CurrentStatus = STATUS_PENDING;
         // IoMarkIrpPending(Irp);   // TODO: SAMPLING - all WDF requests are pending, but this needs to be checked
         return STATUS_PENDING;
     }
@@ -814,7 +817,8 @@ NTSTATUS deviceControl(
         core->ov_mask = ov_mask;
 
         KeRevertToUserGroupAffinityThread(&old_affinity);
-        Irp->IoStatus.Information = 0;
+        queueContext->Information = 0;
+        *outputSize = 0;
         break;
     }
     case PMU_CTL_START:
