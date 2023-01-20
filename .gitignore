@@ -13,6 +13,7 @@ tags
 # CLI build directory
 wperf/ARM64/
 wperf/ARM64/*
+wperf/ARM64EC/
 wperf/Debug/*
 wperf/x64/*
 
@@ -20,12 +21,17 @@ wperf/x64/*
 release/
 
 # Unit test directory
+wperf-test/ARM64EC/
+wperf-test/ARM64/
 wperf-test/x64/*
+ARM64EC/
+ARM64/
 x64/*
 
 # Driver build directory
 wperf-driver/ARM64/
 wperf-driver/ARM64/*
+wperf-driver/ARM64EC/*
 wperf-driver/Debug/*
 wperf-driver/x64/*
 
