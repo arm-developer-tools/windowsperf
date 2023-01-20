@@ -49,6 +49,8 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "utils.h"
 #include "output.h"
 #include "exception.h"
+#include "pe_file.h"
+#include "process_api.h"
 
 using namespace WPerfOutput;
 
@@ -3360,6 +3362,210 @@ wmain(
                     m_out.Print(m_globalJSON);
                 }
             } while (request.do_timeline && no_ctrl_c);
+        }
+        else if (request.do_sample)
+        {
+            if (SetConsoleCtrlHandler(&ctrl_handler, TRUE) == FALSE)
+                throw fatal_exception("SetConsoleCtrlHandler failed for sampling");
+
+            if (request.sample_pe_file == L"")
+                throw fatal_exception("PE file not specified");
+
+            if (request.sample_pdb_file == L"")
+                throw fatal_exception("PDB file not specified");
+
+            std::vector<SectionDesc> sec_info;
+            std::vector<FuncSymDesc> sym_info;
+            uint64_t static_entry_point, image_base;
+
+            parse_pe_file(request.sample_pe_file, static_entry_point, image_base, sec_info);
+            parse_pdb_file(request.sample_pdb_file, sym_info, request.sample_display_short);
+
+            uint32_t stop_bits = CTL_FLAG_CORE;
+
+            pmu_device.stop(stop_bits);
+
+            pmu_device.set_sample_src(request.ioctl_events_sample, request.do_kernel);
+
+            UINT64 runtime_vaddr_delta = 0;
+
+            if (request.sample_image_name == L"")
+            {
+                std::wcout << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
+            }
+            else
+            {
+                DWORD pid = FindProcess(request.sample_image_name);
+                HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+                HMODULE module_handle = GetModule(process_handle, request.sample_image_name);
+
+                MODULEINFO modinfo;
+                bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
+                if (!ret)
+                {
+                    std::wcout << L"failed to query base address of '" << request.sample_image_name << L"'\n";
+                }
+                else
+                {
+                    runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
+                    std::wcout << L"base address of '" << request.sample_image_name
+                        << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
+                        << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
+                }
+            }
+
+            pmu_device.start_sample();
+            std::wcout << L"sampling ...";
+
+            std::vector<FrameChain> raw_samples;
+
+            while (no_ctrl_c)
+            {
+                pmu_device.get_sample(raw_samples);
+                std::wcout << L".";
+            }
+
+            std::wcout << " done!" << std::endl;
+
+            pmu_device.stop_sample();
+
+            std::vector<SampleDesc> resolved_samples;
+
+            for (auto& b : sym_info)
+            {
+                uint64_t sec_base = 0;
+
+                for (auto c : sec_info)
+                {
+                    if (c.idx == (b.sec_idx - 1))
+                    {
+                        sec_base = image_base + c.offset + runtime_vaddr_delta;
+                        break;
+                    }
+                }
+
+                b.offset += sec_base;
+            }
+
+            size_t total_sample = raw_samples.size();
+            for (auto a : raw_samples)
+            {
+                bool found = false;
+                SampleDesc sd;
+
+                for (auto b : sym_info)
+                {
+                    if (a.pc >= b.offset && a.pc < (b.offset + b.size))
+                    {
+                        sd.name = b.name;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                    sd.name = L"unknown";
+
+                for (uint32_t counter_idx = 0; counter_idx < 32; counter_idx++)
+                {
+                    if (!(a.ov_flags & (1i64 << (UINT64)counter_idx)))
+                        continue;
+
+                    bool inserted = false;
+                    uint32_t event_src;
+                    if (counter_idx == 31)
+                        event_src = CYCLE_EVT_IDX;
+                    else
+                        event_src = request.ioctl_events_sample[counter_idx].index;
+                    for (auto& c : resolved_samples)
+                    {
+                        if (c.name == sd.name && c.event_src == event_src)
+                        {
+                            c.freq++;
+                            inserted = true;
+                            break;
+                        }
+                    }
+
+                    if (!inserted)
+                    {
+                        sd.freq = 1;
+                        sd.event_src = event_src;
+                        resolved_samples.push_back(sd);
+                    }
+                }
+            }
+
+            std::sort(resolved_samples.begin(), resolved_samples.end(), sort_samples);
+
+            uint32_t prev_evt_src = resolved_samples[0].event_src;
+            std::vector<uint64_t> total_samples;
+            uint64_t acc = 0;
+            for (auto a : resolved_samples)
+            {
+                if (a.event_src != prev_evt_src)
+                {
+                    prev_evt_src = a.event_src;
+                    total_samples.push_back(acc);
+                    acc = 0;
+                }
+
+                acc += a.freq;
+            }
+            total_samples.push_back(acc);
+
+#if 0
+            uint32_t idx = 0;
+            int displayed_sample = 0;
+            std::wcout << L"======================== sample results (top " << std::dec << request.sample_display_row << L") ========================\n";
+            for (auto a : resolved_samples)
+            {
+                std::wcout << std::format(L"{:>5.2f}%  {:>8}  {:>8}  ", ((double)a.freq * 100 / (double)total_sample), a.event_src, a.freq) << a.name << std::endl;
+                displayed_sample += a.freq;
+                idx++;
+                if (idx == request.sample_display_row)
+                    break;
+            }
+            //std::wcout << std::format(L"{:>5.2f}%  {:>8}  ", ((double)displayed_sample * 100 / (double)total_sample), displayed_sample) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+#else
+            int32_t group_idx = -1;
+            prev_evt_src = CYCLE_EVT_IDX - 1;
+            uint64_t printed_sample_num = 0, printed_sample_freq = 0;
+            for (auto a : resolved_samples)
+            {
+                if (a.event_src != prev_evt_src)
+                {
+                    prev_evt_src = a.event_src;
+
+                    if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
+                        std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+
+                    std::wcout << L"======================== sample source: " << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top " << std::dec << request.sample_display_row << L" hot functions ========================\n";
+
+                    printed_sample_num = 0;
+                    printed_sample_freq = 0;
+                    group_idx++;
+                }
+
+                if (printed_sample_num == request.sample_display_row)
+                {
+                    std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                    printed_sample_num++;
+                    continue;
+                }
+
+                if (printed_sample_num > request.sample_display_row)
+                    continue;
+
+                std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
+
+                printed_sample_freq += a.freq;
+                printed_sample_num++;
+            }
+
+            if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
+                std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+#endif
         }
     }
 	catch (fatal_exception& e)
