@@ -52,9 +52,11 @@
 
 #define SAMPLE_CHAIN_BUFFER_SIZE			128
 
+#define FRAME_CHAIN_BUF_SIZE				128
+
+#define MAX_PROCESSES					1024
+
 // Define how many fixed counters are now handled
 // Currently we are having "cycles" as 1 (only) fixed counter
 #define FIXED_COUNTERS_NO                   1
-
-#define FRAME_CHAIN_BUF_SIZE				128
 

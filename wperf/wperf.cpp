@@ -48,6 +48,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "wperf-common\iorequest.h"
 #include "utils.h"
 #include "output.h"
+#include "exception.h"
 
 using namespace WPerfOutput;
 
@@ -68,8 +69,11 @@ using namespace WPerfOutput;
 #include <cwctype>
 #include <ctime>
 #include <devpkey.h>
-#include <psapi.h>
-#include "dia2.h"
+
+BOOLEAN G_PerformAsyncIo;
+BOOLEAN G_LimitedLoops;
+ULONG G_AsyncIoLoopsNum;
+WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
 
 #pragma warning(push)
 #pragma warning(disable:4100)
@@ -266,15 +270,6 @@ enum
 };
 
 typedef std::vector<std::wstring> wstr_vec;
-
-class fatal_exception : public std::exception
-{
-public:
-    fatal_exception(const char* msg) : exception_msg(msg) {}
-    virtual const char* what() const throw() { return exception_msg; }
-private:
-    const char* exception_msg;
-};
 
 static bool sort_ioctl_events_sample(const struct evt_sample_src& a, const struct evt_sample_src& b)
 {
@@ -1290,7 +1285,7 @@ public:
     {
         PMUSampleSetSrcHdr *ctl;
         DWORD res_len;
-        size_t sz;
+        int sz;
 
         if (sample_sources.size())
         {
@@ -1315,9 +1310,9 @@ public:
         }
 
         ctl->action = PMU_CTL_SAMPLE_SET_SRC;
-        ctl->core_idx = cores_idx[0];   // Only one core for sampling!
+        ctl->core_idx = core_idx;
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, ctl, sz, NULL, 0, &res_len, NULL);
-        BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)sz, NULL, 0, &res_len);
+        BOOL status = DeviceAsyncIoControl(handle, ctl, sz, NULL, 0, &res_len);
         delete[] ctl;
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_SET_SRC failed");
@@ -1333,7 +1328,7 @@ public:
     {
         struct pmu_ctl_get_sample_hdr hdr;
         hdr.action = PMU_CTL_SAMPLE_GET;
-        hdr.core_idx = cores_idx[0];
+        hdr.core_idx = core_idx;
         DWORD res_len;
 
         int buf_sz = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
@@ -1357,8 +1352,7 @@ public:
         DWORD res_len;
 
         ctl.action = PMU_CTL_SAMPLE_START;
-        ctl.cores_idx.cores_count = 1;
-        ctl.cores_idx.cores_no[0] = cores_idx[0];
+        ctl.core_idx = core_idx;
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len, NULL);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
         if (!status)
@@ -1378,10 +1372,9 @@ public:
         DWORD res_len;
 
         ctl.action = PMU_CTL_SAMPLE_STOP;
-        ctl.cores_idx.cores_count = 1;
-        ctl.cores_idx.cores_no[0] = cores_idx[0];
+        ctl.core_idx = core_idx;
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len, NULL);
-        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
+        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_lenL);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
 #if 0
@@ -1476,7 +1469,7 @@ public:
         ctl->core_idx = core_idx;
         ctl->dmc_idx = dmc_idx;
         count_kernel = include_kernel;
-        ctl->filter_bits = include_kernel ? 0 : FILTER_BIT_EXCL_EL1;
+        ctl->filter_bits = count_kernel ? 0 : FILTER_BIT_EXCL_EL1;
         uint16_t* ctl2 =
             reinterpret_cast<uint16_t*>(buf.get() + sizeof(struct pmu_ctl_evt_assign_hdr));
 
@@ -3065,6 +3058,74 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
     }
 }
 
+static DWORD FindProcess(std::wstring lpcszFileName)
+{
+    LPDWORD lpdwProcessIds;
+    LPWSTR  lpszBaseName;
+    HANDLE  hProcess;
+    DWORD   cdwProcesses, dwProcessId = 0;
+
+    lpdwProcessIds = (LPDWORD)HeapAlloc(GetProcessHeap(), 0, MAX_PROCESSES*sizeof(DWORD));
+    if (!lpdwProcessIds)
+        return 0;
+
+    if (!EnumProcesses(lpdwProcessIds, MAX_PROCESSES*sizeof(DWORD), &cdwProcesses))
+        goto release_and_exit;
+
+    lpszBaseName = (LPWSTR)HeapAlloc(GetProcessHeap(), 0, MAX_PATH*sizeof(wchar_t));
+    if (!lpszBaseName)
+        goto release_and_exit;
+
+    cdwProcesses /= sizeof(DWORD);
+    for (int i = 0; i < cdwProcesses; i++)
+    {
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, lpdwProcessIds[i]);
+        if (!hProcess)
+            continue;
+
+        if (GetModuleBaseNameW(hProcess, NULL, lpszBaseName, MAX_PATH) > 0)
+        {
+            if (lpszBaseName == lpcszFileName)
+            {
+                dwProcessId = lpdwProcessIds[i];
+                CloseHandle(hProcess);
+                break;
+            }
+        }
+
+        CloseHandle(hProcess);
+    }
+
+    HeapFree(GetProcessHeap(), 0, (LPVOID)lpszBaseName);
+
+release_and_exit:
+    HeapFree(GetProcessHeap(), 0, (LPVOID)lpdwProcessIds);
+    return dwProcessId;
+}
+
+static HMODULE GetModule(HANDLE pHandle, std::wstring pname)
+{
+    HMODULE hMods[1024];
+    DWORD cbNeeded;
+
+    if (!EnumProcessModules(pHandle, hMods, sizeof(hMods), &cbNeeded))
+        return nullptr;
+
+    for (unsigned int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+    {
+        wchar_t szModName[MAX_PATH];
+        if (GetModuleFileNameExW(pHandle, hMods[i], szModName, sizeof(szModName) / sizeof(wchar_t)))
+        {
+            std::wstring wstrModName(szModName);
+
+            if (wstrModName.find(pname) != std::wstring::npos)
+                return hMods[i];
+        }
+    }
+
+    return nullptr;
+}
+
 static void print_help()
 {
     const wchar_t* wsHelp = LR"(
@@ -3073,9 +3134,11 @@ usage: wperf [options]
     Options:
     list              List supported events and metrics.
     stat              Count events.If - e is not specified, then count default events.
+    sample            Sample events. If -e is not specified, cycle counter will be the default sample source
     -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
                       Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
                       XXXX is hex value of the number without '0x' prefix.
+                      when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
     -m m1, m2...      Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
     -d N              Specify counting duration(in s).The accuracy is 0.1s.
     sleep N           Like -d, for compatibility with Linux perf.
@@ -3084,6 +3147,9 @@ usage: wperf [options]
                       Means counting 1 second after every 60 second, and the result
                       is in.csv file in the same folder where wperf is invoked.
                       You can use -i and -d to change counting duration and interval.
+    -image_name       Specify the image name you want to sample.
+    -pe_file          Specify the PE file.
+    -pdb_file         Specify the PDB file.
     -C config_file    Provide customized config file which describes metrics etc.
     -c core_idx       Profile on the specified core. Skip -c to count on all cores.
     -c cpu_list       Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.

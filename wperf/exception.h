@@ -29,21 +29,13 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define MAX_DEVPATH_LENGTH              256
+#include <exception>
 
-#define CYCLE_EVT_IDX 					0xffffffffU
-
-#define FILTER_BIT_EXCL_EL1             (1U << 31)
-
-struct evt_sample_src
+class fatal_exception : public std::exception
 {
-    uint32_t index;
-    uint32_t interval;
+public:
+    fatal_exception(const char* msg) : exception_msg(msg) {}
+    virtual const char* what() const throw() { return exception_msg; }
+private:
+    const char* exception_msg;
 };
-
-BOOL
-GetDevicePath(
-    _In_  LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
-);
