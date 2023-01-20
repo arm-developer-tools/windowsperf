@@ -69,7 +69,6 @@ using namespace WPerfOutput;
 #include <cwctype>
 #include <ctime>
 #include <devpkey.h>
-#include <psapi.h>
 
 BOOLEAN G_PerformAsyncIo;
 BOOLEAN G_LimitedLoops;
@@ -3059,74 +3058,6 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
         m_out.GetErrorOutputStream() << L"unsupported dwCtrlType " << dwCtrlType << std::endl;
         return FALSE;
     }
-}
-
-static DWORD FindProcess(std::wstring lpcszFileName)
-{
-    LPDWORD lpdwProcessIds;
-    LPWSTR  lpszBaseName;
-    HANDLE  hProcess;
-    DWORD   cdwProcesses, dwProcessId = 0;
-
-    lpdwProcessIds = (LPDWORD)HeapAlloc(GetProcessHeap(), 0, MAX_PROCESSES*sizeof(DWORD));
-    if (!lpdwProcessIds)
-        return 0;
-
-    if (!EnumProcesses(lpdwProcessIds, MAX_PROCESSES*sizeof(DWORD), &cdwProcesses))
-        goto release_and_exit;
-
-    lpszBaseName = (LPWSTR)HeapAlloc(GetProcessHeap(), 0, MAX_PATH*sizeof(wchar_t));
-    if (!lpszBaseName)
-        goto release_and_exit;
-
-    cdwProcesses /= sizeof(DWORD);
-    for (DWORD i = 0; i < cdwProcesses; i++)
-    {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, lpdwProcessIds[i]);
-        if (!hProcess)
-            continue;
-
-        if (GetModuleBaseNameW(hProcess, NULL, lpszBaseName, MAX_PATH) > 0)
-        {
-            if (lpszBaseName == lpcszFileName)
-            {
-                dwProcessId = lpdwProcessIds[i];
-                CloseHandle(hProcess);
-                break;
-            }
-        }
-
-        CloseHandle(hProcess);
-    }
-
-    HeapFree(GetProcessHeap(), 0, (LPVOID)lpszBaseName);
-
-release_and_exit:
-    HeapFree(GetProcessHeap(), 0, (LPVOID)lpdwProcessIds);
-    return dwProcessId;
-}
-
-static HMODULE GetModule(HANDLE pHandle, std::wstring pname)
-{
-    HMODULE hMods[1024];
-    DWORD cbNeeded;
-
-    if (!EnumProcessModules(pHandle, hMods, sizeof(hMods), &cbNeeded))
-        return nullptr;
-
-    for (unsigned int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
-    {
-        wchar_t szModName[MAX_PATH];
-        if (GetModuleFileNameExW(pHandle, hMods[i], szModName, sizeof(szModName) / sizeof(wchar_t)))
-        {
-            std::wstring wstrModName(szModName);
-
-            if (wstrModName.find(pname) != std::wstring::npos)
-                return hMods[i];
-        }
-    }
-
-    return nullptr;
 }
 
 static void print_help()
