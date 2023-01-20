@@ -29,37 +29,31 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <limits.h>
+#include <string>
+#include <vector>
 
-//
-// Macros used by various parts of the solution
-//
-#define ALL_CORE            				_UI32_MAX
-#define ALL_DMC_CHANNEL     				_UI8_MAX
-#define CYCLE_EVENT_IDX     				_UI32_MAX
+typedef struct
+{
+    uint32_t idx;
+    uint64_t offset;
+    std::string name;
+} SectionDesc;
 
-#define CYCLE_COUNTER_IDX   				31
+typedef struct
+{
+    uint32_t sec_idx;
+    uint32_t size;
+    uint64_t offset;
+    std::wstring name;
+} FuncSymDesc;
 
-#define MAX_PMU_CTL_CORES_COUNT     		128
+typedef struct
+{
+    uint32_t freq;
+    std::wstring name;
+    uint32_t event_src;
+} SampleDesc;
 
-#define MAX_MANAGED_CORE_EVENTS     		128
-#define MAX_MANAGED_DSU_EVENTS      		32
-
-#define MAX_MANAGED_DMC_CLK_EVENTS          4
-#define MAX_MANAGED_DMC_CLKDIV2_EVENTS      8
-
-#define AARCH64_MAX_HWC_SUPP 				31
-
-#define SAMPLE_CHAIN_BUFFER_SIZE			128
-
-#define FRAME_CHAIN_BUF_SIZE				128
-
-#define MAX_PROCESSES					1024
-
-#define CYCLE_EVT_IDX					0xffffffffU
-
-#define FILTER_BIT_EXCL_EL1					(1U << 31)
-
-// Define how many fixed counters are now handled
-// Currently we are having "cycles" as 1 (only) fixed counter
-#define FIXED_COUNTERS_NO                   1
+void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short);
+void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info);
+bool sort_samples(const SampleDesc& a, const SampleDesc& b);

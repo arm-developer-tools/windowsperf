@@ -24,6 +24,9 @@
     <ClCompile Include="process_api.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pe_file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
