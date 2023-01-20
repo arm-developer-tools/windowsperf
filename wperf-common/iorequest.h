@@ -226,36 +226,3 @@ struct dmc_ctl_hdr
     UINT64 addr[0];
 };
 #pragma warning(pop)
-
-//
-// Interface used check iorequest
-//
-
-#ifndef __cplusplus
-#define bool                _Bool
-#define true                TRUE
-#define false               FALSE
-#endif
-
-/// <summary>
-/// Check if structure `pmu_ctl_cores_count_hdr` stores correct
-/// number of cores and correct core indexes.
-/// Both values are defined with MAX_PMU_CTL_CORES_COUNT.
-/// </summary>
-/// <param name="ctl_req">Pointer to structure to check</param>
-/// <returns>TRUE if cores_count and cores_no are in range</returns>
-bool check_cores_in_pmu_ctl_hdr_p(const struct pmu_ctl_hdr* ctl_req)
-{
-    if (!ctl_req)
-        return false;
-
-    size_t cores_count = ctl_req->cores_idx.cores_count;
-
-    if (cores_count >= MAX_PMU_CTL_CORES_COUNT)
-        return false;
-
-    for (auto k = 0; k < cores_count; k++)
-        if (ctl_req->cores_idx.cores_no[k] >= MAX_PMU_CTL_CORES_COUNT)
-            return false;
-    return true;
-}

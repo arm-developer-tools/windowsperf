@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2022, Arm Limited
@@ -28,56 +29,34 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "pch.h"
-#include "CppUnitTest.h"
+#include "wperf-common\macros.h"
+#include "wperf-common\iorequest.h"
 
-#include <algorithm>
-#include <numeric>
-#include <windows.h>
-#include "wperf-common\inline.h"
+#ifndef __cplusplus
+#define bool                _Bool
+#define true                TRUE
+#define false               FALSE
+#endif
 
-using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-
-namespace wperftest_common
+/// <summary>
+/// Check if structure `pmu_ctl_cores_count_hdr` stores correct
+/// number of cores and correct core indexes.
+/// Both values are defined with MAX_PMU_CTL_CORES_COUNT.
+/// </summary>
+/// <param name="ctl_req">Pointer to structure to check</param>
+/// <returns>TRUE if cores_count and cores_no are in range</returns>
+bool check_cores_in_pmu_ctl_hdr_p(const struct pmu_ctl_hdr* ctl_req)
 {
-	TEST_CLASS(wperftest_common_iorequest)
-	{
-	public:
+    if (!ctl_req)
+        return false;
 
-		TEST_METHOD(test_check_cores_in_pmu_ctl_hdr_p_null)
-		{
-			Assert::IsFalse(check_cores_in_pmu_ctl_hdr_p(0));
-		}
+    size_t cores_count = ctl_req->cores_idx.cores_count;
 
-		TEST_METHOD(test_check_cores_in_pmu_ctl_hdr_p_cores_count)
-		{
-			struct pmu_ctl_hdr ctl_req;
-			ctl_req.cores_idx.cores_count = MAX_PMU_CTL_CORES_COUNT;
-			std::fill_n(ctl_req.cores_idx.cores_no, MAX_PMU_CTL_CORES_COUNT, 0);
+    if (cores_count >= MAX_PMU_CTL_CORES_COUNT)
+        return false;
 
-			Assert::IsFalse(check_cores_in_pmu_ctl_hdr_p(&ctl_req));
-		}
-
-		TEST_METHOD(test_check_cores_in_pmu_ctl_hdr_p_cores_no_error)
-		{
-			struct pmu_ctl_hdr ctl_req;
-			ctl_req.cores_idx.cores_count = 8;	// Arbitrary value
-			std::fill_n(ctl_req.cores_idx.cores_no, MAX_PMU_CTL_CORES_COUNT, MAX_PMU_CTL_CORES_COUNT);
-
-			Assert::IsFalse(check_cores_in_pmu_ctl_hdr_p(&ctl_req));
-		}
-
-		TEST_METHOD(test_check_cores_in_pmu_ctl_hdr_p_cores_no)
-		{
-			for (size_t cores_count = 0; cores_count < MAX_PMU_CTL_CORES_COUNT; cores_count++)
-			{
-				struct pmu_ctl_hdr ctl_req;
-				ctl_req.cores_idx.cores_count = cores_count;
-				std::iota(ctl_req.cores_idx.cores_no,
-					ctl_req.cores_idx.cores_no + MAX_PMU_CTL_CORES_COUNT, 0);
-
-				Assert::IsTrue(check_cores_in_pmu_ctl_hdr_p(&ctl_req));
-			}
-		}
-	};
+    for (auto k = 0; k < cores_count; k++)
+        if (ctl_req->cores_idx.cores_no[k] >= MAX_PMU_CTL_CORES_COUNT)
+            return false;
+    return true;
 }

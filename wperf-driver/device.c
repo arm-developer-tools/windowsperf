@@ -37,8 +37,9 @@
 #include "pmu.h"
 #include "coreinfo.h"
 #include "sysregs.h"
-#include "wperf-common/macros.h"
+#include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
+#include "wperf-common\inline.h"
 
 //
 // Device events
