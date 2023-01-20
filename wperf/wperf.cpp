@@ -69,6 +69,7 @@ using namespace WPerfOutput;
 #include <cwctype>
 #include <ctime>
 #include <devpkey.h>
+#include <psapi.h>
 
 BOOLEAN G_PerformAsyncIo;
 BOOLEAN G_LimitedLoops;
@@ -1285,7 +1286,7 @@ public:
     {
         PMUSampleSetSrcHdr *ctl;
         DWORD res_len;
-        int sz;
+        size_t sz;
 
         if (sample_sources.size())
         {
@@ -1310,9 +1311,9 @@ public:
         }
 
         ctl->action = PMU_CTL_SAMPLE_SET_SRC;
-        ctl->core_idx = core_idx;
+        ctl->core_idx = cores_idx[0];   // Only one core for sampling!
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, ctl, sz, NULL, 0, &res_len, NULL);
-        BOOL status = DeviceAsyncIoControl(handle, ctl, sz, NULL, 0, &res_len);
+        BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)sz, NULL, 0, &res_len);
         delete[] ctl;
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_SET_SRC failed");
@@ -1328,7 +1329,7 @@ public:
     {
         struct pmu_ctl_get_sample_hdr hdr;
         hdr.action = PMU_CTL_SAMPLE_GET;
-        hdr.core_idx = core_idx;
+        hdr.core_idx = cores_idx[0];
         DWORD res_len;
 
         int buf_sz = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
@@ -1352,7 +1353,8 @@ public:
         DWORD res_len;
 
         ctl.action = PMU_CTL_SAMPLE_START;
-        ctl.core_idx = core_idx;
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = cores_idx[0];
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len, NULL);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
         if (!status)
@@ -1372,9 +1374,10 @@ public:
         DWORD res_len;
 
         ctl.action = PMU_CTL_SAMPLE_STOP;
-        ctl.core_idx = core_idx;
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = cores_idx[0];
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len, NULL);
-        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_lenL);
+        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
 #if 0
@@ -3077,7 +3080,7 @@ static DWORD FindProcess(std::wstring lpcszFileName)
         goto release_and_exit;
 
     cdwProcesses /= sizeof(DWORD);
-    for (int i = 0; i < cdwProcesses; i++)
+    for (DWORD i = 0; i < cdwProcesses; i++)
     {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, lpdwProcessIds[i]);
         if (!hProcess)
