@@ -116,6 +116,19 @@ struct PMUSampleSummary
     UINT64 sample_dropped;
 };
 
+typedef struct
+{
+    UINT64 lr;
+    UINT64 pc;
+    UINT64 ov_flags;
+} FrameChain;
+
+struct PMUCtlGetSampleHdr
+{
+    enum pmu_ctl_action action;
+    UINT32 core_idx;
+};
+
 struct pmu_ctl_ver_hdr
 {
     enum pmu_ctl_action action;

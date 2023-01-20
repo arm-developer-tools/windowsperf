@@ -31,27 +31,13 @@
 
 #include "pmu.h"
 #include "queue.h"
-#include "wperf-common\macros.h"
+#include "wperf-common\iorequest.h"
 
 enum prof_action
 {
     PROF_DISABLED,
     PROF_NORMAL,
     PROF_MULTIPLEX,
-};
-
-typedef struct
-{
-    UINT64 lr;
-    UINT64 pc;
-    UINT64 ov_flags;
-} FrameChain;
-
-#define FRAME_CHAIN_BUF_SIZE 128
-struct PMUCtlGetSampleHdr
-{
-    enum pmu_ctl_action action;
-    UINT32 core_idx;
 };
 
 typedef struct core_info
