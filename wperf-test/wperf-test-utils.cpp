@@ -69,6 +69,17 @@ namespace wperftest
 			Assert::AreEqual(DoubleToWideString(99.99, 4), std::wstring(L"99.9900"));
 		}
 
+		TEST_METHOD(test_DoubleToWideStringExt)
+		{
+			Assert::AreEqual(DoubleToWideStringExt(0.0, 2, 6), std::wstring(L"  0.00"));
+			Assert::AreEqual(DoubleToWideStringExt(1.1, 2, 6), std::wstring(L"  1.10"));
+			Assert::AreEqual(DoubleToWideStringExt(99.99, 2, 6), std::wstring(L" 99.99"));
+
+			Assert::AreEqual(DoubleToWideStringExt(0.0, 4, 8), std::wstring(L"  0.0000"));
+			Assert::AreEqual(DoubleToWideStringExt(1.1, 4, 8), std::wstring(L"  1.1000"));
+			Assert::AreEqual(DoubleToWideStringExt(99.99, 4, 8), std::wstring(L" 99.9900"));
+		}
+
 		TEST_METHOD(test_TokenizeWideStringOfInts_error)
 		{
 			std::vector<uint32_t> Output;
