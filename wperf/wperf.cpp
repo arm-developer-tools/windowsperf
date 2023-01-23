@@ -3447,7 +3447,7 @@ wmain(
                 b.offset += sec_base;
             }
 
-            size_t total_sample = raw_samples.size();
+            //size_t total_sample = raw_samples.size();
             for (auto a : raw_samples)
             {
                 bool found = false;
@@ -3538,7 +3538,11 @@ wmain(
                     prev_evt_src = a.event_src;
 
                     if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
-                        std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                        //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+
+                        std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                                   << IntToDecWideString(printed_sample_freq, 10)
+                                   << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
 
                     std::wcout << L"======================== sample source: " << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top " << std::dec << request.sample_display_row << L" hot functions ========================\n";
 
@@ -3549,7 +3553,10 @@ wmain(
 
                 if (printed_sample_num == request.sample_display_row)
                 {
-                    std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                    //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                    std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                               << IntToDecWideString(printed_sample_freq, 10)
+                               << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     printed_sample_num++;
                     continue;
                 }
@@ -3557,14 +3564,19 @@ wmain(
                 if (printed_sample_num > request.sample_display_row)
                     continue;
 
-                std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
+                //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
+                std::wcout << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                           << IntToDecWideString(a.freq, 10)
+                           << a.name << std::endl;
 
                 printed_sample_freq += a.freq;
                 printed_sample_num++;
             }
 
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
-                std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                std::wcout << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, 6) << L"%"
+                           << IntToDecWideString(printed_sample_freq, 10) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
 #endif
         }
     }
