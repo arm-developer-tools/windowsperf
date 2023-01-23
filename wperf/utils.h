@@ -37,6 +37,8 @@
 std::string MultiByteFromWideString(const wchar_t* wstr);
 std::wstring IntToHexWideString(int Value, size_t Width = 4);
 std::wstring DoubleToWideString(double Value, int Precision = 2);
+std::wstring DoubleToWideStringExt(double Value, int Precision, int Width);
+
 
 /// <summary>
 /// Function tokenizes string and returns vector in INT values.

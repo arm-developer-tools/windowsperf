@@ -69,3 +69,16 @@ std::wstring DoubleToWideString(double Value, int Precision) {
     ss << std::fixed << std::setprecision(Precision) << Value;
     return std::wstring(ss.str());
 }
+
+/// <summary>
+/// Converts double to WSTRING. Function is using fixed format
+/// and default precision set to 2.
+/// </summary>
+/// <param name="Value">Value to convert</param>
+/// <param name="Precision">Precision</param>
+/// <param name="Width">Total string width</param>
+std::wstring DoubleToWideStringExt(double Value, int Precision, int Width) {
+    std::wstringstream ss;
+    ss << std::fixed << std::setw(Width) << std::setprecision(Precision) << Value;
+    return std::wstring(ss.str());
+}
