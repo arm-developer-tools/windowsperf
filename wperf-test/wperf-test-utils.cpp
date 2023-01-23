@@ -58,6 +58,25 @@ namespace wperftest
 			Assert::AreEqual(IntToHexWideString(256, 4), std::wstring(L"0x0100"));
 		}
 
+		TEST_METHOD(test_IntToDecWideString)
+		{
+			Assert::AreEqual(IntToDecWideString(0, 1), std::wstring(L"0"));
+			Assert::AreEqual(IntToDecWideString(0, 2), std::wstring(L" 0"));
+			Assert::AreEqual(IntToDecWideString(0, 3), std::wstring(L"  0"));
+			Assert::AreEqual(IntToDecWideString(0, 4), std::wstring(L"   0"));
+			Assert::AreEqual(IntToDecWideString(1, 1), std::wstring(L"1"));
+			Assert::AreEqual(IntToDecWideString(1, 2), std::wstring(L" 1"));
+			Assert::AreEqual(IntToDecWideString(1, 3), std::wstring(L"  1"));
+			Assert::AreEqual(IntToDecWideString(1, 4), std::wstring(L"   1"));
+			Assert::AreEqual(IntToDecWideString(1, 5), std::wstring(L"    1"));
+			Assert::AreEqual(IntToDecWideString(256, 1), std::wstring(L"256"));
+			Assert::AreEqual(IntToDecWideString(256, 2), std::wstring(L"256"));
+			Assert::AreEqual(IntToDecWideString(256, 3), std::wstring(L"256"));
+			Assert::AreEqual(IntToDecWideString(256, 4), std::wstring(L" 256"));
+			Assert::AreEqual(IntToDecWideString(256, 5), std::wstring(L"  256"));
+			Assert::AreEqual(IntToDecWideString(256, 6), std::wstring(L"   256"));
+		}
+
 		TEST_METHOD(test_DoubleToWideString)
 		{
 			Assert::AreEqual(DoubleToWideString(0.0, 2), std::wstring(L"0.00"));

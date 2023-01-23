@@ -49,7 +49,7 @@ template<typename T>
 std::wstring IntToDecWideString(T Value, size_t Width) {
     static_assert(std::is_integral<T>::value, "Integral type required in Value<T>");
     std::wstringstream ss;
-    ss << std::setw(Width) << std::hex << Value;
+    ss << std::setw(Width) << Value;
     return std::wstring(ss.str());
 }
 
