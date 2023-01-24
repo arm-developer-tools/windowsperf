@@ -34,9 +34,9 @@ default:
 
 stages:
 - build
-# This is disabled for now as CI machine is not yet configured to run this stage.
-# - test
+- test
 
+# CI machines are not yet setup to run this
 # sast:
 #   stage: test
 # include:
@@ -49,6 +49,12 @@ build_and_test:
     - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\ARM64\Release\wperf-test.dll
     # The comman below is here for future reference, there is no point running the python test script without installing the driver we just compiled.
     # - $env:HERE="$(pwd)"; $env:PATH += ";C:\wenv\arm64\python\tools;$env:HERE\wperf\ARM64\Release\"; python -m pip install pytest; python -m pytest wperf-scripts\
+  artifacts:
+    paths:
+      - wperf/ARM64/Release/wperf.exe
+      - wperf-driver/ARM64/Release/wperf-driver
+      - wperf-driver/ARM64/Release/wperf-driver.cer
+    expire_in: 20 min
   rules:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
@@ -66,5 +72,30 @@ build_and_archive:
     name: "$env:CI_JOB_STAGE-$env:CI_COMMIT_REF_NAME"
     paths:
       - release/
+  rules:
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+test_driver:
+  stage: test
+  needs:
+    - job: build_and_test
+      artifacts: true
+  script:
+    # Command to create device node on CI machine
+    # devgen /add /hardwareid "Root\WPERFDRIVER" /bus ROOT
+    - >
+      $env:PATH+=";C:\Program Files (x86)\Windows Kits\10\Tools\10.0.22621.0\arm64";
+      cp wperf-driver\ARM64\Release\wperf-driver\* c:\ci\; 
+      cp wperf-driver\ARM64\Release\wperf-driver.cer c:\ci\;
+      cp wperf\ARM64\Release\wperf.exe c:\ci\;
+      cp -Recurse -Force wperf-scripts\tests c:\ci\;
+      cd c:\ci\;
+      certutil -addstore root wperf-driver.cer;
+      pnputil /add-driver .\wperf-driver.inf /install
+    - >
+      ls;
+      $env:PATH += ";C:\wenv\arm64\python\tools";
+      python -m pip install pytest;
+      python -m pytest
   rules:
       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
