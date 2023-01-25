@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 #include <typeindex>
+#include <algorithm>
 #include "outpututil.h"
 
 /* 
@@ -98,28 +99,28 @@ public:
                         isFirstNested = false;
                     }
 
-                    if constexpr(std::is_same_v<ValueType, StringType>)
+                    if constexpr(std::is_same_v<ValueType, StringType> || std::is_same_v<ValueType, char> || std::is_same_v<ValueType, wchar_t>)
                     {
                         os << LiteralConstants<CharType>::m_quotes;
                     }
 
                     os << cv;
 
-                    if constexpr(std::is_same_v<ValueType, StringType>)
+                    if constexpr(std::is_same_v<ValueType, StringType> || std::is_same_v<ValueType, char> || std::is_same_v<ValueType, wchar_t>)
                     {
                         os << LiteralConstants<CharType>::m_quotes;
                     }
                 }
                 os << LiteralConstants<CharType>::m_bracket_close;
             } else {
-                    if constexpr(std::is_same_v<ValueType, StringType>)
+                    if constexpr(std::is_same_v<ValueType, StringType> || std::is_same_v<ValueType, char> || std::is_same_v<ValueType, wchar_t>)
                     {
                         os << LiteralConstants<CharType>::m_quotes;
                     }
 
                     os << val;
 
-                    if constexpr(std::is_same_v<ValueType, StringType>)
+                    if constexpr(std::is_same_v<ValueType, StringType> || std::is_same_v<ValueType, char> || std::is_same_v<ValueType, wchar_t>)
                     {
                         os << LiteralConstants<CharType>::m_quotes;
                     }

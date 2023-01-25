@@ -24,6 +24,9 @@
     <ClCompile Include="wperf-test-common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="wperf-test-json.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">

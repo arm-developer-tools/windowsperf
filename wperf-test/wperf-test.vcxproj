@@ -186,6 +186,7 @@
     </ClCompile>
     <ClCompile Include="wperf-test-common.cpp" />
     <ClCompile Include="wperf-test-utils.cpp" />
+    <ClCompile Include="wperf-test-json.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
