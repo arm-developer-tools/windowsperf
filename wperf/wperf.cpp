@@ -1519,7 +1519,7 @@ public:
                 m_out.GetOutputStream() << std::endl
                            << L"Performance counter stats for core " << std::dec << i
                            << (multiplexing ? L", multiplexed" : L", no multiplexing")
-                           << (count_kernel ? L", kernel mode excluded" : L", kernel mode included")
+                           << (count_kernel ? L", kernel mode included" : L", kernel mode excluded")
                            << L", on " << vendor_name << L" core implementation:"
                            << std::endl;
 
