@@ -30,33 +30,34 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from jsonschema import validate
 import json
-import subprocess
 import os
+from common import run_command, get_schema
+import pytest
 
-### Common test runner code
+### Test cases
 
-def is_json(str_to_test):
-    """ Test if string is in JSON format. """
+@pytest.mark.parametrize("scheme_name", [ "version", "list", "test", "stat" ])
+def test_wperf_json_schema(request, tmp_path, scheme_name):
+    """ Test `wperf` JSON output against scheme """
+    test_path = os.path.dirname(request.path)
+    file_path = tmp_path / 'test.json'
+    if "version" in scheme_name:
+        cmd_type = "-version"
+    elif "list" in scheme_name:
+        cmd_type = "list"
+    elif "test" in scheme_name:
+        cmd_type = "test"
+    elif "stat" in scheme_name:
+        cmd_type = "stat -e cpu_cycles sleep 1"
+    cmd = 'wperf {} --output {}'.format(cmd_type, str(file_path))
+    stdout, _ = run_command(cmd.split())
+
+    with open(str(file_path)) as json_file:
+        json_output = json.loads(json_file.read())
     try:
-        json.loads(str_to_test)
-    except ValueError:
-        return False
-    return True
-
-def get_schema(schema_name, test_path):
-    """ Get JSON Object for schema with name `schema_name` """
-    with open("{}/schemas/wperf.{}.schema".format(test_path, schema_name)) as file:
-        json_schema = json.loads(file.read())
-    return json_schema
-
-def run_command(args):
-    """ Run command and capture stdout and stderr for parsing. """
-    process = subprocess.Popen(args,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    return stdout, stderr
-
-def check_if_file_exists(filename):
-    return os.path.isfile(filename)
+        validate(instance=json_output, schema=get_schema(scheme_name, test_path))
+    except:
+        assert False
+    assert True

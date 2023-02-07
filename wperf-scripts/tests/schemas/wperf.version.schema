@@ -1,0 +1,22 @@
+{
+    "type": "object",
+    "required": [ "Version" ],
+    "additionalProperties": false,
+    "properties": {
+        "Version": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "required": [ "Component", "Version" ],
+                "additionalProperties": false,
+                "properties": {
+                    "Component": { "type" : "string" },
+                    "Version": { "type" : "string" }
+                }
+            }
+        }
+    }
+}

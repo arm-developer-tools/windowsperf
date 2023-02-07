@@ -1,0 +1,20 @@
+{
+    "type": "object",
+    "required": [ "Test_Results" ],
+    "additionalProperties": false,
+    "properties": {
+        "Test_Results": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "required": [ "Result", "Test_Name" ],
+                "additionalProperties": false,
+                "properties": {
+                    "Result": { "type" : "string" },
+                    "Test_Name": { "type" : "string" }
+                }
+            }
+        }
+    }
+}
