@@ -2849,6 +2849,7 @@ wmain(
         else
         {
             m_out.GetErrorOutputStream() << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
+            exit_code = EXIT_FAILURE;
             goto clean_exit;
         }
     }
