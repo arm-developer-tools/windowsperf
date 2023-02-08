@@ -135,9 +135,9 @@ clean:
 	devenv windowsperf.sln /Clean "$(make_config)|$(make_arch)" 2>&1
 
 purge:
-	rm -rf wperf/ARM64 wperf/x64
-	rm -rf wperf-driver/ARM64 wperf-driver/x64
-	rm -rf wperf-test/x64
+	rm -rf wperf/ARM64 wperf/ARM64EC wperf/x64
+	rm -rf wperf-driver/ARM64 wperf-driver/ARM64EC wperf-driver/x64
+	rm -rf wperf-test/ARM64 wperf-test/x64
 
 docs:
 	doxygen
