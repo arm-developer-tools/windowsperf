@@ -44,3 +44,7 @@ latex/*
 wperf-devgen/ARM64/
 wperf-devgen/ARM64EC/
 wperf-devgen/x64/
+
+# Temporary files that should be masked
+tmp/
+
