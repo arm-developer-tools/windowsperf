@@ -215,9 +215,16 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
     status = CoCreateInstance(__uuidof(DiaSource), NULL,
         CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&DiaDataSource);
 
-    if (status < 0)
+    if (status != S_OK)
     {
-        std::cout << "status: " << status << std::endl;
+        if (status == REGDB_E_CLASSNOTREG)
+        {
+            std::cout << "Status REGDB_E_CLASSNOTREG indicates that DIA SDK class is not registered!" << std::endl;
+            std::cout << "See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
+            std::cout << "The DIA SDK requires msdia.dll. Its normally installed and automatically registered with Visual Studio." << std::endl;
+        }
+        else
+            std::cout << "status: 0x" << std::hex << status << std::endl;
 
         throw fatal_exception("CoCreateInstance failed for DIA");
     }
