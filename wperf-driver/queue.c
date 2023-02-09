@@ -490,7 +490,7 @@ Return Value:
         WdfRequestComplete(Request, Status);
         return;
     }
-    KdPrint(("WindowsPerfEvtIoWrite deviceControl outputSize=%dn", outputSize));
+    KdPrint(("WindowsPerfEvtIoWrite deviceControl outputSize=%lu", outputSize));
     //
     // Port End
     //
