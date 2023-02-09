@@ -664,7 +664,7 @@ NTSTATUS deviceControl(
         struct pmu_ctl_hdr *ctl_req = (struct pmu_ctl_hdr *)pBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
-        if (cores_count != 0)
+        if (cores_count != 1)
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for action %d\n",
                                    cores_count, action);
