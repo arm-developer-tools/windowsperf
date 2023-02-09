@@ -679,6 +679,8 @@ NTSTATUS deviceControl(
             break;
         }
 
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_START\n");
+
         UINT32 core_idx = ctl_req->cores_idx.cores_no[cores_count];
 
         core_info[core_idx].sample_dropped = 0;
@@ -709,6 +711,8 @@ NTSTATUS deviceControl(
             break;
         }
 
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_STOP\n");
+
         UINT32 core_idx = ctl_req->cores_idx.cores_no[cores_count];
 
         per_core_exec(core_idx, CoreCounterStop, NULL);
@@ -721,6 +725,8 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_SAMPLE_GET:
     {
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_GET\n");
+
         struct PMUCtlGetSampleHdr *ctl_req = (struct PMUCtlGetSampleHdr *)pBuffer;
         UINT32 core_idx = ctl_req->core_idx;
         CoreInfo *core = core_info + core_idx;
@@ -748,6 +754,8 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_SAMPLE_SET_SRC:
     {
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_SET_SRC\n");
+
         PMUSampleSetSrcHdr *sample_req = (PMUSampleSetSrcHdr *)pBuffer;
         UINT32 core_idx = sample_req->core_idx;
 
