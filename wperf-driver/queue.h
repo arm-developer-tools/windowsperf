@@ -53,10 +53,11 @@ typedef struct _QUEUE_CONTEXT {
     WDFTIMER    Timer;
 
     // Virtual I/O
+    enum pmu_ctl_action action;     // Current action
+
     WDFREQUEST  CurrentRequest;
     NTSTATUS    CurrentStatus;
     size_t      Information;        // Sampling model virtual state
-
 
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 

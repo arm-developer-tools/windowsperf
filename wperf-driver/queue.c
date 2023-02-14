@@ -29,6 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "driver.h"
+#include "wperf-common/iorequest.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
@@ -381,7 +382,7 @@ WindowsPerfEvtIoWrite(
     IN WDFQUEUE   Queue,
     IN WDFREQUEST Request,
     IN size_t     Length
-    )
+)
 /*++
 
 Routine Description:
@@ -418,27 +419,27 @@ Return Value:
     _Analysis_assume_(Length > 0);
 
     KdPrint(("WindowsPerfEvtIoWrite Called! Queue 0x%p, Request 0x%p Length %Iu\n",
-             Queue,Request,Length));
+        Queue, Request, Length));
 
-    if( Length > MAX_WRITE_LENGTH ) {
+    if (Length > MAX_WRITE_LENGTH) {
         KdPrint(("WindowsPerfEvtIoWrite Buffer Length to big %Iu, Max is %d\n",
-                 Length,MAX_WRITE_LENGTH));
+            Length, MAX_WRITE_LENGTH));
         WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
         return;
     }
 
     // Get the memory buffer
     Status = WdfRequestRetrieveInputMemory(Request, &memory);
-    if( !NT_SUCCESS(Status) ) {
+    if (!NT_SUCCESS(Status)) {
         KdPrint(("WindowsPerfEvtIoWrite Could not get request memory buffer 0x%x\n",
-                 Status));
+            Status));
         WdfVerifierDbgBreakPoint();
         WdfRequestComplete(Request, Status);
         return;
     }
 
     // Release previous buffer if set
-    if( queueContext->Buffer != NULL ) {
+    if (queueContext->Buffer != NULL) {
         ExFreePool(queueContext->Buffer);
         queueContext->Buffer = NULL;
         queueContext->Length = 0L;
@@ -446,18 +447,18 @@ Return Value:
 
     queueContext->Buffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, MAX_WRITE_LENGTH, 'sam1');
     // Set completion status information 
-    if( queueContext->Buffer == NULL ) {
+    if (queueContext->Buffer == NULL) {
         KdPrint(("WindowsPerfEvtIoWrite: Could not allocate %Iu byte buffer\n", Length));
         WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
         return;
     }
 
     // Copy the memory in
-    Status = WdfMemoryCopyToBuffer( memory, 
-                                    0,  // offset into the source memory
-                                    queueContext->Buffer,
-                                    Length );
-    if( !NT_SUCCESS(Status) ) {
+    Status = WdfMemoryCopyToBuffer(memory,
+        0,  // offset into the source memory
+        queueContext->Buffer,
+        Length);
+    if (!NT_SUCCESS(Status)) {
         KdPrint(("WindowsPerfEvtIoWrite WdfMemoryCopyToBuffer failed 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
 
@@ -474,9 +475,14 @@ Return Value:
     //
     ULONG outputSize;
     Status = deviceControl(queueContext->Buffer, (ULONG)Length, &outputSize, queueContext);
-    if (Status == STATUS_PENDING) {
-        KdPrint(("WindowsPerfEvtIoWrite deviceControl pending 0x%x\n", Status));
-        KdPrint(("WindowsPerfEvtIoWrite deviceControl pending information=%zu\n", queueContext->Information));
+    if (Status == STATUS_PENDING)
+    {
+        // deviceControl can return pending for requests that may take more time complete.
+        // It this case timer callback will be responsible to probe if request is completed.
+        KdPrint(("WindowsPerfEvtIoWrite deviceControl STATUS_PENDING (0x%x)\n", Status));
+        // Defer the completion to another thread from the timer dpc
+        queueContext->CurrentRequest = Request;
+        queueContext->CurrentStatus = Status;
         return;
     }
     else if (!NT_SUCCESS(Status)) {
@@ -549,6 +555,24 @@ Return Value:
     Request = queueContext->CurrentRequest;
     if( Request != NULL ) {
 
+        if (queueContext->action == PMU_CTL_SAMPLE_GET)
+        {
+            Status = queueContext->CurrentStatus;
+
+            if (Status == STATUS_SUCCESS) {
+                KdPrint(("CustomTimerDPC Request PMU_CTL_SAMPLE_GET %p completed!\n",
+                    Request));
+
+                queueContext->CurrentRequest = NULL;
+                Status = queueContext->CurrentStatus;
+                WdfRequestComplete(Request, Status);
+            }
+            else if (Status == STATUS_PENDING) {
+                // There's still something to do
+                return;
+            }
+        }
+
         //
         // Attempt to remove cancel status from the request.
         //
@@ -557,7 +581,7 @@ Return Value:
         // and we are racing with it.
         //
         Status = WdfRequestUnmarkCancelable(Request);
-        if( Status != STATUS_CANCELLED ) {
+        if( Status == STATUS_SUCCESS ) {
 
             queueContext->CurrentRequest = NULL;
             Status = queueContext->CurrentStatus;
@@ -566,13 +590,11 @@ Return Value:
 
             WdfRequestComplete(Request, Status);
         }
-        else {
-            KdPrint(("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n",
+        else if (Status == STATUS_CANCELLED) {
+                KdPrint(("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n",
                                 Request));
         }
     }
 
     return;
 }
-
-
