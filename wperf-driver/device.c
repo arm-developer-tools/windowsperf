@@ -688,7 +688,7 @@ NTSTATUS deviceControl(
 
         WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_START\n");
 
-        UINT32 core_idx = ctl_req->cores_idx.cores_no[cores_count];
+        UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
 
         core_info[core_idx].sample_dropped = 0;
         core_info[core_idx].sample_generated = 0;
