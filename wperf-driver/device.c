@@ -703,7 +703,7 @@ NTSTATUS deviceControl(
         struct pmu_ctl_hdr *ctl_req = (struct pmu_ctl_hdr *)pBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
-        if (cores_count != 0)
+        if (cores_count != 1)
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for action %d\n",
                                    cores_count, action);
@@ -720,7 +720,7 @@ NTSTATUS deviceControl(
 
         WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_STOP\n");
 
-        UINT32 core_idx = ctl_req->cores_idx.cores_no[cores_count];
+        UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
 
         per_core_exec(core_idx, CoreCounterStop, NULL);
 
