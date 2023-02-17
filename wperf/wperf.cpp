@@ -2367,7 +2367,8 @@ public:
         m_out.Print(m_globalListJSON);
     }
 
-    void do_test(uint32_t enable_bits)
+    void do_test(uint32_t enable_bits,
+                 std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events)
     {
         std::vector<std::wstring> col_test_name, col_test_result;
 
@@ -2428,6 +2429,91 @@ public:
         col_test_result.push_back(IntToHexWideString(hw_cfg.variant_id));
         col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [vendor_id]");
         col_test_result.push_back(IntToHexWideString(hw_cfg.vendor_id));
+
+        // Tests for event scheduling
+        col_test_name.push_back(L"gpc_nums[EVT_CORE]");
+        col_test_result.push_back(std::to_wstring(gpc_nums[EVT_CORE]));
+        col_test_name.push_back(L"gpc_nums[EVT_DSU]");
+        col_test_result.push_back(std::to_wstring(gpc_nums[EVT_DSU]));
+        col_test_name.push_back(L"gpc_nums[EVT_DMC_CLK]");
+        col_test_result.push_back(std::to_wstring(gpc_nums[EVT_DMC_CLK]));
+        col_test_name.push_back(L"gpc_nums[EVT_DMC_CLKDIV2]");
+        col_test_result.push_back(std::to_wstring(gpc_nums[EVT_DMC_CLKDIV2]));
+        std::wstring evt_indexes, evt_notes;
+        for (auto e : ioctl_events[EVT_CORE])
+        {
+            evt_indexes += std::to_wstring(e.index) + L",";
+            evt_notes += e.note + L",";
+        }
+        if (!evt_indexes.empty() && evt_indexes.back() == L',')
+        {
+            evt_indexes.pop_back();
+        }
+        if (!evt_notes.empty() && evt_notes.back() == L',')
+        {
+            evt_notes.pop_back();
+        }
+        col_test_name.push_back(L"ioctl_events[EVT_CORE].index");
+        col_test_result.push_back(evt_indexes);
+        col_test_name.push_back(L"ioctl_events[EVT_CORE].note");
+        col_test_result.push_back(evt_notes);
+        evt_indexes.clear();
+        evt_notes.clear();
+        for (auto e : ioctl_events[EVT_DSU])
+        {
+            evt_indexes += std::to_wstring(e.index) + L",";
+            evt_notes += e.note + L",";
+        }
+        if (!evt_indexes.empty() && evt_indexes.back() == L',')
+        {
+            evt_indexes.pop_back();
+        }
+        if (!evt_notes.empty() && evt_notes.back() == L',')
+        {
+            evt_notes.pop_back();
+        }
+        col_test_name.push_back(L"ioctl_events[EVT_DSU].index");
+        col_test_result.push_back(evt_indexes);
+        col_test_name.push_back(L"ioctl_events[EVT_DSU].note");
+        col_test_result.push_back(evt_notes);
+        evt_indexes.clear();
+        evt_notes.clear();
+        for (auto e : ioctl_events[EVT_DMC_CLK])
+        {
+            evt_indexes += std::to_wstring(e.index) + L",";
+            evt_notes += e.note + L",";
+        }
+        if (!evt_indexes.empty() && evt_indexes.back() == L',')
+        {
+            evt_indexes.pop_back();
+        }
+        if (!evt_notes.empty() && evt_notes.back() == L',')
+        {
+            evt_notes.pop_back();
+        }
+        col_test_name.push_back(L"ioctl_events[EVT_DMC_CLK].index");
+        col_test_result.push_back(evt_indexes);
+        col_test_name.push_back(L"ioctl_events[EVT_DMC_CLK].note");
+        col_test_result.push_back(evt_notes);
+        evt_indexes.clear();
+        evt_notes.clear();
+        for (auto e : ioctl_events[EVT_DMC_CLKDIV2])
+        {
+            evt_indexes += std::to_wstring(e.index) + L",";
+            evt_notes += e.note + L",";
+        }
+        if (!evt_indexes.empty() && evt_indexes.back() == L',')
+        {
+            evt_indexes.pop_back();
+        }
+        if (!evt_notes.empty() && evt_notes.back() == L',')
+        {
+            evt_notes.pop_back();
+        }
+        col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].index");
+        col_test_result.push_back(evt_indexes);
+        col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].note");
+        col_test_result.push_back(evt_notes);
 
         TableOutputL table(m_outputType);
         table.PresetHeaders<TestOutputTraitsL>();
@@ -2889,7 +2975,7 @@ wmain(
 
     if (request.do_test)
     {
-        pmu_device.do_test(enable_bits);
+        pmu_device.do_test(enable_bits, request.ioctl_events);
         goto clean_exit;
     }
 
