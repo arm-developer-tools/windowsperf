@@ -48,3 +48,7 @@
 #define MAX_MANAGED_DMC_CLKDIV2_EVENTS      8
 
 #define AARCH64_MAX_HWC_SUPP 				31
+
+// Define how many fixed counters are now handled
+// Currently we are having "cycles" as 1 (only) fixed counter
+#define FIXED_COUNTERS_NO                   1

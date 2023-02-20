@@ -1878,7 +1878,7 @@ public:
                     struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
                     uint64_t l3_cache_access_num = 0, l3_cache_refill_num = 0;
 
-                    for (size_t j = 0; j < evt_num; j++)
+                    for (size_t j = FIXED_COUNTERS_NO; j < evt_num; j++)
                     {
                         if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                             continue;
@@ -2012,7 +2012,7 @@ public:
                 struct pmu_event_usr* evts = dsu_outs[dsu_core].evts;
                 uint64_t l3_cache_access_num = 0, l3_cache_refill_num = 0;
 
-                for (size_t j = 0; j < evt_num2; j++)
+                for (size_t j = FIXED_COUNTERS_NO; j < evt_num2; j++)
                 {
                     if (j >= 1 && (events[j - 1].type == EVT_PADDING))
                         continue;
