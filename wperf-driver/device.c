@@ -180,7 +180,7 @@ static VOID core_write_counter(UINT32 counter_idx, __int64 val)
         WRITE_COUNTER(30);
         default:
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
-                       "ARM64PMC: Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
+                       "WindowsPerf: Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
             break;
     }
 }
