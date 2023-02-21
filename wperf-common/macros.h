@@ -56,8 +56,6 @@
 
 #define MAX_PROCESSES					1024
 
-#define CYCLE_EVT_IDX					0xffffffffU
-
 #define FILTER_BIT_EXCL_EL1					(1U << 31)
 
 #define CYCLE_EVT_IDX                       0xffffffffU
