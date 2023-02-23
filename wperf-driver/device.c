@@ -214,14 +214,10 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
     UINT64 ov_flags = arm64_clear_ov_flags();
     ov_flags &= core->ov_mask;
 
-    WindowsPerfKdPrintInfo("arm64_pmi_handler: ov_flags\n");
-
     if (!ov_flags)
         return;
 
     core->sample_generated++;
-
-    WindowsPerfKdPrintInfo("arm64_pmi_handler: sample_generated\n");
 
     if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
     {
@@ -232,8 +228,6 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
     if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
     {
         PQUEUE_CONTEXT irp = core->get_sample_irp;
-
-        WindowsPerfKdPrintInfo("arm64_pmi_handler: SAMPLE_CHAIN_BUFFER_SIZE irp=%p\n", irp);
 
         if (irp)
         {
