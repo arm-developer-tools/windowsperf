@@ -39,6 +39,7 @@
 #define CYCLE_EVENT_IDX                     _UI32_MAX
 
 #define CYCLE_COUNTER_IDX                   31
+#define INVALID_COUNTER_IDX                 32
 
 #define MAX_PMU_CTL_CORES_COUNT             128
 

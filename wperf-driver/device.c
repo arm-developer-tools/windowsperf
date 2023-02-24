@@ -523,6 +523,8 @@ static NTSTATUS evt_assign_dsu(UINT32 core_base, UINT32 core_end, UINT16 dsu_eve
             event->enable_irq = 0;
             if (j < init_num)
                 event->counter_idx = j;
+            else
+                event->counter_idx = INVALID_COUNTER_IDX;
         }
 
         GROUP_AFFINITY old_affinity, new_affinity;
@@ -573,6 +575,7 @@ static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_e
         events[0].value = 0;
         events[0].scheduled = 0;
         events[0].filter_bits = filter_bits;
+        events[0].counter_idx = CYCLE_COUNTER_IDX;
 
         for (UINT32 j = 0; j < core_event_num; j++)
         {
@@ -583,6 +586,8 @@ static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_e
             event->enable_irq = 0;
             if (j < init_num)
                 event->counter_idx = j;
+            else
+                event->counter_idx = INVALID_COUNTER_IDX;
         }
 
         GROUP_AFFINITY old_affinity, new_affinity;
