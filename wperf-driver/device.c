@@ -325,12 +325,6 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
 
         CoreCounterReset();
 
-        struct pmu_event_kernel cycle_event;
-        cycle_event.event_idx = CYCLE_EVENT_IDX;
-        cycle_event.counter_idx = CYCLE_COUNTER_IDX;
-        cycle_event.filter_bits = events[0].filter_bits;
-        event_enable(&cycle_event);
-
         for (UINT32 i = 0; i < numGPC; i++)
         {
             UINT32 adjusted_idx = (event_start_idx2 + i) % (events_num - numFPC);
@@ -372,11 +366,6 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
         }
 
         DSUCounterReset();
-
-        struct pmu_event_kernel cycle_event;
-        cycle_event.event_idx = CYCLE_EVENT_IDX;
-        cycle_event.counter_idx = CYCLE_COUNTER_IDX;
-        DSUEventEnable(&cycle_event);
 
         for (UINT32 i = 0; i < dsu_numGPC; i++)
         {
