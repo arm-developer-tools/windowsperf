@@ -532,6 +532,7 @@ NTSTATUS deviceControl(
 )
 {
     NTSTATUS status = STATUS_SUCCESS;
+    *outputSize = 0;
 
     WindowsPerfKdPrint("IOCTL: inputSize=%d \n", inputSize);
     WindowsPerfKdPrintBuffer((BYTE*)pBuffer, inputSize);
