@@ -67,7 +67,23 @@ build_and_archive:
       mkdir release/wperf-driver;
       cp wperf/ARM64/Release/wperf.exe release;
       cp wperf-driver/ARM64/Release/wperf-driver/* release/wperf-driver;
+      cp wperf-driver/ARM64/Release/wperf-driver.pdb release/wperf-driver;
       cp ARM64/Release/wperf-devgen.exe release;
+    - >
+      $env:PATH += ";C:\wenv\arm64\python\tools";
+      cp ci/ddf.py release;
+      cp ci/wperf-driver.raw.ddf release;
+      cd release;
+      python ddf.py $(pwd);
+      MakeCab /f wperf-driver.ddf;
+      mv disk1/wperf-driver.cab wperf-driver/;
+      rm -Force disk1;
+      rm -Force ddf.py;
+      rm -Force setup.inf;
+      rm -Force setup.rpt;
+      rm -Force wperf-driver.raw.ddf;
+      rm -Force wperf-driver.ddf;
+      cd ..;
     - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\ARM64\Release\wperf-test.dll
   artifacts:
     name: "$env:CI_JOB_STAGE-$env:CI_COMMIT_REF_NAME"
