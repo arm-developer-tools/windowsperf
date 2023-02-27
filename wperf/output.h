@@ -263,7 +263,10 @@ struct WPerfStatJSON
     std::vector<TableOutput<CharType>> m_corePerformanceTables;
     std::vector<TableOutput<CharType>> m_DSUPerformanceTables;
     TableOutput<CharType> m_coreOverall, m_DSUOverall, m_DMCDDDR, m_pmu, m_DSUL3metric;
-    
+    bool m_multiplexing;
+    bool m_kernel;
+    double m_duration;
+
     StringStream Print()
     {
         StringStream os;
@@ -271,6 +274,20 @@ struct WPerfStatJSON
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         {
             os << LITERALCONSTANTS_GET("\"core\": ") <<  LiteralConstants<CharType>::m_cbracket_open << std::endl;
+            os << LITERALCONSTANTS_GET("\"Multiplexing\": ");
+            if (m_multiplexing)
+                os << LITERALCONSTANTS_GET("true");
+            else
+                os << LITERALCONSTANTS_GET("false");
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"Kernel_mode\": ");
+            if (m_kernel)
+                os << LITERALCONSTANTS_GET("true");
+            else
+                os << LITERALCONSTANTS_GET("false");
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"Time_elapsed\": ") << m_duration;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
             bool isFirst = true;
             for(auto& table : m_corePerformanceTables)
             {

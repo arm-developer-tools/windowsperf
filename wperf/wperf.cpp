@@ -1622,6 +1622,8 @@ public:
 
                 m_out.Print(table);
                 table.m_core = GlobalStringType(std::to_wstring(i));
+                m_globalJSON.m_multiplexing = multiplexing;
+                m_globalJSON.m_kernel = count_kernel;
                 m_globalJSON.m_corePerformanceTables.push_back(table);
             }
         }
@@ -3067,10 +3069,6 @@ wmain(
                     pmu_device.dmc_events_read();
                     pmu_device.print_dmc_stat(request.ioctl_events[EVT_DMC_CLK], request.ioctl_events[EVT_DMC_CLKDIV2], request.report_ddr_bw_metric);
                 }
-                if(m_outputType == TableOutputL::JSON || m_outputType == TableOutputL::ALL)
-                {
-                    m_out.Print(m_globalJSON);
-                }
 
                 ULARGE_INTEGER li_a, li_b;
                 FILETIME time_a, time_b;
@@ -3084,10 +3082,11 @@ wmain(
 
                 if (!request.do_timeline)
                 {
+                    double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
                     m_out.GetOutputStream() << std::endl;
                     m_out.GetOutputStream() << std::right << std::setw(20)
-                        << (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0
-                        << L" seconds time elapsed" << std::endl;
+                        << duration << L" seconds time elapsed" << std::endl;
+                    m_globalJSON.m_duration = duration;
                 }
                 else
                 {
@@ -3102,6 +3101,10 @@ wmain(
                     m_out.GetOutputStream() << L'\b' << "done\n";
                 }
 
+                if (m_outputType == TableOutputL::JSON || m_outputType == TableOutputL::ALL)
+                {
+                    m_out.Print(m_globalJSON);
+                }
             } while (request.do_timeline && no_ctrl_c);
         }
     }

@@ -4,8 +4,8 @@
     "properties": {
         "core": {
             "type": "object",
-            "required": [ "overall" ],
-            "minProperties": 2,
+            "required": [ "Multiplexing", "Kernel_mode", "Time_elapsed", "overall" ],
+            "minProperties": 5,
             "additionalProperties": false,
             "patternProperties": {
                 "^[0-9]+$": {
@@ -31,6 +31,9 @@
                 }
             },
             "properties": {
+                "Multiplexing": { "type": "boolean" },
+                "Kernel_mode": { "type": "boolean" },
+                "Time_elapsed": { "type": "number" },
                 "overall": {
                     "type": "object",
                     "properties": {
