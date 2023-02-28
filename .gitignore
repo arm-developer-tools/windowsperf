@@ -33,3 +33,8 @@ wperf-driver/x64/*
 docs/*
 html/*
 latex/*
+
+# wperf-devgen build directory
+wperf-devgen/ARM64/
+wperf-devgen/ARM64EC/
+wperf-devgen/x64/
