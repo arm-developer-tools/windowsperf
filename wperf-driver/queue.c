@@ -548,6 +548,8 @@ Return Value:
     queue = WdfTimerGetParentObject(Timer);
     queueContext = QueueGetContext(queue);
 
+    static int timer_cnt = 0;
+
     //
     // DPC is automatically synchronized to the Queue lock,
     // so this is race free without explicit driver managed locking.
@@ -559,12 +561,24 @@ Return Value:
         {
             Status = queueContext->CurrentStatus;
 
-            if (Status == STATUS_SUCCESS) {
-                KdPrint(("CustomTimerDPC Request PMU_CTL_SAMPLE_GET %p completed!\n",
-                    Request));
+            timer_cnt++;
 
-                queueContext->CurrentRequest = NULL;
-                Status = queueContext->CurrentStatus;
+            _Bool sample_get_timer_guard = (timer_cnt % 100) == 0;
+
+            if (Status == STATUS_SUCCESS || sample_get_timer_guard) {
+                KdPrint(("CustomTimerDPC Request PMU_CTL_SAMPLE_GET %p completed! timer_cnt=%d \n", Request, timer_cnt));
+
+                timer_cnt = 0;
+
+                if (sample_get_timer_guard) {
+                    // We will end this request because Kernel sampling grace time for
+                    // getting samples ended.
+                    queueContext->CurrentRequest = NULL;
+                    queueContext->Length = 0;               // No data to transmit
+                    queueContext->Buffer = NULL;            // No data to read
+                }
+                //Status = queueContext->CurrentStatus;
+                Status = STATUS_SUCCESS;
                 WdfRequestComplete(Request, Status);
             }
             else if (Status == STATUS_PENDING) {
