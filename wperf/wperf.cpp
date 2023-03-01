@@ -1326,26 +1326,31 @@ public:
         uint32_t core_idx;
     };
 
-    void get_sample(std::vector<FrameChain> &sample_info)
+    // Return false if sample buffer was empty
+    bool get_sample(std::vector<FrameChain> &sample_info)
     {
         struct pmu_ctl_get_sample_hdr hdr;
         hdr.action = PMU_CTL_SAMPLE_GET;
         hdr.core_idx = cores_idx[0];
         DWORD res_len;
 
-        int buf_sz = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
-        uint8_t *buf = new uint8_t[buf_sz];
+        const int buf_sz = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
+
+        std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(buf_sz);
 
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &hdr, sizeof(struct pmu_ctl_get_sample_hdr), buf, buf_sz, &res_len, NULL);
-        BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct pmu_ctl_get_sample_hdr), buf, buf_sz, &res_len);
+        BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct pmu_ctl_get_sample_hdr), buf.get(), buf_sz, &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
 
-        FrameChain *frames = (FrameChain *)buf;
+        if (res_len == 0)
+            return false;
+
+        FrameChain *frames = (FrameChain *)buf.get();
         for (int i = 0; i < (res_len / sizeof(FrameChain)); i++)
             sample_info.push_back(frames[i]);
 
-        delete[] buf;
+        return true;
     }
 
     void start_sample()
@@ -3421,8 +3426,11 @@ wmain(
 
             while (no_ctrl_c)
             {
-                pmu_device.get_sample(raw_samples);
-                std::wcout << L".";
+                bool sample = pmu_device.get_sample(raw_samples);
+                if (sample)
+                    std::wcout << L".";
+                else
+                    std::wcout << L"e";
             }
 
             std::wcout << " done!" << std::endl;
