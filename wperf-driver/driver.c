@@ -31,6 +31,7 @@
 #include "driver.h"
 #include "device.h"
 #include "debug.h"
+#include "driver.tmh"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -47,9 +48,16 @@ WindowsPerfEvtWdfDriverUnload(
     PAGED_CODE();
     UNREFERENCED_PARAMETER(Driver);
 
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
+
     WindowsPerfDeviceUnload();
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "unloaded\n"));
+
+    //
+    // Stop WPP Tracing
+    //
+    WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
 }
 
 /// <summary>
@@ -77,6 +85,10 @@ DriverEntry(
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
 
+    WPP_INIT_TRACING(DriverObject, RegistryPath);
+    
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+
     // Initialize the driver config structure
     WDF_DRIVER_CONFIG_INIT(&config, WindowsPerfEvtDeviceAdd);
 
@@ -97,6 +109,8 @@ DriverEntry(
 #if DBG
     WindowsPerfPrintDriverVersion();
 #endif
+    
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 
     return status;
 }

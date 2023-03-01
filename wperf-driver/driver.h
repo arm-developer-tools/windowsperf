@@ -34,6 +34,7 @@
 #include <wdf.h>
 #include <limits.h>
 #include "queue.h"
+#include "trace.h"
 
 //
 // Device

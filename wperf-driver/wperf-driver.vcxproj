@@ -230,6 +230,11 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <WppEnabled>true</WppEnabled>
+      <WppGenerateUsingTemplateFile>
+      </WppGenerateUsingTemplateFile>
+      <WppScanConfigurationData>trace.h</WppScanConfigurationData>
+      <WppRecorderEnabled>false</WppRecorderEnabled>
     </ClCompile>
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
@@ -280,6 +285,11 @@
       <ExceptionHandling>
       </ExceptionHandling>
       <Optimization>MaxSpeed</Optimization>
+      <WppEnabled>true</WppEnabled>
+      <WppGenerateUsingTemplateFile>
+      </WppGenerateUsingTemplateFile>
+      <WppScanConfigurationData>trace.h</WppScanConfigurationData>
+      <WppRecorderEnabled>false</WppRecorderEnabled>
     </ClCompile>
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
