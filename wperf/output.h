@@ -286,8 +286,6 @@ struct WPerfStatJSON
             else
                 os << LITERALCONSTANTS_GET("false");
             os << LiteralConstants<CharType>::m_comma << std::endl;
-            os << LITERALCONSTANTS_GET("\"Time_elapsed\": ") << m_duration;
-            os << LiteralConstants<CharType>::m_comma << std::endl;
             bool isFirst = true;
             for(auto& table : m_corePerformanceTables)
             {
@@ -331,8 +329,9 @@ struct WPerfStatJSON
             os << LITERALCONSTANTS_GET("\"dmc\": ") <<  LiteralConstants<CharType>::m_cbracket_open << std::endl;
             os << LITERALCONSTANTS_GET("\"pmu\": ") << m_pmu.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"ddr\": ") << m_DMCDDDR.Print(jsonType).str() << std::endl;
-            os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
+            os << LiteralConstants<CharType>::m_cbracket_close << LiteralConstants<CharType>::m_comma << std::endl;
         }
+        os << LITERALCONSTANTS_GET("\"Time_elapsed\": ") << m_duration << std::endl;
         os << LiteralConstants<CharType>::m_cbracket_close;
         return os;
     }
