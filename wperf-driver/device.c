@@ -372,6 +372,8 @@ VOID free_pmu_resource(VOID)
 
     NTSTATUS status = HalFreeHardwareCounters(pmc_resource_handle);
 
+    pmc_resource_handle = NULL;
+
     if (status != STATUS_SUCCESS)
     {
         WindowsPerfKdPrintInfo("HalFreeHardwareCounters: failed 0x%x\n", status);
