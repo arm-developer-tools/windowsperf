@@ -214,7 +214,7 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
     ULONG core_idx = 1;// KeGetCurrentProcessorNumberEx(NULL);
     CoreInfo *core = core_info + core_idx;
     UINT64 ov_flags = arm64_clear_ov_flags();
-    WindowsPerfKdPrint("%!FUNC! %!LINE! core->sample_generated=%llu core_idx=%llu", core->sample_generated, core_idx);
+    WindowsPerfKdPrint("%!FUNC! %!LINE! core->sample_generated=%llu core_idx=%llu ov_flags=%llu", core->sample_generated, core_idx, ov_flags);
     //WindowsPerfKdPrint("%!FUNC! %!LINE! %llx %llx", ov_flags, core->ov_mask);
     ov_flags &= core->ov_mask;
     //WindowsPerfKdPrint("%!FUNC! %!LINE! %llx", ov_flags);
@@ -243,11 +243,10 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
             irp->CurrentStatus = STATUS_SUCCESS;
             irp->Length = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
             if (irp->Buffer) {
-                ExFreePool(irp->Buffer);
-                irp->Buffer = NULL;
+                WindowsPerfKdPrint("%!FUNC! %!LINE! SAMPLE_CHAIN_BUFFER_SIZE irp->Length=%u irp->Buffer=0x%p",
+                    irp->Length, irp->Buffer);
+                RtlCopyMemory(irp->Buffer, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
             }
-            irp->Buffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, MAX_WRITE_LENGTH, 'pri1');
-            RtlCopyMemory(irp->Buffer, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
             //IoCompleteRequest(irp, IO_NO_INCREMENT);
             core->get_sample_irp = NULL;
             core->sample_idx = 0;

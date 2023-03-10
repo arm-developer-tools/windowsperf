@@ -352,7 +352,8 @@ Return Value:
                              queueContext->Buffer,
                              Length );
     if( !NT_SUCCESS(Status) ) {
-        KdPrint(("WindowsPerfEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x\n", Status));
+        KdPrint(("WindowsPerfEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%zu \n",
+            Status, queueContext->Buffer, Length));
         WdfRequestComplete(Request, Status);
         return;
     }
@@ -575,9 +576,9 @@ Return Value:
                     // getting samples ended.
                     queueContext->CurrentRequest = NULL;
                     queueContext->Length = 0;               // No data to transmit
-                    queueContext->Buffer = NULL;            // No data to read
+                    //queueContext->Buffer = NULL;            // No data to read
                 }
-                //Status = queueContext->CurrentStatus;
+                Status = queueContext->CurrentStatus;
                 Status = STATUS_SUCCESS;
                 WdfRequestComplete(Request, Status);
             }

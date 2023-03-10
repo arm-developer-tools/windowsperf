@@ -97,6 +97,7 @@ BOOL DeviceAsyncIoControl(
             WindowsPerfDbgPrint("Error: WriteFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
+        WindowsPerfDbgPrint("WriteFile: 0x%p, %u %lu \n", lpBuffer, nNumberOfBytesToWrite, numberOfBytesWritten);
     }
 
     if (lpOutBuffer != NULL)
@@ -106,6 +107,7 @@ BOOL DeviceAsyncIoControl(
             WindowsPerfDbgPrint("Error: ReadFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
+        WindowsPerfDbgPrint("ReadFile:  0x%p, %u %lu  \n", lpOutBuffer, nOutBufferSize, *lpBytesReturned);
     }
 
     return TRUE;
