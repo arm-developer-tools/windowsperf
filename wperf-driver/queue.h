@@ -57,7 +57,6 @@ typedef struct _QUEUE_CONTEXT {
 
     WDFREQUEST  CurrentRequest;
     NTSTATUS    CurrentStatus;
-    size_t      Information;        // Sampling model virtual state
 
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 

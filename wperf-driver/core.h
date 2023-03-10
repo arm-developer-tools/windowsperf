@@ -32,7 +32,7 @@
 #include "wperf-common\macros.h"
 #include "pmu.h"
 
-#define ARMV8_PMCR_MASK         0xff
+#define ARMV8_PMCR_MASK         0x3f
 #define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
 #define ARMV8_PMCR_P            (1 << 1) /*  Reset all counters */
 #define ARMV8_PMCR_C            (1 << 2) /*  Cycle counter reset */

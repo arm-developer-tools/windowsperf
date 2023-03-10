@@ -241,11 +241,18 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
         {
             WindowsPerfKdPrint("%!FUNC! %!LINE! inside irp");
             irp->CurrentStatus = STATUS_SUCCESS;
-            irp->Information = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
+            irp->Length = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
+            if (irp->Buffer) {
+                ExFreePool(irp->Buffer);
+                irp->Buffer = NULL;
+            }
+            irp->Buffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, MAX_WRITE_LENGTH, 'pri1');
             RtlCopyMemory(irp->Buffer, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
             //IoCompleteRequest(irp, IO_NO_INCREMENT);
             core->get_sample_irp = NULL;
             core->sample_idx = 0;
+            WindowsPerfKdPrint("%!FUNC! %!LINE! SAMPLE_CHAIN_BUFFER_SIZE irp->Length=%u irp->Buffer=0x%p",
+                irp->Length, irp->Buffer);
         }
         else
         {
@@ -257,11 +264,20 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
     }
     //WindowsPerfKdPrint("%!FUNC! %!LINE!");
     CoreCounterStop();
-    //WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    core->samples[core->sample_idx].lr = pTrapFrame->Lr;
-    core->samples[core->sample_idx].pc = pTrapFrame->Pc;
-    core->samples[core->sample_idx].ov_flags = ov_flags;
-    core->sample_idx++;
+
+    if (core->sample_idx >= SAMPLE_CHAIN_BUFFER_SIZE)
+    {
+        WindowsPerfKdPrint("%!FUNC! %!LINE! core->sample_idx >= SAMPLE_CHAIN_BUFFER_SIZE %u", core->sample_idx);
+    }
+    else
+    {
+        //WindowsPerfKdPrint("%!FUNC! %!LINE!");
+        core->samples[core->sample_idx].lr = pTrapFrame->Lr;
+        core->samples[core->sample_idx].pc = pTrapFrame->Pc;
+        core->samples[core->sample_idx].ov_flags = ov_flags;
+        core->sample_idx++;
+    }
+
     KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
     //WindowsPerfKdPrint("%!FUNC! %!LINE!");
     for (int i = 0; i < 32; i++)
@@ -699,7 +715,7 @@ NTSTATUS deviceControl(
         core_info[core_idx].sample_generated = 0;
         core_info[core_idx].sample_idx = 0;
         per_core_exec(core_idx, CoreCounterStart, NULL);
-        queueContext->Information = 0;
+        //queueContext->Information = 0;
         *outputSize = 0;
         break;
     }
@@ -757,7 +773,7 @@ NTSTATUS deviceControl(
             KeReleaseSpinLock(&core->SampleLock, oldIrql);
             WindowsPerfKdPrint("%!FUNC! %!LINE!");
             queueContext->CurrentStatus = STATUS_SUCCESS;
-            queueContext->Information = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
+            queueContext->Length = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
             *outputSize = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
             //IoCompleteRequest(Irp, IO_NO_INCREMENT);
             core->get_sample_irp = NULL;
@@ -851,7 +867,7 @@ NTSTATUS deviceControl(
         WindowsPerfKdPrint("%!FUNC! %!LINE! core->ov_mask=%llx", core->ov_mask);
 
         KeRevertToUserGroupAffinityThread(&old_affinity);
-        queueContext->Information = 0;
+        //queueContext->Information = 0;
         *outputSize = 0;
         break;
     }

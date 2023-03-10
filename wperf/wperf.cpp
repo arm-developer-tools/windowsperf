@@ -1386,7 +1386,7 @@ public:
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
-#if 0
+#if 1
         std::wcout << L"=================\n" << std::endl;
         std::wcout << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
         std::wcout << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
