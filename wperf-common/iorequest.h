@@ -129,6 +129,12 @@ struct PMUCtlGetSampleHdr
     UINT32 core_idx;
 };
 
+struct PMUSamplePayload
+{
+    UINT32 size;                                // How many framechains in payload
+    FrameChain payload[FRAME_CHAIN_BUF_SIZE];   
+};
+
 struct pmu_ctl_ver_hdr
 {
     enum pmu_ctl_action action;

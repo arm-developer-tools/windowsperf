@@ -476,17 +476,7 @@ Return Value:
     //
     ULONG outputSize;
     Status = deviceControl(queueContext->Buffer, (ULONG)Length, &outputSize, queueContext);
-    if (Status == STATUS_PENDING)
-    {
-        // deviceControl can return pending for requests that may take more time complete.
-        // It this case timer callback will be responsible to probe if request is completed.
-        KdPrint(("WindowsPerfEvtIoWrite deviceControl STATUS_PENDING (0x%x)\n", Status));
-        // Defer the completion to another thread from the timer dpc
-        queueContext->CurrentRequest = Request;
-        queueContext->CurrentStatus = Status;
-        return;
-    }
-    else if (!NT_SUCCESS(Status)) {
+    if (!NT_SUCCESS(Status)) {
         KdPrint(("WindowsPerfEvtIoWrite deviceControl failed 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
 
@@ -544,49 +534,17 @@ Return Value:
     NTSTATUS      Status;
     WDFREQUEST     Request;
     WDFQUEUE queue;
-    PQUEUE_CONTEXT queueContext ;
+    PQUEUE_CONTEXT queueContext;
 
     queue = WdfTimerGetParentObject(Timer);
     queueContext = QueueGetContext(queue);
-
-    static int timer_cnt = 0;
 
     //
     // DPC is automatically synchronized to the Queue lock,
     // so this is race free without explicit driver managed locking.
     //
     Request = queueContext->CurrentRequest;
-    if( Request != NULL ) {
-
-        if (queueContext->action == PMU_CTL_SAMPLE_GET)
-        {
-            Status = queueContext->CurrentStatus;
-
-            timer_cnt++;
-
-            _Bool sample_get_timer_guard = (timer_cnt % 100) == 0;
-
-            if (Status == STATUS_SUCCESS || sample_get_timer_guard) {
-                KdPrint(("CustomTimerDPC Request PMU_CTL_SAMPLE_GET %p completed! timer_cnt=%d \n", Request, timer_cnt));
-
-                timer_cnt = 0;
-
-                if (sample_get_timer_guard) {
-                    // We will end this request because Kernel sampling grace time for
-                    // getting samples ended.
-                    queueContext->CurrentRequest = NULL;
-                    queueContext->Length = 0;               // No data to transmit
-                    //queueContext->Buffer = NULL;            // No data to read
-                }
-                Status = queueContext->CurrentStatus;
-                Status = STATUS_SUCCESS;
-                WdfRequestComplete(Request, Status);
-            }
-            else if (Status == STATUS_PENDING) {
-                // There's still something to do
-                return;
-            }
-        }
+    if (Request != NULL) {
 
         //
         // Attempt to remove cancel status from the request.
@@ -596,18 +554,18 @@ Return Value:
         // and we are racing with it.
         //
         Status = WdfRequestUnmarkCancelable(Request);
-        if( Status == STATUS_SUCCESS ) {
+        if (Status != STATUS_CANCELLED) {
 
             queueContext->CurrentRequest = NULL;
             Status = queueContext->CurrentStatus;
 
-            KdPrint(("CustomTimerDPC Completing request 0x%p, Status 0x%x \n", Request,Status));
+            KdPrint(("CustomTimerDPC Completing request 0x%p, Status 0x%x \n", Request, Status));
 
             WdfRequestComplete(Request, Status);
         }
-        else if (Status == STATUS_CANCELLED) {
-                KdPrint(("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n",
-                                Request));
+        else {
+            KdPrint(("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n",
+                Request));
         }
     }
 

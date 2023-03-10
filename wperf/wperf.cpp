@@ -97,7 +97,7 @@ BOOL DeviceAsyncIoControl(
             WindowsPerfDbgPrint("Error: WriteFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
-        WindowsPerfDbgPrint("WriteFile: 0x%p, %u %lu \n", lpBuffer, nNumberOfBytesToWrite, numberOfBytesWritten);
+        //WindowsPerfDbgPrint("WriteFile: 0x%p, %u %lu \n", lpBuffer, nNumberOfBytesToWrite, numberOfBytesWritten);
     }
 
     if (lpOutBuffer != NULL)
@@ -107,7 +107,7 @@ BOOL DeviceAsyncIoControl(
             WindowsPerfDbgPrint("Error: ReadFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
-        WindowsPerfDbgPrint("ReadFile:  0x%p, %u %lu  \n", lpOutBuffer, nOutBufferSize, *lpBytesReturned);
+        //WindowsPerfDbgPrint("ReadFile:  0x%p, %u %lu  \n", lpOutBuffer, nOutBufferSize, *lpBytesReturned);
     }
 
     return TRUE;
@@ -1322,33 +1322,29 @@ public:
             throw fatal_exception("PMU_CTL_SAMPLE_SET_SRC failed");
     }
 
-    struct pmu_ctl_get_sample_hdr
-    {
-        enum pmu_ctl_action action;
-        uint32_t core_idx;
-    };
-
     // Return false if sample buffer was empty
     bool get_sample(std::vector<FrameChain> &sample_info)
     {
-        struct pmu_ctl_get_sample_hdr hdr;
+        struct PMUCtlGetSampleHdr hdr;
         hdr.action = PMU_CTL_SAMPLE_GET;
         hdr.core_idx = cores_idx[0];
         DWORD res_len;
 
-        const int buf_sz = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
-
-        std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(buf_sz);
+        PMUSamplePayload framesPayload = {0};
 
         //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &hdr, sizeof(struct pmu_ctl_get_sample_hdr), buf, buf_sz, &res_len, NULL);
-        BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct pmu_ctl_get_sample_hdr), buf.get(), buf_sz, &res_len);
+        BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct PMUCtlGetSampleHdr), &framesPayload, sizeof(PMUSamplePayload), &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
 
-        if (res_len == 0)
+#if 0
+        std::wcout << L"framesPayload.size: " << std::dec << framesPayload.size << std::endl;
+#endif
+
+        if (framesPayload.size != FRAME_CHAIN_BUF_SIZE)
             return false;
 
-        FrameChain *frames = (FrameChain *)buf.get();
+        FrameChain *frames = (FrameChain *)framesPayload.payload;
         for (int i = 0; i < (res_len / sizeof(FrameChain)); i++)
             sample_info.push_back(frames[i]);
 
@@ -3433,6 +3429,7 @@ wmain(
                     std::wcout << L".";
                 else
                     std::wcout << L"e";
+                Sleep(1000);
             }
 
             std::wcout << " done!" << std::endl;
@@ -3552,7 +3549,7 @@ wmain(
 
                         std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
                                    << IntToDecWideString(printed_sample_freq, 10)
-                                   << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                                   << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
 
                     std::wcout << L"======================== sample source: " << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top " << std::dec << request.sample_display_row << L" hot functions ========================\n";
 

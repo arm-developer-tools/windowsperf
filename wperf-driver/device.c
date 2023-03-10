@@ -210,9 +210,9 @@ static UINT64 arm64_clear_ov_flags(void)
 typedef VOID (*PMIHANDLER)(PKTRAP_FRAME TrapFrame);
 
 VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
-{    
+{
     ULONG core_idx = 1;// KeGetCurrentProcessorNumberEx(NULL);
-    CoreInfo *core = core_info + core_idx;
+    CoreInfo* core = core_info + core_idx;
     UINT64 ov_flags = arm64_clear_ov_flags();
     WindowsPerfKdPrint("%!FUNC! %!LINE! core->sample_generated=%llu core_idx=%llu ov_flags=%llu", core->sample_generated, core_idx, ov_flags);
     //WindowsPerfKdPrint("%!FUNC! %!LINE! %llx %llx", ov_flags, core->ov_mask);
@@ -224,7 +224,9 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
         return;
     }
     //WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     core->sample_generated++;
+
     //WindowsPerfKdPrint("%!FUNC! %!LINE!");
     if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
     {
@@ -232,68 +234,46 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
         core->sample_dropped++;
         return;
     }
+
     //WindowsPerfKdPrint("%!FUNC! %!LINE!");
     if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
     {
-        PQUEUE_CONTEXT irp = core->get_sample_irp;
-        //WindowsPerfKdPrint("%!FUNC! %!LINE!");
-        if (irp)
-        {
-            WindowsPerfKdPrint("%!FUNC! %!LINE! inside irp");
-            irp->CurrentStatus = STATUS_SUCCESS;
-            irp->Length = sizeof(FrameChain) * FRAME_CHAIN_BUF_SIZE;
-            if (irp->Buffer) {
-                WindowsPerfKdPrint("%!FUNC! %!LINE! SAMPLE_CHAIN_BUFFER_SIZE irp->Length=%u irp->Buffer=0x%p",
-                    irp->Length, irp->Buffer);
-                RtlCopyMemory(irp->Buffer, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
-            }
-            //IoCompleteRequest(irp, IO_NO_INCREMENT);
-            core->get_sample_irp = NULL;
-            core->sample_idx = 0;
-            WindowsPerfKdPrint("%!FUNC! %!LINE! SAMPLE_CHAIN_BUFFER_SIZE irp->Length=%u irp->Buffer=0x%p",
-                irp->Length, irp->Buffer);
-        }
-        else
-        {
-            WindowsPerfKdPrint("%!FUNC! %!LINE! else irp");
-            KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
-            core->sample_dropped++;
-            return;
-        }
-    }
-    //WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    CoreCounterStop();
 
-    if (core->sample_idx >= SAMPLE_CHAIN_BUFFER_SIZE)
-    {
-        WindowsPerfKdPrint("%!FUNC! %!LINE! core->sample_idx >= SAMPLE_CHAIN_BUFFER_SIZE %u", core->sample_idx);
+        WindowsPerfKdPrint("%!FUNC! %!LINE! else irp");
+        KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
+        core->sample_dropped++;
+        return;
     }
     else
     {
-        //WindowsPerfKdPrint("%!FUNC! %!LINE!");
+        CoreCounterStop();
+
+        WindowsPerfKdPrint("%!FUNC! %!LINE! CoreCounterStop()");
         core->samples[core->sample_idx].lr = pTrapFrame->Lr;
         core->samples[core->sample_idx].pc = pTrapFrame->Pc;
         core->samples[core->sample_idx].ov_flags = ov_flags;
         core->sample_idx++;
-    }
 
-    KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
-    //WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    for (int i = 0; i < 32; i++)
-    {
-        if (!(ov_flags & (1ULL << i)))
-            continue;
-        WindowsPerfKdPrint("%!FUNC! %!LINE! i=%d",i);
-        UINT32 val = 0xFFFFFFFF - core->sample_interval[i];
+        KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
 
-        if (i == 31)
-            _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
-        else
-            core_write_counter(i, (__int64)val);
+        //WindowsPerfKdPrint("%!FUNC! %!LINE!");
+        for (int i = 0; i < 32; i++)
+        {
+            if (!(ov_flags & (1ULL << i)))
+                continue;
+            WindowsPerfKdPrint("%!FUNC! %!LINE! i=%d", i);
+            UINT32 val = 0xFFFFFFFF - core->sample_interval[i];
+
+            if (i == 31)
+                _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
+            else
+                core_write_counter(i, (__int64)val);
+        }
+        CoreCounterStart();
+        WindowsPerfKdPrint("%!FUNC! %!LINE! CoreCounterStart()");
     }
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    CoreCounterStart();
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+    
+    WindowsPerfKdPrint("%!FUNC! %!LINE! KeReleaseSpinLockFromDpcLevel()");
 }
 
 static VOID update_core_counting(CoreInfo* core)
@@ -759,32 +739,31 @@ NTSTATUS deviceControl(
         UINT32 core_idx = ctl_req->core_idx;
         CoreInfo *core = core_info + core_idx;
         KIRQL oldIrql;
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
+        WindowsPerfKdPrint("%!FUNC! %!LINE! core_idx=%u", core_idx);
+
         KeAcquireSpinLock(&core->SampleLock, &oldIrql);
-        WindowsPerfKdPrint("FILTER_ME %!FUNC! %!LINE! %d", core->sample_idx);
-        if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
         {
+            WindowsPerfKdPrint("FILTER_ME %!FUNC! %!LINE! %d, queueContext->Length=%u", core->sample_idx, queueContext->Length);
+
+            struct PMUSamplePayload *out = (struct PMUSamplePayload*)pBuffer;
+            *outputSize = sizeof(struct PMUSamplePayload);  // sizeof(FrameChain)* SAMPLE_CHAIN_BUFFER_SIZE;
+
+            RtlSecureZeroMemory(out, *outputSize);
+
+            if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
+            {
+                WindowsPerfKdPrint("%!FUNC! %!LINE!");
+                RtlCopyMemory(out->payload, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
+                out->size = SAMPLE_CHAIN_BUFFER_SIZE;
+                core->sample_idx = 0;
+                WindowsPerfKdPrint("%!FUNC! %!LINE!");
+            }
+
             WindowsPerfKdPrint("%!FUNC! %!LINE!");
-            FrameChain *out = (FrameChain *)pBuffer;
-            RtlCopyMemory(out, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
-            WindowsPerfKdPrint("%!FUNC! %!LINE!");
-            core->sample_idx = 0;
-            KeReleaseSpinLock(&core->SampleLock, oldIrql);
-            WindowsPerfKdPrint("%!FUNC! %!LINE!");
-            queueContext->CurrentStatus = STATUS_SUCCESS;
-            queueContext->Length = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
-            *outputSize = sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE;
-            //IoCompleteRequest(Irp, IO_NO_INCREMENT);
-            core->get_sample_irp = NULL;
-            return STATUS_SUCCESS;
         }
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
-        core->get_sample_irp = queueContext;
         KeReleaseSpinLock(&core->SampleLock, oldIrql);
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
-        queueContext->CurrentStatus = STATUS_PENDING;
-        // IoMarkIrpPending(Irp);   // TODO: SAMPLING - all WDF requests are pending, but this needs to be checked
-        return STATUS_PENDING;
+
+        return STATUS_SUCCESS;
     }
     case PMU_CTL_SAMPLE_SET_SRC:
     {
