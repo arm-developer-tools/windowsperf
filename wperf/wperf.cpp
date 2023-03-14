@@ -1315,7 +1315,6 @@ public:
 
         ctl->action = PMU_CTL_SAMPLE_SET_SRC;
         ctl->core_idx = cores_idx[0];   // Only one core for sampling!
-        //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, ctl, sz, NULL, 0, &res_len, NULL);
         BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)sz, NULL, 0, &res_len);
         delete[] ctl;
         if (!status)
@@ -1332,14 +1331,9 @@ public:
 
         PMUSamplePayload framesPayload = {0};
 
-        //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &hdr, sizeof(struct pmu_ctl_get_sample_hdr), buf, buf_sz, &res_len, NULL);
         BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct PMUCtlGetSampleHdr), &framesPayload, sizeof(PMUSamplePayload), &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
-
-#if 0
-        std::wcout << L"framesPayload.size: " << std::dec << framesPayload.size << std::endl;
-#endif
 
         if (framesPayload.size != FRAME_CHAIN_BUF_SIZE)
             return false;
@@ -1359,7 +1353,6 @@ public:
         ctl.action = PMU_CTL_SAMPLE_START;
         ctl.cores_idx.cores_count = 1;
         ctl.cores_idx.cores_no[0] = cores_idx[0];
-        //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len, NULL);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_START failed");
@@ -1380,15 +1373,16 @@ public:
         ctl.action = PMU_CTL_SAMPLE_STOP;
         ctl.cores_idx.cores_count = 1;
         ctl.cores_idx.cores_no[0] = cores_idx[0];
-        //BOOL status = DeviceIoControl(handle, IO_CTL_PMU_CTL, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len, NULL);
         BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
-#if 1
-        std::wcout << L"=================\n" << std::endl;
-        std::wcout << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
-        std::wcout << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
-#endif
+
+        if (do_verbose)
+        {
+            std::wcout << L"=================" << std::endl;
+            std::wcout << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
+            std::wcout << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
+        }
     }
 
     void set_builtin_metrics(std::wstring key, std::wstring raw_str)
@@ -3563,7 +3557,7 @@ wmain(
                     //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
                                << IntToDecWideString(printed_sample_freq, 10)
-                               << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                               << L"  top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     printed_sample_num++;
                     continue;
                 }
@@ -3574,7 +3568,7 @@ wmain(
                 //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
                 std::wcout << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
                            << IntToDecWideString(a.freq, 10)
-                           << a.name << std::endl;
+                           << L"  " << a.name << std::endl;
 
                 printed_sample_freq += a.freq;
                 printed_sample_num++;
@@ -3583,7 +3577,7 @@ wmain(
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
                 //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
                 std::wcout << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, 6) << L"%"
-                           << IntToDecWideString(printed_sample_freq, 10) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                           << IntToDecWideString(printed_sample_freq, 10) << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
 #endif
         }
     }
