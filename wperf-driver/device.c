@@ -679,6 +679,12 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     switch (action) // Actions that must be done on `core_idx`
     {
+    case PMU_CTL_SAMPLE_START:
+    {
+        CoreCounterStart();
+        break;
+    }
+
     case PMU_CTL_SAMPLE_SET_SRC:
     {
         CoreCounterStop();
@@ -780,8 +786,13 @@ NTSTATUS deviceControl(
         core_info[core_idx].sample_dropped = 0;
         core_info[core_idx].sample_generated = 0;
         core_info[core_idx].sample_idx = 0;
-        per_core_exec(core_idx, CoreCounterStart, NULL);
-        //queueContext->Information = 0;
+
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_SAMPLE_START;
+        context->core_idx = core_idx;
+        WdfWorkItemEnqueue(queueContext->WorkItem);
+
         *outputSize = 0;
         break;
     }
