@@ -36,6 +36,8 @@
 #pragma alloc_text (PAGE, WindowsPerfTimerCreate)
 #endif
 
+VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
+
 NTSTATUS
 WindowsPerfQueueInitialize(
     WDFDEVICE Device
@@ -125,6 +127,28 @@ Return Value:
 
     queueContext->CurrentRequest = NULL;
     queueContext->CurrentStatus = STATUS_INVALID_DEVICE_REQUEST;
+
+    WDF_WORKITEM_CONFIG workItemConfig;
+    WDF_OBJECT_ATTRIBUTES workItemAttributes;
+
+    WDF_WORKITEM_CONFIG_INIT(&workItemConfig, EvtWorkItemFunc);
+    workItemConfig.AutomaticSerialization = FALSE;
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&workItemAttributes, WORK_ITEM_CTXT);
+    workItemAttributes.ParentObject = queue;
+
+    NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->WorkItem);
+    if (!NT_SUCCESS(wiStatus))
+    {
+        KdPrint(("WdfWorkItemCreate failed 0x%x", wiStatus));
+    }
+
+    PWORK_ITEM_CTXT workItemCtxt;
+    workItemAttributes.ParentObject = NULL;
+    wiStatus = WdfObjectAllocateContext(queueContext->WorkItem, &workItemAttributes, &workItemCtxt);
+    if (!NT_SUCCESS(wiStatus))
+    {
+        KdPrint(("WdfObjectAllocateContext failed 0x%x", wiStatus));
+    }
 
     //
     // Create the Queue timer
