@@ -3499,7 +3499,10 @@ wmain(
 
             std::sort(resolved_samples.begin(), resolved_samples.end(), sort_samples);
 
-            uint32_t prev_evt_src = resolved_samples[0].event_src;
+            uint32_t prev_evt_src = 0;
+            if(resolved_samples.size() > 0)
+                prev_evt_src = resolved_samples[0].event_src;
+
             std::vector<uint64_t> total_samples;
             uint64_t acc = 0;
             for (auto a : resolved_samples)
