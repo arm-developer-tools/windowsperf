@@ -1696,6 +1696,11 @@ VOID WindowsPerfDeviceUnload()
         ExFreePoolWithTag(dmc_array.dmcs, 'DMCR');
         dmc_array.dmcs = NULL;
     }
+
+    // Uninstall PMI isr
+    PMIHANDLER isr = NULL;
+    if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
+        WindowsPerfKdPrintInfo("uninstalling sampling isr failed \n");
 }
 
 
