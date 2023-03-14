@@ -651,6 +651,9 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
 
+    const enum pmu_ctl_action action = context->action;
+    const UINT32 core_idx = context->core_idx;
+
     WindowsPerfKdPrint("%!FUNC! %!LINE!");
     WindowsPerfKdPrint("Current Processor Index %lu", KeGetCurrentProcessorIndex());
     WindowsPerfKdPrint("IRQL = %d", KeGetCurrentIrql());
@@ -664,52 +667,68 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     WindowsPerfKdPrint("%!FUNC! %!LINE!");
     WindowsPerfKdPrint("Current Processor Index %lu", KeGetCurrentProcessorIndex());
     WindowsPerfKdPrint("IRQl = %d", KeGetCurrentIrql());
-    KeGetProcessorNumberFromIndex(context->core_idx, &ProcNumber);
+    KeGetProcessorNumberFromIndex(core_idx, &ProcNumber);
     WindowsPerfKdPrint("%!FUNC! %!LINE!");
     new_affinity.Group = ProcNumber.Group;
     new_affinity.Mask = 1ULL << (ProcNumber.Number);
     KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    CoreCounterStop();
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    CoreCounterReset();
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
     WindowsPerfKdPrint("Current Processor Index after call %lu", KeGetCurrentProcessorIndex());
     // NOTE: counters have been enabled inside DriverEntry, so just assign event and enable irq is enough.
     UINT64 ov_mask = 0;
     int gpc_num = 0;
 
-    for (int i = 0; i < context->sample_src_num; i++)
+    switch (action) // Actions that must be done on `core_idx`
     {
-        SampleSrcDesc* src_desc = &context->sample_req->sources[i];
-        UINT32 val = 0xffffffff - src_desc->interval;
-        UINT32 event_src = src_desc->event_src;
-        UINT32 filter_bits = src_desc->filter_bits;
+    case PMU_CTL_SAMPLE_SET_SRC:
+    {
+        CoreCounterStop();
+        CoreCounterReset();
 
-        if (event_src == CYCLE_EVENT_IDX)
+        for (int i = 0; i < context->sample_src_num; i++)
         {
-            _WriteStatusReg(PMCCFILTR_EL0, (__int64)filter_bits);
-            ov_mask |= 1ULL << 31;
-            WindowsPerfKdPrint("%!FUNC! %!LINE! %llx", ov_mask);
-            CoreCounterEnableIrq(1U << 31);
-            _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
+            SampleSrcDesc* src_desc = &context->sample_req->sources[i];
+            UINT32 val = 0xffffffff - src_desc->interval;
+            UINT32 event_src = src_desc->event_src;
+            UINT32 filter_bits = src_desc->filter_bits;
+
+            if (event_src == CYCLE_EVENT_IDX)
+            {
+                _WriteStatusReg(PMCCFILTR_EL0, (__int64)filter_bits);
+                ov_mask |= 1ULL << 31;
+                WindowsPerfKdPrint("%!FUNC! %!LINE! %llx", ov_mask);
+                CoreCounterEnableIrq(1U << 31);
+                _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
+            }
+            else
+            {
+                CoreCouterSetType(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
+                ov_mask |= 1ULL << gpc_num;
+                WindowsPerfKdPrint("%!FUNC! %!LINE! %llx %x", ov_mask, gpc_num);
+                CoreCounterEnableIrq(1U << gpc_num);
+                core_write_counter(gpc_num, (__int64)val);
+                gpc_num++;
+            }
         }
-        else
-        {
-            CoreCouterSetType(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
-            ov_mask |= 1ULL << gpc_num;
-            WindowsPerfKdPrint("%!FUNC! %!LINE! %llx %x", ov_mask, gpc_num);
-            CoreCounterEnableIrq(1U << gpc_num);
-            core_write_counter(gpc_num, (__int64)val);
-            gpc_num++;
-        }
+
+        for (; gpc_num < numGPC; gpc_num++)
+            CoreCounterIrqDisable(1U << gpc_num);
+        CoreInfo* core = core_info + context->core_idx;
+        core->ov_mask = ov_mask;
+        WindowsPerfKdPrint("%!FUNC! %!LINE! core->ov_mask=%llx", core->ov_mask);
+        break;
     }
 
-    for (; gpc_num < numGPC; gpc_num++)
-        CoreCounterIrqDisable(1U << gpc_num);
-    CoreInfo* core = core_info + context->core_idx;
-    core->ov_mask = ov_mask;
-    WindowsPerfKdPrint("%!FUNC! %!LINE! core->ov_mask=%llx", core->ov_mask);
+    case PMU_CTL_SAMPLE_STOP:
+    {
+        CoreCounterStop();
+
+        CoreInfo* core = core_info + core_idx;
+        for (int i = 0; i < 32; i++)
+            if (core->ov_mask & (1ULL << i))
+                CoreCounterIrqDisable(1U << i);
+        break;
+    }
+    }
 
     KeRevertToUserGroupAffinityThread(&old_affinity);
 }
@@ -791,7 +810,11 @@ NTSTATUS deviceControl(
 
         UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
 
-        per_core_exec(core_idx, CoreCounterStop, NULL);
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_SAMPLE_STOP;
+        context->core_idx = core_idx;
+        WdfWorkItemEnqueue(queueContext->WorkItem);
 
         struct PMUSampleSummary *out = (struct PMUSampleSummary *)pBuffer;
         out->sample_generated = core_info[core_idx].sample_generated;
@@ -861,6 +884,7 @@ NTSTATUS deviceControl(
 
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_SAMPLE_SET_SRC;
         context->core_idx = core_idx;
         context->sample_req = sample_req;
         context->sample_src_num = sample_src_num;
