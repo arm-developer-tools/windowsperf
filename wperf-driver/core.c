@@ -29,7 +29,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ntddk.h>
+#include "trace.h"
 #include "core.h"
+#include "core.tmh"
 #include "sysregs.h"
 #include "debug.h"
 

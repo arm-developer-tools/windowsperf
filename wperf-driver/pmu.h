@@ -31,6 +31,15 @@
 
 #include <ntddk.h>
 
+//
+// Constants
+//
+#define dsu_numFPC          1
+#define numFPC              1
+
+//
+// Structures
+//
 struct pmu_event_pseudo
 {
     UINT32 event_idx;

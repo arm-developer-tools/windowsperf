@@ -58,6 +58,25 @@ namespace wperftest
 			Assert::AreEqual(IntToHexWideString(256, 4), std::wstring(L"0x0100"));
 		}
 
+		TEST_METHOD(test_IntToDecWideString)
+		{
+			Assert::AreEqual(IntToDecWideString(0, 1), std::wstring(L"0"));
+			Assert::AreEqual(IntToDecWideString(0, 2), std::wstring(L" 0"));
+			Assert::AreEqual(IntToDecWideString(0, 3), std::wstring(L"  0"));
+			Assert::AreEqual(IntToDecWideString(0, 4), std::wstring(L"   0"));
+			Assert::AreEqual(IntToDecWideString(1, 1), std::wstring(L"1"));
+			Assert::AreEqual(IntToDecWideString(1, 2), std::wstring(L" 1"));
+			Assert::AreEqual(IntToDecWideString(1, 3), std::wstring(L"  1"));
+			Assert::AreEqual(IntToDecWideString(1, 4), std::wstring(L"   1"));
+			Assert::AreEqual(IntToDecWideString(1, 5), std::wstring(L"    1"));
+			Assert::AreEqual(IntToDecWideString(256, 1), std::wstring(L"256"));
+			Assert::AreEqual(IntToDecWideString(256, 2), std::wstring(L"256"));
+			Assert::AreEqual(IntToDecWideString(256, 3), std::wstring(L"256"));
+			Assert::AreEqual(IntToDecWideString(256, 4), std::wstring(L" 256"));
+			Assert::AreEqual(IntToDecWideString(256, 5), std::wstring(L"  256"));
+			Assert::AreEqual(IntToDecWideString(256, 6), std::wstring(L"   256"));
+		}
+
 		TEST_METHOD(test_DoubleToWideString)
 		{
 			Assert::AreEqual(DoubleToWideString(0.0, 2), std::wstring(L"0.00"));
@@ -67,6 +86,17 @@ namespace wperftest
 			Assert::AreEqual(DoubleToWideString(0.0, 4), std::wstring(L"0.0000"));
 			Assert::AreEqual(DoubleToWideString(1.1, 4), std::wstring(L"1.1000"));
 			Assert::AreEqual(DoubleToWideString(99.99, 4), std::wstring(L"99.9900"));
+		}
+
+		TEST_METHOD(test_DoubleToWideStringExt)
+		{
+			Assert::AreEqual(DoubleToWideStringExt(0.0, 2, 6), std::wstring(L"  0.00"));
+			Assert::AreEqual(DoubleToWideStringExt(1.1, 2, 6), std::wstring(L"  1.10"));
+			Assert::AreEqual(DoubleToWideStringExt(99.99, 2, 6), std::wstring(L" 99.99"));
+
+			Assert::AreEqual(DoubleToWideStringExt(0.0, 4, 8), std::wstring(L"  0.0000"));
+			Assert::AreEqual(DoubleToWideStringExt(1.1, 4, 8), std::wstring(L"  1.1000"));
+			Assert::AreEqual(DoubleToWideStringExt(99.99, 4, 8), std::wstring(L" 99.9900"));
 		}
 
 		TEST_METHOD(test_TokenizeWideStringOfInts_error)

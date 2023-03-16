@@ -29,17 +29,10 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define MAX_DEVPATH_LENGTH              256
+#include <psapi.h>
+#include <string>
 
-struct evt_sample_src
-{
-    uint32_t index;
-    uint32_t interval;
-};
+#define MAX_PROCESSES					1024
 
-BOOL
-GetDevicePath(
-    _In_  LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
-);
+DWORD FindProcess(std::wstring lpcszFileName);
+HMODULE GetModule(HANDLE pHandle, std::wstring pname);

@@ -30,6 +30,7 @@
 
 #include "driver.h"
 #include "device.h"
+#include "device.tmh"
 #include "debug.h"
 #include "dmc.h"
 #include "dsu.h"
@@ -37,14 +38,9 @@
 #include "pmu.h"
 #include "coreinfo.h"
 #include "sysregs.h"
-#include "wperf-common/macros.h"
+#include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
-
-//
-// Constants
-//
-#define dsu_numFPC          1
-#define numFPC              1
+#include "wperf-common\inline.h"
 
 //
 // Device events
@@ -141,8 +137,53 @@ static VOID event_enable(struct pmu_event_kernel* event)
 
     if (event->enable_irq)
         event_enable_irq(event);
+    else
+        event_disable_irq(event);
 
     event_enable_counter(event);
+}
+
+#define WRITE_COUNTER(N) case N: _WriteStatusReg(PMEVCNTR##N##_EL0, (__int64)val); break;
+static VOID core_write_counter(UINT32 counter_idx, __int64 val)
+{
+    switch(counter_idx)
+    {
+        WRITE_COUNTER(0);
+        WRITE_COUNTER(1);
+        WRITE_COUNTER(2);
+        WRITE_COUNTER(3);
+        WRITE_COUNTER(4);
+        WRITE_COUNTER(5);
+        WRITE_COUNTER(6);
+        WRITE_COUNTER(7);
+        WRITE_COUNTER(8);
+        WRITE_COUNTER(9);
+        WRITE_COUNTER(10);
+        WRITE_COUNTER(11);
+        WRITE_COUNTER(12);
+        WRITE_COUNTER(13);
+        WRITE_COUNTER(14);
+        WRITE_COUNTER(15);
+        WRITE_COUNTER(16);
+        WRITE_COUNTER(17);
+        WRITE_COUNTER(18);
+        WRITE_COUNTER(19);
+        WRITE_COUNTER(20);
+        WRITE_COUNTER(21);
+        WRITE_COUNTER(22);
+        WRITE_COUNTER(23);
+        WRITE_COUNTER(24);
+        WRITE_COUNTER(25);
+        WRITE_COUNTER(26);
+        WRITE_COUNTER(27);
+        WRITE_COUNTER(28);
+        WRITE_COUNTER(29);
+        WRITE_COUNTER(30);
+        default:
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
+                       "WindowsPerf: Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
+            break;
+    }
 }
 
 static UINT64 event_get_counting(struct pmu_event_kernel* event)
@@ -155,11 +196,75 @@ static UINT64 event_get_counting(struct pmu_event_kernel* event)
     return CoreReadCounter(event->counter_idx);
 }
 
+#define PMOVSCLR_VALID_BITS_MASK 0xffffffffULL
+static UINT64 arm64_clear_ov_flags(void)
+{
+    //WindowsPerfKdPrint("%!FUNC! Entry");
+    UINT64 pmov_value = _ReadStatusReg(PMOVSCLR_EL0);
+    pmov_value &= PMOVSCLR_VALID_BITS_MASK;
+    _WriteStatusReg(PMOVSCLR_EL0, (__int64)pmov_value);
+    __isb(_ARM64_BARRIER_SY);
+    return pmov_value;
+}
+
+typedef VOID (*PMIHANDLER)(PKTRAP_FRAME TrapFrame);
+
+VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
+{
+    ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
+    CoreInfo* core = core_info + core_idx;
+    UINT64 ov_flags = arm64_clear_ov_flags();
+    ov_flags &= core->ov_mask;
+
+    if (!ov_flags)
+        return;
+
+    core->sample_generated++;
+
+    if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
+    {
+        core->sample_dropped++;
+        return;
+    }
+
+    if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
+    {
+
+        KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
+        core->sample_dropped++;
+        return;
+    }
+    else
+    {
+        CoreCounterStop();
+
+        core->samples[core->sample_idx].lr = pTrapFrame->Lr;
+        core->samples[core->sample_idx].pc = pTrapFrame->Pc;
+        core->samples[core->sample_idx].ov_flags = ov_flags;
+        core->sample_idx++;
+
+        KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
+
+        for (int i = 0; i < 32; i++)
+        {
+            if (!(ov_flags & (1ULL << i)))
+                continue;
+
+            UINT32 val = 0xFFFFFFFF - core->sample_interval[i];
+
+            if (i == 31)
+                _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
+            else
+                core_write_counter(i, (__int64)val);
+        }
+        CoreCounterStart();
+    }
+}
+
 static VOID update_core_counting(CoreInfo* core)
 {
     UINT32 events_num = core->events_num;
     struct pmu_event_pseudo* events = core->events;
-
     CoreCounterStop();
 
     for (UINT32 i = 0; i < events_num; i++)
@@ -210,12 +315,6 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
 
         CoreCounterReset();
 
-        struct pmu_event_kernel cycle_event;
-        cycle_event.event_idx = CYCLE_EVENT_IDX;
-        cycle_event.counter_idx = CYCLE_COUNTER_IDX;
-        cycle_event.filter_bits = events[0].filter_bits;
-        event_enable(&cycle_event);
-
         for (UINT32 i = 0; i < numGPC; i++)
         {
             UINT32 adjusted_idx = (event_start_idx2 + i) % (events_num - numFPC);
@@ -258,11 +357,6 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
 
         DSUCounterReset();
 
-        struct pmu_event_kernel cycle_event;
-        cycle_event.event_idx = CYCLE_EVENT_IDX;
-        cycle_event.counter_idx = CYCLE_COUNTER_IDX;
-        DSUEventEnable(&cycle_event);
-
         for (UINT32 i = 0; i < dsu_numGPC; i++)
         {
             UINT32 adjusted_idx = (event_start_idx2 + i) % (events_num - dsu_numFPC);
@@ -291,7 +385,6 @@ static VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys
     UNREFERENCED_PARAMETER(sys_arg2);
 
     CoreInfo* core = (CoreInfo*)ctx;
-
     if (core->prof_core != PROF_DISABLED)
         update_core_counting(core);
 
@@ -419,6 +512,8 @@ static NTSTATUS evt_assign_dsu(UINT32 core_base, UINT32 core_end, UINT16 dsu_eve
             event->enable_irq = 0;
             if (j < init_num)
                 event->counter_idx = j;
+            else
+                event->counter_idx = INVALID_COUNTER_IDX;
         }
 
         GROUP_AFFINITY old_affinity, new_affinity;
@@ -469,6 +564,7 @@ static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_e
         events[0].value = 0;
         events[0].scheduled = 0;
         events[0].filter_bits = filter_bits;
+        events[0].counter_idx = CYCLE_COUNTER_IDX;
 
         for (UINT32 j = 0; j < core_event_num; j++)
         {
@@ -479,6 +575,8 @@ static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_e
             event->enable_irq = 0;
             if (j < init_num)
                 event->counter_idx = j;
+            else
+                event->counter_idx = INVALID_COUNTER_IDX;
         }
 
         GROUP_AFFINITY old_affinity, new_affinity;
@@ -527,22 +625,237 @@ static VOID per_core_exec(UINT32 core_idx, VOID(*do_func)(VOID), VOID(*do_func2)
     KeRevertToUserGroupAffinityThread(&old_affinity);
 }
 
+VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
+{
+    PWORK_ITEM_CTXT context;
+    context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
+
+    const enum pmu_ctl_action action = context->action;
+    const UINT32 core_idx = context->core_idx;
+
+    GROUP_AFFINITY old_affinity, new_affinity;
+    PROCESSOR_NUMBER ProcNumber;
+
+    RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
+    RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
+    RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
+    KeGetProcessorNumberFromIndex(core_idx, &ProcNumber);
+
+    new_affinity.Group = ProcNumber.Group;
+    new_affinity.Mask = 1ULL << (ProcNumber.Number);
+    KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
+    // NOTE: counters have been enabled inside DriverEntry, so just assign event and enable irq is enough.
+    UINT64 ov_mask = 0;
+    int gpc_num = 0;
+
+    switch (action) // Actions that must be done on `core_idx`
+    {
+    case PMU_CTL_SAMPLE_START:
+    {
+        CoreCounterStart();
+        break;
+    }
+
+    case PMU_CTL_SAMPLE_SET_SRC:
+    {
+        CoreCounterStop();
+        CoreCounterReset();
+
+        for (int i = 0; i < context->sample_src_num; i++)
+        {
+            SampleSrcDesc* src_desc = &context->sample_req->sources[i];
+            UINT32 val = 0xffffffff - src_desc->interval;
+            UINT32 event_src = src_desc->event_src;
+            UINT32 filter_bits = src_desc->filter_bits;
+
+            if (event_src == CYCLE_EVENT_IDX)
+            {
+                _WriteStatusReg(PMCCFILTR_EL0, (__int64)filter_bits);
+                ov_mask |= 1ULL << 31;
+                CoreCounterEnableIrq(1U << 31);
+                _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
+            }
+            else
+            {
+                CoreCouterSetType(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
+                ov_mask |= 1ULL << gpc_num;
+                CoreCounterEnableIrq(1U << gpc_num);
+                core_write_counter(gpc_num, (__int64)val);
+                gpc_num++;
+            }
+        }
+
+        for (; gpc_num < numGPC; gpc_num++)
+            CoreCounterIrqDisable(1U << gpc_num);
+        CoreInfo* core = core_info + context->core_idx;
+        core->ov_mask = ov_mask;
+        break;
+    }
+
+    case PMU_CTL_SAMPLE_STOP:
+    {
+        CoreCounterStop();
+
+        CoreInfo* core = core_info + core_idx;
+        for (int i = 0; i < 32; i++)
+            if (core->ov_mask & (1ULL << i))
+                CoreCounterIrqDisable(1U << i);
+        break;
+    }
+    }
+
+    KeRevertToUserGroupAffinityThread(&old_affinity);
+}
+
 NTSTATUS deviceControl(
     _In_    PVOID   pBuffer,
     _In_    ULONG   inputSize,
-    _Out_   PULONG  outputSize
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext
 )
 {
     NTSTATUS status = STATUS_SUCCESS;
     *outputSize = 0;
 
-    WindowsPerfKdPrint("IOCTL: inputSize=%d \n", inputSize);
-    WindowsPerfKdPrintBuffer((BYTE*)pBuffer, inputSize);
-
     enum pmu_ctl_action action = *(enum pmu_ctl_action*)pBuffer;
+    queueContext->action = action;  // Save for later processing
 
     switch (action)
     {
+    case PMU_CTL_SAMPLE_START:
+    {
+        struct pmu_ctl_hdr *ctl_req = (struct pmu_ctl_hdr *)pBuffer;
+        size_t cores_count = ctl_req->cores_idx.cores_count;
+
+        if (cores_count != 1)
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
+                                   cores_count, action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_START\n");
+
+        UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
+
+        core_info[core_idx].sample_dropped = 0;
+        core_info[core_idx].sample_generated = 0;
+        core_info[core_idx].sample_idx = 0;
+
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_SAMPLE_START;
+        context->core_idx = core_idx;
+        WdfWorkItemEnqueue(queueContext->WorkItem);
+
+        *outputSize = 0;
+        break;
+    }
+    case PMU_CTL_SAMPLE_STOP:
+    {
+        struct pmu_ctl_hdr *ctl_req = (struct pmu_ctl_hdr *)pBuffer;
+        size_t cores_count = ctl_req->cores_idx.cores_count;
+
+        if (cores_count != 1)
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
+                                   cores_count, action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
+        {
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_STOP\n");
+
+        UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
+
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_SAMPLE_STOP;
+        context->core_idx = core_idx;
+        WdfWorkItemEnqueue(queueContext->WorkItem);
+
+        struct PMUSampleSummary *out = (struct PMUSampleSummary *)pBuffer;
+        out->sample_generated = core_info[core_idx].sample_generated;
+        out->sample_dropped = core_info[core_idx].sample_dropped;
+        *outputSize = sizeof(struct PMUSampleSummary);
+        break;
+    }
+    case PMU_CTL_SAMPLE_GET:
+    {
+        struct PMUCtlGetSampleHdr *ctl_req = (struct PMUCtlGetSampleHdr *)pBuffer;
+        UINT32 core_idx = ctl_req->core_idx;
+        CoreInfo *core = core_info + core_idx;
+        KIRQL oldIrql;
+
+        KeAcquireSpinLock(&core->SampleLock, &oldIrql);
+        {
+            struct PMUSamplePayload *out = (struct PMUSamplePayload*)pBuffer;
+            *outputSize = sizeof(struct PMUSamplePayload);
+
+            RtlSecureZeroMemory(out, *outputSize);
+
+            if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
+            {
+                RtlCopyMemory(out->payload, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
+                out->size = SAMPLE_CHAIN_BUFFER_SIZE;
+                core->sample_idx = 0;
+            }
+        }
+        KeReleaseSpinLock(&core->SampleLock, oldIrql);
+
+        return STATUS_SUCCESS;
+    }
+    case PMU_CTL_SAMPLE_SET_SRC:
+    {
+        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_SET_SRC\n");
+
+        PMUSampleSetSrcHdr *sample_req = (PMUSampleSetSrcHdr *)pBuffer;
+        UINT32 core_idx = sample_req->core_idx;
+
+        int sample_src_num = (inputSize - sizeof(PMUSampleSetSrcHdr)) / sizeof(SampleSrcDesc);
+        // rough check
+        if (sample_src_num > (numGPC + numFPC))
+            sample_src_num = numGPC + numFPC;
+
+        CoreInfo *core = core_info + core_idx;
+        int gpc_num = 0;
+        for (int i = 0; i < sample_src_num; i++)
+        {
+            SampleSrcDesc *src_desc = &sample_req->sources[i];
+            UINT32 event_src = src_desc->event_src;
+            UINT32 interval = src_desc->interval;
+            if (event_src == CYCLE_EVENT_IDX)
+                core->sample_interval[31] = interval;
+            else
+                core->sample_interval[gpc_num++] = interval;
+        }
+
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_SAMPLE_SET_SRC;
+        context->core_idx = core_idx;
+        context->sample_req = sample_req;
+        context->sample_src_num = sample_src_num;
+        WdfWorkItemEnqueue(queueContext->WorkItem);
+
+        *outputSize = 0;
+        break;
+    }
     case PMU_CTL_START:
     case PMU_CTL_STOP:
     case PMU_CTL_RESET:
@@ -562,7 +875,7 @@ NTSTATUS deviceControl(
 
         if (cores_count == 0 || cores_count >= MAX_PMU_CTL_CORES_COUNT)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1-%d) for action %d\n",
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1-%d) for action %d\n",
                                    cores_count, MAX_PMU_CTL_CORES_COUNT, action);
             status = STATUS_INVALID_PARAMETER;
             break;
@@ -1018,7 +1331,7 @@ NTSTATUS deviceControl(
 
         if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count);
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count);
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1119,7 +1432,7 @@ NTSTATUS deviceControl(
 
         if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%zu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count);
+            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count);
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1334,6 +1647,11 @@ VOID WindowsPerfDeviceUnload()
         ExFreePoolWithTag(dmc_array.dmcs, 'DMCR');
         dmc_array.dmcs = NULL;
     }
+
+    // Uninstall PMI isr
+    PMIHANDLER isr = NULL;
+    if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
+        WindowsPerfKdPrintInfo("uninstalling sampling isr failed \n");
 }
 
 
@@ -1503,6 +1821,9 @@ WindowsPerfDeviceCreate(
         RtlCopyMemory(core->events, default_events, sizeof(struct pmu_event_kernel) * ((size_t)numGPC + numFPC));
         core->events_num = numFPC + numGPC;
 
+        // Initialize fields for sampling;
+        KeInitializeSpinLock(&core->SampleLock);
+
         PRKDPC dpc = &core_info[i].dpc;
         KeInitializeDpc(dpc, arm64pmc_enable_default, NULL);
         status = KeSetTargetProcessorDpcEx(dpc, &ProcNumber);
@@ -1515,6 +1836,14 @@ WindowsPerfDeviceCreate(
     KeInitializeEvent(&SyncPMCEnc, NotificationEvent, FALSE);
     KeWaitForSingleObject(&SyncPMCEnc, Executive, KernelMode, 0, NULL);
     KeClearEvent(&SyncPMCEnc);
+
+    PMIHANDLER isr = arm64_pmi_handler;
+    status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);
+    if (status != STATUS_SUCCESS)
+    {
+        WindowsPerfKdPrintInfo("register sampling isr failed \n");
+        return status;
+    }
 
     WindowsPerfKdPrintInfo("loaded\n");
     //

@@ -48,6 +48,9 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "wperf-common\iorequest.h"
 #include "utils.h"
 #include "output.h"
+#include "exception.h"
+#include "pe_file.h"
+#include "process_api.h"
 
 using namespace WPerfOutput;
 
@@ -55,7 +58,9 @@ using namespace WPerfOutput;
 // Port start
 //
 
+#include <algorithm>
 #include <exception>
+//#include <format>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -66,6 +71,11 @@ using namespace WPerfOutput;
 #include <cwctype>
 #include <ctime>
 #include <devpkey.h>
+
+BOOLEAN G_PerformAsyncIo;
+BOOLEAN G_LimitedLoops;
+ULONG G_AsyncIoLoopsNum;
+WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
 
 #pragma warning(push)
 #pragma warning(disable:4100)
@@ -87,6 +97,7 @@ BOOL DeviceAsyncIoControl(
             WindowsPerfDbgPrint("Error: WriteFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
+        //WindowsPerfDbgPrint("WriteFile: 0x%p, %u %lu \n", lpBuffer, nNumberOfBytesToWrite, numberOfBytesWritten);
     }
 
     if (lpOutBuffer != NULL)
@@ -96,6 +107,7 @@ BOOL DeviceAsyncIoControl(
             WindowsPerfDbgPrint("Error: ReadFile failed: GetLastError=%d\n", GetLastError());
             return FALSE;
         }
+        //WindowsPerfDbgPrint("ReadFile:  0x%p, %u %lu  \n", lpOutBuffer, nOutBufferSize, *lpBytesReturned);
     }
 
     return TRUE;
@@ -103,6 +115,9 @@ BOOL DeviceAsyncIoControl(
 #pragma warning(pop)
 
 #pragma comment (lib, "cfgmgr32.lib")
+#pragma comment (lib, "User32.lib")
+#pragma comment (lib, "ole32.lib")
+#pragma comment (lib, "oleaut32.lib")
 
 static std::map<uint8_t, wchar_t*>arm64_vendor_names =
 {
@@ -260,14 +275,10 @@ enum
 
 typedef std::vector<std::wstring> wstr_vec;
 
-class fatal_exception : public std::exception
+static bool sort_ioctl_events_sample(const struct evt_sample_src& a, const struct evt_sample_src& b)
 {
-public:
-    fatal_exception(const char* msg) : exception_msg(msg) {}
-    virtual const char* what() const throw() { return exception_msg; }
-private:
-    const char* exception_msg;
-};
+    return a.index < b.index;
+}
 
 class user_request
 {
@@ -275,6 +286,8 @@ public:
     user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
         do_sample(false), do_version(false), do_verbose(false), do_test(false),
         do_help(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
+        sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
+        sample_display_row(50), sample_display_short(true),
         count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
 
     void init(wstr_vec& raw_args, uint8_t core_num, std::map<std::wstring, metric_desc>& builtin_metrics)
@@ -287,6 +300,10 @@ public:
         bool waiting_interval = false;
         bool waiting_config = false;
         bool waiting_filename = false;
+        bool waiting_image_name = false;
+        bool waiting_pe_file = false;
+        bool waiting_pdb_file = false;
+        bool waiting_sample_display_row = false;
         std::map<enum evt_class, std::deque<struct evt_noted>> events;
         std::map<enum evt_class, std::vector<struct evt_noted>> groups;
 
@@ -330,7 +347,10 @@ public:
 
             if (waiting_events)
             {
-                parse_events_str(a, events, groups, L"");
+                if (do_sample)
+                    parse_events_str_for_sample(a);
+                else
+                    parse_events_str(a, events, groups, L"");
                 waiting_events = false;
                 continue;
             }
@@ -383,6 +403,27 @@ public:
                 continue;
             }
 
+            if (waiting_image_name)
+            {
+                sample_image_name = a;
+                waiting_image_name = false;
+                continue;
+            }
+
+            if (waiting_pe_file)
+            {
+                sample_pe_file = a;
+                waiting_pe_file = false;
+                continue;
+            }
+
+            if (waiting_pdb_file)
+            {
+                sample_pdb_file = a;
+                waiting_pdb_file = false;
+                continue;
+            }
+
             if (waiting_core_idx)
             {
                 if (TokenizeWideStringOfInts(a.c_str(), L',', cores_idx) == false)
@@ -427,6 +468,13 @@ public:
                 continue;
             }
 
+            if (waiting_sample_display_row)
+            {
+                sample_display_row = _wtoi(a.c_str());
+                waiting_sample_display_row = false;
+                continue;
+            }
+
             // For compatibility with Linux perf
             if (a == L"list" || a == L"-l")
             {
@@ -458,6 +506,30 @@ public:
                 continue;
             }
 
+            if (a == L"sample")
+            {
+                do_sample = true;
+                continue;
+            }
+
+            if (a == L"-image_name")
+            {
+                waiting_image_name = true;
+                continue;
+            }
+
+            if (a == L"-pe_file")
+            {
+                waiting_pe_file = true;
+                continue;
+            }
+
+            if (a == L"-pdb_file")
+            {
+                waiting_pdb_file = true;
+                continue;
+            }
+
             if (a == L"-d" || a == L"sleep")
             {
                 waiting_duration = true;
@@ -484,6 +556,18 @@ public:
                     count_interval = 60;
                 if (count_duration == -1.0)
                     count_duration = 1;
+                continue;
+            }
+
+            if (a == L"-sample-display-row")
+            {
+                waiting_sample_display_row = true;
+                continue;
+            }
+
+            if (a == L"-sample-display-long")
+            {
+                sample_display_short = false;
                 continue;
             }
 
@@ -602,6 +686,8 @@ public:
                     padding_ioctl_events(e_class);
             }
         }
+
+        std::sort(ioctl_events_sample.begin(), ioctl_events_sample.end(), sort_ioctl_events_sample);
     }
 
     bool has_events()
@@ -703,8 +789,71 @@ public:
     uint8_t dmc_idx;
     double count_duration;
     double count_interval;
+    std::wstring sample_image_name;
+    std::wstring sample_pe_file;
+    std::wstring sample_pdb_file;
+    uint32_t sample_display_row;
+    bool sample_display_short;
     std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
+    std::vector<struct evt_sample_src> ioctl_events_sample;
     std::map<std::wstring, metric_desc> metrics;
+
+    void parse_events_str_for_sample(std::wstring events_str)
+    {
+        std::wistringstream event_stream(events_str);
+        std::wstring event;
+
+        while(std::getline(event_stream, event, L','))
+        {
+            uint32_t raw_event, interval = 0x4000000;
+            size_t delim_pos = event.find(L":");
+            std::wstring str1;
+
+            if (delim_pos == std::string::npos)
+            {
+                str1 = event;
+            }
+            else
+            {
+                str1 = event.substr(0, delim_pos);
+                interval = std::stoi(event.substr(delim_pos + 1, std::string::npos), NULL, 0);
+            }
+
+            if (std::iswdigit(str1[0]))
+            {
+                raw_event = static_cast<uint32_t>(std::stoi(str1, nullptr, 0));
+            }
+            else if (str1[0] == L'r' &&
+                     str1.length() == 5 &&
+                     std::iswxdigit(str1[1]) &&
+                     std::iswxdigit(str1[2]) &&
+                     std::iswxdigit(str1[3]) &&
+                     std::iswxdigit(str1[4]))
+            {
+                raw_event = static_cast<uint32_t>(std::stoi(str1.substr(1, std::string::npos), NULL, 16));
+            }
+            else
+            {
+                int idx = get_event_index(str1);
+
+                if (idx < 0)
+                {
+                    std::wcout << L"unknown event name: " << str1 << std::endl;
+                    exit(-1);
+                }
+
+                raw_event = static_cast<uint32_t>(idx);
+            }
+
+            // convert to fixed cycle event to save one GPC
+            if (raw_event == 0x11)
+                raw_event = CYCLE_EVT_IDX;
+
+            struct evt_sample_src _evt = {raw_event, interval};
+            ioctl_events_sample.push_back(_evt);
+        }
+    }
+
     static void parse_events_str(std::wstring events_str, std::map<enum evt_class, std::deque<struct evt_noted>>& events,
         std::map<enum evt_class, std::vector<struct evt_noted>>& groups, std::wstring note)
     {
@@ -1136,6 +1285,105 @@ public:
         CloseHandle(handle);
     }
 
+    void set_sample_src(std::vector<struct evt_sample_src> &sample_sources, bool sample_kernel)
+    {
+        PMUSampleSetSrcHdr *ctl;
+        DWORD res_len;
+        size_t sz;
+
+        if (sample_sources.size())
+        {
+            sz = sizeof(PMUSampleSetSrcHdr) + sample_sources.size() * sizeof(SampleSrcDesc);
+            ctl = reinterpret_cast<PMUSampleSetSrcHdr *>(new uint8_t[sz]);
+            for (int i = 0; i < sample_sources.size(); i++)
+            {
+                SampleSrcDesc *dst = ctl->sources + i;
+                struct evt_sample_src src = sample_sources[i];
+                dst->event_src = src.index;
+                dst->interval = src.interval;
+                dst->filter_bits = sample_kernel ? 0 : FILTER_BIT_EXCL_EL1;
+            }
+        }
+        else
+        {
+            sz = sizeof(PMUSampleSetSrcHdr) + sizeof(SampleSrcDesc);
+            ctl = reinterpret_cast<PMUSampleSetSrcHdr *>(new uint8_t[sz]);
+            ctl->sources[0].event_src = CYCLE_EVT_IDX;
+            ctl->sources[0].interval = 0x8000000;
+            ctl->sources[0].filter_bits = sample_kernel ? 0 : FILTER_BIT_EXCL_EL1;
+        }
+
+        ctl->action = PMU_CTL_SAMPLE_SET_SRC;
+        ctl->core_idx = cores_idx[0];   // Only one core for sampling!
+        BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)sz, NULL, 0, &res_len);
+        delete[] ctl;
+        if (!status)
+            throw fatal_exception("PMU_CTL_SAMPLE_SET_SRC failed");
+    }
+
+    // Return false if sample buffer was empty
+    bool get_sample(std::vector<FrameChain> &sample_info)
+    {
+        struct PMUCtlGetSampleHdr hdr;
+        hdr.action = PMU_CTL_SAMPLE_GET;
+        hdr.core_idx = cores_idx[0];
+        DWORD res_len;
+
+        PMUSamplePayload framesPayload = {0};
+
+        BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct PMUCtlGetSampleHdr), &framesPayload, sizeof(PMUSamplePayload), &res_len);
+        if (!status)
+            throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
+
+        if (framesPayload.size != SAMPLE_CHAIN_BUFFER_SIZE)
+            return false;
+
+        FrameChain *frames = (FrameChain *)framesPayload.payload;
+        for (int i = 0; i < (res_len / sizeof(FrameChain)); i++)
+            sample_info.push_back(frames[i]);
+
+        return true;
+    }
+
+    void start_sample()
+    {
+        struct pmu_ctl_hdr ctl;
+        DWORD res_len;
+
+        ctl.action = PMU_CTL_SAMPLE_START;
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = cores_idx[0];
+        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+        if (!status)
+            throw fatal_exception("PMU_CTL_SAMPLE_START failed");
+    }
+
+    struct pmu_sample_summary
+    {
+        uint64_t sample_generated;
+        uint64_t sample_dropped;
+    };
+
+    void stop_sample()
+    {
+        struct pmu_ctl_hdr ctl;
+        struct pmu_sample_summary summary;
+        DWORD res_len;
+
+        ctl.action = PMU_CTL_SAMPLE_STOP;
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = cores_idx[0];
+        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
+        if (!status)
+            throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
+
+        if (do_verbose)
+        {
+            std::wcout << L"=================" << std::endl;
+            std::wcout << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
+            std::wcout << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
+        }
+    }
 
     void set_builtin_metrics(std::wstring key, std::wstring raw_str)
     {
@@ -1222,7 +1470,7 @@ public:
         ctl->core_idx = core_idx;
         ctl->dmc_idx = dmc_idx;
         count_kernel = include_kernel;
-        ctl->filter_bits = include_kernel ? 0 : FILTER_BIT_EXCL_EL1;
+        ctl->filter_bits = count_kernel ? 0 : FILTER_BIT_EXCL_EL1;
         uint16_t* ctl2 =
             reinterpret_cast<uint16_t*>(buf.get() + sizeof(struct pmu_ctl_evt_assign_hdr));
 
@@ -2819,9 +3067,11 @@ usage: wperf [options]
     Options:
     list              List supported events and metrics.
     stat              Count events.If - e is not specified, then count default events.
+    sample            Sample events. If -e is not specified, cycle counter will be the default sample source
     -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
                       Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
                       XXXX is hex value of the number without '0x' prefix.
+                      when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
     -m m1, m2...      Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
     -d N              Specify counting duration(in s).The accuracy is 0.1s.
     sleep N           Like -d, for compatibility with Linux perf.
@@ -2830,6 +3080,9 @@ usage: wperf [options]
                       Means counting 1 second after every 60 second, and the result
                       is in.csv file in the same folder where wperf is invoked.
                       You can use -i and -d to change counting duration and interval.
+    -image_name       Specify the image name you want to sample.
+    -pe_file          Specify the PE file.
+    -pdb_file         Specify the PDB file.
     -C config_file    Provide customized config file which describes metrics etc.
     -c core_idx       Profile on the specified core. Skip -c to count on all cores.
     -c cpu_list       Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
@@ -3106,6 +3359,229 @@ wmain(
                     m_out.Print(m_globalJSON);
                 }
             } while (request.do_timeline && no_ctrl_c);
+        }
+        else if (request.do_sample)
+        {
+            if (SetConsoleCtrlHandler(&ctrl_handler, TRUE) == FALSE)
+                throw fatal_exception("SetConsoleCtrlHandler failed for sampling");
+
+            if (request.sample_pe_file == L"")
+                throw fatal_exception("PE file not specified");
+
+            if (request.sample_pdb_file == L"")
+                throw fatal_exception("PDB file not specified");
+
+            std::vector<SectionDesc> sec_info;
+            std::vector<FuncSymDesc> sym_info;
+            uint64_t static_entry_point, image_base;
+
+            parse_pe_file(request.sample_pe_file, static_entry_point, image_base, sec_info);
+            parse_pdb_file(request.sample_pdb_file, sym_info, request.sample_display_short);
+
+            uint32_t stop_bits = CTL_FLAG_CORE;
+
+            pmu_device.stop(stop_bits);
+
+            pmu_device.set_sample_src(request.ioctl_events_sample, request.do_kernel);
+
+            UINT64 runtime_vaddr_delta = 0;
+
+            if (request.sample_image_name == L"")
+            {
+                std::wcout << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
+            }
+            else
+            {
+                DWORD pid = FindProcess(request.sample_image_name);
+                HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+                HMODULE module_handle = GetModule(process_handle, request.sample_image_name);
+
+                MODULEINFO modinfo;
+                bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
+                if (!ret)
+                {
+                    std::wcout << L"failed to query base address of '" << request.sample_image_name << L"'\n";
+                }
+                else
+                {
+                    runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
+                    std::wcout << L"base address of '" << request.sample_image_name
+                        << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
+                        << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
+                }
+            }
+
+            pmu_device.start_sample();
+            std::wcout << L"sampling ...";
+
+            std::vector<FrameChain> raw_samples;
+
+            while (no_ctrl_c)
+            {
+                bool sample = pmu_device.get_sample(raw_samples);
+                if (sample)
+                    std::wcout << L".";
+                else
+                    std::wcout << L"e";
+                Sleep(1000);
+            }
+
+            std::wcout << " done!" << std::endl;
+
+            pmu_device.stop_sample();
+
+            std::vector<SampleDesc> resolved_samples;
+
+            for (auto& b : sym_info)
+            {
+                uint64_t sec_base = 0;
+
+                for (auto c : sec_info)
+                {
+                    if (c.idx == (b.sec_idx - 1))
+                    {
+                        sec_base = image_base + c.offset + runtime_vaddr_delta;
+                        break;
+                    }
+                }
+
+                b.offset += sec_base;
+            }
+
+            //size_t total_sample = raw_samples.size();
+            for (auto a : raw_samples)
+            {
+                bool found = false;
+                SampleDesc sd;
+
+                for (auto b : sym_info)
+                {
+                    if (a.pc >= b.offset && a.pc < (b.offset + b.size))
+                    {
+                        sd.name = b.name;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                    sd.name = L"unknown";
+
+                for (uint32_t counter_idx = 0; counter_idx < 32; counter_idx++)
+                {
+                    if (!(a.ov_flags & (1i64 << (UINT64)counter_idx)))
+                        continue;
+
+                    bool inserted = false;
+                    uint32_t event_src;
+                    if (counter_idx == 31)
+                        event_src = CYCLE_EVT_IDX;
+                    else
+                        event_src = request.ioctl_events_sample[counter_idx].index;
+                    for (auto& c : resolved_samples)
+                    {
+                        if (c.name == sd.name && c.event_src == event_src)
+                        {
+                            c.freq++;
+                            inserted = true;
+                            break;
+                        }
+                    }
+
+                    if (!inserted)
+                    {
+                        sd.freq = 1;
+                        sd.event_src = event_src;
+                        resolved_samples.push_back(sd);
+                    }
+                }
+            }
+
+            std::sort(resolved_samples.begin(), resolved_samples.end(), sort_samples);
+
+            uint32_t prev_evt_src = 0;
+            if(resolved_samples.size() > 0)
+                prev_evt_src = resolved_samples[0].event_src;
+
+            std::vector<uint64_t> total_samples;
+            uint64_t acc = 0;
+            for (auto a : resolved_samples)
+            {
+                if (a.event_src != prev_evt_src)
+                {
+                    prev_evt_src = a.event_src;
+                    total_samples.push_back(acc);
+                    acc = 0;
+                }
+
+                acc += a.freq;
+            }
+            total_samples.push_back(acc);
+
+#if 0
+            uint32_t idx = 0;
+            int displayed_sample = 0;
+            std::wcout << L"======================== sample results (top " << std::dec << request.sample_display_row << L") ========================\n";
+            for (auto a : resolved_samples)
+            {
+                std::wcout << std::format(L"{:>5.2f}%  {:>8}  {:>8}  ", ((double)a.freq * 100 / (double)total_sample), a.event_src, a.freq) << a.name << std::endl;
+                displayed_sample += a.freq;
+                idx++;
+                if (idx == request.sample_display_row)
+                    break;
+            }
+            //std::wcout << std::format(L"{:>5.2f}%  {:>8}  ", ((double)displayed_sample * 100 / (double)total_sample), displayed_sample) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+#else
+            int32_t group_idx = -1;
+            prev_evt_src = CYCLE_EVT_IDX - 1;
+            uint64_t printed_sample_num = 0, printed_sample_freq = 0;
+            for (auto a : resolved_samples)
+            {
+                if (a.event_src != prev_evt_src)
+                {
+                    prev_evt_src = a.event_src;
+
+                    if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
+                        //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+
+                        std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                                   << IntToDecWideString(printed_sample_freq, 10)
+                                   << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
+
+                    std::wcout << L"======================== sample source: " << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top " << std::dec << request.sample_display_row << L" hot functions ========================\n";
+
+                    printed_sample_num = 0;
+                    printed_sample_freq = 0;
+                    group_idx++;
+                }
+
+                if (printed_sample_num == request.sample_display_row)
+                {
+                    //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                    std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                               << IntToDecWideString(printed_sample_freq, 10)
+                               << L"  top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                    printed_sample_num++;
+                    continue;
+                }
+
+                if (printed_sample_num > request.sample_display_row)
+                    continue;
+
+                //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
+                std::wcout << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                           << IntToDecWideString(a.freq, 10)
+                           << L"  " << a.name << std::endl;
+
+                printed_sample_freq += a.freq;
+                printed_sample_num++;
+            }
+
+            if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
+                //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                std::wcout << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, 6) << L"%"
+                           << IntToDecWideString(printed_sample_freq, 10) << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
+#endif
         }
     }
 	catch (fatal_exception& e)

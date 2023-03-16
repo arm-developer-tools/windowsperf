@@ -87,9 +87,9 @@
 # Use `make config=Release release` to package `wperf` and `wperf-driver`.
 #
 
-# By default we build for ARM64 target. Define arch variable to change defalt
+# By default we build for ARM64EC target. Define arch variable to change defalt
 # value.
-make_arch=ARM64
+make_arch=ARM64EC
 
 # By default we build with Debug configuration. Define config variable to change defalt
 # value.
@@ -135,9 +135,10 @@ clean:
 	devenv windowsperf.sln /Clean "$(make_config)|$(make_arch)" 2>&1
 
 purge:
-	rm -rf wperf/ARM64 wperf/x64
-	rm -rf wperf-driver/ARM64 wperf-driver/x64
-	rm -rf wperf-test/x64
+	rm -rf wperf/ARM64 wperf/ARM64EC wperf/x64
+	rm -rf wperf-driver/ARM64 wperf-driver/ARM64EC wperf-driver/x64
+	rm -rf wperf-test/ARM64 wperf-test/x64
+	rm -rf ARM64/ ARM64EC/ x64/
 
 docs:
 	doxygen

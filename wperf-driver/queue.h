@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2022, Arm Limited
@@ -28,6 +29,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "wperf-common/iorequest.h"
+
 //
 // Set max write length for testing
 //
@@ -50,14 +53,27 @@ typedef struct _QUEUE_CONTEXT {
 
     // Timer DPC for this queue
     WDFTIMER    Timer;
+    WDFWORKITEM WorkItem;
 
     // Virtual I/O
+    enum pmu_ctl_action action;     // Current action
+
     WDFREQUEST  CurrentRequest;
     NTSTATUS    CurrentStatus;
 
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, QueueGetContext)
+
+typedef struct WORK_ITEM_CTXT_
+{
+    UINT32 core_idx;
+    int sample_src_num;
+    PMUSampleSetSrcHdr* sample_req;
+    enum pmu_ctl_action action;
+} WORK_ITEM_CTXT, * PWORK_ITEM_CTXT;
+
+WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
 
 NTSTATUS
 WindowsPerfQueueInitialize(

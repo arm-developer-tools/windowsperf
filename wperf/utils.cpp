@@ -28,7 +28,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <iomanip>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -67,5 +66,18 @@ std::wstring IntToHexWideString(int Value, size_t Width) {
 std::wstring DoubleToWideString(double Value, int Precision) {
     std::wstringstream ss;
     ss << std::fixed << std::setprecision(Precision) << Value;
+    return std::wstring(ss.str());
+}
+
+/// <summary>
+/// Converts double to WSTRING. Function is using fixed format
+/// and default precision set to 2.
+/// </summary>
+/// <param name="Value">Value to convert</param>
+/// <param name="Precision">Precision</param>
+/// <param name="Width">Total string width</param>
+std::wstring DoubleToWideStringExt(double Value, int Precision, int Width) {
+    std::wstringstream ss;
+    ss << std::fixed << std::setw(Width) << std::setprecision(Precision) << Value;
     return std::wstring(ss.str());
 }

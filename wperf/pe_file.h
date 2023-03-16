@@ -29,17 +29,31 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define MAX_DEVPATH_LENGTH              256
+#include <string>
+#include <vector>
 
-struct evt_sample_src
+typedef struct
 {
-    uint32_t index;
-    uint32_t interval;
-};
+    uint32_t idx;
+    uint64_t offset;
+    std::string name;
+} SectionDesc;
 
-BOOL
-GetDevicePath(
-    _In_  LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
-);
+typedef struct
+{
+    uint32_t sec_idx;
+    uint32_t size;
+    uint64_t offset;
+    std::wstring name;
+} FuncSymDesc;
+
+typedef struct
+{
+    uint32_t freq;
+    std::wstring name;
+    uint32_t event_src;
+} SampleDesc;
+
+void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short);
+void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info);
+bool sort_samples(const SampleDesc& a, const SampleDesc& b);

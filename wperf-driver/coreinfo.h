@@ -30,7 +30,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pmu.h"
-#include "wperf-common\macros.h"
+#include "queue.h"
+#include "wperf-common\iorequest.h"
 
 enum prof_action
 {
@@ -53,4 +54,12 @@ typedef struct core_info
     enum prof_action prof_core;
     enum prof_action prof_dsu;
     enum prof_action prof_dmc;
+    KSPIN_LOCK SampleLock;
+    PQUEUE_CONTEXT get_sample_irp;
+    FrameChain samples[SAMPLE_CHAIN_BUFFER_SIZE];
+    UINT16 sample_idx;
+    UINT64 sample_generated;
+    UINT64 sample_dropped;
+    UINT32 sample_interval[AARCH64_MAX_HWC_SUPP + numFPC];
+    UINT64 ov_mask;
 } CoreInfo;

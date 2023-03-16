@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <numeric>
 #include <windows.h>
-#include "wperf-common\iorequest.h"
+#include "wperf-common\inline.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
