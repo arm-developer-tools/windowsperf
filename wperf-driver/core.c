@@ -33,7 +33,6 @@
 #include "core.h"
 #include "core.tmh"
 #include "sysregs.h"
-#include "debug.h"
 
 static UINT8 has_long_event_support = 0;
 
