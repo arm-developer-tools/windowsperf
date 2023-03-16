@@ -221,7 +221,9 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
         {
             std::cout << "Status REGDB_E_CLASSNOTREG indicates that DIA SDK class is not registered!" << std::endl;
             std::cout << "See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
-            std::cout << "The DIA SDK requires msdia.dll. Its normally installed and automatically registered with Visual Studio." << std::endl;
+            std::cout << "Try registering this service with command:" << std::endl;
+            std::cout << std::endl;
+            std::cout << "\t" << "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\DIA SDK\\bin>regsvr32 msdia140.dll" << std::endl;
         }
         else
             std::cout << "status: 0x" << std::hex << status << std::endl;
