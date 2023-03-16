@@ -214,32 +214,22 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
     CoreInfo* core = core_info + core_idx;
     UINT64 ov_flags = arm64_clear_ov_flags();
-    WindowsPerfKdPrint("%!FUNC! %!LINE! core->sample_generated=%llu core_idx=%llu ov_flags=%llu", core->sample_generated, core_idx, ov_flags);
-    //WindowsPerfKdPrint("%!FUNC! %!LINE! %llx %llx", ov_flags, core->ov_mask);
     ov_flags &= core->ov_mask;
-    //WindowsPerfKdPrint("%!FUNC! %!LINE! %llx", ov_flags);
+
     if (!ov_flags)
-    {
-        WindowsPerfKdPrint("%!FUNC! %!LINE! leaving because of ov_flags");
         return;
-    }
-    //WindowsPerfKdPrint("%!FUNC! %!LINE!");
 
     core->sample_generated++;
 
-    //WindowsPerfKdPrint("%!FUNC! %!LINE!");
     if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
     {
-        //WindowsPerfKdPrint("%!FUNC! %!LINE!");
         core->sample_dropped++;
         return;
     }
 
-    //WindowsPerfKdPrint("%!FUNC! %!LINE!");
     if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
     {
 
-        WindowsPerfKdPrint("%!FUNC! %!LINE! else irp");
         KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
         core->sample_dropped++;
         return;
@@ -248,7 +238,6 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
     {
         CoreCounterStop();
 
-        WindowsPerfKdPrint("%!FUNC! %!LINE! CoreCounterStop()");
         core->samples[core->sample_idx].lr = pTrapFrame->Lr;
         core->samples[core->sample_idx].pc = pTrapFrame->Pc;
         core->samples[core->sample_idx].ov_flags = ov_flags;
@@ -256,12 +245,11 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
 
         KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
 
-        //WindowsPerfKdPrint("%!FUNC! %!LINE!");
         for (int i = 0; i < 32; i++)
         {
             if (!(ov_flags & (1ULL << i)))
                 continue;
-            WindowsPerfKdPrint("%!FUNC! %!LINE! i=%d", i);
+
             UINT32 val = 0xFFFFFFFF - core->sample_interval[i];
 
             if (i == 31)
@@ -270,29 +258,22 @@ VOID arm64_pmi_handler(PKTRAP_FRAME pTrapFrame)
                 core_write_counter(i, (__int64)val);
         }
         CoreCounterStart();
-        WindowsPerfKdPrint("%!FUNC! %!LINE! CoreCounterStart()");
     }
-    
-    WindowsPerfKdPrint("%!FUNC! %!LINE! KeReleaseSpinLockFromDpcLevel()");
 }
 
 static VOID update_core_counting(CoreInfo* core)
 {
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
     UINT32 events_num = core->events_num;
     struct pmu_event_pseudo* events = core->events;
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
     CoreCounterStop();
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     for (UINT32 i = 0; i < events_num; i++)
     {
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
         events[i].value += event_get_counting((struct pmu_event_kernel*)&events[i]);
         events[i].scheduled += 1;
     }
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     CoreCounterReset();
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
     CoreCounterStart();
 }
 
@@ -399,22 +380,20 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
 // collecting counter value before overflow.
 static VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
 
     CoreInfo* core = (CoreInfo*)ctx;
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
     if (core->prof_core != PROF_DISABLED)
         update_core_counting(core);
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     if (core->prof_dsu != PROF_DISABLED)
         DSUUpdateDSUCounting(core);
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     if (core->prof_dmc != PROF_DISABLED)
         UpdateDmcCounting(core->dmc_ch, &dmc_array);
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     core->timer_round++;
 }
 
@@ -654,25 +633,17 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     const enum pmu_ctl_action action = context->action;
     const UINT32 core_idx = context->core_idx;
 
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    WindowsPerfKdPrint("Current Processor Index %lu", KeGetCurrentProcessorIndex());
-    WindowsPerfKdPrint("IRQL = %d", KeGetCurrentIrql());
-
     GROUP_AFFINITY old_affinity, new_affinity;
     PROCESSOR_NUMBER ProcNumber;
 
     RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
     RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
     RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    WindowsPerfKdPrint("Current Processor Index %lu", KeGetCurrentProcessorIndex());
-    WindowsPerfKdPrint("IRQl = %d", KeGetCurrentIrql());
     KeGetProcessorNumberFromIndex(core_idx, &ProcNumber);
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
+
     new_affinity.Group = ProcNumber.Group;
     new_affinity.Mask = 1ULL << (ProcNumber.Number);
     KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
-    WindowsPerfKdPrint("Current Processor Index after call %lu", KeGetCurrentProcessorIndex());
     // NOTE: counters have been enabled inside DriverEntry, so just assign event and enable irq is enough.
     UINT64 ov_mask = 0;
     int gpc_num = 0;
@@ -701,7 +672,6 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             {
                 _WriteStatusReg(PMCCFILTR_EL0, (__int64)filter_bits);
                 ov_mask |= 1ULL << 31;
-                WindowsPerfKdPrint("%!FUNC! %!LINE! %llx", ov_mask);
                 CoreCounterEnableIrq(1U << 31);
                 _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
             }
@@ -709,7 +679,6 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             {
                 CoreCouterSetType(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
                 ov_mask |= 1ULL << gpc_num;
-                WindowsPerfKdPrint("%!FUNC! %!LINE! %llx %x", ov_mask, gpc_num);
                 CoreCounterEnableIrq(1U << gpc_num);
                 core_write_counter(gpc_num, (__int64)val);
                 gpc_num++;
@@ -720,7 +689,6 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             CoreCounterIrqDisable(1U << gpc_num);
         CoreInfo* core = core_info + context->core_idx;
         core->ov_mask = ov_mask;
-        WindowsPerfKdPrint("%!FUNC! %!LINE! core->ov_mask=%llx", core->ov_mask);
         break;
     }
 
@@ -749,10 +717,6 @@ NTSTATUS deviceControl(
     NTSTATUS status = STATUS_SUCCESS;
     *outputSize = 0;
 
-    WindowsPerfKdPrint("IOCTL: inputSize=%d \n", inputSize);
-    WindowsPerfKdPrint("%!FUNC! %!LINE!");
-    //WindowsPerfKdPrintBuffer((BYTE*)pBuffer, inputSize);
-
     enum pmu_ctl_action action = *(enum pmu_ctl_action*)pBuffer;
     queueContext->action = action;  // Save for later processing
 
@@ -760,7 +724,6 @@ NTSTATUS deviceControl(
     {
     case PMU_CTL_SAMPLE_START:
     {
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
         struct pmu_ctl_hdr *ctl_req = (struct pmu_ctl_hdr *)pBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
@@ -798,7 +761,6 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_SAMPLE_STOP:
     {
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
         struct pmu_ctl_hdr *ctl_req = (struct pmu_ctl_hdr *)pBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
@@ -835,33 +797,24 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_SAMPLE_GET:
     {
-        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_GET\n");
-
         struct PMUCtlGetSampleHdr *ctl_req = (struct PMUCtlGetSampleHdr *)pBuffer;
         UINT32 core_idx = ctl_req->core_idx;
         CoreInfo *core = core_info + core_idx;
         KIRQL oldIrql;
-        WindowsPerfKdPrint("%!FUNC! %!LINE! core_idx=%u", core_idx);
 
         KeAcquireSpinLock(&core->SampleLock, &oldIrql);
         {
-            WindowsPerfKdPrint("FILTER_ME %!FUNC! %!LINE! %d, queueContext->Length=%u", core->sample_idx, queueContext->Length);
-
             struct PMUSamplePayload *out = (struct PMUSamplePayload*)pBuffer;
-            *outputSize = sizeof(struct PMUSamplePayload);  // sizeof(FrameChain)* SAMPLE_CHAIN_BUFFER_SIZE;
+            *outputSize = sizeof(struct PMUSamplePayload);
 
             RtlSecureZeroMemory(out, *outputSize);
 
             if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
             {
-                WindowsPerfKdPrint("%!FUNC! %!LINE!");
                 RtlCopyMemory(out->payload, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
                 out->size = SAMPLE_CHAIN_BUFFER_SIZE;
                 core->sample_idx = 0;
-                WindowsPerfKdPrint("%!FUNC! %!LINE!");
             }
-
-            WindowsPerfKdPrint("%!FUNC! %!LINE!");
         }
         KeReleaseSpinLock(&core->SampleLock, oldIrql);
 
@@ -878,7 +831,7 @@ NTSTATUS deviceControl(
         // rough check
         if (sample_src_num > (numGPC + numFPC))
             sample_src_num = numGPC + numFPC;
-        WindowsPerfKdPrint("%!FUNC! %!LINE! core_idx=%llu", core_idx);
+
         CoreInfo *core = core_info + core_idx;
         int gpc_num = 0;
         for (int i = 0; i < sample_src_num; i++)
@@ -891,7 +844,6 @@ NTSTATUS deviceControl(
             else
                 core->sample_interval[gpc_num++] = interval;
         }
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
 
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
@@ -1120,7 +1072,6 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_QUERY_HW_CFG:
     {
-        WindowsPerfKdPrint("%!FUNC! %!LINE!");
         if (inputSize != sizeof(enum pmu_ctl_action))
         {
             WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_HW_CFG\n", inputSize);
