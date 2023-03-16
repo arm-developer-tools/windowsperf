@@ -1335,7 +1335,7 @@ public:
         if (!status)
             throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
 
-        if (framesPayload.size != FRAME_CHAIN_BUF_SIZE)
+        if (framesPayload.size != SAMPLE_CHAIN_BUFFER_SIZE)
             return false;
 
         FrameChain *frames = (FrameChain *)framesPayload.payload;

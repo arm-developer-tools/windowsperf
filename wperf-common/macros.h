@@ -53,8 +53,6 @@
 
 #define SAMPLE_CHAIN_BUFFER_SIZE            128
 
-#define FRAME_CHAIN_BUF_SIZE                128
-
 #define MAX_PROCESSES					1024
 
 #define FILTER_BIT_EXCL_EL1					(1U << 31)
