@@ -1096,10 +1096,9 @@ public:
             multiplexings[e] = false;
     }
 
-    void init(HANDLE hDevice, bool verbose = false)
+    void init(HANDLE hDevice)
     {
         handle = hDevice;
-		do_verbose = verbose;
 
         struct hw_cfg hw_cfg;
         query_hw_cfg(hw_cfg);
@@ -2776,6 +2775,7 @@ public:
     uint32_t dsu_cluster_num;
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;
+    bool do_verbose;
 
 private:
     /// <summary>
@@ -3034,7 +3034,6 @@ private:
     bool multiplexings[EVT_CLASS_NUM];
     bool timeline_mode;
     bool count_kernel;
-    bool do_verbose;
     uint32_t enc_bits;
     std::wofstream timeline_outfiles[EVT_CLASS_NUM];
     std::vector<std::pair<uint64_t, uint64_t>> dmc_regions;
@@ -3147,7 +3146,7 @@ wmain(
     wstr_vec raw_args;
 
     try{
-        pmu_device.init(hDevice, request.do_verbose);
+        pmu_device.init(hDevice);
     } catch(std::exception&) {
         exit_code = EXIT_FAILURE;
         goto clean_exit;
@@ -3158,6 +3157,7 @@ wmain(
 
     try{
         request.init(raw_args, pmu_device.core_num, pmu_device.builtin_metrics);
+        pmu_device.do_verbose = request.do_verbose;
     } catch(std::exception&)
     {
         exit_code = EXIT_FAILURE;
