@@ -33,10 +33,10 @@
 #include <algorithm>
 #include <iomanip>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 std::string MultiByteFromWideString(const wchar_t* wstr);
-std::wstring IntToHexWideString(int Value, size_t Width = 4);
 std::wstring DoubleToWideString(double Value, int Precision = 2);
 std::wstring DoubleToWideStringExt(double Value, int Precision, int Width);
 
@@ -50,6 +50,23 @@ std::wstring IntToDecWideString(T Value, size_t Width) {
     static_assert(std::is_integral<T>::value, "Integral type required in Value<T>");
     std::wstringstream ss;
     ss << std::setw(Width) << Value;
+    return std::wstring(ss.str());
+}
+
+/// <summary>
+/// Converts integer VALUE to hex WSTRING, e.g. 100 -> "0x0064" where
+/// WIDTH is total digit count (excluding 0x).
+/// </summary>
+/// <param name="Value">Value to convert to hex string</param>
+/// <param name="Width">Total digits to fill with</param>
+template<typename T>
+std::wstring IntToHexWideString(T Value, size_t Width = 4) {
+    static_assert(std::is_integral<T>::value, "Integral type required in Value<T>");
+    std::wstringstream ss;
+    if (std::is_same<T, wchar_t>::value)
+        ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << (uint32_t)Value;
+    else
+        ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
     return std::wstring(ss.str());
 }
 

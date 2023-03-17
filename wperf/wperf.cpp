@@ -2570,7 +2570,7 @@ public:
                        << L"List of pre-defined events (to be used in -e)"
                        << std::endl << std::endl;
 
-            for (auto a : events)
+            for (const auto &a : events)
             {
                 const wchar_t* prefix = evt_name_prefix[a.first];
                 for (auto b : a.second) {
@@ -3481,6 +3481,20 @@ wmain(
                         if (c.name == sd.name && c.event_src == event_src)
                         {
                             c.freq++;
+                            bool pc_found = false;
+                            for (int i = 0; i < c.pc.size(); i++)
+                            {
+                                if (c.pc[i].first == a.pc)
+                                {
+                                    c.pc[i].second += 1;
+                                    pc_found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!pc_found)
+                                c.pc.push_back(std::make_pair(a.pc, 1));
+
                             inserted = true;
                             break;
                         }
@@ -3490,6 +3504,7 @@ wmain(
                     {
                         sd.freq = 1;
                         sd.event_src = event_src;
+                        sd.pc.push_back(std::make_pair(a.pc, 1));
                         resolved_samples.push_back(sd);
                     }
                 }
@@ -3543,8 +3558,8 @@ wmain(
                         //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
 
                         std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                                   << IntToDecWideString(printed_sample_freq, 10)
-                                   << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                        << IntToDecWideString(printed_sample_freq, 10)
+                        << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
 
                     std::wcout << L"======================== sample source: " << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top " << std::dec << request.sample_display_row << L" hot functions ========================\n";
 
@@ -3557,8 +3572,8 @@ wmain(
                 {
                     //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                               << IntToDecWideString(printed_sample_freq, 10)
-                               << L"  top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                        << IntToDecWideString(printed_sample_freq, 10)
+                        << L"  top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     printed_sample_num++;
                     continue;
                 }
@@ -3568,11 +3583,21 @@ wmain(
 
                 //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
                 std::wcout << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                           << IntToDecWideString(a.freq, 10)
-                           << L"  " << a.name << std::endl;
+                    << IntToDecWideString(a.freq, 10)
+                    << L"  " << a.name << std::endl;
 
-                printed_sample_freq += a.freq;
-                printed_sample_num++;
+                if (request.do_verbose)
+                {
+                    std::sort(a.pc.begin(), a.pc.end(), sort_pcs);
+
+                    for (int i = 0; i < 10 && i < a.pc.size(); i++)
+                    {
+                        std::wcout << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
+                    }
+
+                    printed_sample_freq += a.freq;
+                    printed_sample_num++;
+                }
             }
 
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)

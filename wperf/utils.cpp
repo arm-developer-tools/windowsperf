@@ -46,18 +46,6 @@ std::string MultiByteFromWideString(const wchar_t* wstr)
 }
 
 /// <summary>
-/// Converts integer VALUE to hex WSTRING, e.g. 100 -> "0x0064" where
-/// WIDTH is total digit count (excluding 0x).
-/// </summary>
-/// <param name="Value">Value to convert to hex string</param>
-/// <param name="Width">Total digits to fill with</param>
-std::wstring IntToHexWideString(int Value, size_t Width) {
-    std::wstringstream ss;
-    ss << L"0x" << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
-    return std::wstring(ss.str());
-}
-
-/// <summary>
 /// Converts double to WSTRING. Function is using fixed format
 /// and default precision set to 2.
 /// </summary>

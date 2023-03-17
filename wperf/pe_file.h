@@ -52,8 +52,10 @@ typedef struct
     uint32_t freq;
     std::wstring name;
     uint32_t event_src;
+    std::vector<std::pair<uint64_t, uint64_t>> pc;
 } SampleDesc;
 
 void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short);
 void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info);
 bool sort_samples(const SampleDesc& a, const SampleDesc& b);
+bool sort_pcs(const std::pair<uint64_t, uint64_t>& a, const std::pair<uint64_t, uint64_t>& b);

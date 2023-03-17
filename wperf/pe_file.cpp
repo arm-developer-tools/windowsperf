@@ -444,3 +444,8 @@ bool sort_samples(const SampleDesc& a, const SampleDesc& b)
 
     return a.freq > b.freq;
 }
+
+bool sort_pcs(const std::pair<uint64_t, uint64_t>& a, const std::pair<uint64_t, uint64_t>& b)
+{
+    return a.second > b.second;
+}
