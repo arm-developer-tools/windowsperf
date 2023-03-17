@@ -36,9 +36,8 @@
 #include "wperf-common\macros.h"
 #include "pe_file.h"
 
-void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info)
+void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::string>& sec_import)
 {
-#if 1
     std::ifstream pe_file_stream(pe_file, std::ios::binary);
     // make sure we have enough space for maximum read
     std::streamsize buf_size = sizeof(IMAGE_DOS_HEADER) > sizeof(IMAGE_NT_HEADERS)
@@ -73,135 +72,51 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     pos += FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + nt_hdr->FileHeader.SizeOfOptionalHeader;
     pe_file_stream.seekg(pos);
     pe_file_stream.read(sec_buf, buf_size);
+
+    ULONGLONG importDirectoryRVA = nt_hdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+    PIMAGE_SECTION_HEADER importSection = NULL;
+
     PIMAGE_SECTION_HEADER sections = reinterpret_cast<PIMAGE_SECTION_HEADER>(sec_buf);
     for (uint32_t i = 0; i < nt_hdr->FileHeader.NumberOfSections; i++)
     {
         SectionDesc sec_desc = { i, sections[i].VirtualAddress, std::string(reinterpret_cast<char*>(sections[i].Name)) };
         sec_info.push_back(sec_desc);
         //std::cout << "addr: 0x" << std::hex << sec_desc.offset << ", name: " <<  sec_desc.name << std::endl;
-    }
 
-    delete[] hdr_buf;
-    delete[] sec_buf;
-#else // legacy code passing llvm result
-    HANDLE g_hChildStd_IN_Rd = NULL;
-    HANDLE g_hChildStd_IN_Wr = NULL;
-    HANDLE g_hChildStd_OUT_Rd = NULL;
-    HANDLE g_hChildStd_OUT_Wr = NULL;
-    SECURITY_ATTRIBUTES saAttr;
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
-    if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0))
-        throw fatal_exception("CreatePipe failed for child stdout");
-    if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-        throw fatal_exception("SetHandleInformation failed for child stdout");
-    if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0))
-        throw fatal_exception("CreatePipe failed for child stdin");
-    if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-        throw fatal_exception("SetHandleInformation failed for child stdin");
-    std::wstring dump_cmd = L"llvm-readobj.exe --file-headers --section-headers " + pe_file;
-    PROCESS_INFORMATION piProcInfo;
-    STARTUPINFOW siStartInfo;
-    BOOL bSuccess = FALSE;
-
-    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&siStartInfo, sizeof(STARTUPINFOW));
-    siStartInfo.cb = sizeof(STARTUPINFO);
-    siStartInfo.hStdError = g_hChildStd_OUT_Wr;
-    siStartInfo.hStdOutput = g_hChildStd_OUT_Wr;
-    siStartInfo.hStdInput = g_hChildStd_IN_Rd;
-    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-    wchar_t* dump_cmd_chr = new wchar_t[dump_cmd.length() + 1];
-    std::wcscpy(dump_cmd_chr, dump_cmd.c_str());
-    bSuccess = CreateProcessW(NULL, dump_cmd_chr, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
-    if (!bSuccess)
-    {
-        throw fatal_exception("CreateProcess failed for llvm-readobj");
-    }
-    else
-    {
-        CloseHandle(piProcInfo.hProcess);
-        CloseHandle(piProcInfo.hThread);
-        CloseHandle(g_hChildStd_OUT_Wr);
-        CloseHandle(g_hChildStd_IN_Rd);
-    }
-#define BUFSIZE  4096
-#define LINESIZE 256
-    int line_pos = 0;
-    SectionDesc sec_desc = { UINT32_MAX, UINT64_MAX, "" };
-    bool inside_section = false;
-    for (;;)
-    {
-        CHAR chBuf[BUFSIZE];
-        CHAR lineBuf[LINESIZE];
-        DWORD dwRead;
-        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
-        if (!bSuccess || dwRead == 0)
-            break;
-        for (DWORD i = 0; i < dwRead; i++)
-        {
-            if (chBuf[i] == ' ')
-                continue;
-            lineBuf[line_pos++] = chBuf[i];
-            if (chBuf[i] != '\n')
-                continue;
-            // remove newline plus end the string.
-            lineBuf[line_pos - 1] = '\0';
-            line_pos = 0;
-            std::string lineString(lineBuf);
-            size_t delim_pos = 0;
-            if ((delim_pos = lineString.find(":")) == std::string::npos)
-            {
-                if (lineString == "Section{")
-                {
-                    inside_section = true;
-                }
-                else if (lineString == "}" && inside_section)
-                {
-                    inside_section = false;
-                    sec_info.push_back(sec_desc);
-                }
-            }
-            else if (inside_section)
-            {
-                std::string key, value;
-                key = lineString.substr(0, delim_pos);
-                value = lineString.substr(delim_pos + 1, std::string::npos);
-                if (key == "Number")
-                    sec_desc.idx = std::stoi(value, nullptr, 10);
-                else if (key == "VirtualAddress")
-                    sec_desc.offset = std::stoll(value, nullptr, 0);
-                else if (key == "Name")
-                {
-                    if ((delim_pos = value.find("(")) != std::string::npos)
-                    {
-                        sec_desc.name = value.substr(0, delim_pos);
-                    }
-                    else
-                    {
-                        sec_desc.name = value;
-                    }
-                }
-            }
-            else
-            {
-                std::string key, value;
-                key = lineString.substr(0, delim_pos);
-                if (key == "AddressOfEntryPoint" || key == "ImageBase")
-                {
-                    value = lineString.substr(delim_pos + 1, std::string::npos);
-                    if (key == "AddressOfEntryPoint")
-                        static_entry_point = std::stoll(value, nullptr, 0);
-                    else
-                        image_base = std::stoll(value, nullptr, 0);
-                }
-            }
+        if (importDirectoryRVA >= sections[i].VirtualAddress && importDirectoryRVA < sections[i].VirtualAddress + sections[i].Misc.VirtualSize) {
+            importSection = sections + i;
         }
     }
-    delete[] dump_cmd_chr;
-#endif
+
+	/** DLL IMPORTS **/
+	if (importSection)
+	{
+		pos = importSection->PointerToRawData;
+		pe_file_stream.seekg(0, pe_file_stream.end);
+		std::streampos length = pe_file_stream.tellg();
+		std::streampos length_to_read = length - pos;
+		pe_file_stream.seekg(pos);
+
+		char* import_buf = new char[length_to_read];
+
+		pe_file_stream.read(import_buf, length_to_read);
+
+		PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(import_buf + (nt_hdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress - importSection->VirtualAddress));
+
+		for (; importDescriptor->Name != 0; importDescriptor++) {
+			const char* name = import_buf + (importDescriptor->Name - importSection->VirtualAddress);
+			sec_import.push_back(name);
+			// std::cout << "dll: " << name << std::endl;
+		}
+
+		delete[] import_buf;
+	}
+
+    pe_file_stream.close();
+    delete[] hdr_buf;
+    delete[] sec_buf;
 }
+
 
 void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short)
 {

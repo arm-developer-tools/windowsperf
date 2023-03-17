@@ -3371,10 +3371,18 @@ wmain(
 
             std::vector<SectionDesc> sec_info;
             std::vector<FuncSymDesc> sym_info;
+            std::vector<std::string> sym_import;
             uint64_t static_entry_point, image_base;
 
-            parse_pe_file(request.sample_pe_file, static_entry_point, image_base, sec_info);
+            parse_pe_file(request.sample_pe_file, static_entry_point, image_base, sec_info, sym_import);
             parse_pdb_file(request.sample_pdb_file, sym_info, request.sample_display_short);
+
+            if (request.do_verbose)
+            {
+                std::wcout << L"================================" << std::endl;
+                for (const auto& s : sym_import)
+                    std::wcout << std::setw(32) << std::wstring(s.begin(), s.end()) << std::endl;
+            }
 
             uint32_t stop_bits = CTL_FLAG_CORE;
 
