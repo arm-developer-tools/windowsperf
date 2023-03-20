@@ -36,7 +36,27 @@
 #include "wperf-common\macros.h"
 #include "pe_file.h"
 
-void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::string>& sec_import)
+
+std::wstring gen_pdb_name(std::wstring str)
+{
+    size_t index = str.find(L".", 0);
+    std::wstring pdb_name = str.substr(0, index);
+    pdb_name += L".pdb";
+    return pdb_name;
+}
+
+void parse_pe_file(std::wstring pe_file, PeFileMetaData& pefile_metadata)
+{
+    pefile_metadata.pe_name = pe_file;
+
+    parse_pe_file(pe_file,
+        pefile_metadata.static_entry_point,
+        pefile_metadata.image_base,
+        pefile_metadata.sec_info,
+        pefile_metadata.sec_import);
+}
+
+void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::wstring>& sec_import)
 {
     std::ifstream pe_file_stream(pe_file, std::ios::binary);
     // make sure we have enough space for maximum read
@@ -50,6 +70,7 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     if (dos_hdr->e_magic != IMAGE_DOS_SIGNATURE)
     {
         delete[] hdr_buf;
+        std::wcout << pe_file << std::endl;
         throw fatal_exception("PE file specified is not in valid PE format");
     }
 
@@ -79,7 +100,11 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     PIMAGE_SECTION_HEADER sections = reinterpret_cast<PIMAGE_SECTION_HEADER>(sec_buf);
     for (uint32_t i = 0; i < nt_hdr->FileHeader.NumberOfSections; i++)
     {
-        SectionDesc sec_desc = { i, sections[i].VirtualAddress, std::string(reinterpret_cast<char*>(sections[i].Name)) };
+        char section_name[16] = { 0 };
+        memcpy_s(section_name, 16, sections[i].Name, IMAGE_SIZEOF_SHORT_NAME);
+
+        std::string name(section_name);
+        SectionDesc sec_desc = { i, sections[i].VirtualAddress, sections[i].Misc.VirtualSize, std::wstring(name.begin(), name.end()) };
         sec_info.push_back(sec_desc);
         //std::cout << "addr: 0x" << std::hex << sec_desc.offset << ", name: " <<  sec_desc.name << std::endl;
 
@@ -104,8 +129,8 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
 		PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(import_buf + (nt_hdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress - importSection->VirtualAddress));
 
 		for (; importDescriptor->Name != 0; importDescriptor++) {
-			const char* name = import_buf + (importDescriptor->Name - importSection->VirtualAddress);
-			sec_import.push_back(name);
+			std::string name = import_buf + (importDescriptor->Name - importSection->VirtualAddress);
+			sec_import.push_back(std::wstring(name.begin(), name.end()));
 			// std::cout << "dll: " << name << std::endl;
 		}
 

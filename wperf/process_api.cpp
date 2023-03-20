@@ -29,7 +29,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <windows.h>
-
+#include <iostream>
+#include <tchar.h>
+#include <psapi.h>
 #include "process_api.h"
 
 DWORD FindProcess(std::wstring lpcszFileName)

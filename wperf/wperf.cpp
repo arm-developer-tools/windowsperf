@@ -72,6 +72,10 @@ using namespace WPerfOutput;
 #include <ctime>
 #include <devpkey.h>
 
+#include <tchar.h>
+#include <stdio.h>
+#include <psapi.h>
+
 BOOLEAN G_PerformAsyncIo;
 BOOLEAN G_LimitedLoops;
 ULONG G_AsyncIoLoopsNum;
@@ -3369,20 +3373,13 @@ wmain(
             if (request.sample_pdb_file == L"")
                 throw fatal_exception("PDB file not specified");
 
-            std::vector<SectionDesc> sec_info;
+            std::vector<SectionDesc> sec_info;          // List of sections in executable
             std::vector<FuncSymDesc> sym_info;
-            std::vector<std::string> sym_import;
+            std::vector<std::wstring> sec_import;       // List of DLL imported by executable
             uint64_t static_entry_point, image_base;
 
-            parse_pe_file(request.sample_pe_file, static_entry_point, image_base, sec_info, sym_import);
+            parse_pe_file(request.sample_pe_file, static_entry_point, image_base, sec_info, sec_import);
             parse_pdb_file(request.sample_pdb_file, sym_info, request.sample_display_short);
-
-            if (request.do_verbose)
-            {
-                std::wcout << L"================================" << std::endl;
-                for (const auto& s : sym_import)
-                    std::wcout << std::setw(32) << std::wstring(s.begin(), s.end()) << std::endl;
-            }
 
             uint32_t stop_bits = CTL_FLAG_CORE;
 
@@ -3392,14 +3389,87 @@ wmain(
 
             UINT64 runtime_vaddr_delta = 0;
 
+            std::map<std::wstring, PeFileMetaData> dll_metadata;        // [pe_name] -> PeFileMetaData
+            std::map<std::wstring, ModuleMetaData> modules_metadata;    // [mod_name] -> ModuleMetaData
+
             if (request.sample_image_name == L"")
             {
                 std::wcout << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
             }
             else
             {
+                HMODULE hMods[1024];
+                DWORD cbNeeded;
                 DWORD pid = FindProcess(request.sample_image_name);
                 HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+
+                if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
+                {
+                    for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+                    {
+                        TCHAR szModName[MAX_PATH];
+                        TCHAR lpszBaseName[MAX_PATH];
+
+                        std::wstring name;
+                        if (GetModuleBaseNameW(process_handle, hMods[i], lpszBaseName, MAX_PATH))
+                        {
+                            name = lpszBaseName;
+                            modules_metadata[name].mod_name = name;
+                        }
+
+                        // Get the full path to the module's file.
+                        if (GetModuleFileNameEx(process_handle, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
+                        {
+                            std::wstring mod_path = szModName;
+                            modules_metadata[name].mod_path = mod_path;
+                            modules_metadata[name].handle = hMods[i];
+                        }
+                    }
+                }
+
+                if (request.do_verbose)
+                {
+                    std::wcout << L"================================" << std::endl;
+                    for (const auto& [key, value] : modules_metadata)
+                        {
+                            std::wcout << std::setw(32) << key
+                                << std::setw(32) << IntToHexWideString((ULONGLONG)value.handle, 20)
+                                << L"          " << value.mod_path << std::endl;
+                        }
+                }
+
+                for (auto& [key, value] : modules_metadata)
+                {
+                    std::wstring pdb_path = gen_pdb_name(value.mod_path);
+                    std::ifstream ifile(pdb_path);
+                    if (ifile) {
+                        PeFileMetaData pefile_metadata;
+                        parse_pe_file(value.mod_path, pefile_metadata);
+                        dll_metadata[value.mod_name] = pefile_metadata;
+
+                        parse_pdb_file(pdb_path, value.sym_info, request.sample_display_short);
+                        ifile.close();
+                    }
+                }
+
+                if (request.do_verbose)
+                {
+                    std::wcout << L"================================" << std::endl;
+                    for (const auto& [key, value] : dll_metadata)
+                    {
+                        std::wcout << std::setw(32) << key
+                            << L"          " << value.pe_name << std::endl;
+
+                        for (auto& sec : value.sec_info)
+                        {
+                            std::wcout << std::setw(32) << sec.name
+                                << std::setw(32) << IntToHexWideString(sec.offset, 20)
+                                << std::setw(32) << IntToHexWideString(sec.virtual_size)
+                                << std::endl;
+                        }
+                    }
+                }
+
                 HMODULE module_handle = GetModule(process_handle, request.sample_image_name);
 
                 MODULEINFO modinfo;
@@ -3415,6 +3485,8 @@ wmain(
                         << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
                         << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
                 }
+
+                CloseHandle(process_handle);
             }
 
             pmu_device.start_sample();
@@ -3438,10 +3510,10 @@ wmain(
 
             std::vector<SampleDesc> resolved_samples;
 
+            // Search for symbols in image (executable)
+            uint64_t sec_base = 0;
             for (auto& b : sym_info)
             {
-                uint64_t sec_base = 0;
-
                 for (const auto &c : sec_info)
                 {
                     if (c.idx == (b.sec_idx - 1))
@@ -3450,23 +3522,56 @@ wmain(
                         break;
                     }
                 }
-
-                b.offset += sec_base;
             }
 
-            //size_t total_sample = raw_samples.size();
             for (const auto &a : raw_samples)
             {
                 bool found = false;
                 SampleDesc sd;
 
-                for (auto b : sym_info)
+                // Search in symbol table for image (executable)
+                for (const auto& b : sym_info)
                 {
-                    if (a.pc >= b.offset && a.pc < (b.offset + b.size))
+                    if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
                     {
                         sd.name = b.name;
                         found = true;
                         break;
+                    }
+                }
+
+                // Nothing was found in base images, let's search inside modules loaded with
+                // images (such as DLLs).
+                // Note: at this point:
+                //  `dll_metadata` contains names of all modules loaded with image (executable)
+                //  `modules_metadata` contains e.g. symbols of image modules loaded which had
+                //                     PDB files present and we were able to load them.
+                if (!found)
+                {
+                    sec_base = 0;
+
+                    for (const auto& [key, value] : dll_metadata)
+                    {
+                        if (modules_metadata.count(key))
+                        {
+                            ModuleMetaData& mmd = modules_metadata[key];
+
+                            for (auto& b : mmd.sym_info)
+                                for (const auto& c : value.sec_info)
+                                    if (c.idx == (b.sec_idx - 1))
+                                    {
+                                        sec_base = (UINT64)mmd.handle + c.offset;
+                                        break;
+                                    }
+
+                            for (const auto& b : mmd.sym_info)
+                                if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
+                                {
+                                    sd.name = b.name + L":" + key;
+                                    found = true;
+                                    break;
+                                }
+                        }
                     }
                 }
 
@@ -3526,7 +3631,7 @@ wmain(
 
             std::vector<uint64_t> total_samples;
             uint64_t acc = 0;
-            for (auto a : resolved_samples)
+            for (const auto& a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
                 {

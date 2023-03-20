@@ -36,7 +36,8 @@ typedef struct
 {
     uint32_t idx;
     uint64_t offset;
-    std::string name;
+    uint64_t virtual_size;
+    std::wstring name;
 } SectionDesc;
 
 typedef struct
@@ -55,8 +56,29 @@ typedef struct
     std::vector<std::pair<uint64_t, uint64_t>> pc;
 } SampleDesc;
 
+typedef struct
+{
+    std::wstring pe_name;
+    uint64_t static_entry_point;
+    uint64_t image_base;
+    std::vector<SectionDesc> sec_info;
+    std::vector<std::wstring> sec_import;
+} PeFileMetaData;
+
+
+typedef struct
+{
+    std::wstring mod_name;
+    std::wstring mod_path;
+    HMODULE handle;
+    std::vector<FuncSymDesc> sym_info;
+} ModuleMetaData;
+
+
+std::wstring gen_pdb_name(std::wstring str);
 void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short);
-void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::string>& sec_import);
+void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::wstring>& sec_import);
+void parse_pe_file(std::wstring pe_file, PeFileMetaData& pefile_metadata);
 bool sort_samples(const SampleDesc& a, const SampleDesc& b);
 bool sort_pcs(const std::pair<uint64_t, uint64_t>& a, const std::pair<uint64_t, uint64_t>& b);
 
