@@ -651,6 +651,11 @@ public:
                     std::wcout << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
             }
         }
+        else
+        {
+            m_out.GetErrorOutputStream() << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
+            throw fatal_exception("ERROR_IMAGE_NAME");
+        }
 
         for (uint32_t core_idx : cores_idx)
             if (core_idx >= core_num) {
@@ -3193,7 +3198,7 @@ wmain(
     }
 
     uint32_t enable_bits = 0;
-    for (auto a : request.ioctl_events)
+    for (const auto& a : request.ioctl_events)
     {
         if (a.first == EVT_CORE)
         {
@@ -3410,121 +3415,124 @@ wmain(
             std::map<std::wstring, PeFileMetaData> dll_metadata;        // [pe_name] -> PeFileMetaData
             std::map<std::wstring, ModuleMetaData> modules_metadata;    // [mod_name] -> ModuleMetaData
 
-            if (request.sample_image_name == L"")
+            HMODULE hMods[1024];
+            DWORD cbNeeded;
+            DWORD pid = FindProcess(request.sample_image_name);
+            HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+
+            if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
             {
-                std::wcout << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
+                for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+                {
+                    TCHAR szModName[MAX_PATH];
+                    TCHAR lpszBaseName[MAX_PATH];
+
+                    std::wstring name;
+                    if (GetModuleBaseNameW(process_handle, hMods[i], lpszBaseName, MAX_PATH))
+                    {
+                        name = lpszBaseName;
+                        modules_metadata[name].mod_name = name;
+                    }
+
+                    // Get the full path to the module's file.
+                    if (GetModuleFileNameEx(process_handle, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
+                    {
+                        std::wstring mod_path = szModName;
+                        modules_metadata[name].mod_path = mod_path;
+                        modules_metadata[name].handle = hMods[i];
+                    }
+                }
+            }
+
+            if (request.do_verbose)
+            {
+                std::wcout << L"================================" << std::endl;
+                for (const auto& [key, value] : modules_metadata)
+                    {
+                        std::wcout << std::setw(32) << key
+                            << std::setw(32) << IntToHexWideString((ULONGLONG)value.handle, 20)
+                            << L"          " << value.mod_path << std::endl;
+                    }
+            }
+
+            for (auto& [key, value] : modules_metadata)
+            {
+                std::wstring pdb_path = gen_pdb_name(value.mod_path);
+                std::ifstream ifile(pdb_path);
+                if (ifile) {
+                    PeFileMetaData pefile_metadata;
+                    parse_pe_file(value.mod_path, pefile_metadata);
+                    dll_metadata[value.mod_name] = pefile_metadata;
+
+                    parse_pdb_file(pdb_path, value.sym_info, request.sample_display_short);
+                    ifile.close();
+                }
+            }
+
+            if (request.do_verbose)
+            {
+                std::wcout << L"================================" << std::endl;
+                for (const auto& [key, value] : dll_metadata)
+                {
+                    std::wcout << std::setw(32) << key
+                        << L"          " << value.pe_name << std::endl;
+
+                    for (auto& sec : value.sec_info)
+                    {
+                        std::wcout << std::setw(32) << sec.name
+                            << std::setw(32) << IntToHexWideString(sec.offset, 20)
+                            << std::setw(32) << IntToHexWideString(sec.virtual_size)
+                            << std::endl;
+                    }
+                }
+            }
+
+            HMODULE module_handle = GetModule(process_handle, request.sample_image_name);
+            MODULEINFO modinfo;
+            bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
+            if (!ret)
+            {
+                std::wcout << L"failed to query base address of '" << request.sample_image_name << L"'\n";
             }
             else
             {
-                HMODULE hMods[1024];
-                DWORD cbNeeded;
-                DWORD pid = FindProcess(request.sample_image_name);
-                HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
-
-                if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
-                {
-                    for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
-                    {
-                        TCHAR szModName[MAX_PATH];
-                        TCHAR lpszBaseName[MAX_PATH];
-
-                        std::wstring name;
-                        if (GetModuleBaseNameW(process_handle, hMods[i], lpszBaseName, MAX_PATH))
-                        {
-                            name = lpszBaseName;
-                            modules_metadata[name].mod_name = name;
-                        }
-
-                        // Get the full path to the module's file.
-                        if (GetModuleFileNameEx(process_handle, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
-                        {
-                            std::wstring mod_path = szModName;
-                            modules_metadata[name].mod_path = mod_path;
-                            modules_metadata[name].handle = hMods[i];
-                        }
-                    }
-                }
-
-                if (request.do_verbose)
-                {
-                    std::wcout << L"================================" << std::endl;
-                    for (const auto& [key, value] : modules_metadata)
-                        {
-                            std::wcout << std::setw(32) << key
-                                << std::setw(32) << IntToHexWideString((ULONGLONG)value.handle, 20)
-                                << L"          " << value.mod_path << std::endl;
-                        }
-                }
-
-                for (auto& [key, value] : modules_metadata)
-                {
-                    std::wstring pdb_path = gen_pdb_name(value.mod_path);
-                    std::ifstream ifile(pdb_path);
-                    if (ifile) {
-                        PeFileMetaData pefile_metadata;
-                        parse_pe_file(value.mod_path, pefile_metadata);
-                        dll_metadata[value.mod_name] = pefile_metadata;
-
-                        parse_pdb_file(pdb_path, value.sym_info, request.sample_display_short);
-                        ifile.close();
-                    }
-                }
-
-                if (request.do_verbose)
-                {
-                    std::wcout << L"================================" << std::endl;
-                    for (const auto& [key, value] : dll_metadata)
-                    {
-                        std::wcout << std::setw(32) << key
-                            << L"          " << value.pe_name << std::endl;
-
-                        for (auto& sec : value.sec_info)
-                        {
-                            std::wcout << std::setw(32) << sec.name
-                                << std::setw(32) << IntToHexWideString(sec.offset, 20)
-                                << std::setw(32) << IntToHexWideString(sec.virtual_size)
-                                << std::endl;
-                        }
-                    }
-                }
-
-                HMODULE module_handle = GetModule(process_handle, request.sample_image_name);
-
-                MODULEINFO modinfo;
-                bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
-                if (!ret)
-                {
-                    std::wcout << L"failed to query base address of '" << request.sample_image_name << L"'\n";
-                }
-                else
-                {
-                    runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
-                    std::wcout << L"base address of '" << request.sample_image_name
-                        << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
-                        << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
-                }
-
-                CloseHandle(process_handle);
+                runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
+                std::wcout << L"base address of '" << request.sample_image_name
+                    << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
+                    << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
             }
-
-            pmu_device.start_sample();
-            std::wcout << L"sampling ...";
 
             std::vector<FrameChain> raw_samples;
-
-            while (no_ctrl_c)
             {
-                bool sample = pmu_device.get_sample(raw_samples);
-                if (sample)
-                    std::wcout << L".";
-                else
-                    std::wcout << L"e";
-                Sleep(1000);
+                DWORD image_exit_code = 0;
+
+                pmu_device.start_sample();
+                
+                std::wcout << L"sampling ...";
+                while (no_ctrl_c)
+                {
+                    bool sample = pmu_device.get_sample(raw_samples);
+                    if (sample)
+                        std::wcout << L".";
+                    else
+                        std::wcout << L"e";
+
+                    if (GetExitCodeProcess(process_handle, &image_exit_code))
+                        if (image_exit_code != STILL_ACTIVE)
+                            break;
+
+                    Sleep(1000);
+                }
+                std::wcout << " done!" << std::endl;
+
+                pmu_device.stop_sample();
+
+                if (request.do_verbose)
+                    std::wcout << "Sampling stopped, process pid=" << pid
+                        << L" exited with code " << IntToHexWideString(image_exit_code) << std::endl;
             }
 
-            std::wcout << " done!" << std::endl;
-
-            pmu_device.stop_sample();
+            CloseHandle(process_handle);
 
             std::vector<SampleDesc> resolved_samples;
 
