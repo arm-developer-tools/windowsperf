@@ -314,7 +314,7 @@ public:
         cores_idx.resize(core_num);
         std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
 
-        for (auto a : raw_args)
+        for (const auto& a : raw_args)
         {
             if (waiting_config)
             {
@@ -339,7 +339,7 @@ public:
             }
         }
 
-        for (auto a : raw_args)
+        for (const auto& a : raw_args)
         {
             if (waiting_config)
             {
@@ -632,6 +632,24 @@ public:
             }
 
             m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
+        }
+
+        // Deduce image name and PDB file name from PE file name
+        if (sample_pe_file.size())
+        {
+            if (sample_image_name.empty())
+            {
+                sample_image_name = sample_pe_file;
+                if (do_verbose)
+                    std::wcout << L"deduced image name '" << sample_image_name << L"'" << std::endl;
+            }
+
+            if (sample_pdb_file.empty())
+            {
+                sample_pdb_file = ReplaceFileExtension(sample_pe_file, L"pdb");
+                if (do_verbose)
+                    std::wcout << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
+            }
         }
 
         for (uint32_t core_idx : cores_idx)
