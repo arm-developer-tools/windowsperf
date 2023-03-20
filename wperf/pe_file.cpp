@@ -143,7 +143,6 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
 
 void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short)
 {
-#if 1
     // Init DIA COM
     IDiaDataSource* DiaDataSource;
     IDiaSession* DiaSession;
@@ -251,120 +250,6 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
     DiaSymbol->Release();
     DiaSession->Release();
     CoUninitialize();
-
-#else // legacy code for getting result from llvm-pdbutil dump
-    HANDLE g_hChildStd_IN_Rd = NULL;
-    HANDLE g_hChildStd_IN_Wr = NULL;
-    HANDLE g_hChildStd_OUT_Rd = NULL;
-    HANDLE g_hChildStd_OUT_Wr = NULL;
-    SECURITY_ATTRIBUTES saAttr;
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
-    if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0))
-        throw fatal_exception("CreatePipe failed for child stdout");
-    if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-        throw fatal_exception("SetHandleInformation failed for child stdout");
-    if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0))
-        throw fatal_exception("CreatePipe failed for child stdin");
-    if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-        throw fatal_exception("SetHandleInformation failed for child stdin");
-    std::wstring dump_cmd = L"llvm-pdbutil.exe dump -symbols " + pdb_file;
-    PROCESS_INFORMATION piProcInfo;
-    STARTUPINFOW siStartInfo;
-    BOOL bSuccess = FALSE;
-
-    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&siStartInfo, sizeof(STARTUPINFOW));
-    siStartInfo.cb = sizeof(STARTUPINFO);
-    siStartInfo.hStdError = g_hChildStd_OUT_Wr;
-    siStartInfo.hStdOutput = g_hChildStd_OUT_Wr;
-    siStartInfo.hStdInput = g_hChildStd_IN_Rd;
-    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-    wchar_t* dump_cmd_chr = new wchar_t[dump_cmd.length() + 1];
-    std::wcscpy(dump_cmd_chr, dump_cmd.c_str());
-    bSuccess = CreateProcessW(NULL, dump_cmd_chr, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
-    if (!bSuccess)
-    {
-        throw fatal_exception("CreateProcess failed for llvm-readobj");
-    }
-    else
-    {
-        CloseHandle(piProcInfo.hProcess);
-        CloseHandle(piProcInfo.hThread);
-        CloseHandle(g_hChildStd_OUT_Wr);
-        CloseHandle(g_hChildStd_IN_Rd);
-    }
-#define BUFSIZE  4096
-#define LINESIZE2 1024
-    int line_pos = 0;
-    FuncSymDesc sym_desc = { UINT32_MAX, 0, UINT64_MAX, "" };
-    bool got_sym = false;
-    for (;;)
-    {
-        CHAR chBuf[BUFSIZE];
-        CHAR lineBuf[LINESIZE2];
-        DWORD dwRead;
-        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
-        if (!bSuccess || dwRead == 0)
-            break;
-        for (DWORD i = 0; i < dwRead; i++)
-        {
-            if (chBuf[i] == ' ')
-                continue;
-            lineBuf[line_pos++] = chBuf[i];
-            if (chBuf[i] != '\n')
-                continue;
-            // remove newline plus end the string.
-            lineBuf[line_pos - 1] = '\0';
-            line_pos = 0;
-            std::string lineString(lineBuf);
-            size_t delim_pos = 0;
-            if (got_sym)
-            {
-                got_sym = false;
-                std::string key = "addr=";
-                if ((delim_pos = lineString.find(key)) != std::string::npos)
-                {
-                    std::string sym_value = lineString.substr(delim_pos + key.length(), std::string::npos);
-                    delim_pos = sym_value.find(",");
-                    if (delim_pos != std::string::npos)
-                        sym_value = sym_value.substr(0, delim_pos);
-                    delim_pos = sym_value.find(":");
-                    std::string value = sym_value.substr(0, delim_pos);
-                    sym_desc.sec_idx = std::stoi(value, nullptr, 10);
-                    value = sym_value.substr(delim_pos + 1, std::string::npos);
-                    sym_desc.offset = std::stoll(value, nullptr, 10);
-                }
-                key = "codesize=";
-                if ((delim_pos = lineString.find(key)) != std::string::npos)
-                {
-                    std::string sym_value = lineString.substr(delim_pos + key.length(), std::string::npos);
-                    delim_pos = sym_value.find(",");
-                    if (delim_pos != std::string::npos)
-                        sym_value = sym_value.substr(0, delim_pos);
-                    sym_desc.size = std::stoi(sym_value, nullptr, 10);
-                }
-                sym_info.push_back(sym_desc);
-            }
-            else
-            {
-                if ((delim_pos = lineString.find("|S_LPROC32")) != std::string::npos)
-                {
-                    got_sym = true;
-                    delim_pos = lineString.find("`");
-                    if (delim_pos != std::string::npos)
-                    {
-                        std::string sym_name = lineString.substr(delim_pos + 1, std::string::npos);
-                        sym_name.pop_back();
-                        sym_desc.name = sym_name;
-                    }
-                }
-            }
-        }
-    }
-    delete[] dump_cmd_chr;
-#endif
 }
 
 bool sort_samples(const SampleDesc& a, const SampleDesc& b)
