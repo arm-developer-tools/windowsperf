@@ -34,15 +34,13 @@
 
 #include "exception.h"
 #include "wperf-common\macros.h"
+#include "utils.h"
 #include "pe_file.h"
 
 
 std::wstring gen_pdb_name(std::wstring str)
 {
-    size_t index = str.find(L".", 0);
-    std::wstring pdb_name = str.substr(0, index);
-    pdb_name += L".pdb";
-    return pdb_name;
+    return ReplaceFileExtension(str, L"pdb");
 }
 
 void parse_pe_file(std::wstring pe_file, PeFileMetaData& pefile_metadata)

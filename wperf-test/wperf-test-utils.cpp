@@ -160,5 +160,16 @@ namespace wperftest
 			Assert::AreEqual(Output.size(), (size_t)14);
 			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233});
 		}
+
+		TEST_METHOD(test_ReplaceFileExtension)
+		{
+			Assert::AreEqual(ReplaceFileExtension(std::wstring(L"filename"), std::wstring(L"xyz")), std::wstring(L"filename"));
+			Assert::AreEqual(ReplaceFileExtension(std::wstring(L""), std::wstring(L"xyz")), std::wstring(L""));
+
+			Assert::AreEqual(ReplaceFileExtension(std::wstring(L"filename.abc"), std::wstring(L"xyz")), std::wstring(L"filename.xyz"));
+			Assert::AreEqual(ReplaceFileExtension(std::wstring(L"file.name.abc"), std::wstring(L"xyz")), std::wstring(L"file.name.xyz"));
+			Assert::AreEqual(ReplaceFileExtension(std::wstring(L".file.name.abc"), std::wstring(L"xyz")), std::wstring(L".file.name.xyz"));
+			Assert::AreEqual(ReplaceFileExtension(std::wstring(L".abc"), std::wstring(L"xyz")), std::wstring(L".xyz"));
+		}
 	};
 }

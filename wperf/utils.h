@@ -39,6 +39,7 @@
 std::string MultiByteFromWideString(const wchar_t* wstr);
 std::wstring DoubleToWideString(double Value, int Precision = 2);
 std::wstring DoubleToWideStringExt(double Value, int Precision, int Width);
+std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext);
 
 /// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"

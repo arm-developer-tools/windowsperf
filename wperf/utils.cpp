@@ -69,3 +69,11 @@ std::wstring DoubleToWideStringExt(double Value, int Precision, int Width) {
     ss << std::fixed << std::setw(Width) << std::setprecision(Precision) << Value;
     return std::wstring(ss.str());
 }
+
+std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext)
+{
+    size_t index = filename.find_last_of(L".");
+    if (index != std::string::npos)
+        filename = filename.substr(0, index) + L"." + ext;
+    return filename;
+}
