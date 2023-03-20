@@ -6,19 +6,20 @@
 
 Take the Linux perf tool and port it to Windows on Arm with the same command line interface so that you can do deep performance analysis.
 
-Currently we support the **counting model**, for obtaining aggregate counts of occurrences of special events, and
-* Currently under development.
-* Will be developed and improved in short-term.
-* Less complex then sampling model.
-
-In the future we will support the **sampling model**, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels.
+Currently we support:
+* **counting model**, for obtaining aggregate counts of occurrences of special events, and
+* **sampling model**, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels. Sampling model features include:
+  * sampling mode initial merge, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/111
+  * support for DLL symbol resolution, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/132
+  * deduce from command line image name and PDB file name, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/134
+  * stop sampling when sampled process ends, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/135
 
 ## Modules
 
 WindowsPerf solution consists of two projects:
 * `wperf` is a perf-like user space command line interface tool.
 * `wperf-driver` is a Kernel-Mode Driver Framework (KMDF) driver.
- * See [Using WDF to Develop a Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/using-the-framework-to-develop-a-driver) article for more details on KMDF.
+  * See [Using WDF to Develop a Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/using-the-framework-to-develop-a-driver) article for more details on KMDF.
 
 `wperf` application communicates with `wperf-driver` via I/O buffer. Proprietary binary protocol is used to exchange data, commands and status between two.
 
@@ -34,9 +35,11 @@ For more information regarding project visit [WindowsPerf Wiki](https://linaro.a
 
 # Building WindowsPerf project
 
-Currently WindowsPerf is targeted for Windows on Arm devices. Both, user space `wperf` application and Kernel-mode driver `wperf-driver` are `ARM64` binaries. Due to current toolchain limitations WindowsPerf can be build using cross-compiling (`x64` host and `ARM64` target).
+Currently WindowsPerf is targeted for Windows on Arm devices. Both, user space `wperf` application and Kernel-mode driver `wperf-driver` are `ARM64EC` and `ARM64` binaries respectively.
 
-Currently both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilarion only.
+Currently both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation. You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
+
+Please build `wperf` application with `ARM64EC` configuration as it's requiring DIA SDK support which is not available in `ARM64` mode.
 
 ## Project requirements
 
@@ -56,6 +59,8 @@ WindowsPerf solution is implemented in `C/C++17`.
 
 You can see `wperf-driver` debug printouts with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview). Kernel-Mode debug prints are produced with macros [DbgPrint](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprint) and [DbgPrintEx](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprintex).
 
+After adding sampling model we've moved to more robust tracing. For kernel driver traces please use [TraceView](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/traceview) application. You will need to present TraceView with `wperf-driver.pdb` file and you are ready to go!
+
 Debugging Tools for Windows supports kernel debugging over a USB cable using EEM on an Arm device. Please refer to [Setting Up Kernel-Mode Debugging over USB EEM on an Arm device using KDNET](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-kernel-mode-debugging-over-usb-eem-arm-kdnet) article for more details.
 
 ### Creating Reliable Kernel-Mode Drivers
@@ -66,7 +71,7 @@ To create a reliable kernel-mode driver, follow these [guidelines](https://learn
 
 ```
 > cd WindowsPerf
-> devenv windowsperf.sln /Build "Debug|ARM64"
+> devenv windowsperf.sln /Build "Debug|ARM64EC"
 ```
 
 For more information regarding `devenv` and its command line options visit [Devenv command-line switches](https://learn.microsoft.com/en-us/visualstudio/ide/reference/devenv-command-line-switches?view=vs-2022).
@@ -76,7 +81,7 @@ For more information regarding `devenv` and its command line options visit [Deve
 
 ```
 > cd WindowsPerf
-> devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf\wperf.vcxproj
+> devenv windowsperf.sln /Rebuild "Debug|ARM64EC" /Project wperf\wperf.vcxproj
 ```
 
 ```
