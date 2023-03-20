@@ -651,7 +651,7 @@ public:
                     std::wcout << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
             }
         }
-        else
+        else if (do_sample)
         {
             m_out.GetErrorOutputStream() << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
             throw fatal_exception("ERROR_IMAGE_NAME");
