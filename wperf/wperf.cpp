@@ -3091,6 +3091,7 @@ usage: wperf [options]
     Options:
     list              List supported events and metrics.
     stat              Count events.If - e is not specified, then count default events.
+    test              Configuration information about driver and application confituration.
     sample            Sample events. If -e is not specified, cycle counter will be the default sample source
     -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
                       Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
