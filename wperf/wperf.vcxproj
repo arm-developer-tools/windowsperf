@@ -362,6 +362,7 @@
     </DriverSign>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="events.cpp" />
     <ClCompile Include="pe_file.cpp" />
     <ClCompile Include="process_api.cpp" />
     <ClCompile Include="utils.cpp" />

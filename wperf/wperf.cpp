@@ -51,6 +51,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "exception.h"
 #include "pe_file.h"
 #include "process_api.h"
+#include "events.h"
 
 using namespace WPerfOutput;
 
@@ -138,32 +139,6 @@ static std::map<uint8_t, wchar_t*>arm64_vendor_names =
     {0xC0, L"Ampere Computing"}
 };
 
-enum evt_type
-{
-    EVT_NORMAL,
-    EVT_GROUPED,
-    EVT_METRIC_NORMAL,
-    EVT_METRIC_GROUPED,
-    EVT_PADDING,
-    EVT_HDR,                //!< Used to make beginning of a new group. Not real event
-};
-
-static const wchar_t* evt_class_name[EVT_CLASS_NUM] =
-{
-    L"core",
-    L"dsu",
-    L"dmc_clk",
-    L"dmc_clkdiv2",
-};
-
-static const wchar_t* evt_name_prefix[EVT_CLASS_NUM] =
-{
-    L"",
-    L"/dsu/",
-    L"/dmc_clk/",
-    L"/dmc_clkdiv2/",
-};
-
 static uint8_t gpc_nums[EVT_CLASS_NUM];
 static uint8_t fpc_nums[EVT_CLASS_NUM];
 
@@ -179,100 +154,6 @@ struct metric_desc
     std::map<enum evt_class, std::deque<struct evt_noted>> events;
     std::map<enum evt_class, std::vector<struct evt_noted>> groups;
     std::wstring raw_str;
-};
-
-static wchar_t* get_dmc_clk_event_name(uint16_t index)
-{
-    switch (index)
-    {
-#define WPERF_DMC_CLK_EVENTS(a,b,c) case b: return L##c;
-#include "wperf-common\dmc-clk-events.def"
-#undef WPERF_DMC_CLK_EVENTS
-    default: return L"unknown event";
-    }
-}
-
-static const wchar_t* get_dmc_clkdiv2_event_name(uint16_t index)
-{
-    switch (index)
-    {
-#define WPERF_DMC_CLKDIV2_EVENTS(a,b,c) case b: return L##c;
-#include "wperf-common\dmc-clkdiv2-events.def"
-#undef WPERF_DMC_CLKDIV2_EVENTS
-    default: return L"unknown event";
-    }
-}
-
-static const wchar_t* get_core_event_name(uint16_t index)
-{
-    switch (index)
-    {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) case b: return L##c;
-#include "wperf-common\armv8-arch-events.def"
-#undef WPERF_ARMV8_ARCH_EVENTS
-    case 0xFFFF: return L"cycle";
-    default: return L"unknown event";
-    }
-}
-
-static const wchar_t* get_event_name(uint16_t index, enum evt_class e_class = EVT_CORE)
-{
-    if (e_class == EVT_DMC_CLK)
-        return get_dmc_clk_event_name(index);
-
-    if (e_class == EVT_DMC_CLKDIV2)
-        return get_dmc_clkdiv2_event_name(index);
-
-    return get_core_event_name(index);
-}
-
-static int get_core_event_index(std::wstring name)
-{
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) if (name == L##c) return b;
-#include "wperf-common\armv8-arch-events.def"
-#undef WPERF_ARMV8_ARCH_EVENTS
-    return -1;
-}
-
-static int get_dmc_clk_event_index(std::wstring name)
-{
-#define WPERF_DMC_CLK_EVENTS(a,b,c) if (name == L##c) return b;
-#include "wperf-common\dmc-clk-events.def"
-#undef WPERF_DMC_CLK_EVENTS
-    return -1;
-}
-
-static int get_dmc_clkdiv2_event_index(std::wstring name)
-{
-#define WPERF_DMC_CLKDIV2_EVENTS(a,b,c) if (name == L##c) return b;
-#include "wperf-common\dmc-clkdiv2-events.def"
-#undef WPERF_DMC_CLKDIV2_EVENTS
-    return -1;
-}
-
-static int get_event_index(std::wstring name, enum evt_class e_class = EVT_CORE)
-{
-    if (e_class == EVT_DMC_CLK)
-        return get_dmc_clk_event_index(name);
-
-    if (e_class == EVT_DMC_CLKDIV2)
-        return get_dmc_clkdiv2_event_index(name);
-
-    return get_core_event_index(name);
-}
-
-enum
-{
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) PMU_EVENT_##a = b,
-#include "wperf-common\armv8-arch-events.def"
-#undef WPERF_ARMV8_ARCH_EVENTS
-};
-
-enum
-{
-#define WPERF_DMC_CLKDIV2_EVENTS(a,b,c) DMC_EVENT_##a = b,
-#include "wperf-common\dmc-clkdiv2-events.def"
-#undef WPERF_DMC_CLKDIV2_EVENTS
 };
 
 typedef std::vector<std::wstring> wstr_vec;
