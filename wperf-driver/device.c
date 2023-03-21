@@ -198,7 +198,6 @@ static UINT64 event_get_counting(struct pmu_event_kernel* event)
 #define PMOVSCLR_VALID_BITS_MASK 0xffffffffULL
 static UINT64 arm64_clear_ov_flags(void)
 {
-    //WindowsPerfKdPrint("%!FUNC! Entry");
     UINT64 pmov_value = _ReadStatusReg(PMOVSCLR_EL0);
     pmov_value &= PMOVSCLR_VALID_BITS_MASK;
     _WriteStatusReg(PMOVSCLR_EL0, (__int64)pmov_value);
@@ -450,7 +449,7 @@ static VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1
     CoreCounterStart();
 
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
-    WindowsPerfKdPrintInfo("core %d PMC enabled\n", core_idx);
+    KdPrint(("core %d PMC enabled\n", core_idx));
 
     InterlockedIncrement(&cpunos);
     if ((ULONG)cpunos >= numCores)
@@ -468,11 +467,11 @@ VOID free_pmu_resource(VOID)
 
     if (status != STATUS_SUCCESS)
     {
-        WindowsPerfKdPrintInfo("HalFreeHardwareCounters: failed 0x%x\n", status);
+        KdPrint(("HalFreeHardwareCounters: failed 0x%x\n", status));
     }
     else
     {
-        WindowsPerfKdPrintInfo("HalFreeHardwareCounters: success\n");
+        KdPrint(("HalFreeHardwareCounters: success\n"));
     }
 }
 
@@ -480,13 +479,13 @@ static NTSTATUS evt_assign_dsu(UINT32 core_base, UINT32 core_end, UINT16 dsu_eve
 {
     if ((dsu_event_num + dsu_numFPC) > MAX_MANAGED_DSU_EVENTS)
     {
-        WindowsPerfKdPrintInfo("IOCTL: assigned dsu_event_num %d > %d\n",
-            dsu_event_num, (MAX_MANAGED_DSU_EVENTS - dsu_numFPC));
+        KdPrint(("IOCTL: assigned dsu_event_num %d > %d\n",
+            dsu_event_num, (MAX_MANAGED_DSU_EVENTS - dsu_numFPC)));
         return STATUS_INVALID_PARAMETER;
     }
 
-    WindowsPerfKdPrintInfo("IOCTL: assign %d dsu_events (%s)\n",
-        dsu_event_num, dsu_event_num > dsu_numGPC ? "multiplexing" : "no-multiplexing");
+    KdPrint(("IOCTL: assign %d dsu_events (%s)\n",
+        dsu_event_num, dsu_event_num > dsu_numGPC ? "multiplexing" : "no-multiplexing"));
 
     for (UINT32 i = core_base; i < core_end; i += dsu_sizeCluster)
     {
@@ -542,13 +541,13 @@ static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_e
 {
     if ((core_event_num + numFPC) > MAX_MANAGED_CORE_EVENTS)
     {
-        WindowsPerfKdPrintInfo("IOCTL: assigned core_event_num %d > %d\n",
-            core_event_num, (MAX_MANAGED_CORE_EVENTS - numFPC));
+        KdPrint(("IOCTL: assigned core_event_num %d > %d\n",
+            core_event_num, (MAX_MANAGED_CORE_EVENTS - numFPC)));
         return STATUS_INVALID_PARAMETER;
     }
 
-    WindowsPerfKdPrintInfo("IOCTL: assign %d events (%s)\n",
-        core_event_num, core_event_num > numGPC ? "multiplexing" : "no-multiplexing");
+    KdPrint(("IOCTL: assign %d events (%s)\n",
+        core_event_num, core_event_num > numGPC ? "multiplexing" : "no-multiplexing"));
 
     for (UINT32 i = core_base; i < core_end; i++)
     {
@@ -728,20 +727,20 @@ NTSTATUS deviceControl(
 
         if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
-                                   cores_count, action);
+            KdPrint(("IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
+                                   cores_count, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            KdPrint(("IOCTL: invalid cores_no for action %d\n", action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_START\n");
+        KdPrint(("IOCTL: PMU_CTL_SAMPLE_START\n"));
 
         UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
 
@@ -765,20 +764,20 @@ NTSTATUS deviceControl(
 
         if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
-                                   cores_count, action);
+            KdPrint(("IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
+                                   cores_count, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            KdPrint(("IOCTL: invalid cores_no for action %d\n", action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_STOP\n");
+        KdPrint(("IOCTL: PMU_CTL_SAMPLE_STOP\n"));
 
         UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
 
@@ -821,7 +820,7 @@ NTSTATUS deviceControl(
     }
     case PMU_CTL_SAMPLE_SET_SRC:
     {
-        WindowsPerfKdPrintInfo("IOCTL: PMU_CTL_SAMPLE_SET_SRC\n");
+        KdPrint(("IOCTL: PMU_CTL_SAMPLE_SET_SRC\n"));
 
         PMUSampleSetSrcHdr *sample_req = (PMUSampleSetSrcHdr *)pBuffer;
         UINT32 core_idx = sample_req->core_idx;
@@ -867,27 +866,27 @@ NTSTATUS deviceControl(
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for action %d\n", inputSize, action);
+            KdPrint(("IOCTL: invalid inputsize %ld for action %d\n", inputSize, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (cores_count == 0 || cores_count >= MAX_PMU_CTL_CORES_COUNT)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1-%d) for action %d\n",
-                                   cores_count, MAX_PMU_CTL_CORES_COUNT, action);
+            KdPrint(("IOCTL: invalid cores_count=%llu (must be 1-%d) for action %d\n",
+                                   cores_count, MAX_PMU_CTL_CORES_COUNT, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            KdPrint(("IOCTL: invalid cores_no for action %d\n", action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: action %d\n", action);
+        KdPrint(("IOCTL: action %d\n", action));
 
         VOID(*core_func)(VOID) = NULL;
         VOID(*dsu_func)(VOID) = NULL;
@@ -1073,12 +1072,12 @@ NTSTATUS deviceControl(
     {
         if (inputSize != sizeof(enum pmu_ctl_action))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_HW_CFG\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_HW_CFG\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: QUERY_HW_CFG\n");
+        KdPrint(("IOCTL: QUERY_HW_CFG\n"));
 
         struct hw_cfg* out = (struct hw_cfg*)pBuffer;
         out->core_num = (UINT16)numCores;
@@ -1098,12 +1097,12 @@ NTSTATUS deviceControl(
     {
         if (inputSize != sizeof(enum pmu_ctl_action))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_SUPP_EVENTS\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_SUPP_EVENTS\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: QUERY_SUPP_EVENTS\n");
+        KdPrint(("IOCTL: QUERY_SUPP_EVENTS\n"));
 
         struct evt_hdr* hdr = (struct evt_hdr*)pBuffer;
         hdr->evt_class = EVT_CORE;
@@ -1186,25 +1185,25 @@ NTSTATUS deviceControl(
     {
         if (inputSize != sizeof(struct pmu_ctl_ver_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_VERSION\n",
-                                   inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_VERSION\n",
+                                   inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: QUERY_VERSION\n");
+        KdPrint(("IOCTL: QUERY_VERSION\n"));
 
         struct pmu_ctl_ver_hdr* ctl_req = (struct pmu_ctl_ver_hdr*)pBuffer;
         if (ctl_req->version.major != MAJOR || ctl_req->version.minor != MINOR
             || ctl_req->version.patch != PATCH)
         {
-            WindowsPerfKdPrintInfo("IOCTL: version mismatch bewteen wperf-driver and wperf\n");
-            WindowsPerfKdPrintInfo("IOCTL: wperf-driver version: %d.%d.%d\n",
-                                   MAJOR, MINOR, PATCH);
-            WindowsPerfKdPrintInfo("IOCTL: wperf version: %d.%d.%d\n",
+            KdPrint(("IOCTL: version mismatch bewteen wperf-driver and wperf\n"));
+            KdPrint(("IOCTL: wperf-driver version: %d.%d.%d\n",
+                                   MAJOR, MINOR, PATCH));
+            KdPrint(("IOCTL: wperf version: %d.%d.%d\n",
                                    ctl_req->version.major,
                                    ctl_req->version.minor,
-                                   ctl_req->version.patch);
+                                   ctl_req->version.patch));
         }
 
         struct version_info* ver_info = (struct version_info*)pBuffer;
@@ -1294,8 +1293,8 @@ NTSTATUS deviceControl(
                         counter_adj = 0;
                     }
 
-                    WindowsPerfKdPrintInfo("IOCTL: assign %d dmc_%s_events (no-multiplexing)\n",
-                        evt_num, evt_class == EVT_DMC_CLK ? "clk" : "clkdiv2");
+                    KdPrint(("IOCTL: assign %d dmc_%s_events (no-multiplexing)\n",
+                        evt_num, evt_class == EVT_DMC_CLK ? "clk" : "clkdiv2"));
 
                     for (UINT16 i = 0; i < evt_num; i++)
                     {
@@ -1323,21 +1322,21 @@ NTSTATUS deviceControl(
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for PMU_CTL_READ_COUNTING\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for PMU_CTL_READ_COUNTING\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count);
+            KdPrint(("IOCTL: invalid cores_count=%llu (must be 1) for PMU_CTL_READ_COUNTING\n", cores_count));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            KdPrint(("IOCTL: invalid cores_no for action %d\n", action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1395,7 +1394,7 @@ NTSTATUS deviceControl(
 
         if (inputSize != sizeof(struct dsu_ctl_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DSU_CTL_INIT\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for DSU_CTL_INIT\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1403,11 +1402,11 @@ NTSTATUS deviceControl(
         dsu_numCluster = ctl_req->cluster_num;
         dsu_sizeCluster = ctl_req->cluster_size;
 
-        WindowsPerfKdPrintInfo("IOCTL: DSU_CTL_INIT\n");
+        KdPrint(("IOCTL: DSU_CTL_INIT\n"));
 
         DSUProbePMU(&dsu_numGPC, &dsu_evt_mask_lo, &dsu_evt_mask_hi);
-        WindowsPerfKdPrintInfo("dsu pmu num %d\n", dsu_numGPC);
-        WindowsPerfKdPrintInfo("dsu pmu event mask 0x%x, 0x%x\n", dsu_evt_mask_lo, dsu_evt_mask_hi);
+        KdPrint(("dsu pmu num %d\n", dsu_numGPC));
+        KdPrint(("dsu pmu event mask 0x%x, 0x%x\n", dsu_evt_mask_lo, dsu_evt_mask_hi));
 
         struct dsu_cfg* out = (struct dsu_cfg*)pBuffer;
         out->fpc_num = dsu_numFPC;
@@ -1424,21 +1423,21 @@ NTSTATUS deviceControl(
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DSU_CTL_READ_COUNTING\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for DSU_CTL_READ_COUNTING\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (cores_count != 1)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_count=%llu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count);
+            KdPrint(("IOCTL: invalid cores_count=%llu (must be 1) for DSU_CTL_READ_COUNTING\n", cores_count));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid cores_no for action %d\n", action);
+            KdPrint(("IOCTL: invalid cores_no for action %d\n", action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1499,7 +1498,7 @@ NTSTATUS deviceControl(
 
         if (inputSize != expected_size)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DMC_CTL_INIT\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for DMC_CTL_INIT\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1509,7 +1508,7 @@ NTSTATUS deviceControl(
             dmc_array.dmcs = (struct dmc_desc*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(struct dmc_desc) * ctl_req->dmc_num, 'DMCR');
             if (!dmc_array.dmcs)
             {
-                WindowsPerfKdPrintInfo("DMC_CTL_INIT: allocate dmcs failed\n");
+                KdPrint(("DMC_CTL_INIT: allocate dmcs failed\n"));
                 status = STATUS_INVALID_PARAMETER;
                 break;
             }
@@ -1523,7 +1522,7 @@ NTSTATUS deviceControl(
                 dmc_array.dmcs[i].iomem_start = (UINT64)MmMapIoSpace(phy_addr, iomem_len, MmNonCached);
                 if (!dmc_array.dmcs[i].iomem_start)
                 {
-                    WindowsPerfKdPrintInfo("IOCTL: MmMapIoSpace failed\n");
+                    KdPrint(("IOCTL: MmMapIoSpace failed\n"));
                     status = STATUS_INVALID_PARAMETER;
                     break;
                 }
@@ -1535,7 +1534,7 @@ NTSTATUS deviceControl(
                 break;
         }
 
-        WindowsPerfKdPrintInfo("IOCTL: DMC_CTL_INIT\n");
+        KdPrint(("IOCTL: DMC_CTL_INIT\n"));
 
         struct dmc_cfg* out = (struct dmc_cfg*)pBuffer;
         out->clk_fpc_num = 0;
@@ -1552,14 +1551,14 @@ NTSTATUS deviceControl(
 
         if (inputSize != sizeof(struct pmu_ctl_hdr))
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid inputsize %ld for DMC_CTL_READ_COUNTING\n", inputSize);
+            KdPrint(("IOCTL: invalid inputsize %ld for DMC_CTL_READ_COUNTING\n", inputSize));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
 
         if (dmc_idx != ALL_DMC_CHANNEL && dmc_idx >= dmc_array.dmc_num)
         {
-            WindowsPerfKdPrintInfo("IOCTL: invalid dmc_idx %d for DMC_CTL_READ_COUNTING\n", dmc_idx);
+            KdPrint(("IOCTL: invalid dmc_idx %d for DMC_CTL_READ_COUNTING\n", dmc_idx));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -1623,7 +1622,7 @@ NTSTATUS deviceControl(
         break;
     }
     default:
-        WindowsPerfKdPrint("IOCTL: invalid action %d\n", action);
+        KdPrint(("IOCTL: invalid action %d\n", action));
         status = STATUS_INVALID_PARAMETER;
         *outputSize = 0;
         break;
@@ -1650,7 +1649,7 @@ VOID WindowsPerfDeviceUnload()
     // Uninstall PMI isr
     PMIHANDLER isr = NULL;
     if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
-        WindowsPerfKdPrintInfo("uninstalling sampling isr failed \n");
+        KdPrint(("uninstalling sampling isr failed \n"));
 }
 
 
@@ -1742,11 +1741,11 @@ WindowsPerfDeviceCreate(
 
     if (pmu_ver == 0x0)
     {
-        WindowsPerfKdPrintInfo("PMUv3 not supported by hardware\n");
+        KdPrint(("PMUv3 not supported by hardware\n"));
         return STATUS_FAIL_CHECK;
     }
 
-    WindowsPerfKdPrintInfo("PMU version %d\n", pmu_ver);
+    KdPrint(("PMU version %d\n", pmu_ver));
 
     midr_value = _ReadStatusReg(MIDR_EL1);
     UINT8 implementer = (midr_value >> 24) & 0xff;
@@ -1754,30 +1753,30 @@ WindowsPerfDeviceCreate(
     UINT8 arch_num = (midr_value >> 16) & 0xf;
     UINT16 part_num = (midr_value >> 4) & 0xfff;
     UINT8 revision = midr_value & 0xf;
-    WindowsPerfKdPrintInfo("arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
-        arch_num, implementer, variant, part_num, revision);
+    KdPrint(("arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
+        arch_num, implementer, variant, part_num, revision));
 
     if (pmu_ver == 0x6 || pmu_ver == 0x7)
         CpuHasLongEventSupportSet(1);
 
     UINT32 pmcr = CorePmcrGet();
     numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;
-    WindowsPerfKdPrintInfo("%d general purpose hardware counters detected\n", numGPC);
+    KdPrint(("%d general purpose hardware counters detected\n", numGPC));
 
     numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
-    WindowsPerfKdPrintInfo("%d cores detected\n", numCores);
+    KdPrint(("%d cores detected\n", numCores));
 
     // Finally, alloc PMU counters
     status = HalAllocateHardwareCounters(NULL, 0, NULL, &pmc_resource_handle);
     if (status == STATUS_INSUFFICIENT_RESOURCES)
     {
-        WindowsPerfKdPrintInfo("HAL: counters allocated by other kernel modules\n");
+        KdPrint(("HAL: counters allocated by other kernel modules\n"));
         return status;
     }
 
     if (status != STATUS_SUCCESS)
     {
-        WindowsPerfKdPrintInfo("HAL: allocate failed 0x%x\n", status);
+        KdPrint(("HAL: allocate failed 0x%x\n", status));
         return status;
     }
 
@@ -1792,11 +1791,11 @@ WindowsPerfDeviceCreate(
         status = KeSetHardwareCounterConfiguration(&counter_descs[i], 1);
         if (status == STATUS_WMI_ALREADY_ENABLED)
         {
-            WindowsPerfKdPrintInfo("KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", i);
+            KdPrint(("KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", i));
         }
         else if (status != STATUS_SUCCESS)
         {
-            WindowsPerfKdPrintInfo("KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", i, status);
+            KdPrint(("KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", i, status));
             return status;
         }
     }
@@ -1804,7 +1803,7 @@ WindowsPerfDeviceCreate(
     core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * numCores, 'CORE');
     if (!core_info)
     {
-        WindowsPerfKdPrintInfo("ExAllocatePoolWithTag: failed \n");
+        KdPrint(("ExAllocatePoolWithTag: failed \n"));
         return STATUS_FAIL_CHECK;
     }
     RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
@@ -1840,11 +1839,11 @@ WindowsPerfDeviceCreate(
     status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);
     if (status != STATUS_SUCCESS)
     {
-        WindowsPerfKdPrintInfo("register sampling isr failed \n");
+        KdPrint(("register sampling isr failed \n"));
         return status;
     }
 
-    WindowsPerfKdPrintInfo("loaded\n");
+    KdPrint(("loaded\n"));
     //
     // Port End
     //
@@ -1872,7 +1871,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(Device));
     LARGE_INTEGER DueTime;
 
-    WindowsPerfKdPrint("--> WindowsPerfEvtDeviceSelfManagedIoInit\n");
+    KdPrint(("--> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     //
     // Restart the queue and the periodic timer. We stopped them before going
@@ -1884,7 +1883,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
 
     WdfTimerStart(queueContext->Timer,  DueTime.QuadPart);
 
-    WindowsPerfKdPrint( "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n");
+    KdPrint(( "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     return STATUS_SUCCESS;
 }
@@ -1906,7 +1905,7 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
 
     PAGED_CODE();
 
-    WindowsPerfKdPrint("--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n");
+    KdPrint(("--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     //
     // Before we stop the timer we should make sure there are no outstanding
@@ -1926,7 +1925,7 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     //
     WdfTimerStop(queueContext->Timer, TRUE);
 
-    WindowsPerfKdPrint( "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n");
+    KdPrint(( "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     return STATUS_SUCCESS;
 }

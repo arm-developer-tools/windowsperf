@@ -135,7 +135,7 @@ VOID CoreCouterSetType(UINT32 counter_idx, __int64 evtype_val)
         SET_COUNTER_TYPE(29);
         SET_COUNTER_TYPE(30);
     default:
-        WindowsPerfKdPrintInfo("Warn: Invalid PMEVTYPE index: %d\n", counter_idx);
+        KdPrint(("Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
         break;
     }
 }
@@ -177,7 +177,7 @@ UINT64 CoreReadCounter(UINT32 counter_idx)
         READ_COUNTER(29);
         READ_COUNTER(30);
     default:
-        WindowsPerfKdPrintInfo("Warn: Invalid PMEVTYPE index: %d\n", counter_idx);
+        KdPrint(("Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
         break;
     }
 

@@ -69,6 +69,4 @@
 // FUNC Trace{FLAG=MYDRIVER_ALL_INFO}(LEVEL, MSG, ...);
 // FUNC TraceEvents(LEVEL, FLAGS, MSG, ...);
 // FUNC KdPrint{LEVEL=TRACE_LEVEL_INFORMATION, FLAGS=TRACE_DRIVER}((MSG, ...));
-// FUNC WindowsPerfKdPrintInfo{FLAG=MYDRIVER_ALL_INFO}(MSG, ...);
-// FUNC WindowsPerfKdPrint{FLAG=MYDRIVER_ALL_INFO}(MSG, ...);
 // end_wpp
