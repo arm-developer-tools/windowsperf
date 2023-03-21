@@ -17,38 +17,40 @@ You can build `wperf` project from command line:
 usage: wperf [options]
 
     Options:
-    list              List supported events and metrics.
-    test              Configuration information about driver and application confituration.
-    stat              Count events.If - e is not specified, then count default events.
-    sample            Sample events. If -e is not specified, cycle counter will be the default sample source
-    -e e1, e2...      Specify events to count.Event eN could be a symbolic name or in raw number.
-                      Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
-                      XXXX is hex value of the number without '0x' prefix.
-                      when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
-    -m m1, m2...      Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    -d N              Specify counting duration(in s).The accuracy is 0.1s.
-    sleep N           Like -d, for compatibility with Linux perf.
-    -i N              Specify counting interval(in s).To be used with -t.
-    -t                Enable timeline mode.It specifies -i 60 -d 1 implicitly.
-                      Means counting 1 second after every 60 second, and the result
-                      is in.csv file in the same folder where wperf is invoked.
-                      You can use -i and -d to change counting duration and interval.
-    -image_name       Specify the image name you want to sample.
-    -pe_file          Specify the PE file.
-    -pdb_file         Specify the PDB file.
-    -C config_file    Provide customized config file which describes metrics etc.
-    -c core_idx       Profile on the specified core. Skip -c to count on all cores.
-    -c cpu_list       Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
-    -dmc dmc_idx      Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
-    -k                Count kernel model as well (disabled by default).
-    -h                Show tool help.
-    --output          Enable JSON output to file.
-    -q                Quiet mode, no output is produced.
-    -json             Define output type as JSON.
-    -l                Alias of 'list'.
-    -verbose          Enable verbose output.
-    -v                Alias of '-verbose'.
-    -version          Show tool version.
+    list                  List supported events and metrics.
+    test                  Configuration information about driver and application confituration.
+    stat                  Count events.If - e is not specified, then count default events.
+    sample                Sample events. If -e is not specified, cycle counter will be the default sample source
+    -e e1, e2...          Specify events to count.Event eN could be a symbolic name or in raw number.
+                          Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
+                          XXXX is hex value of the number without '0x' prefix.
+                          when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
+    -m m1, m2...          Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
+    -d N                  Specify counting duration(in s).The accuracy is 0.1s.
+    sleep N               Like -d, for compatibility with Linux perf.
+    -i N                  Specify counting interval(in s).To be used with -t.
+    -t                    Enable timeline mode.It specifies -i 60 -d 1 implicitly.
+                          Means counting 1 second after every 60 second, and the result
+                          is in.csv file in the same folder where wperf is invoked.
+                          You can use -i and -d to change counting duration and interval.
+    -image_name           Specify the image name you want to sample.
+    -pe_file              Specify the PE file.
+    -pdb_file             Specify the PDB file.
+    -sample-display-long  Display decorated symbol names.
+    -sample-display-row   Set how many samples you want to see in the summary (50 by default).
+    -C config_file        Provide customized config file which describes metrics etc.
+    -c core_idx           Profile on the specified core. Skip -c to count on all cores.
+    -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
+    -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
+    -k                    Count kernel model as well (disabled by default).
+    -h                    Show tool help.
+    --output              Enable JSON output to file.
+    -q                    Quiet mode, no output is produced.
+    -json                 Define output type as JSON.
+    -l                    Alias of 'list'.
+    -verbose              Enable verbose output.
+    -v                    Alias of '-verbose'.
+    -version              Show tool version.
 ```
 
 # WindowsPerf auxiliary command line options
@@ -392,13 +394,15 @@ Store counting results in JSON file `count.json` and do not print anything on th
 In this example we will build CPython from sources and execute simple instructions in Python interactive mode to obtain sampling from CPython runtime image.
 To achieve that we will:
 * Build CPython binaries targeting ARM64 from sources in debug mode.
-* Pin `python_d.exe` interactive console to core 1.
+* Pin `python_d.exe` interactive console to core no. 1.
 * Try to calculate absurdly large integer number [Googolplex](https://en.wikipedia.org/wiki/Googolplex) to stress CPython and get simple workload.
 * Run counting and sampling to obtain some simple event invormation.
 
 Let's go...
 
 ### CPython cross-build on x64 machine targeting ARM64
+
+Let's build locally CPython in debug mode. We will in this example cross-compile CPython to ARM64 target. Build machine is x64.
 
 ```
 > git clone git@github.com:python/cpython.git
@@ -420,10 +424,16 @@ Copy above CPython binaries from `PCbuild/arm64` directory to your ARM64 machine
 
 ### Example 1: sampling Cpython executing Googolplex calculation
 
-Pin new CPython process on code 1:
+Pin new CPython process on core no. 1:
+
 ```
 > start /affinity 2 python_d.exe
 ```
+
+Check with for example Task Manager if `python_d.exe` is running on core no. 1. Newly created CPython interactive window will allow us to execute example workload.
+In below example we will calculate very large integer `10^10^100`.
+
+Note: [start](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/start) command line switch `/affinity <hexaffinity>` applies the specified processor affinity mask (expressed as a hexadecimal number) to the new application. In our example decimal `2` is `0x02` or `0b0010`. This value denotes core no. 1 as 1 is a 1st bit in the mask, where mask is indexed from 0 (zero).
 
 ```
 Python 3.12.0a6+ (heads/main:1ff81c0cb6, Mar 14 2023, 16:26:50) [MSC v.1935 64 bit (ARM64)] on win32
@@ -431,7 +441,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> 10**10**100
 ```
 
-#### Counting to asses which events are "popular":
+#### Counting to asses which events are "popular"
 
 ```
 >wperf stat -m imix -c 1 sleep 3
@@ -453,9 +463,11 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
                 3.31 seconds time elapsed
 ```
 
-#### Sampling for `ld_spec` event which, by looking at counting is dominant (at least for `imix` metrics):
+#### Sampling for `ld_spec` event which, by looking at counting is dominant (at least for `imix` metrics)
 
-Let's sample for event `ld_spec`. Please note that you can specify process image name and PDB file name with `-pdb_file python_d.pdb` and `-image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
+Let's sample for `ld_spec` event. Please note that you can specify process image name and PDB file name with `-pdb_file python_d.pdb` and `-image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
+
+We can stop sampling by pressing `Ctrl-C` in `wperf` console or we can end process we are sampling.
 
 ```
 >wperf sample -e ld_spec:100000 -pe_file python_d.exe -c 1
@@ -484,6 +496,10 @@ sampling ....e.e.e.e.e.eCtrl-C received, quit counting... done!
   0.13%         1  _PyMem_DebugRawFree:python312_d.dll
   0.13%         1  _PyLong_New:python312_d.dll
 ```
+
+In above example we can see that majority of code executed by CPython's `python_d.exe` executable resides inside `python312_d.dll` DLL.
+
+Note that in `sampling ....e.e.e.e.e.` progressing printout `.` represents sample payload (of 128 samples)  received from the driver. 'e' represents an unsuccessful attempt to fetch whole sample payload. `wperf` is polling `wperf-driver` awaiting sample payload.
 
 ### Example 2: sampling of Cpython executable on ARM64 running simple Fibonacci lambda:
 
@@ -679,3 +695,21 @@ sample dropped  : 4
 100.00%       384  top 18 in total
 ```
 
+IN above example:
+
+```
+ 68.49%       263  x_mul:python312_d.dll
+                   0x000000007fff56054b8c       82
+                   0x000000007fff56054bbc       63
+                   0x000000007fff56054be4       34
+                   0x000000007fff56054b54       19
+                   0x000000007fff56054bac       19
+                   0x000000007fff56054b78       10
+                   0x000000007fff56054b58       10
+                   0x000000007fff56054b60        5
+                   0x000000007fff56054bb8        3
+                   0x000000007fff56054bec        2
+```
+
+represents a set of samples which were coming from single symbol `x_mul` originated in `python312_d.dll` DLL.
+Below hexadecimal values represent PC values which were sampled with corresponding sample count.
