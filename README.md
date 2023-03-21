@@ -14,22 +14,27 @@ Currently we support:
   * deduce from command line image name and PDB file name, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/134
   * stop sampling when sampled process ends, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/135
 
-You can find example usage of [counting model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#counting-model) and [sampling model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#sampling-model) in `wperf's` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/README.md).
+You can find example usage of [counting model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#counting-model) and [sampling model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#sampling-model) in `wperf` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/README.md).
 
-## Modules
+## WindowsPerf Modules
 
-WindowsPerf solution consists of two projects:
-* `wperf` is a perf-like user space command line interface tool.
-* `wperf-driver` is a Kernel-Mode Driver Framework (KMDF) driver.
+WindowsPerf solution consists of few projects:
+
+* [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf) is a perf-like user space command line interface tool.
+* [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver) is a Kernel-Mode Driver Framework (KMDF) driver.
   * See [Using WDF to Develop a Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/using-the-framework-to-develop-a-driver) article for more details on KMDF.
+  * Currently `wperf-driver` can communicate with one instance of `wperf`.
+* [wperf-test](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-test) contains unit tests for `wperf` project.
 
-`wperf` application communicates with `wperf-driver` via I/O buffer. Proprietary binary protocol is used to exchange data, commands and status between two.
-
-Currently `wperf-driver` can communicate with one instance of `wperf`.
+Other directories contain:
+* [wperf-common](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-common) contains common code between `wperf` and `wperf-driver` project. Mostly data structures describing IOCTRL binary protocol.
+  * Note: [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf) application communicates with [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver) via IOCTRL buffer. Proprietary binary protocol is used to exchange data, commands and status between two.
+* [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts) contains various scripts including testing scripts.
+* [wperf-devgen](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-devgen) is our own simple implementation of tool which can install or remove [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver).
 
 ## Contributing
 
-When contributing to this repository, please first read `CONTRIBUTING.md` file for more details regarding how to contribute to this project.
+When contributing to this repository, please first read [CONTRIBUTING.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/CONTRIBUTING.md) file for more details regarding how to contribute to this project.
 
 ## Project resources
 
@@ -41,7 +46,13 @@ Currently WindowsPerf is targeted for Windows on Arm devices. Both, user space `
 
 Currently both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation. You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
 
-Please build `wperf` application with `ARM64EC` configuration as it's requiring DIA SDK support which is not available in `ARM64` mode.
+Please build `wperf` application with `ARM64EC` configuration as it's requiring [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022) support which is not available in `ARM64` mode.
+
+You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
+
+```
+> C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\DIA SDK\bin>regsvr32 msdia140.dll
+```
 
 ## Project requirements
 
@@ -53,7 +64,7 @@ Please build `wperf` application with `ARM64EC` configuration as it's requiring 
 
 Please note that SDK and WDK versions installed on your system must be compatible! First install Windows SDK using Visual Studio installer and after it’s installed proceed and install WDK which must match DSK version so that first three numbers of the version are the same. For example, SDK version `10.0.22621.1` and WDK `10.0.22621.382` is a match.
 
-### Codebase
+### Code base
 
 WindowsPerf solution is implemented in `C/C++17`.
 
