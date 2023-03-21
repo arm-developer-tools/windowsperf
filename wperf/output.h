@@ -36,7 +36,9 @@
 // Just a handy definition to get compile time Integer value.
 template <int I>
 struct Integer
-{ const static int value = I; };
+{
+    const static int value = I;
+};
 
 // Base class to all table outputs.
 template <typename CharType>
@@ -50,10 +52,10 @@ struct TableOutputTraits
 template <typename CharType>
 struct PredefinedEventsOutputTraits : public TableOutputTraits<CharType>
 {
-    inline const static std::tuple<CharType *, CharType*, CharType*> headers = 
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Alias Name"),
-                        LITERALCONSTANTS_GET("Raw Index"),
-                        LITERALCONSTANTS_GET("Event Type"));
+            LITERALCONSTANTS_GET("Raw Index"),
+            LITERALCONSTANTS_GET("Event Type"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Events");
 };
@@ -61,49 +63,49 @@ struct PredefinedEventsOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct MetricOutputTraits : public TableOutputTraits<CharType>
 {
-    inline const static std::tuple<CharType *, CharType*> headers = 
+    inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Metric"),
-                        LITERALCONSTANTS_GET("Events"));
+            LITERALCONSTANTS_GET("Events"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Metrics");
 };
 
-template <typename CharType, bool isMultiplexed=true>
+template <typename CharType, bool isMultiplexed = true>
 struct PerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
     inline const static int size = std::conditional_t<isMultiplexed, Integer<6>, Integer<4>>::value;
-    inline const static std::tuple<CharType *, CharType*, CharType*, CharType*, CharType*, CharType*> headers =
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("counter value"),
-                        LITERALCONSTANTS_GET("event name"),
-                        LITERALCONSTANTS_GET("event idx"),
-                        LITERALCONSTANTS_GET("event note"),
-                        LITERALCONSTANTS_GET("multiplexed"),
-                        LITERALCONSTANTS_GET("scaled value"));
+            LITERALCONSTANTS_GET("event name"),
+            LITERALCONSTANTS_GET("event idx"),
+            LITERALCONSTANTS_GET("event note"),
+            LITERALCONSTANTS_GET("multiplexed"),
+            LITERALCONSTANTS_GET("scaled value"));
     inline const static CharType* key = LITERALCONSTANTS_GET("Performance counter");
 };
 
-template <typename CharType, bool isMultiplexed=true>
+template <typename CharType, bool isMultiplexed = true>
 struct SystemwidePerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
     inline const static int size = std::conditional_t<isMultiplexed, Integer<5>, Integer<4>>::value;
-    inline const static std::tuple<CharType *, CharType*, CharType*, CharType*, CharType*> headers =
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("counter value"),
-                        LITERALCONSTANTS_GET("event name"),
-                        LITERALCONSTANTS_GET("event idx"),
-                        LITERALCONSTANTS_GET("event note"),
-                        LITERALCONSTANTS_GET("scaled value"));
+            LITERALCONSTANTS_GET("event name"),
+            LITERALCONSTANTS_GET("event idx"),
+            LITERALCONSTANTS_GET("event note"),
+            LITERALCONSTANTS_GET("scaled value"));
     inline const static CharType* key = LITERALCONSTANTS_GET("Systemwide Overall Performance Counters");
 };
 
 template <typename CharType>
 struct PMUPerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
-    inline const static std::tuple<CharType *, CharType*, CharType*, CharType*, CharType*> headers =
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("pmu id"),
-                        LITERALCONSTANTS_GET("counter value"),
-                        LITERALCONSTANTS_GET("event name"),
-                        LITERALCONSTANTS_GET("event idx"),
-                        LITERALCONSTANTS_GET("event note"));
+            LITERALCONSTANTS_GET("counter value"),
+            LITERALCONSTANTS_GET("event name"),
+            LITERALCONSTANTS_GET("event idx"),
+            LITERALCONSTANTS_GET("event note"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("PMU Performance Counters");
 };
@@ -111,11 +113,11 @@ struct PMUPerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct L3CacheMetricOutputTraits : public TableOutputTraits<CharType>
 {
-    inline const static std::tuple<CharType *, CharType*, CharType*, CharType*> headers = 
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("cluster"),
-                        LITERALCONSTANTS_GET("cores"),
-                        LITERALCONSTANTS_GET("read_bandwidth"),
-                        LITERALCONSTANTS_GET("miss_rate"));
+            LITERALCONSTANTS_GET("cores"),
+            LITERALCONSTANTS_GET("read_bandwidth"),
+            LITERALCONSTANTS_GET("miss_rate"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("L3 Cache Metrics");
 };
@@ -123,9 +125,9 @@ struct L3CacheMetricOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct DDRMetricOutputTraits : public TableOutputTraits<CharType>
 {
-    inline const static std::tuple<CharType *, CharType*> headers = 
+    inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("channel"),
-                        LITERALCONSTANTS_GET("rw_bandwidth"));
+            LITERALCONSTANTS_GET("rw_bandwidth"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("DDR Metrics");
 };
@@ -133,9 +135,9 @@ struct DDRMetricOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct TestOutputTraits : public TableOutputTraits<CharType>
 {
-    inline const static std::tuple<CharType *, CharType*> headers = 
+    inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Test Name"),
-                        LITERALCONSTANTS_GET("Result"));
+            LITERALCONSTANTS_GET("Result"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("Test Results");
 };
@@ -145,7 +147,7 @@ struct VersionOutputTraits : public TableOutputTraits<CharType>
 {
     inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Component"),
-                        LITERALCONSTANTS_GET("Version"));
+            LITERALCONSTANTS_GET("Version"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("Version");
 };
@@ -173,7 +175,7 @@ private:
     {
         m_type = rhs.m_type;
         m_core = rhs.m_core;
-        if(m_type == JSON || m_type == ALL)
+        if (m_type == JSON || m_type == ALL)
         {
             TableJSON<CharType> obj = rhs.m_tableJSON;
             m_tableJSON = obj;
@@ -205,11 +207,12 @@ public:
     template <typename PresetTable, int I = 0>
     void PresetHeaders()
     {
-        if constexpr(I < PresetTable::size)
+        if constexpr (I < PresetTable::size)
         {
             AddColumn(std::get<I>(PresetTable::headers));
             PresetHeaders<PresetTable, I + 1>();
-        } else {
+        }
+        else {
             SetKey(PresetTable::key);
         }
     }
@@ -245,10 +248,10 @@ public:
     StringStream Print(TableType type = PRETTY)
     {
         StringStream strstream;
-        switch(type)
+        switch (type)
         {
-            case JSON: strstream << m_tableJSON; break;
-            case PRETTY: strstream << m_tablePretty; break;
+        case JSON: strstream << m_tableJSON; break;
+        case PRETTY: strstream << m_tablePretty; break;
         }
         return strstream;
     }
@@ -273,7 +276,7 @@ struct WPerfStatJSON
         enum TableOutput<CharType>::TableType jsonType = TableOutput<CharType>::JSON;
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         {
-            os << LITERALCONSTANTS_GET("\"core\": ") <<  LiteralConstants<CharType>::m_cbracket_open << std::endl;
+            os << LITERALCONSTANTS_GET("\"core\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
             os << LITERALCONSTANTS_GET("\"Multiplexing\": ");
             if (m_multiplexing)
                 os << LITERALCONSTANTS_GET("true");
@@ -287,38 +290,40 @@ struct WPerfStatJSON
                 os << LITERALCONSTANTS_GET("false");
             os << LiteralConstants<CharType>::m_comma << std::endl;
             bool isFirst = true;
-            for(auto& table : m_corePerformanceTables)
+            for (auto& table : m_corePerformanceTables)
             {
-                if(!isFirst)
+                if (!isFirst)
                 {
                     os << LiteralConstants<CharType>::m_comma << std::endl;
-                } else {
+                }
+                else {
                     isFirst = false;
                 }
                 os << LiteralConstants<CharType>::m_quotes << table.m_core << LiteralConstants<CharType>::m_quotes;
                 os << LiteralConstants<CharType>::m_colon << table.Print(jsonType).str() << std::endl;
             }
-            if(!m_corePerformanceTables.empty())
+            if (!m_corePerformanceTables.empty())
                 os << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"overall\": ") << m_coreOverall.Print(jsonType).str() << std::endl;
             os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
         }
         os << LiteralConstants<CharType>::m_comma << std::endl;
         {
-            os << LITERALCONSTANTS_GET("\"dsu\": ") <<  LiteralConstants<CharType>::m_cbracket_open << std::endl;
+            os << LITERALCONSTANTS_GET("\"dsu\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
             bool isFirst = true;
-            for(auto& table : m_DSUPerformanceTables)
+            for (auto& table : m_DSUPerformanceTables)
             {
-                if(!isFirst)
+                if (!isFirst)
                 {
                     os << LiteralConstants<CharType>::m_comma << std::endl;
-                } else {
+                }
+                else {
                     isFirst = false;
                 }
                 os << LiteralConstants<CharType>::m_quotes << table.m_core << LiteralConstants<CharType>::m_quotes;
                 os << LiteralConstants<CharType>::m_colon << table.Print(jsonType).str() << std::endl;
             }
-            if(!m_DSUPerformanceTables.empty())
+            if (!m_DSUPerformanceTables.empty())
                 os << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"l3metric\": ") << m_DSUL3metric.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"overall\": ") << m_DSUOverall.Print(jsonType).str() << std::endl;
@@ -326,7 +331,7 @@ struct WPerfStatJSON
         }
         os << LiteralConstants<CharType>::m_comma << std::endl;
         {
-            os << LITERALCONSTANTS_GET("\"dmc\": ") <<  LiteralConstants<CharType>::m_cbracket_open << std::endl;
+            os << LITERALCONSTANTS_GET("\"dmc\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
             os << LITERALCONSTANTS_GET("\"pmu\": ") << m_pmu.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"ddr\": ") << m_DMCDDDR.Print(jsonType).str() << std::endl;
             os << LiteralConstants<CharType>::m_cbracket_close << LiteralConstants<CharType>::m_comma << std::endl;
@@ -364,9 +369,9 @@ struct WPerfListJSON
 template <typename CharType>
 struct OutputControl
 {
-	typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
-	typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
-	typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ofstream, std::wofstream> FileStream;
 
     bool m_isQuiet = false;
@@ -376,20 +381,23 @@ struct OutputControl
 
     OutputStream& GetOutputStream()
     {
-        if constexpr(std::is_same_v<CharType, char>)
+        if constexpr (std::is_same_v<CharType, char>)
         {
-            if(m_isQuiet)
+            if (m_isQuiet)
             {
                 std::cout.setstate(std::ios::failbit);
-            } else {
+            }
+            else {
                 std::cout.clear();
             }
             return std::cout;
-        } else {
-            if(m_isQuiet)
+        }
+        else {
+            if (m_isQuiet)
             {
                 std::wcout.setstate(std::ios::failbit);
-            } else {
+            }
+            else {
                 std::wcout.clear();
             }
             return std::wcout;
@@ -398,10 +406,11 @@ struct OutputControl
 
     OutputStream& GetErrorOutputStream()
     {
-        if constexpr(std::is_same_v<CharType, char>)
+        if constexpr (std::is_same_v<CharType, char>)
         {
             return std::cerr;
-        } else {
+        }
+        else {
             return std::wcerr;
         }
     }
@@ -411,14 +420,14 @@ struct OutputControl
         bool curIsQuiet = m_isQuiet;
         //If the user requested to be quiet but to output JSON results we disable quiet mode just
         //tou output the JSON tables and then reenable it afterwards.
-        if((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && m_isQuiet)
+        if ((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && m_isQuiet)
         {
             m_isQuiet = false;
         }
 
         GetOutputStream() << str;
-        
-        if((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && curIsQuiet)
+
+        if ((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && curIsQuiet)
         {
             m_isQuiet = true;
         }
@@ -428,11 +437,12 @@ struct OutputControl
     {
         FileStream file;
         file.open(m_filename, std::fstream::out | std::fstream::trunc);
-        if(file.is_open())
+        if (file.is_open())
         {
             file << str;
             file.close();
-        } else {
+        }
+        else {
             GetErrorOutputStream() << LITERALCONSTANTS_GET("Unable to open ") << m_filename << std::endl;
         }
     }
@@ -441,13 +451,14 @@ struct OutputControl
     {
         StringType s = table.Print(TableOutput<CharType>::PRETTY).str();
         GetOutputStream() << s;
-        if((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && printJson)
+        if ((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && printJson)
         {
             StringType sj = table.Print(TableOutput<CharType>::JSON).str();
-            if(!m_shouldWriteToFile)
+            if (!m_shouldWriteToFile)
             {
                 Print_(sj);
-            } else {
+            }
+            else {
                 OutputToFile(sj);
             }
         }
@@ -455,13 +466,14 @@ struct OutputControl
 
     void Print(WPerfStatJSON<CharType>& table)
     {
-        if(m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
+        if (m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
         {
             StringType s = table.Print().str();
-            if(!m_shouldWriteToFile)
+            if (!m_shouldWriteToFile)
             {
                 Print_(s);
-            } else {
+            }
+            else {
                 OutputToFile(s);
             }
         }
@@ -469,46 +481,45 @@ struct OutputControl
 
     void Print(WPerfListJSON<CharType>& table)
     {
-        if(m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
+        if (m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
         {
             StringType s = table.Print().str();
-            if(!m_shouldWriteToFile)
+            if (!m_shouldWriteToFile)
             {
                 Print_(s);
-            } else {
+            }
+            else {
                 OutputToFile(s);
             }
         }
     }
 };
 
-// Handy namespace to facilitate gathering all output for WPerf along with global char type definitions and quick aliases. The L at the 
-// end of each alias stands for local.
-namespace WPerfOutput
-{
-    using GlobalCharType = wchar_t;
-    using GlobalStringType = std::basic_string<GlobalCharType>;
-    using TableOutputL = TableOutput<GlobalCharType>;
-    using OutputControlL = OutputControl<GlobalCharType>;
-    using ColumnAlignL = enum PrettyTable<GlobalCharType>::ColumnAlign;
-    using PredefinedEventsOutputTraitsL = PredefinedEventsOutputTraits<GlobalCharType>;
-    
-    template <bool isMultiplexing>
-    using PerformanceCounterOutputTraitsL = PerformanceCounterOutputTraits<GlobalCharType, isMultiplexing>;
+// Handy aliases, the L at the end of each stands for local.
+using GlobalCharType = wchar_t;
+using GlobalStringType = std::basic_string<GlobalCharType>;
+using TableOutputL = TableOutput<GlobalCharType>;
+using ColumnAlignL = enum PrettyTable<GlobalCharType>::ColumnAlign;
+using PredefinedEventsOutputTraitsL = PredefinedEventsOutputTraits<GlobalCharType>;
 
-    template <bool isMultiplexing>
-    using SystemwidePerformanceCounterOutputTraitsL = SystemwidePerformanceCounterOutputTraits<GlobalCharType, isMultiplexing>;
+template <bool isMultiplexing>
+using PerformanceCounterOutputTraitsL = PerformanceCounterOutputTraits<GlobalCharType, isMultiplexing>;
 
-    using L3CacheMetricOutputTraitsL = L3CacheMetricOutputTraits<GlobalCharType>;
-    using PMUPerformanceCounterOutputTraitsL = PMUPerformanceCounterOutputTraits<GlobalCharType>;
-    using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
-    using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;
-    using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType>;
-    using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
-    
-    OutputControlL m_out;
-    WPerfStatJSON<GlobalCharType> m_globalJSON;
-    WPerfListJSON<GlobalCharType> m_globalListJSON;
+template <bool isMultiplexing>
+using SystemwidePerformanceCounterOutputTraitsL = SystemwidePerformanceCounterOutputTraits<GlobalCharType, isMultiplexing>;
 
-    TableOutputL::TableType m_outputType = TableOutputL::PRETTY;
-};
+using L3CacheMetricOutputTraitsL = L3CacheMetricOutputTraits<GlobalCharType>;
+using PMUPerformanceCounterOutputTraitsL = PMUPerformanceCounterOutputTraits<GlobalCharType>;
+using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
+using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;
+using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType>;
+using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
+
+using OutputControlL = OutputControl<GlobalCharType>;
+
+// Global variables to handle output.
+extern OutputControlL m_out;
+extern WPerfStatJSON<GlobalCharType> m_globalJSON;
+extern WPerfListJSON<GlobalCharType> m_globalListJSON;
+
+extern TableOutputL::TableType m_outputType;

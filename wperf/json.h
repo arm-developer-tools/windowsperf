@@ -65,7 +65,7 @@ public:
 
     JSONObject() {}
 
-    JSONObject(std::map<StringType, ValueType> map) : m_map(map_) {}
+    JSONObject(std::map<StringType, ValueType> map) : m_map(map) {}
 
     friend OutputStream& operator<<(OutputStream& os, const JSONObject& json)
     {

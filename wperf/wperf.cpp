@@ -53,7 +53,12 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "process_api.h"
 #include "events.h"
 
-using namespace WPerfOutput;
+OutputControlL m_out;
+WPerfStatJSON<GlobalCharType> m_globalJSON;
+WPerfListJSON<GlobalCharType> m_globalListJSON;
+
+TableOutputL::TableType m_outputType = TableOutputL::PRETTY;
+
 
 //
 // Port start
