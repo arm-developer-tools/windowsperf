@@ -302,7 +302,7 @@ bool pmu_device::get_sample(std::vector<FrameChain>& sample_info)
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
 
-    if (framesPayload.size != SAMPLE_CHAIN_BUFFER_SIZE)
+    if (framesPayload.size == 0)
         return false;
 
     FrameChain* frames = (FrameChain*)framesPayload.payload;
@@ -346,9 +346,11 @@ void pmu_device::stop_sample()
 
     if (do_verbose)
     {
+        double drop_rate = ((double)summary.sample_dropped / (double)summary.sample_generated) * 100.0;
         std::wcout << L"=================" << std::endl;
         std::wcout << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
         std::wcout << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
+        std::wcout << L"sample drop rate: " << std::dec << DoubleToWideString(drop_rate) << L"%" << std::endl;
     }
 }
 

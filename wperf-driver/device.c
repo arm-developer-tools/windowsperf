@@ -807,10 +807,10 @@ NTSTATUS deviceControl(
 
             RtlSecureZeroMemory(out, *outputSize);
 
-            if (core->sample_idx == SAMPLE_CHAIN_BUFFER_SIZE)
+            if (core->sample_idx > 0)
             {
-                RtlCopyMemory(out->payload, core->samples, sizeof(FrameChain) * SAMPLE_CHAIN_BUFFER_SIZE);
-                out->size = SAMPLE_CHAIN_BUFFER_SIZE;
+                RtlCopyMemory(out->payload, core->samples, sizeof(FrameChain) * core->sample_idx);
+                out->size = core->sample_idx;
                 core->sample_idx = 0;
             }
         }

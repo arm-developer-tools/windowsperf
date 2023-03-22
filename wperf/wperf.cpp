@@ -497,8 +497,9 @@ wmain(
                 pmu_device.start_sample();
                 
                 std::wcout << L"sampling ...";
-                while (no_ctrl_c)
+                do
                 {
+                    Sleep(1000);
                     bool sample = pmu_device.get_sample(raw_samples);
                     if (sample)
                         std::wcout << L".";
@@ -508,9 +509,7 @@ wmain(
                     if (GetExitCodeProcess(process_handle, &image_exit_code))
                         if (image_exit_code != STILL_ACTIVE)
                             break;
-
-                    Sleep(1000);
-                }
+                } while (no_ctrl_c);
                 std::wcout << " done!" << std::endl;
 
                 pmu_device.stop_sample();
