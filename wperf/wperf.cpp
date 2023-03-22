@@ -111,51 +111,6 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
     }
 }
 
-static void print_help()
-{
-    const wchar_t* wsHelp = LR"(
-usage: wperf [options]
-
-    Options:
-    list                  List supported events and metrics.
-    stat                  Count events.If - e is not specified, then count default events.
-    test                  Configuration information about driver and application confituration.
-    sample                Sample events. If -e is not specified, cycle counter will be the default sample source
-    -e e1, e2...          Specify events to count.Event eN could be a symbolic name or in raw number.
-                          Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
-                          XXXX is hex value of the number without '0x' prefix.
-                          when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
-    -m m1, m2...          Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    -d N                  Specify counting duration(in s).The accuracy is 0.1s.
-    sleep N               Like -d, for compatibility with Linux perf.
-    -i N                  Specify counting interval(in s).To be used with -t.
-    -t                    Enable timeline mode.It specifies -i 60 -d 1 implicitly.
-                          Means counting 1 second after every 60 second, and the result
-                          is in.csv file in the same folder where wperf is invoked.
-                          You can use -i and -d to change counting duration and interval.
-    -image_name           Specify the image name you want to sample.
-    -pe_file              Specify the PE file.
-    -pdb_file             Specify the PDB file.
-    -sample-display-long  Display decorated symbol names.
-    -sample-display-row   Set how many samples you want to see in the summary (50 by default).
-    -C config_file        Provide customized config file which describes metrics etc.
-    -c core_idx           Profile on the specified core. Skip -c to count on all cores.
-    -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
-    -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
-    -k                    Count kernel model as well (disabled by default).
-    -h                    Show tool help.
-    --output              Enable JSON output to file.
-    -q                    Quiet mode, no output is produced.
-    -json                 Define output type as JSON.
-    -l                    Alias of 'list'.
-    -verbose              Enable verbose output.
-    -v                    Alias of '-verbose'.
-    -version              Show tool version.
-)";
-
-    m_out.GetOutputStream() << wsHelp << std::endl;
-}
-
 //
 // Port End
 //
@@ -170,7 +125,7 @@ wmain(
 
     if (argc < 2)
     {
-        print_help();
+        user_request::print_help();
         return EXIT_SUCCESS;
     }
 
@@ -226,7 +181,7 @@ wmain(
 
     if (request.do_help)
     {
-        print_help();
+        user_request::print_help();
         goto clean_exit;
     }
 

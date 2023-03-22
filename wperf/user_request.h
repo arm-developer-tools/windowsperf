@@ -53,6 +53,8 @@ public:
     void push_ioctl_grouped_event(enum evt_class e_class, struct evt_noted event, uint16_t group_num);
     void load_config(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
 
+    static void print_help();
+
     bool do_list;
     bool do_count;
     bool do_kernel;
