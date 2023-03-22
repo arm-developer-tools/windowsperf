@@ -363,8 +363,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="events.cpp" />
+    <ClCompile Include="parsers.cpp" />
     <ClCompile Include="pe_file.cpp" />
+    <ClCompile Include="pmu_device.cpp" />
     <ClCompile Include="process_api.cpp" />
+    <ClCompile Include="user_request.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="wperf.cpp" />
   </ItemGroup>

@@ -29,11 +29,22 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define MAX_DEVPATH_LENGTH              256
+#include <deque>
+#include <map>
+#include <string>
+#include <vector>
 
-BOOL
-GetDevicePath(
-    _In_  LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
-);
+
+struct evt_noted
+{
+    uint16_t index;
+    enum evt_type type;
+    std::wstring note;
+};
+
+struct metric_desc
+{
+    std::map<enum evt_class, std::deque<struct evt_noted>> events;
+    std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+    std::wstring raw_str;
+};

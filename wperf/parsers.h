@@ -29,11 +29,19 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define MAX_DEVPATH_LENGTH              256
 
-BOOL
-GetDevicePath(
-    _In_  LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
-);
+#include <deque>
+#include <map>
+#include <string>
+#include <vector>
+
+void parse_events_str_for_sample(std::wstring events_str,
+    std::vector<struct evt_sample_src>& ioctl_events_sample);
+
+void parse_events_str(std::wstring events_str,
+    std::map<enum evt_class,
+    std::deque<struct evt_noted>>& events,
+    std::map<enum evt_class,
+    std::vector<struct evt_noted>>& groups,
+    std::wstring note,
+    const struct pmu_device_cfg& pmu_cfg);
