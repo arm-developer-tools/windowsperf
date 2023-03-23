@@ -30,58 +30,57 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+""" Module testing basic output from `wperf stat -m <metric> ... """
 import json
-import subprocess
-import os
+import re
+import pytest
+from common import run_command
+from common import wperf_list, wperf_metric_events, wperf_metric_is_available
 
-### Common test runner code
+### Test cases
 
-def is_json(str_to_test):
-    """ Test if string is in JSON format. """
-    try:
-        json.loads(str_to_test)
-    except ValueError:
-        return False
-    return True
 
-def get_schema(schema_name, test_path):
-    """ Get JSON Object for schema with name `schema_name` """
-    with open("{}/schemas/wperf.{}.schema".format(test_path, schema_name)) as file:
-        json_schema = json.loads(file.read())
-    return json_schema
+def test_metrics_exist():
+    """ Test if metrics are available in `list` command """
+    json_output = wperf_list()
+    assert "Predefined_Events" in json_output
+    assert "Predefined_Metrics" in json_output
 
-def run_command(args):
-    """ Run command and capture stdout and stderr for parsing. """
-    process = subprocess.Popen(args,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    return stdout, stderr
+    metrics = json_output["Predefined_Metrics"]
 
-def check_if_file_exists(filename):
-    return os.path.isfile(filename)
+    for m in metrics:
+        assert "Events" in m
+        assert "Metric" in m
+        assert len(m["Events"]) > 0
+        assert len(m["Metric"]) > 0
 
-def wperf_list():
-    """ Test `wperf list` JSON output """
-    cmd = 'wperf list -json'
+@pytest.mark.parametrize("metric",
+[
+    ("dcache"),
+    ("ddr_bw"),
+    ("dtlb"),
+    ("icache"),
+    ("imix"),
+    ("itlb"),
+    ("l3_cache"),
+]
+)
+def test_metric_(metric):
+    """ Run known metrics and check if defined events are present """
+    if not wperf_metric_is_available(metric):
+        pytest.skip("unsupported configuration")
+        return
+
+    cmd = 'wperf stat -m ' + metric + ' -c 1 sleep 1'
     stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-    return json_output
 
+    events = wperf_metric_events(metric)
+    assert events
 
-def wperf_metric_is_available(metric):
-    """ Check if given `metric` is available """
-    json_output = wperf_list()
-    for m in json_output["Predefined_Metrics"]:
-        if metric == m["Metric"]:
-            return True
-    return False
-
-
-def wperf_metric_events(metric):
-    """ Return list of events for given `metric` """
-    json_output = wperf_list()
-    for m in json_output["Predefined_Metrics"]:
-        if metric == m["Metric"]:
-            return m["Events"]
-    return None
+    # Event names in pretty table
+    if events:
+        for event in events.split(','):
+            event = event.strip("{}/")   # Some events may be part of groups
+            if "/" in event:
+                event = event.split('/')[1]    # e.g. "/dsu/<event_name>" -> "<event_name>"
+            assert re.search(b'[\\d]+[\\s]+%s[\\s]+0x[0-9a-f]+' % str.encode(event), stdout)

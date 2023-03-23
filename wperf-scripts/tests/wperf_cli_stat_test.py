@@ -44,6 +44,7 @@ Usage:
 import os
 import re
 from common import run_command, is_json, check_if_file_exists
+from common import wperf_metric_is_available
 
 import pytest
 
@@ -54,10 +55,12 @@ N_CORES = os.cpu_count()
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "imix", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
 
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "imix", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
 ]
@@ -74,7 +77,7 @@ def test_wperf_stat_json(events,cores,metric,sleep):
         cmd += ['-e', events]
     if cores:
         cmd += ['-c', cores]
-    if metric:
+    if metric and wperf_metric_is_available(metric):
         cmd += ['-m', metric]
     if sleep:
         cmd += ['sleep', str(sleep)]
@@ -93,6 +96,7 @@ def test_wperf_stat_no_events():
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "dcache", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES,N_CORES//2)), "", 1),
@@ -100,6 +104,7 @@ def test_wperf_stat_no_events():
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES,N_CORES//8)), "", 1),
 
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "icache", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES,N_CORES//2)), "", 1),
@@ -119,7 +124,7 @@ def test_wperf_stat(events,cores,metric,sleep):
         cmd += ['-e', events]
     if cores:
         cmd += ['-c', cores]
-    if metric:
+    if metric and wperf_metric_is_available(metric):
         cmd += ['-m', metric]
     if sleep:
         cmd += ['sleep', str(sleep)]
@@ -159,10 +164,12 @@ def test_wperf_stat(events,cores,metric,sleep):
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "dcache", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
 
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "dcache", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
 ]
@@ -175,7 +182,7 @@ def test_wperf_stat_json_file_output_exists(events, cores, metric, sleep, tmp_pa
         cmd += ['-e', events]
     if cores:
         cmd += ['-c', cores]
-    if metric:
+    if metric and wperf_metric_is_available(metric):
         cmd += ['-m', metric]
     if sleep:
         cmd += ['sleep', str(sleep)]
@@ -190,10 +197,12 @@ def test_wperf_stat_json_file_output_exists(events, cores, metric, sleep, tmp_pa
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0", "icache", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
 
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0", "icache", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", "0,1", "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES)), "", 1),
 ]
