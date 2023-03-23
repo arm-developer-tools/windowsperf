@@ -43,8 +43,14 @@ class user_request
 public:
     user_request();
 
-    void init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+    void init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg, std::map<std::wstring, metric_desc>& builtin_metrics);
+    void parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+        std::map<enum evt_class, std::deque<struct evt_noted>>& events,
+        std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
         std::map<std::wstring, metric_desc>& builtin_metrics);
+    void set_event_padding(const struct pmu_device_cfg& pmu_cfg,
+        std::map<enum evt_class, std::deque<struct evt_noted>>& events,
+        std::map<enum evt_class, std::vector<struct evt_noted>>& groups);
 
     bool has_events();
     void show_events();

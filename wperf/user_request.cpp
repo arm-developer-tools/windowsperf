@@ -92,7 +92,110 @@ user_request::user_request() : do_list{ false }, do_count(false), do_kernel(fals
     sample_display_row(50), sample_display_short(true),
     count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
 
-void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg, std::map<std::wstring, metric_desc>& builtin_metrics)
+{
+    std::map<enum evt_class, std::deque<struct evt_noted>> events;
+    std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+
+    // Fill cores_idx with {0, ... core_num}
+    cores_idx.clear();
+    cores_idx.resize(pmu_cfg.core_num);
+    std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
+
+    parse_raw_args(raw_args, pmu_cfg, events, groups, builtin_metrics);
+
+    // Deduce image name and PDB file name from PE file name
+    if (sample_pe_file.size())
+    {
+        if (sample_image_name.empty())
+        {
+            sample_image_name = sample_pe_file;
+            if (do_verbose)
+                std::wcout << L"deduced image name '" << sample_image_name << L"'" << std::endl;
+        }
+
+        if (sample_pdb_file.empty())
+        {
+            sample_pdb_file = ReplaceFileExtension(sample_pe_file, L"pdb");
+            if (do_verbose)
+                std::wcout << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
+        }
+    }
+    else if (do_sample)
+    {
+        m_out.GetErrorOutputStream() << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
+        throw fatal_exception("ERROR_IMAGE_NAME");
+    }
+
+    for (uint32_t core_idx : cores_idx)
+        if (core_idx >= pmu_cfg.core_num) {
+            m_out.GetErrorOutputStream() << L"core index " << core_idx << L" not allowed. Use 0-" << (pmu_cfg.core_num - 1)
+                << L", see option -c <n>" << std::endl;
+            throw fatal_exception("ERROR_CORES");
+        }
+
+    set_event_padding(pmu_cfg, events, groups);
+}
+
+void user_request::set_event_padding(const struct pmu_device_cfg& pmu_cfg,
+    std::map<enum evt_class, std::deque<struct evt_noted>>& events,
+    std::map<enum evt_class, std::vector<struct evt_noted>>& groups)
+{
+    if (groups.size())
+    {
+        for (const auto& a : groups)
+        {
+            auto total_size = a.second.size();
+            enum evt_class e_class = a.first;
+
+            // We start with group_start === 1 because at "a" index [0] there is a EVT_HDR event.
+            // This event is not "an event". It is a placeholder which stores following group event size.
+            // Please note that we will read EVT_HDR.index for event group size here.
+            //
+            //  a.second vector contains:
+            //
+            //      EVT_HDR(m), EVT_m1, EVT_m2, ..., EVT_HDR(n), EVT_n1, EVT_n2, ...
+            //
+            for (uint16_t group_start = 1, group_size = a.second[0].index, group_num = 0; group_start < total_size; group_num++)
+            {
+                for (uint16_t elem_idx = group_start; elem_idx < (group_start + group_size); elem_idx++)
+                    push_ioctl_grouped_event(e_class, a.second[elem_idx], group_num);
+
+                padding_ioctl_events(e_class, pmu_cfg.gpc_nums[e_class], events[e_class]);
+
+                // Make sure we are not reading beyond last element in a.second vector.
+                // Here if there's another event we want to read next EVT_HDR to know next group size.
+                const uint16_t next_evt_hdr_idx = group_start + group_size;
+                if (next_evt_hdr_idx >= total_size)
+                    break;
+                uint16_t next_evt_group_size = a.second[next_evt_hdr_idx].index;
+                group_start += group_size + 1;
+                group_size = next_evt_group_size;
+            }
+        }
+    }
+
+    if (events.size())
+    {
+        for (const auto& a : events)
+        {
+            enum evt_class e_class = a.first;
+
+            for (const auto& e : a.second)
+                push_ioctl_normal_event(e_class, e);
+
+            if (groups.find(e_class) != groups.end())
+                padding_ioctl_events(e_class, pmu_cfg.gpc_nums[e_class]);
+        }
+    }
+
+    std::sort(ioctl_events_sample.begin(), ioctl_events_sample.end(), sort_ioctl_events_sample);
+}
+
+
+void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+    std::map<enum evt_class, std::deque<struct evt_noted>>& events,
+    std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
     std::map<std::wstring, metric_desc>& builtin_metrics)
 {
     bool waiting_events = false;
@@ -107,13 +210,6 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
     bool waiting_pe_file = false;
     bool waiting_pdb_file = false;
     bool waiting_sample_display_row = false;
-    std::map<enum evt_class, std::deque<struct evt_noted>> events;
-    std::map<enum evt_class, std::vector<struct evt_noted>> groups;
-
-    // Fill cores_idx with {0, ... core_num}
-    cores_idx.clear();
-    cores_idx.resize(pmu_cfg.core_num);
-    std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
 
     for (const auto& a : raw_args)
     {
@@ -434,86 +530,6 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
 
         m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
     }
-
-    // Deduce image name and PDB file name from PE file name
-    if (sample_pe_file.size())
-    {
-        if (sample_image_name.empty())
-        {
-            sample_image_name = sample_pe_file;
-            if (do_verbose)
-                std::wcout << L"deduced image name '" << sample_image_name << L"'" << std::endl;
-        }
-
-        if (sample_pdb_file.empty())
-        {
-            sample_pdb_file = ReplaceFileExtension(sample_pe_file, L"pdb");
-            if (do_verbose)
-                std::wcout << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
-        }
-    }
-    else if (do_sample)
-    {
-        m_out.GetErrorOutputStream() << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
-        throw fatal_exception("ERROR_IMAGE_NAME");
-    }
-
-    for (uint32_t core_idx : cores_idx)
-        if (core_idx >= pmu_cfg.core_num) {
-            m_out.GetErrorOutputStream() << L"core index " << core_idx << L" not allowed. Use 0-" << (pmu_cfg.core_num - 1)
-                << L", see option -c <n>" << std::endl;
-            throw fatal_exception("ERROR_CORES");
-        }
-
-    if (groups.size())
-    {
-        for (auto a : groups)
-        {
-            auto total_size = a.second.size();
-            enum evt_class e_class = a.first;
-
-            // We start with group_start === 1 because at "a" index [0] there is a EVT_HDR event.
-            // This event is not "an event". It is a placeholder which stores following group event size.
-            // Please note that we will read EVT_HDR.index for event group size here.
-            //
-            //  a.second vector contains:
-            //
-            //      EVT_HDR(m), EVT_m1, EVT_m2, ..., EVT_HDR(n), EVT_n1, EVT_n2, ...
-            //
-            for (uint16_t group_start = 1, group_size = a.second[0].index, group_num = 0; group_start < total_size; group_num++)
-            {
-                for (uint16_t elem_idx = group_start; elem_idx < (group_start + group_size); elem_idx++)
-                    push_ioctl_grouped_event(e_class, a.second[elem_idx], group_num);
-
-                padding_ioctl_events(e_class, pmu_cfg.gpc_nums[e_class], events[e_class]);
-
-                // Make sure we are not reading beyond last element in a.second vector.
-                // Here if there's another event we want to read next EVT_HDR to know next group size.
-                const uint16_t next_evt_hdr_idx = group_start + group_size;
-                if (next_evt_hdr_idx >= total_size)
-                    break;
-                uint16_t next_evt_group_size = a.second[next_evt_hdr_idx].index;
-                group_start += group_size + 1;
-                group_size = next_evt_group_size;
-            }
-        }
-    }
-
-    if (events.size())
-    {
-        for (auto a : events)
-        {
-            enum evt_class e_class = a.first;
-
-            for (auto e : a.second)
-                push_ioctl_normal_event(e_class, e);
-
-            if (groups.find(e_class) != groups.end())
-                padding_ioctl_events(e_class, pmu_cfg.gpc_nums[e_class]);
-        }
-    }
-
-    std::sort(ioctl_events_sample.begin(), ioctl_events_sample.end(), sort_ioctl_events_sample);
 }
 
 bool user_request::has_events()
