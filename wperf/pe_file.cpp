@@ -30,6 +30,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include "dia2.h"
 
 #include "exception.h"
@@ -62,24 +63,22 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     std::streamsize buf_size = sizeof(IMAGE_DOS_HEADER) > sizeof(IMAGE_NT_HEADERS)
         ? sizeof(IMAGE_DOS_HEADER) : sizeof(IMAGE_NT_HEADERS);
 
-    char* hdr_buf = new char[buf_size];
-    pe_file_stream.read(hdr_buf, sizeof(IMAGE_DOS_HEADER));
+    std::unique_ptr<char[]> hdr_buf = std::make_unique<char[]>(buf_size);
+    pe_file_stream.read(hdr_buf.get(), sizeof(IMAGE_DOS_HEADER));
 
-    PIMAGE_DOS_HEADER dos_hdr = reinterpret_cast<PIMAGE_DOS_HEADER>(hdr_buf);
+    PIMAGE_DOS_HEADER dos_hdr = reinterpret_cast<PIMAGE_DOS_HEADER>(hdr_buf.get());
     if (dos_hdr->e_magic != IMAGE_DOS_SIGNATURE)
     {
-        delete[] hdr_buf;
         m_out.GetOutputStream() << pe_file << std::endl;
         throw fatal_exception("PE file specified is not in valid PE format");
     }
 
     std::streampos pos = dos_hdr->e_lfanew;
     pe_file_stream.seekg(pos);
-    pe_file_stream.read(hdr_buf, sizeof(IMAGE_NT_HEADERS));
-    PIMAGE_NT_HEADERS nt_hdr = reinterpret_cast<PIMAGE_NT_HEADERS>(hdr_buf);
+    pe_file_stream.read(hdr_buf.get(), sizeof(IMAGE_NT_HEADERS));
+    PIMAGE_NT_HEADERS nt_hdr = reinterpret_cast<PIMAGE_NT_HEADERS>(hdr_buf.get());
     if (nt_hdr->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC)
     {
-        delete[] hdr_buf;
         throw fatal_exception("PE file specified is not 64bit format");
     }
 
@@ -88,19 +87,20 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     //std::cout << "static entry: 0x" << std::hex << static_entry_point << ", image_base: 0x" << image_base << std::endl;
 
     buf_size = sizeof(IMAGE_SECTION_HEADER) * nt_hdr->FileHeader.NumberOfSections;
-    char* sec_buf = new char[buf_size];
+    std::unique_ptr<char[]> sec_buf = std::make_unique<char[]>(buf_size);
+
     pos += FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + nt_hdr->FileHeader.SizeOfOptionalHeader;
     pe_file_stream.seekg(pos);
-    pe_file_stream.read(sec_buf, buf_size);
+    pe_file_stream.read(sec_buf.get(), buf_size);
 
     ULONGLONG importDirectoryRVA = nt_hdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
     PIMAGE_SECTION_HEADER importSection = NULL;
 
-    PIMAGE_SECTION_HEADER sections = reinterpret_cast<PIMAGE_SECTION_HEADER>(sec_buf);
+    PIMAGE_SECTION_HEADER sections = reinterpret_cast<PIMAGE_SECTION_HEADER>(sec_buf.get());
     for (uint32_t i = 0; i < nt_hdr->FileHeader.NumberOfSections; i++)
     {
         char section_name[16] = { 0 };
-        memcpy_s(section_name, 16, sections[i].Name, IMAGE_SIZEOF_SHORT_NAME);
+        memcpy_s(section_name, sizeof section_name, sections[i].Name, IMAGE_SIZEOF_SHORT_NAME);
 
         std::string name(section_name);
         SectionDesc sec_desc = { i, sections[i].VirtualAddress, sections[i].Misc.VirtualSize, std::wstring(name.begin(), name.end()) };
@@ -112,33 +112,27 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
         }
     }
 
-	/** DLL IMPORTS **/
-	if (importSection)
-	{
-		pos = importSection->PointerToRawData;
-		pe_file_stream.seekg(0, pe_file_stream.end);
-		std::streampos length = pe_file_stream.tellg();
-		std::streampos length_to_read = length - pos;
-		pe_file_stream.seekg(pos);
+    /** DLL IMPORTS **/
+    if (importSection)
+    {
+        pos = importSection->PointerToRawData;
+        pe_file_stream.seekg(0, pe_file_stream.end);
+        std::streampos length = pe_file_stream.tellg();
+        std::streampos length_to_read = length - pos;
+        pe_file_stream.seekg(pos);
 
-		char* import_buf = new char[length_to_read];
+        std::unique_ptr<char[]> import_buf = std::make_unique<char[]>(length_to_read);
+        pe_file_stream.read(import_buf.get(), length_to_read);
+        PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(import_buf.get() + (nt_hdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress - importSection->VirtualAddress));
 
-		pe_file_stream.read(import_buf, length_to_read);
-
-		PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(import_buf + (nt_hdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress - importSection->VirtualAddress));
-
-		for (; importDescriptor->Name != 0; importDescriptor++) {
-			std::string name = import_buf + (importDescriptor->Name - importSection->VirtualAddress);
-			sec_import.push_back(std::wstring(name.begin(), name.end()));
-			// std::cout << "dll: " << name << std::endl;
-		}
-
-		delete[] import_buf;
-	}
+        for (; importDescriptor->Name != 0; importDescriptor++) {
+            std::string name = import_buf.get() + (importDescriptor->Name - importSection->VirtualAddress);
+            sec_import.push_back(std::wstring(name.begin(), name.end()));
+            // std::cout << "dll: " << name << std::endl;
+        }
+    }
 
     pe_file_stream.close();
-    delete[] hdr_buf;
-    delete[] sec_buf;
 }
 
 
