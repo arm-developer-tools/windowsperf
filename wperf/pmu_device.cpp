@@ -64,6 +64,9 @@ pmu_device::pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), ds
 {
     for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
         multiplexings[e] = false;
+
+    memset(gpc_nums, sizeof gpc_nums, 0);
+    memset(fpc_nums, sizeof fpc_nums, 0);
 }
 
 void pmu_device::init(HANDLE hDevice)
