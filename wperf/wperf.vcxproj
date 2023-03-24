@@ -363,6 +363,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="events.cpp" />
+    <ClCompile Include="output.cpp" />
     <ClCompile Include="parsers.cpp" />
     <ClCompile Include="pe_file.cpp" />
     <ClCompile Include="pmu_device.cpp" />

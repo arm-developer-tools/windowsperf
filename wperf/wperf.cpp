@@ -52,13 +52,6 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "process_api.h"
 #include "events.h"
 
-OutputControlL m_out;
-WPerfStatJSON<GlobalCharType> m_globalJSON;
-WPerfListJSON<GlobalCharType> m_globalListJSON;
-
-TableOutputL::TableType m_outputType = TableOutputL::PRETTY;
-
-
 //
 // Port start
 //
@@ -434,10 +427,10 @@ wmain(
 
             if (request.do_verbose)
             {
-                std::wcout << L"================================" << std::endl;
+                m_out.GetOutputStream() << L"================================" << std::endl;
                 for (const auto& [key, value] : modules_metadata)
                     {
-                        std::wcout << std::setw(32) << key
+                        m_out.GetOutputStream() << std::setw(32) << key
                             << std::setw(32) << IntToHexWideString((ULONGLONG)value.handle, 20)
                             << L"          " << value.mod_path << std::endl;
                     }
@@ -459,15 +452,15 @@ wmain(
 
             if (request.do_verbose)
             {
-                std::wcout << L"================================" << std::endl;
+                m_out.GetOutputStream() << L"================================" << std::endl;
                 for (const auto& [key, value] : dll_metadata)
                 {
-                    std::wcout << std::setw(32) << key
+                    m_out.GetOutputStream() << std::setw(32) << key
                         << L"          " << value.pe_name << std::endl;
 
                     for (auto& sec : value.sec_info)
                     {
-                        std::wcout << std::setw(32) << sec.name
+                        m_out.GetOutputStream() << std::setw(32) << sec.name
                             << std::setw(32) << IntToHexWideString(sec.offset, 20)
                             << std::setw(32) << IntToHexWideString(sec.virtual_size)
                             << std::endl;
@@ -480,12 +473,12 @@ wmain(
             bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
             if (!ret)
             {
-                std::wcout << L"failed to query base address of '" << request.sample_image_name << L"'\n";
+                m_out.GetOutputStream() << L"failed to query base address of '" << request.sample_image_name << L"'\n";
             }
             else
             {
                 runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
-                std::wcout << L"base address of '" << request.sample_image_name
+                m_out.GetOutputStream() << L"base address of '" << request.sample_image_name
                     << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
                     << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
             }
@@ -496,26 +489,26 @@ wmain(
 
                 pmu_device.start_sample();
                 
-                std::wcout << L"sampling ...";
+                m_out.GetOutputStream() << L"sampling ...";
                 do
                 {
                     Sleep(1000);
                     bool sample = pmu_device.get_sample(raw_samples);
                     if (sample)
-                        std::wcout << L".";
+                        m_out.GetOutputStream() << L".";
                     else
-                        std::wcout << L"e";
+                        m_out.GetOutputStream() << L"e";
 
                     if (GetExitCodeProcess(process_handle, &image_exit_code))
                         if (image_exit_code != STILL_ACTIVE)
                             break;
                 } while (no_ctrl_c);
-                std::wcout << " done!" << std::endl;
+                m_out.GetOutputStream() << " done!" << std::endl;
 
                 pmu_device.stop_sample();
 
                 if (request.do_verbose)
-                    std::wcout << "Sampling stopped, process pid=" << pid
+                    m_out.GetOutputStream() << "Sampling stopped, process pid=" << pid
                         << L" exited with code " << IntToHexWideString(image_exit_code) << std::endl;
             }
 
@@ -657,20 +650,6 @@ wmain(
             }
             total_samples.push_back(acc);
 
-#if 0
-            uint32_t idx = 0;
-            int displayed_sample = 0;
-            std::wcout << L"======================== sample results (top " << std::dec << request.sample_display_row << L") ========================\n";
-            for (auto a : resolved_samples)
-            {
-                std::wcout << std::format(L"{:>5.2f}%  {:>8}  {:>8}  ", ((double)a.freq * 100 / (double)total_sample), a.event_src, a.freq) << a.name << std::endl;
-                displayed_sample += a.freq;
-                idx++;
-                if (idx == request.sample_display_row)
-                    break;
-            }
-            //std::wcout << std::format(L"{:>5.2f}%  {:>8}  ", ((double)displayed_sample * 100 / (double)total_sample), displayed_sample) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
-#else
             int32_t group_idx = -1;
             prev_evt_src = CYCLE_EVT_IDX - 1;
             uint64_t printed_sample_num = 0, printed_sample_freq = 0;
@@ -681,13 +660,16 @@ wmain(
                     prev_evt_src = a.event_src;
 
                     if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
-                        //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                        m_out.GetOutputStream() 
+                            << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                            << IntToDecWideString(printed_sample_freq, 10)
+                            << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
 
-                        std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                        << IntToDecWideString(printed_sample_freq, 10)
-                        << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
-
-                    std::wcout << L"======================== sample source: " << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top " << std::dec << request.sample_display_row << L" hot functions ========================\n";
+                    m_out.GetOutputStream()
+                        << L"======================== sample source: "
+                        << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top "
+                        << std::dec << request.sample_display_row
+                        << L" hot functions ========================" << std::endl;
 
                     printed_sample_num = 0;
                     printed_sample_freq = 0;
@@ -696,8 +678,7 @@ wmain(
 
                 if (printed_sample_num == request.sample_display_row)
                 {
-                    //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
-                    std::wcout << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                    m_out.GetOutputStream() << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
                         << IntToDecWideString(printed_sample_freq, 10)
                         << L"  top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     printed_sample_num++;
@@ -707,8 +688,7 @@ wmain(
                 if (printed_sample_num > request.sample_display_row)
                     continue;
 
-                //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)a.freq * 100 / (double)total_samples[group_idx]), a.freq) << a.name << std::endl;
-                std::wcout << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
+                m_out.GetOutputStream() << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
                     << IntToDecWideString(a.freq, 10)
                     << L"  " << a.name << std::endl;
 
@@ -718,7 +698,7 @@ wmain(
 
                     for (int i = 0; i < 10 && i < a.pc.size(); i++)
                     {
-                        std::wcout << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
+                        m_out.GetOutputStream() << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
                     }
 
                     printed_sample_freq += a.freq;
@@ -727,10 +707,8 @@ wmain(
             }
 
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
-                //std::wcout << std::format(L"{:>6.2f}%  {:>8}  ", ((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), printed_sample_freq) << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
-                std::wcout << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, 6) << L"%"
+                m_out.GetOutputStream() << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, 6) << L"%"
                            << IntToDecWideString(printed_sample_freq, 10) << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
-#endif
         }
     }
 	catch (fatal_exception& e)

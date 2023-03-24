@@ -347,10 +347,10 @@ void pmu_device::stop_sample()
     if (do_verbose)
     {
         double drop_rate = ((double)summary.sample_dropped / (double)summary.sample_generated) * 100.0;
-        std::wcout << L"=================" << std::endl;
-        std::wcout << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
-        std::wcout << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
-        std::wcout << L"sample drop rate: " << std::dec << DoubleToWideString(drop_rate) << L"%" << std::endl;
+        m_out.GetOutputStream() << L"=================" << std::endl;
+        m_out.GetOutputStream() << L"sample generated: " << std::dec << summary.sample_generated << std::endl;
+        m_out.GetOutputStream() << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
+        m_out.GetOutputStream() << L"sample drop rate: " << std::dec << DoubleToWideString(drop_rate) << L"%" << std::endl;
     }
 }
 

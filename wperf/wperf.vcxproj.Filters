@@ -39,6 +39,9 @@
     <ClCompile Include="parsers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">

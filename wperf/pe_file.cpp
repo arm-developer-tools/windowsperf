@@ -34,6 +34,7 @@
 
 #include "exception.h"
 #include "wperf-common\macros.h"
+#include "output.h"
 #include "utils.h"
 #include "pe_file.h"
 
@@ -68,7 +69,7 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     if (dos_hdr->e_magic != IMAGE_DOS_SIGNATURE)
     {
         delete[] hdr_buf;
-        std::wcout << pe_file << std::endl;
+        m_out.GetOutputStream() << pe_file << std::endl;
         throw fatal_exception("PE file specified is not in valid PE format");
     }
 
@@ -156,14 +157,14 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
     {
         if (status == REGDB_E_CLASSNOTREG)
         {
-            std::cout << "Status REGDB_E_CLASSNOTREG indicates that DIA SDK class is not registered!" << std::endl;
-            std::cout << "See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
-            std::cout << "Try registering this service with command:" << std::endl;
-            std::cout << std::endl;
-            std::cout << "\t" << "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\DIA SDK\\bin>regsvr32 msdia140.dll" << std::endl;
+            m_out.GetOutputStream() << L"Status REGDB_E_CLASSNOTREG indicates that DIA SDK class is not registered!" << std::endl;
+            m_out.GetOutputStream() << L"See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
+            m_out.GetOutputStream() << L"Try registering this service with command:" << std::endl;
+            m_out.GetOutputStream() << std::endl;
+            m_out.GetOutputStream() << L"\t" << L"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Professional\\DIA SDK\\bin>regsvr32 msdia140.dll" << std::endl;
         }
         else
-            std::cout << "status: 0x" << std::hex << status << std::endl;
+            m_out.GetOutputStream() << L"status: 0x" << std::hex << status << std::endl;
 
         throw fatal_exception("CoCreateInstance failed for DIA");
     }

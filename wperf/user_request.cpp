@@ -111,14 +111,14 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
         {
             sample_image_name = sample_pe_file;
             if (do_verbose)
-                std::wcout << L"deduced image name '" << sample_image_name << L"'" << std::endl;
+                m_out.GetOutputStream() << L"deduced image name '" << sample_image_name << L"'" << std::endl;
         }
 
         if (sample_pdb_file.empty())
         {
             sample_pdb_file = ReplaceFileExtension(sample_pe_file, L"pdb");
             if (do_verbose)
-                std::wcout << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
+                m_out.GetOutputStream() << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
         }
     }
     else if (do_sample)
@@ -287,9 +287,9 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                 }
 
                 metric_desc desc = metrics[metric];
-                for (auto x : desc.events)
+                for (const auto& x : desc.events)
                     events[x.first].insert(events[x.first].end(), x.second.begin(), x.second.end());
-                for (auto y : desc.groups)
+                for (const auto& y : desc.groups)
                     groups[y.first].insert(groups[y.first].end(), y.second.begin(), y.second.end());
 
                 if (metric == L"l3_cache")
@@ -541,10 +541,10 @@ void user_request::show_events()
 {
     m_out.GetOutputStream() << L"events to be counted:" << std::endl;
 
-    for (auto a : ioctl_events)
+    for (const auto& a : ioctl_events)
     {
         m_out.GetOutputStream() << L"  " << std::setw(18) << evt_class_name[a.first] << L":";
-        for (auto b : a.second)
+        for (const auto& b : a.second)
             m_out.GetOutputStream() << L" " << IntToHexWideString(b.index);
         m_out.GetOutputStream() << std::endl;
     }
