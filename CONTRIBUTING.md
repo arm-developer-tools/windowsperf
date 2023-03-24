@@ -27,12 +27,14 @@ Good commit message examples can be found [here](https://wiki.openstack.org/wiki
 | Prefix | Code change |
 | -------------- | ----------- |
 | `wperf` 			| Changes to files in `WindowsPerf\wperf` directory. |
+| `wperf-common` 	| Changes to files in `WindowsPerf\wperf-common` directory. |
+| `wperf-devgen` 	| Changes to files in `WindowsPerf\wperf-devgen` directory. |
 | `wperf-driver` 	| Changes to files in `WindowsPerf\wperf-driver` directory. |
+| `wperf-scripts` 	| Changes to files in `WindowsPerf\wperf-scripts` directory. |
 | `wperf-test` 	    | Changes to files in `WindowsPerf\wperf-test` directory. |
-| `common` 			| Changes to files in `WindowsPerf\wperf-common` directory. |
 | `docs`  			| Changes to documentation (E.g.: `README.md`). |
 | `sln` 			| Changes to solution files `windowsperf.sln`. |
-| `other` 			| Changes to other files (E.g.: `.gitignore`). |
+| `other` 			| Changes to other files (E.g.: `.gitignore`, `Makefile`). |
 
 You can group prefixes in your commit message subject (E.g.: `"wperf-common,docs: Add new header"`).
 
