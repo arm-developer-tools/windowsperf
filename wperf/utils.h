@@ -41,6 +41,7 @@ std::wstring DoubleToWideString(double Value, int Precision = 2);
 std::wstring DoubleToWideStringExt(double Value, int Precision, int Width);
 std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext);
 
+
 /// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"
 /// </summary>
@@ -98,4 +99,30 @@ bool TokenizeWideStringOfInts(_In_ std::wstring Input, _In_  const wchar_t Delim
     }
 
     return true;
+}
+
+/// <summary>
+/// Converts integer VALUE to string separated with commas ','
+/// Example:
+///     1234567 -> 1,234,567
+///     -1234567 -> -1,234,567
+/// </summary>
+/// <param name="Value">Value to convert to comma separated integer STRING</param>
+template<typename T>
+std::wstring IntToDecWithCommas(T Value) {
+    static_assert(std::is_integral<T>::value, "Integral type required in Output<T> of " __FUNCTION__);
+
+    std::wstring result;
+    std::wstring str = std::to_wstring(Value);
+
+    int count = 0;
+    for (auto i = str.rbegin(); i != str.rend(); i++, count++)
+    {
+        if (count && (count % 3 == 0) && *i != L'-')
+            result.push_back(L',');
+        result.push_back(*i);
+    }
+
+    std::reverse(result.begin(), result.end());
+    return result;
 }

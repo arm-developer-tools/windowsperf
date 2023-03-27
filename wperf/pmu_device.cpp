@@ -707,7 +707,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
     bool multiplexing = multiplexings[EVT_CORE];
     bool print_note = false;
 
-    for (auto a : events)
+    for (const auto& a : events)
     {
         if (a.type != EVT_NORMAL)
         {
@@ -776,20 +776,20 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
                 else
                 {
                     if (evt->event_idx == CYCLE_EVT_IDX) {
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
-                        col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        col_scaled_value.push_back(IntToDecWithCommas((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
                     }
                     else {
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
                         col_event_note.push_back(events[j - 1].note);
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
-                        col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        col_scaled_value.push_back(IntToDecWithCommas((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
                     }
                 }
 
@@ -808,13 +808,13 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
                 else
                 {
                     if (evt->event_idx == CYCLE_EVT_IDX) {
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                     }
                     else {
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
                         col_event_note.push_back(events[j - 1].note);
@@ -878,30 +878,30 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
         if (multiplexing)
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
-                col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
             }
             else {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
-                col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
             }
         }
         else
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
             }
             else {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
@@ -1008,20 +1008,20 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
                 {
                     if (evt->event_idx == CYCLE_EVT_IDX) {
 
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
-                        col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        col_scaled_value.push_back(IntToDecWithCommas((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
                     }
                     else {
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                         col_event_note.push_back(events[j - 1].note);
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
-                        col_scaled_value.push_back(std::to_wstring((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
+                        col_scaled_value.push_back(IntToDecWithCommas((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round))));
                     }
                 }
 
@@ -1041,13 +1041,13 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
                 {
                     if (evt->event_idx == CYCLE_EVT_IDX) {
 
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                     }
                     else {
-                        col_counter_value.push_back(std::to_wstring(evt->value));
+                        col_counter_value.push_back(IntToDecWithCommas(evt->value));
                         col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                         col_event_note.push_back(events[j - 1].note);
@@ -1175,30 +1175,30 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
         if (multiplexing)
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
-                col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
             }
             else {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
-                col_scaled_value.push_back(std::to_wstring(entry->scaled_value));
+                col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
             }
         }
         else
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
             }
             else {
-                col_counter_value.push_back(std::to_wstring(entry->counter_value));
+                col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
                 col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
@@ -1371,7 +1371,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
             else
             {
                 col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
-                col_counter_value.push_back(std::to_wstring(evt->value));
+                col_counter_value.push_back(IntToDecWithCommas(evt->value));
                 col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK));
                 col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                 col_event_note.push_back(clk_events[j].note);
@@ -1394,7 +1394,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
             else
             {
                 col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
-                col_counter_value.push_back(std::to_wstring(evt->value));
+                col_counter_value.push_back(IntToDecWithCommas(evt->value));
                 col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2));
                 col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                 col_event_note.push_back(clkdiv2_events[j].note);
@@ -1409,7 +1409,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
     {
         struct agg_entry* entry = overall_clk.get() + j;
         col_pmu_id.push_back(L"overall");
-        col_counter_value.push_back(std::to_wstring(entry->counter_value));
+        col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
         col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
         col_event_idx.push_back(IntToHexWideString(entry->event_idx));
         col_event_note.push_back(clk_events[j].note);
@@ -1419,7 +1419,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
     {
         struct agg_entry* entry = overall_clkdiv2.get() + j;
         col_pmu_id.push_back(L"overall");
-        col_counter_value.push_back(std::to_wstring(entry->counter_value));
+        col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
         col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
         col_event_idx.push_back(IntToHexWideString(entry->event_idx));
         col_event_note.push_back(clkdiv2_events[j].note);
