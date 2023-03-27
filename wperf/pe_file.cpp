@@ -88,8 +88,7 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
 
     buf_size = sizeof(IMAGE_SECTION_HEADER) * nt_hdr->FileHeader.NumberOfSections;
     std::unique_ptr<char[]> sec_buf = std::make_unique<char[]>(buf_size);
-
-    pos += FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + nt_hdr->FileHeader.SizeOfOptionalHeader;
+    pos += FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + std::streampos(nt_hdr->FileHeader.SizeOfOptionalHeader);
     pe_file_stream.seekg(pos);
     pe_file_stream.read(sec_buf.get(), buf_size);
 
