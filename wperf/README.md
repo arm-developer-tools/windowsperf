@@ -42,7 +42,7 @@ usage: wperf [options]
     -c core_idx           Profile on the specified core. Skip -c to count on all cores.
     -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
     -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
-    -k                    Count kernel model as well (disabled by default).
+    -k                    Count kernel mode as well (disabled by default).
     -h                    Show tool help.
     --output              Enable JSON output to file.
     -q                    Quiet mode, no output is produced.
