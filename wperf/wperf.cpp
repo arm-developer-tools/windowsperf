@@ -273,8 +273,12 @@ wmain(
 
             pmu_device.stop(stop_bits);
 
+            pmu_device.timeline_params(request.ioctl_events, request.count_interval, request.do_kernel);
+
             for (uint32_t core_idx : request.cores_idx)
                 pmu_device.events_assign(core_idx, request.ioctl_events, request.do_kernel);
+
+            pmu_device.timeline_header(request.ioctl_events);
 
             int64_t counting_duration_iter = request.count_duration > 0 ?
                 static_cast<int64_t>(request.count_duration * 10) : _I64_MAX;

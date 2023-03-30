@@ -86,12 +86,18 @@ public:
     void stop_sample();
     // Sampling
 
+    // Timeline
+    void timeline_init();
+    void timeline_release();
+    void timeline_params(const std::map<enum evt_class, std::vector<struct evt_noted>>& events, double count_interval, bool include_kernel);
+    void timeline_header(const std::map<enum evt_class, std::vector<struct evt_noted>>& events);
+    // Timeline
+
     void set_builtin_metrics(std::wstring key, std::wstring raw_str);
     void start(uint32_t flags);
     void stop(uint32_t flags);
     void reset(uint32_t flags);
     void events_assign(uint32_t core_idx, std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel);
-
     void core_events_read_nth(uint8_t core_no);
     void core_events_read();
     void dsu_events_read_nth(uint8_t core_no);

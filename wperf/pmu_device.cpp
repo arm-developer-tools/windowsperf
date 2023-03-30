@@ -29,6 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+#include <numeric>
 #include <assert.h>
 #include "pmu_device.h"
 #include "exception.h"
@@ -180,28 +181,9 @@ void pmu_device::init(HANDLE hDevice)
     }
 }
 
-// post_init members
-void pmu_device::post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx_init, bool timeline_mode_init, uint32_t enable_bits)
+void pmu_device::timeline_init()
 {
-    // Initliaze core numbers, please note we are sorting cores ascending
-    // because we may relay in ascending order for some simple algorithms.
-    // For example in wperf-driver::deviceControl() we only init one core
-    // per DSU cluster.
-    cores_idx = cores_idx_init;
-    std::sort(cores_idx.begin(), cores_idx.end());  // Keep this sorting!
-    // We want to keep only unique cores
-    cores_idx.erase(unique(cores_idx.begin(), cores_idx.end()), cores_idx.end());
-
-    dmc_idx = (uint8_t)dmc_idx_init;
-    timeline_mode = timeline_mode_init;
-    enc_bits = enable_bits;
-
-    if (has_dsu)
-        // Gather all DSU numbers for specified core in set of unique DSU numbers
-        for (uint32_t i : cores_idx)
-            dsu_cores.insert(i / dsu_cluster_size);
-
-    if (!timeline_mode_init)
+    if (!timeline_mode)
         return;
 
     time_t rawtime;
@@ -243,15 +225,44 @@ void pmu_device::post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx
     }
 }
 
+
+// post_init members
+void pmu_device::post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx_init, bool timeline_mode_init, uint32_t enable_bits)
+{
+    // Initliaze core numbers, please note we are sorting cores ascending
+    // because we may relay in ascending order for some simple algorithms.
+    // For example in wperf-driver::deviceControl() we only init one core
+    // per DSU cluster.
+    cores_idx = cores_idx_init;
+    std::sort(cores_idx.begin(), cores_idx.end());  // Keep this sorting!
+    // We want to keep only unique cores
+    cores_idx.erase(unique(cores_idx.begin(), cores_idx.end()), cores_idx.end());
+
+    dmc_idx = (uint8_t)dmc_idx_init;
+    timeline_mode = timeline_mode_init;
+    enc_bits = enable_bits;
+
+    if (has_dsu)
+        // Gather all DSU numbers for specified core in set of unique DSU numbers
+        for (uint32_t i : cores_idx)
+            dsu_cores.insert(i / dsu_cluster_size);
+
+    timeline_init();
+}
+
+void pmu_device::timeline_release()
+{
+    if (!timeline_mode)
+        return;
+
+    for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
+        if (enc_bits & (1 << e))
+            timeline_outfiles[e].close();
+}
+
 pmu_device::~pmu_device()
 {
-    if (timeline_mode)
-    {
-        for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
-            if (enc_bits & (1 << e))
-                timeline_outfiles[e].close();
-    }
-
+    timeline_release();
     CloseHandle(handle);
 }
 
@@ -420,87 +431,54 @@ void pmu_device::reset(uint32_t flags = CTL_FLAG_CORE)
         throw fatal_exception("PMU_CTL_RESET failed");
 }
 
-void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel)
+void pmu_device::timeline_params(const std::map<enum evt_class, std::vector<struct evt_noted>>& events, double count_interval, bool include_kernel)
 {
-    size_t acc_sz = 0;
-
-    for (auto a : events)
-    {
-        enum evt_class e_class = a.first;
-        size_t e_num = a.second.size();
-
-        acc_sz += sizeof(struct evt_hdr) + e_num * sizeof(uint16_t);
-        multiplexings[e_class] = !!(e_num > gpc_nums[e_class]);
-    }
-
-    if (!acc_sz)
-        return;
-
-    acc_sz += sizeof(struct pmu_ctl_evt_assign_hdr);
-
-    std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(acc_sz);
-
-    DWORD res_len;
-    struct pmu_ctl_evt_assign_hdr* ctl =
-        reinterpret_cast<struct pmu_ctl_evt_assign_hdr*>(buf.get());
-
-    ctl->action = PMU_CTL_ASSIGN_EVENTS;
-    ctl->core_idx = core_idx;
-    ctl->dmc_idx = dmc_idx;
-    count_kernel = include_kernel;
-    ctl->filter_bits = count_kernel ? 0 : FILTER_BIT_EXCL_EL1;
-    uint16_t* ctl2 =
-        reinterpret_cast<uint16_t*>(buf.get() + sizeof(struct pmu_ctl_evt_assign_hdr));
-
-    for (auto a : events)
-    {
-        enum evt_class e_class = a.first;
-        struct evt_hdr* hdr = reinterpret_cast<struct evt_hdr*>(ctl2);
-
-        hdr->evt_class = e_class;
-        hdr->num = (UINT16)a.second.size();
-        uint16_t* payload = reinterpret_cast<uint16_t*>(hdr + 1);
-
-        for (auto b : a.second)
-            *payload++ = b.index;
-
-        ctl2 = payload;
-    }
-
-    BOOL status = DeviceAsyncIoControl(handle, buf.get(), (DWORD)acc_sz, NULL, 0, &res_len);
-    if (!status)
-        throw fatal_exception("PMU_CTL_ASSIGN_EVENTS failed");
-
     if (!timeline_mode)
         return;
 
     bool multiplexing = multiplexings[EVT_CORE];
 
-    for (auto a : events)
+    for (const auto& a : events)
     {
         enum evt_class e_class = a.first;
         std::wofstream& timeline_outfile = timeline_outfiles[e_class];
 
-        timeline_outfile << L"\"performance counter stats";
-        if (multiplexing)
-            timeline_outfile << L", multiplexed";
-        else
-            timeline_outfile << L", no multiplexing";
+        timeline_outfile << L"Multiplexing,";
+        timeline_outfile << (multiplexing ? L"TRUE" : L"FALSE");
+        timeline_outfile << std::endl;
 
         if (e_class == EVT_CORE)
         {
-            if (count_kernel)
-                timeline_outfile << L", kernel mode included";
-            else
-                timeline_outfile << L", kernel mode excluded";
+            timeline_outfile << L"Kernel mode,";
+            timeline_outfile << (include_kernel ? L"TRUE" : L"FALSE");
+            timeline_outfile << std::endl;
         }
 
-        timeline_outfile << L", on " << vendor_name << L" " << evt_class_name[e_class] << " implementation\",";
+        timeline_outfile << L"Count interval,";
+        timeline_outfile << DoubleToWideString(count_interval);
+        timeline_outfile << std::endl;
 
-        std::vector<struct evt_noted>& unit_events = events[e_class];
+        timeline_outfile << L"Vendor," << vendor_name;
+        timeline_outfile << std::endl;
+
+        timeline_outfile << L"Event class," << evt_class_name[e_class];
+        timeline_outfile << std::endl;
+    }
+}
+
+void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<struct evt_noted>>& events)
+{
+    if (!timeline_mode)
+        return;
+
+    bool multiplexing = multiplexings[EVT_CORE];
+
+    for (const auto& [e_class, unit_events] : events)
+    {
+        std::wofstream& timeline_outfile = timeline_outfiles[e_class];
         uint32_t real_event_num = 0;
 
-        for (auto e : unit_events)
+        for (const auto& e : unit_events)
         {
             if (e.type == EVT_PADDING)
                 continue;
@@ -508,57 +486,61 @@ void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::
             real_event_num++;
         }
 
-        uint32_t iter_base, iter_end, comma_num, comma_num2;
+        std::vector<uint32_t> iter;
+        uint32_t comma_num, comma_num2;
         if (e_class == EVT_DMC_CLK || e_class == EVT_DMC_CLKDIV2)
         {
             if (dmc_idx == ALL_DMC_CHANNEL)
             {
                 comma_num = real_event_num * dmc_num - 1;
                 comma_num2 = real_event_num - 1;
-                iter_base = 0;
-                iter_end = dmc_num;
+
+                iter.resize(dmc_num);
+                std::iota(iter.begin(), iter.end(), 0);
             }
             else
             {
                 comma_num = real_event_num - 1;
                 comma_num2 = comma_num;
-                iter_base = dmc_idx;
-                iter_end = dmc_idx + 1;
+
+                iter.push_back(dmc_idx);
             }
         }
-        else if (core_idx == ALL_CORE)
+        else if (all_cores_p())
         {
             uint32_t block_num = e_class == EVT_DSU ? dsu_cluster_num : core_num;
 
             comma_num = multiplexing ? ((real_event_num + 1) * 2 * block_num - 1)
                 : ((real_event_num + 1) * block_num - 1);
             comma_num2 = multiplexing ? ((real_event_num + 1) * 2 - 1) : real_event_num;
-            iter_base = 0;
-            iter_end = core_num;
+
+            iter.resize(cores_idx.size());
+            std::copy(cores_idx.begin(), cores_idx.end(), iter.begin());
         }
         else
         {
             comma_num = multiplexing ? ((real_event_num + 1) * 2 - 1) : real_event_num;
             comma_num2 = comma_num;
-            iter_base = core_idx;
-            iter_end = core_idx + 1;
+
+            iter.resize(cores_idx.size());
+            std::copy(cores_idx.begin(), cores_idx.end(), iter.begin());
         }
 
-        for (uint32_t idx = 0; idx < comma_num; idx++)
-            timeline_outfile << L",";
         timeline_outfile << std::endl;
 
         uint32_t i_inc = e_class == EVT_DSU ? dsu_cluster_size : 1;
-        for (uint32_t idx = iter_base; idx < iter_end; idx += i_inc)
+        
+        for (uint32_t idx : iter)
         {
             timeline_outfile << evt_class_name[e_class] << L" " << idx / i_inc << L",";
             for (uint32_t i = 0; i < comma_num2; i++)
-                timeline_outfile << L",";
+                timeline_outfile << evt_class_name[e_class] << L" " << idx / i_inc << L",";
+            idx += i_inc;
         }
         timeline_outfile << std::endl;
 
         uint32_t event_num = (uint32_t)unit_events.size();
-        for (uint32_t i = iter_base; i < iter_end; i += i_inc)
+        for (uint32_t i : iter)
         {
             if (e_class == EVT_DMC_CLK || e_class == EVT_DMC_CLKDIV2)
             {
@@ -589,9 +571,63 @@ void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::
                     timeline_outfile << get_event_name(unit_events[idx].index) << L",";
                 }
             }
+
+            i += i_inc;
         }
         timeline_outfile << std::endl;
     }
+}
+
+void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel)
+{
+    size_t acc_sz = 0;
+
+    for (const auto& a : events)
+    {
+        enum evt_class e_class = a.first;
+        size_t e_num = a.second.size();
+
+        acc_sz += sizeof(struct evt_hdr) + e_num * sizeof(uint16_t);
+        multiplexings[e_class] = !!(e_num > gpc_nums[e_class]);
+    }
+
+    if (!acc_sz)
+        return;
+
+    acc_sz += sizeof(struct pmu_ctl_evt_assign_hdr);
+
+    std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(acc_sz);
+
+    DWORD res_len;
+    struct pmu_ctl_evt_assign_hdr* ctl =
+        reinterpret_cast<struct pmu_ctl_evt_assign_hdr*>(buf.get());
+
+    ctl->action = PMU_CTL_ASSIGN_EVENTS;
+    ctl->core_idx = core_idx;
+    ctl->dmc_idx = dmc_idx;
+    count_kernel = include_kernel;
+    ctl->filter_bits = count_kernel ? 0 : FILTER_BIT_EXCL_EL1;
+    uint16_t* ctl2 =
+        reinterpret_cast<uint16_t*>(buf.get() + sizeof(struct pmu_ctl_evt_assign_hdr));
+
+    for (const auto& a : events)
+    {
+        enum evt_class e_class = a.first;
+        struct evt_hdr* hdr = reinterpret_cast<struct evt_hdr*>(ctl2);
+
+        hdr->evt_class = e_class;
+        hdr->num = (UINT16)a.second.size();
+        uint16_t* payload = reinterpret_cast<uint16_t*>(hdr + 1);
+
+        for (const auto& b : a.second)
+            *payload++ = b.index;
+
+        ctl2 = payload;
+    }
+
+    BOOL status = DeviceAsyncIoControl(handle, buf.get(), (DWORD)acc_sz, NULL, 0, &res_len);
+    if (!status)
+        throw fatal_exception("PMU_CTL_ASSIGN_EVENTS failed");
 }
 
 void pmu_device::core_events_read_nth(uint8_t core_no)
