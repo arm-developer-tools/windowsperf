@@ -68,10 +68,18 @@ WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, QueueGetContext)
 typedef struct WORK_ITEM_CTXT_
 {
     UINT32 core_idx;
+    UINT32 core_base, core_end, event_num;
+    UINT32 ctl_flags;
+    struct pmu_ctl_hdr* ctl_req;
+    size_t cores_count;
+    _Bool isDSU;
     int sample_src_num;
     PMUSampleSetSrcHdr* sample_req;
     enum pmu_ctl_action action;
-} WORK_ITEM_CTXT, * PWORK_ITEM_CTXT;
+    //struct pmu_event_pseudo* events;
+    VOID(*do_func)(VOID);
+    VOID(*do_func2)(VOID);
+} WORK_ITEM_CTXT, *PWORK_ITEM_CTXT;
 
 WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
 

@@ -475,7 +475,7 @@ VOID free_pmu_resource(VOID)
     }
 }
 
-static NTSTATUS evt_assign_dsu(UINT32 core_base, UINT32 core_end, UINT16 dsu_event_num, UINT16* dsu_events)
+static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UINT32 core_end, UINT16 dsu_event_num, UINT16* dsu_events)
 {
     if ((dsu_event_num + dsu_numFPC) > MAX_MANAGED_DSU_EVENTS)
     {
@@ -513,31 +513,22 @@ static NTSTATUS evt_assign_dsu(UINT32 core_base, UINT32 core_end, UINT16 dsu_eve
             else
                 event->counter_idx = INVALID_COUNTER_IDX;
         }
-
-        GROUP_AFFINITY old_affinity, new_affinity;
-        PROCESSOR_NUMBER ProcNumber;
-
-        RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
-        RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
-        RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
-        KeGetProcessorNumberFromIndex(i, &ProcNumber);
-        new_affinity.Group = ProcNumber.Group;
-        new_affinity.Mask = 1ULL << (ProcNumber.Number);
-        KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
-
-        for (UINT32 j = 0; j < init_num; j++)
-        {
-            struct pmu_event_kernel* event = (struct pmu_event_kernel*)&events[dsu_numFPC + j];
-            DSUEventEnable(event);
-        }
-
-        KeRevertToUserGroupAffinityThread(&old_affinity);
     }
+
+    PWORK_ITEM_CTXT context;
+    context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+    context->action = PMU_CTL_ASSIGN_EVENTS;
+    context->isDSU = true;
+    context->core_base = core_base;
+    context->core_end = core_end;
+    context->event_num = dsu_event_num;
+    KdPrint(("%!FUNC! enqueuing for action %d", context->action));
+    WdfWorkItemEnqueue(queueContext->WorkItem);
 
     return STATUS_SUCCESS;
 }
 
-static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_event_num, UINT16* core_events, UINT64 filter_bits)
+static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, UINT32 core_end, UINT16 core_event_num, UINT16* core_events, UINT64 filter_bits)
 {
     if ((core_event_num + numFPC) > MAX_MANAGED_CORE_EVENTS)
     {
@@ -576,52 +567,36 @@ static NTSTATUS evt_assign_core(UINT32 core_base, UINT32 core_end, UINT16 core_e
             else
                 event->counter_idx = INVALID_COUNTER_IDX;
         }
-
-        GROUP_AFFINITY old_affinity, new_affinity;
-        PROCESSOR_NUMBER ProcNumber;
-
-        RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
-        RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
-        RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
-        KeGetProcessorNumberFromIndex(i, &ProcNumber);
-        new_affinity.Group = ProcNumber.Group;
-        new_affinity.Mask = 1ULL << (ProcNumber.Number);
-        KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
-
-        for (UINT32 j = 0; j < init_num; j++)
-        {
-            struct pmu_event_kernel* event = (struct pmu_event_kernel*)&events[numFPC + j];
-            event_enable(event);
-        }
-
-        KeRevertToUserGroupAffinityThread(&old_affinity);
     }
+
+    PWORK_ITEM_CTXT context;
+    context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+    context->action = PMU_CTL_ASSIGN_EVENTS;
+    context->isDSU = false;
+    context->core_base = core_base;
+    context->core_end = core_end;
+    context->event_num = core_event_num;
+    KdPrint(("%!FUNC! enqueuing for action %d", context->action));
+    WdfWorkItemEnqueue(queueContext->WorkItem);
+    //WdfWorkItemFlush(queueContext->WorkItem);
+   
 
     return STATUS_SUCCESS;
 }
 
 // Execution DO_FUNC on CORE_IDX, then switch back
-static VOID per_core_exec(UINT32 core_idx, VOID(*do_func)(VOID), VOID(*do_func2)(VOID))
-{
-    GROUP_AFFINITY old_affinity, new_affinity;
-    PROCESSOR_NUMBER ProcNumber;
-
-    RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
-    RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
-    RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
-
-    KeGetProcessorNumberFromIndex(core_idx, &ProcNumber);
-    new_affinity.Group = ProcNumber.Group;
-    new_affinity.Mask = 1ULL << (ProcNumber.Number);
-    KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
-
-    if (do_func)
-        do_func();
-    if (do_func2)
-        do_func2();
-
-    KeRevertToUserGroupAffinityThread(&old_affinity);
-}
+//static VOID per_core_exec(PQUEUE_CONTEXT queueContext, UINT32 core_idx, VOID(*do_func)(VOID), VOID(*do_func2)(VOID))
+//{
+//    PWORK_ITEM_CTXT context;
+//    context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+//    context->action = PMU_CTL_START;
+//    context->do_func = do_func;
+//    context->do_func2 = do_func2;
+//    context->core_idx = core_idx;
+//    KdPrint(("%!FUNC! %!LINE! enqueuing (%d) for action %d", core_idx, context->action));
+//    WdfWorkItemEnqueue(queueContext->WorkItem);
+//    //WdfWorkItemFlush(queueContext->WorkItem);
+//}
 
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 {
@@ -630,6 +605,92 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     const enum pmu_ctl_action action = context->action;
     const UINT32 core_idx = context->core_idx;
+
+    KdPrint(("%!FUNC! Entry (%d) for action %d", core_idx, action));
+
+    if (action == PMU_CTL_ASSIGN_EVENTS)
+    {
+        VOID(*func)(struct pmu_event_kernel* event) = NULL;
+        if (context->isDSU)
+        {
+            func = DSUEventEnable;
+        }
+        else {
+            func = event_enable;
+        }
+
+        for (UINT32 i = context->core_base; i < context->core_end; i++)
+        {
+            GROUP_AFFINITY old_affinity, new_affinity;
+            PROCESSOR_NUMBER ProcNumber;
+
+            RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
+            RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
+            RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
+            KeGetProcessorNumberFromIndex(i, &ProcNumber);
+
+            new_affinity.Group = ProcNumber.Group;
+            new_affinity.Mask = 1ULL << (ProcNumber.Number);
+            KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
+
+            CoreInfo* core = &core_info[i];
+            UINT32 init_num = context->event_num <= numGPC ? context->event_num : numGPC;
+            struct pmu_event_pseudo* events = &core->events[0];
+            for (UINT32 j = 0; j < init_num; j++)
+            {
+                struct pmu_event_kernel* event = (struct pmu_event_kernel*)&events[numFPC + j];
+                func(event);
+            }
+            KeRevertToUserGroupAffinityThread(&old_affinity);
+        }
+        KdPrint(("%!FUNC! Exit"));
+        return;
+    }
+    else if (action == PMU_CTL_START || action == PMU_CTL_STOP || action == PMU_CTL_RESET)
+    {
+        int last_cluster = -1;
+        for (auto k = 0; k < context->cores_count; k++)
+        {
+            int i = context->ctl_req->cores_idx.cores_no[k];
+            VOID(*dsu_func2)(VOID) = context->do_func2;
+
+            if (context->ctl_flags & CTL_FLAG_DSU)
+            {
+                int cluster_no = i / dsu_sizeCluster;
+
+                // This works only if ctl_req->cores_idx.cores_no[] is sorted
+                // We will only cofigure one core in cluster with per_core_exec
+                if (last_cluster != cluster_no)
+                    last_cluster = cluster_no;
+                else
+                    dsu_func2 = NULL;
+            }
+
+            if (context->do_func || dsu_func2)
+            {
+                GROUP_AFFINITY old_affinity, new_affinity;
+                PROCESSOR_NUMBER ProcNumber;
+
+                RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
+                RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
+                RtlSecureZeroMemory(&ProcNumber, sizeof(PROCESSOR_NUMBER));
+                KeGetProcessorNumberFromIndex(i, &ProcNumber);
+
+                new_affinity.Group = ProcNumber.Group;
+                new_affinity.Mask = 1ULL << (ProcNumber.Number);
+                KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
+
+                if (context->do_func)
+                    context->do_func();
+                if (context->do_func2)
+                    context->do_func2();
+
+                KeRevertToUserGroupAffinityThread(&old_affinity);
+            }
+        }
+        KdPrint(("%!FUNC! Exit"));
+        return;
+    }
 
     GROUP_AFFINITY old_affinity, new_affinity;
     PROCESSOR_NUMBER ProcNumber;
@@ -703,6 +764,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     }
 
     KeRevertToUserGroupAffinityThread(&old_affinity);
+    KdPrint(("%!FUNC! Exit"));
 }
 
 NTSTATUS deviceControl(
@@ -897,27 +959,34 @@ NTSTATUS deviceControl(
         if (ctl_flags & CTL_FLAG_DSU)
             dsu_func = dsu_ctl_funcs[action];
 
-        int last_cluster = -1;
-        for (auto k = 0; k < cores_count; k++)
-        {
-            int i = ctl_req->cores_idx.cores_no[k];
-            VOID(*dsu_func2)(VOID) = dsu_func;
+        //int last_cluster = -1;
+        //for (auto k = 0; k < cores_count; k++)
+        //{
+        //    int i = ctl_req->cores_idx.cores_no[k];
+        //    VOID(*dsu_func2)(VOID) = dsu_func;
 
-            if (ctl_flags & CTL_FLAG_DSU)
-            {
-                int cluster_no = i / dsu_sizeCluster;
+        //    if (ctl_flags & CTL_FLAG_DSU)
+        //    {
+        //        int cluster_no = i / dsu_sizeCluster;
 
-                // This works only if ctl_req->cores_idx.cores_no[] is sorted
-                // We will only cofigure one core in cluster with per_core_exec
-                if (last_cluster != cluster_no)
-                    last_cluster = cluster_no;
-                else
-                    dsu_func2 = NULL;
-            }
+        //        // This works only if ctl_req->cores_idx.cores_no[] is sorted
+        //        // We will only cofigure one core in cluster with per_core_exec
+        //        if (last_cluster != cluster_no)
+        //            last_cluster = cluster_no;
+        //        else
+        //            dsu_func2 = NULL;
+        //    }
 
-            if (core_func || dsu_func2)
-                per_core_exec(i, core_func, dsu_func2);
-        }
+        //    if (core_func || dsu_func2)
+        //        per_core_exec(queueContext, i, core_func, dsu_func2);
+        //}
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_START;
+        context->do_func = core_func;
+        context->do_func2 = dsu_func;
+        KdPrint(("%!FUNC! %!LINE! enqueuing for action %d", context->action));
+        WdfWorkItemEnqueue(queueContext->WorkItem);
 
         if (ctl_flags & CTL_FLAG_DMC)
         {
@@ -1244,13 +1313,13 @@ NTSTATUS deviceControl(
 
             if (evt_class == EVT_CORE)
             {
-                status = evt_assign_core(core_base, core_end, evt_num, raw_evts, filter_bits);
+                status = evt_assign_core(queueContext, core_base, core_end, evt_num, raw_evts, filter_bits);
                 if (status != STATUS_SUCCESS)
                     break;
             }
             else if (evt_class == EVT_DSU)
             {
-                status = evt_assign_dsu(core_base, core_end, evt_num, raw_evts);
+                status = evt_assign_dsu(queueContext, core_base, core_end, evt_num, raw_evts);
                 if (status != STATUS_SUCCESS)
                     break;
             }
