@@ -657,10 +657,27 @@ wmain(
             int32_t group_idx = -1;
             prev_evt_src = CYCLE_EVT_IDX - 1;
             uint64_t printed_sample_num = 0, printed_sample_freq = 0;
+            std::vector<std::wstring> col_overhead, col_count, col_symbol;
             for (auto a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
                 {
+                    if (prev_evt_src != CYCLE_EVT_IDX - 1)
+                    {
+                        TableOutputL table(m_outputType);
+                        table.PresetHeaders<SamplingOutputTraitsL>();
+                        table.SetAlignment(0, ColumnAlignL::RIGHT);
+                        table.SetAlignment(1, ColumnAlignL::RIGHT);
+                        table.Insert(col_overhead, col_count, col_symbol);
+                        table.InsertExtra(L"interval", std::to_wstring(request.sampling_inverval[prev_evt_src]));
+                        table.InsertExtra(L"printed_sample_num", std::to_wstring(printed_sample_num));
+                        m_out.Print(table);
+                        table.m_event = GlobalStringType(get_event_name(static_cast<uint16_t>(prev_evt_src)));
+                        m_globalSamplingJSON.m_samplingTables.push_back(table);
+                        col_overhead.clear();
+                        col_count.clear();
+                        col_symbol.clear();
+                    }
                     prev_evt_src = a.event_src;
 
                     if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
@@ -692,9 +709,9 @@ wmain(
                 if (printed_sample_num > request.sample_display_row)
                     continue;
 
-                m_out.GetOutputStream() << DoubleToWideStringExt(((double)a.freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                    << IntToDecWideString(a.freq, 10)
-                    << L"  " << a.name << std::endl;
+                col_overhead.push_back(DoubleToWideString(((double)a.freq * 100 / (double)total_samples[group_idx])) + L"%");
+                col_count.push_back(std::to_wstring(a.freq));
+                col_symbol.push_back(a.name);
 
                 if (request.do_verbose)
                 {
@@ -704,10 +721,27 @@ wmain(
                     {
                         m_out.GetOutputStream() << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
                     }
-
-                    printed_sample_freq += a.freq;
-                    printed_sample_num++;
                 }
+
+                printed_sample_freq += a.freq;
+                printed_sample_num++;
+            }
+
+            TableOutputL table(m_outputType);
+            table.PresetHeaders<SamplingOutputTraitsL>();
+            table.SetAlignment(0, ColumnAlignL::RIGHT);
+            table.SetAlignment(1, ColumnAlignL::RIGHT);
+            table.Insert(col_overhead, col_count, col_symbol);
+            table.InsertExtra(L"interval", std::to_wstring(request.sampling_inverval[prev_evt_src]));
+            table.InsertExtra(L"printed_sample_num", std::to_wstring(printed_sample_num));
+            m_out.Print(table);
+            table.m_event = GlobalStringType(get_event_name(static_cast<uint16_t>(prev_evt_src)));
+            m_globalSamplingJSON.m_samplingTables.push_back(table);
+            m_globalSamplingJSON.sample_display_row = request.sample_display_row;
+
+            if (m_outputType == TableOutputL::JSON || m_outputType == TableOutputL::ALL)
+            {
+                m_out.Print(m_globalSamplingJSON);
             }
 
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)

@@ -39,7 +39,8 @@
 #include "output.h"
 
 
-void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt_sample_src> &ioctl_events_sample)
+void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt_sample_src> &ioctl_events_sample,
+    std::map<uint32_t, uint32_t>& sampling_inverval)
 {
     std::wistringstream event_stream(events_str);
     std::wstring event;
@@ -91,6 +92,7 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
 
         struct evt_sample_src _evt = { raw_event, interval };
         ioctl_events_sample.push_back(_evt);
+        sampling_inverval[raw_event] = interval;
     }
 }
 

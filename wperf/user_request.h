@@ -84,6 +84,7 @@ public:
     std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
     std::vector<struct evt_sample_src> ioctl_events_sample;
     std::map<std::wstring, metric_desc> metrics;
+    std::map<uint32_t, uint32_t> sampling_inverval;
 
 private:
     bool all_cores_p() {

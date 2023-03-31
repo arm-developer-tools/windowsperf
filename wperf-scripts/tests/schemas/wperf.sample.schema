@@ -1,0 +1,39 @@
+{
+    "type": "object",
+    "required": [ "sampling" ],
+    "properties": {
+        "sampling": {
+            "type": "object",
+            "required": [ "sample_display_row", "sample_generated", "sample_dropped" ],
+            "minProperties": 4,
+            "additionalProperties": {
+                "type": "object",
+                "required": [ "samples", "interval", "printed_sample_num" ],
+                "minProperties": 3,
+                "maxProperties": 3,
+                "properties": {
+                    "samples": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["count", "overhead", "symbol"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "count": { "type": "string"},
+                                "overhead": { "type": "string" },
+                                "symbol": { "type": "string" }
+                            }
+                        }
+                    },
+                    "interval": { "type": "string" },
+                    "printed_sample_num": { "type": "string" }
+                }
+            },
+            "properties": {
+                "sample_display_row": { "type": "number" },
+                "sample_generated": { "type": "number" },
+                "sample_dropped": { "type": "number" }
+            }
+        }
+    }
+}

@@ -247,7 +247,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (waiting_events)
         {
             if (do_sample)
-                parse_events_str_for_sample(a, ioctl_events_sample);
+                parse_events_str_for_sample(a, ioctl_events_sample, sampling_inverval);
             else
                 parse_events_str(a, events, groups, L"", pmu_cfg);
             waiting_events = false;

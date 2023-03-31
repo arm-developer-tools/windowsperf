@@ -368,6 +368,9 @@ void pmu_device::stop_sample()
         m_out.GetOutputStream() << L"sample dropped  : " << std::dec << summary.sample_dropped << std::endl;
         m_out.GetOutputStream() << L"sample drop rate: " << std::dec << DoubleToWideString(drop_rate) << L"%" << std::endl;
     }
+
+    m_globalSamplingJSON.sample_generated = summary.sample_generated;
+    m_globalSamplingJSON.sample_dropped = summary.sample_dropped;
 }
 
 void pmu_device::set_builtin_metrics(std::wstring key, std::wstring raw_str)

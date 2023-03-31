@@ -152,6 +152,17 @@ struct VersionOutputTraits : public TableOutputTraits<CharType>
     inline const static CharType* key = LITERALCONSTANTS_GET("Version");
 };
 
+template <typename CharType>
+struct SamplingOutputTraits : public TableOutputTraits<CharType>
+{
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("overhead"),
+            LITERALCONSTANTS_GET("count"),
+            LITERALCONSTANTS_GET("symbol"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("samples");
+};
+
 // Generic TableOutput that handles instantiating and dispatching to the proper Table formating class.
 template <typename CharType>
 class TableOutput
@@ -175,6 +186,7 @@ private:
     {
         m_type = rhs.m_type;
         m_core = rhs.m_core;
+        m_event = rhs.m_event;
         if (m_type == JSON || m_type == ALL)
         {
             TableJSON<CharType> obj = rhs.m_tableJSON;
@@ -186,6 +198,8 @@ public:
     PrettyTable<CharType> m_tablePretty;
 
     StringType m_core;
+    StringType m_event;
+
 
     TableOutput(TableType type) : m_type(type)
     {
@@ -364,6 +378,50 @@ struct WPerfListJSON
     }
 };
 
+template <typename CharType>
+struct WPerfSamplingJSON
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
+
+    std::vector<TableOutput<CharType>> m_samplingTables;
+    uint32_t sample_display_row;
+    uint64_t sample_generated;
+    uint64_t sample_dropped;
+
+    StringStream Print()
+    {
+        StringStream os;
+        enum TableOutput<CharType>::TableType jsonType = TableOutput<CharType>::JSON;
+        os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
+        {
+            os << LITERALCONSTANTS_GET("\"sampling\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
+            os << LITERALCONSTANTS_GET("\"sample_display_row\": ") << sample_display_row;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"sample_generated\": ") << sample_generated;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"sample_dropped\": ") << sample_dropped;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            bool isFirst = true;
+            for (auto& table : m_samplingTables)
+            {
+                if (!isFirst)
+                {
+                    os << LiteralConstants<CharType>::m_comma << std::endl;
+                }
+                else {
+                    isFirst = false;
+                }
+                os << LiteralConstants<CharType>::m_quotes << table.m_event << LiteralConstants<CharType>::m_quotes;
+                os << LiteralConstants<CharType>::m_colon << table.Print(jsonType).str() << std::endl;
+            }
+            os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
+        }
+        os << LiteralConstants<CharType>::m_cbracket_close;
+        return os;
+    }
+};
+
 // Class to control the output, it handles if the program is in quiet mode or not, which output to use (either wcout or cout)
 // as well as outputing to a file in case the user requested it.
 template <typename CharType>
@@ -493,6 +551,21 @@ struct OutputControl
             }
         }
     }
+
+    void Print(WPerfSamplingJSON<CharType>& table)
+    {
+        if (m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
+        {
+            StringType s = table.Print().str();
+            if (!m_shouldWriteToFile)
+            {
+                Print_(s);
+            }
+            else {
+                OutputToFile(s);
+            }
+        }
+    }
 };
 
 // Handy aliases, the L at the end of each stands for local.
@@ -514,6 +587,7 @@ using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
 using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;
 using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType>;
 using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
+using SamplingOutputTraitsL = SamplingOutputTraits<GlobalCharType>;
 
 using OutputControlL = OutputControl<GlobalCharType>;
 
@@ -521,5 +595,6 @@ using OutputControlL = OutputControl<GlobalCharType>;
 extern OutputControlL m_out;
 extern WPerfStatJSON<GlobalCharType> m_globalJSON;
 extern WPerfListJSON<GlobalCharType> m_globalListJSON;
+extern WPerfSamplingJSON<GlobalCharType> m_globalSamplingJSON;
 
 extern TableOutputL::TableType m_outputType;

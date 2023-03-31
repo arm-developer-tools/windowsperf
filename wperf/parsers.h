@@ -36,7 +36,8 @@
 #include <vector>
 
 void parse_events_str_for_sample(std::wstring events_str,
-    std::vector<struct evt_sample_src>& ioctl_events_sample);
+    std::vector<struct evt_sample_src>& ioctl_events_sample,
+    std::map<uint32_t, uint32_t>& sampling_inverval);
 
 void parse_events_str(std::wstring events_str,
     std::map<enum evt_class,
