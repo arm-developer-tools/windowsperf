@@ -106,7 +106,8 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
         sec_info.push_back(sec_desc);
         //std::cout << "addr: 0x" << std::hex << sec_desc.offset << ", name: " <<  sec_desc.name << std::endl;
 
-        if (importDirectoryRVA >= sections[i].VirtualAddress && importDirectoryRVA < sections[i].VirtualAddress + sections[i].Misc.VirtualSize) {
+        ULONGLONG section_vaddr_with_size = (ULONGLONG)sections[i].VirtualAddress + sections[i].Misc.VirtualSize;
+        if (importDirectoryRVA >= sections[i].VirtualAddress && importDirectoryRVA < section_vaddr_with_size) {
             importSection = sections + i;
         }
     }
