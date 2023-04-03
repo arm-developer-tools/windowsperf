@@ -77,9 +77,6 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "user_request.h"
 
 
-BOOLEAN G_PerformAsyncIo;
-BOOLEAN G_LimitedLoops;
-ULONG G_AsyncIoLoopsNum;
 WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
 
 #pragma comment (lib, "cfgmgr32.lib")
