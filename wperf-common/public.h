@@ -47,6 +47,6 @@ DEFINE_GUID (GUID_DEVINTERFACE_WINDOWSPERF,
 //     PATCH version when you make backwards compatible bug fixes.
 // 
 
-#define MAJOR 1
-#define MINOR 0
-#define PATCH 1
+#define MAJOR 2
+#define MINOR 3
+#define PATCH 0
