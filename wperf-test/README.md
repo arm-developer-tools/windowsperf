@@ -37,21 +37,46 @@ Note: You can use `config=` command line option to switch between `Debug` and `R
 2>------ Rebuild All started: Project: wperf-test, Configuration: Debug x64 ------
 ...
 ========== Rebuild All: 2 succeeded, 0 failed, 0 skipped ==========
-========== Elapsed 00:06.397 ==========
+========== Rebuild started at 9:59 AM and took 12.367 seconds ==========
 vstest.console x64\Debug\wperf-test.dll
-Microsoft (R) Test Execution Command Line Tool Version 17.4.0 (x64)
+Microsoft (R) Test Execution Command Line Tool Version 17.5.0 (x64)
 Copyright (c) Microsoft Corporation.  All rights reserved.
 
 Starting test execution, please wait...
 A total of 1 test files matched the specified pattern.
+  Passed test_check_cores_in_pmu_ctl_hdr_p_null [< 1 ms]
+  Passed test_check_cores_in_pmu_ctl_hdr_p_cores_count [< 1 ms]
+  Passed test_check_cores_in_pmu_ctl_hdr_p_cores_no_error [< 1 ms]
+  Passed test_check_cores_in_pmu_ctl_hdr_p_cores_no [< 1 ms]
+  Passed test_gen_pdb_name_dll [< 1 ms]
+  Passed test_gen_pdb_name_exe [< 1 ms]
+  Passed test_gen_pdb_name_dll_path [< 1 ms]
+  Passed test_gen_pdb_name_multiple_dll_dots [< 1 ms]
   Passed test_MultiByteFromWideString [< 1 ms]
   Passed test_IntToHexWideString [< 1 ms]
+  Passed test_IntToHexWideString_wchar_t [< 1 ms]
+  Passed test_IntToDecWideString [< 1 ms]
   Passed test_DoubleToWideString [< 1 ms]
+  Passed test_DoubleToWideStringExt [< 1 ms]
+  Passed test_TokenizeWideStringOfInts_error [< 1 ms]
+  Passed test_TokenizeWideStringOfInts_empty [< 1 ms]
+  Passed test_TokenizeWideStringOfInts_clear_output [< 1 ms]
+  Passed test_TokenizeWideStringOfInts_0 [< 1 ms]
+  Passed test_TokenizeWideStringOfInts_012 [< 1 ms]
+  Passed test_TokenizeWideStringOfInts_fibb [< 1 ms]
+  Passed test_ReplaceFileExtension [< 1 ms]
+  Passed test_IntToDecWithCommas [< 1 ms]
+  Passed test_IntToDecWithCommas_neg [< 1 ms]
+  Passed test_IntToDecWithCommas_Ramanujan_Tau [< 1 ms]
+  Passed test_tablejson_char [< 1 ms]
+  Passed test_tablejson_wchar [< 1 ms]
+  Passed test_jsonobject_char [< 1 ms]
+  Passed test_jsonobject_wchar [< 1 ms]
 
 Test Run Successful.
-Total tests: 3
-     Passed: 3
- Total time: 0.4764 Seconds
+Total tests: 28
+     Passed: 28
+ Total time: 0.3613 Seconds
 ```
 
 `VSTest.Console.exe` command-line tool executes all unit tests in the project and presents user with simple summary. If you want to learn more read [VSTest.Console.exe command-line options](https://learn.microsoft.com/en-us/visualstudio/test/vstest-console-options?view=vs-2022) article.
