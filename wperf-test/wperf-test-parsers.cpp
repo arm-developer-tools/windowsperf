@@ -166,5 +166,146 @@ namespace wperftest
 			Assert::AreEqual(events[EVT_CORE][5].index, (uint16_t)0xFEDC);
 			Assert::AreEqual(events[EVT_CORE][6].index, (uint16_t)0x1234);
 		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DSU_1_event)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+
+			parse_events_str(L"/dsu/l3d_cache_refill", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)1);
+
+			Assert::AreEqual(events[EVT_DSU][0].index, (uint16_t)0x2A);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DSU_2_events)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+
+			parse_events_str(L"/dsu/l3d_cache,/dsu/l3d_cache_refill", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)2);
+
+			Assert::AreEqual(events[EVT_DSU][0].index, (uint16_t)0x2B);
+			Assert::AreEqual(events[EVT_DSU][1].index, (uint16_t)0x2A);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DSU_2_events_case_insensitive_prefix)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+
+			parse_events_str(L"/DSU/l3d_cache,/Dsu/l3d_cache_refill", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)2);
+
+			Assert::AreEqual(events[EVT_DSU][0].index, (uint16_t)0x2B);
+			Assert::AreEqual(events[EVT_DSU][1].index, (uint16_t)0x2A);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DSU_2_events_uppercase)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+
+			parse_events_str(L"/DSU/L3D_CACHE,/DSU/L3D_CACHE_REFILL", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)2);
+
+			Assert::AreEqual(events[EVT_DSU][0].index, (uint16_t)0x2B);
+			Assert::AreEqual(events[EVT_DSU][1].index, (uint16_t)0x2A);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DMC_CLKDIV2_1_event)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+			pmu_cfg.gpc_nums[EVT_DMC_CLK] = 2;
+			pmu_cfg.gpc_nums[EVT_DMC_CLKDIV2] = 8;
+
+			parse_events_str(L"/dmc_clkdiv2/rdwr", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DMC_CLK].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DMC_CLKDIV2].size(), (size_t)1);
+
+			Assert::AreEqual(events[EVT_DMC_CLKDIV2][0].index, (uint16_t)0x12);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DMC_CLKDIV2_1_event_uppercase)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+			pmu_cfg.gpc_nums[EVT_DMC_CLK] = 2;
+			pmu_cfg.gpc_nums[EVT_DMC_CLKDIV2] = 8;
+
+			parse_events_str(L"/dmc_clkdiv2/RDWR", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DMC_CLK].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DMC_CLKDIV2].size(), (size_t)1);
+
+			Assert::AreEqual(events[EVT_DMC_CLKDIV2][0].index, (uint16_t)0x12);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_DMC_CLKDIV2_1_event_prefix_uppercase)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+			pmu_cfg.gpc_nums[EVT_DSU] = 6;
+			pmu_cfg.gpc_nums[EVT_DMC_CLK] = 2;
+			pmu_cfg.gpc_nums[EVT_DMC_CLKDIV2] = 8;
+
+			parse_events_str(L"/DMC_CLKDIV2/rdwr", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DSU].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DMC_CLK].size(), (size_t)0);
+			Assert::AreEqual(events[EVT_DMC_CLKDIV2].size(), (size_t)1);
+
+			Assert::AreEqual(events[EVT_DMC_CLKDIV2][0].index, (uint16_t)0x12);
+		}
 	};
 }

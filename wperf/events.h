@@ -68,3 +68,4 @@ int get_core_event_index(std::wstring name);
 int get_dmc_clk_event_index(std::wstring name);
 int get_dmc_clkdiv2_event_index(std::wstring name);
 int get_event_index(std::wstring name, enum evt_class e_class = EVT_CORE);
+enum evt_class get_event_class_from_prefix(std::wstring prefix);

@@ -231,5 +231,49 @@ namespace wperftest
 			Assert::AreEqual(IntToDecWithCommas(10661420), std::wstring(L"10,661,420"));
 			Assert::AreEqual(IntToDecWithCommas(-7109760), std::wstring(L"-7,109,760"));
 		}
+
+		TEST_METHOD(test_CaseInsensitiveWStringComparision)
+		{
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L""), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L",./"), std::wstring(L",./")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"1234567890"), std::wstring(L"1234567890")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"!@#$%^&*()_+"), std::wstring(L"!@#$%^&*()_+")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"!@#$%^&*()_+a"), std::wstring(L"!@#$%^&*()_+A")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"0x5f3759df"), std::wstring(L"0X5F3759DF")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"   0x5f3759df"), std::wstring(L"   0X5F3759DF")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"0x5f3759df   "), std::wstring(L"0X5F3759DF   ")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"   0x5f3759df   "), std::wstring(L"   0X5F3759DF   ")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"text"), std::wstring(L"TEXT")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"x"), std::wstring(L"X")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"It takes a touch of genius -- and a lot of courage -- to move in the opposite direction"),
+				std::wstring(L"It takes a touch of genius -- and a lot of courage -- to move in the opposite direction")));
+			Assert::IsTrue(CaseInsensitiveWStringComparision(std::wstring(L"Everything should be made as simple as possible, but not simpler."),
+				std::wstring(L"Everything should be maDE AS SIMple as possIBLE, BUT NOt simpler.")));
+		}
+
+		TEST_METHOD(test_WStringToLower)
+		{
+			Assert::AreEqual(WStringToLower(L""), std::wstring(L""));
+			Assert::AreEqual(WStringToLower(L"X"), std::wstring(L"x"));
+			Assert::AreEqual(WStringToLower(L"/DSU/"), std::wstring(L"/dsu/"));
+			Assert::AreEqual(WStringToLower(L"/core/"), std::wstring(L"/core/"));
+			Assert::AreEqual(WStringToLower(L"The hardest thing in the world to understand is the income tax."),
+				std::wstring(L"the hardest thing in the world to understand is the income tax."));
+		}
+
+		TEST_METHOD(test_WStringStartsWith)
+		{
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/dsu/")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"/dsu/")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
+		}
+
+		TEST_METHOD(test_CaseInsensitiveWStringStartsWith)
+		{
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DSU/l3d_cache"), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DSU/l3d_cache"), std::wstring(L"/dsu/")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DMC_CLKDIV2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
+		}
 	};
 }

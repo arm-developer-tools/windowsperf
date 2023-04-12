@@ -110,6 +110,11 @@ def test_wperf_stat_no_events():
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES,N_CORES//2)), "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES,N_CORES//6)), "", 1),
     (b"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", ','.join(str(cores) for cores in range(0, N_CORES,N_CORES//8)), "", 1),
+
+    (b"LD_SPEC", "0", "", 1),
+    (b"inst_spec,vfp_spec,ASE_SPEC,dp_spec,ld_spec,st_spec", "0", "", 1),
+    (b"inst_spec,vfp_spec,ASE_SPEC,dp_spec,ld_spec,ST_SPEC", "0", "", 1),
+    (b"INST_SPEC,VFP_SPEC,ASE_SPEC,DP_SPEC,LD_SPEC,ST_SPEC", "0", "", 1),
 ]
 )
 def test_wperf_stat(events,cores,metric,sleep):
@@ -151,7 +156,7 @@ def test_wperf_stat(events,cores,metric,sleep):
     # Event names in pretty table
     if events:
         for event in events.split(b','):
-            assert re.search(b'[\\d]+[\\s]+%s[\\s]+0x[0-9a-f]+' % event, stdout)
+            assert re.search(b'[\\d]+[\\s]+%s[\\s]+0x[0-9a-f]+' % event.lower(), stdout)
         assert re.search(b'[\\s]+cycle[\\s]+fixed', stdout)
 
     # Overall summary header when more than one CPU count

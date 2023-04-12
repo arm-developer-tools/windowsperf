@@ -32,6 +32,7 @@
 #include <string>
 
 #include "events.h"
+#include "utils.h"
 
 #include "wperf-common/iorequest.h"
 
@@ -51,6 +52,13 @@ const wchar_t* evt_name_prefix[EVT_CLASS_NUM] =
     L"/dmc_clkdiv2/",
 };
 
+enum evt_class get_event_class_from_prefix(std::wstring prefix)
+{
+    if (CaseInsensitiveWStringComparision(prefix, L"/dsu/")) return EVT_DSU;
+    if (CaseInsensitiveWStringComparision(prefix, L"/dmc_clk/")) return EVT_DMC_CLK;
+    if (CaseInsensitiveWStringComparision(prefix, L"/dmc_clkdiv2/")) return EVT_DMC_CLKDIV2;
+    return EVT_CLASS_NUM;
+}
 
 wchar_t* get_dmc_clk_event_name(uint16_t index)
 {
@@ -99,7 +107,7 @@ const wchar_t* get_event_name(uint16_t index, enum evt_class e_class)
 
 int get_core_event_index(std::wstring name)
 {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) if (name == L##c) return b;
+#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) if (CaseInsensitiveWStringComparision(name, std::wstring(L##c))) return b;
 #include "wperf-common\armv8-arch-events.def"
 #undef WPERF_ARMV8_ARCH_EVENTS
     return -1;
@@ -107,7 +115,7 @@ int get_core_event_index(std::wstring name)
 
 int get_dmc_clk_event_index(std::wstring name)
 {
-#define WPERF_DMC_CLK_EVENTS(a,b,c) if (name == L##c) return b;
+#define WPERF_DMC_CLK_EVENTS(a,b,c) if (CaseInsensitiveWStringComparision(name, std::wstring(L##c))) return b;
 #include "wperf-common\dmc-clk-events.def"
 #undef WPERF_DMC_CLK_EVENTS
     return -1;
@@ -115,7 +123,7 @@ int get_dmc_clk_event_index(std::wstring name)
 
 int get_dmc_clkdiv2_event_index(std::wstring name)
 {
-#define WPERF_DMC_CLKDIV2_EVENTS(a,b,c) if (name == L##c) return b;
+#define WPERF_DMC_CLKDIV2_EVENTS(a,b,c) if (CaseInsensitiveWStringComparision(name, std::wstring(L##c))) return b;
 #include "wperf-common\dmc-clkdiv2-events.def"
 #undef WPERF_DMC_CLKDIV2_EVENTS
     return -1;

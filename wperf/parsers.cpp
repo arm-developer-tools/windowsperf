@@ -38,7 +38,14 @@
 #include "pmu_device.h"
 #include "events.h"
 #include "output.h"
+#include "utils.h"
 
+static bool is_raw_event(const std::wstring& event)
+{
+    return (event.length() > 1 &&
+        event[0] == L'r' &&
+        std::all_of(event.begin() + 1, event.end(), std::iswxdigit));
+}
 
 void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt_sample_src> &ioctl_events_sample,
     std::map<uint32_t, uint32_t>& sampling_inverval)
@@ -66,9 +73,7 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
         {
             raw_event = static_cast<uint32_t>(std::stoi(str1, nullptr, 0));
         }
-        else if (str1.length() > 1 &&
-                 str1[0] == L'r' &&
-                 std::all_of(str1.begin() + 1 , str1.end(), std::iswxdigit))
+        else if (is_raw_event(str1))
         {
             raw_event = static_cast<uint32_t>(std::stoi(str1.substr(1, std::string::npos), NULL, 16));
         }
@@ -109,23 +114,17 @@ void parse_events_str(std::wstring events_str,
     {
         bool push_group = false, push_group_last = false;
         enum evt_class e_class = EVT_CORE;
-        const wchar_t* chars_try = event.c_str();
         uint16_t raw_event;
 
-        if (wcsncmp(chars_try, L"/dsu/", 5) == 0)
+        for (auto e : { EVT_DSU, EVT_DMC_CLK, EVT_DMC_CLKDIV2 })
         {
-            e_class = EVT_DSU;
-            event.erase(0, 5);
-        }
-        else if (wcsncmp(chars_try, L"/dmc_clk/", 9) == 0)
-        {
-            e_class = EVT_DMC_CLK;
-            event.erase(0, 9);
-        }
-        else if (wcsncmp(chars_try, L"/dmc_clkdiv2/", 13) == 0)
-        {
-            e_class = EVT_DMC_CLKDIV2;
-            event.erase(0, 13);
+            std::wstring prefix = evt_name_prefix[e];
+            if (CaseInsensitiveWStringStartsWith(event, prefix))
+            {
+                e_class = e;
+                event.erase(0, prefix.size());
+                break;
+            }
         }
 
         const wchar_t* chars = event.c_str();
@@ -140,9 +139,7 @@ void parse_events_str(std::wstring events_str,
                 group_size++;
             }
         }
-        else if (event.length() > 1 &&
-            event[0] == L'r' &&
-            std::all_of(event.begin() + 1, event.end(), std::iswxdigit))
+        else if (is_raw_event(event))
         {
             raw_event = static_cast<uint16_t>(std::stoi(event.substr(1, std::string::npos), NULL, 16));
 

@@ -77,3 +77,48 @@ std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext)
         filename = filename.substr(0, index) + L"." + ext;
     return filename;
 }
+
+/// <summary>
+/// Case insensitive WSTRINGs comparision.
+/// </summary>
+/// <param name="str1">WSTRING to compare</param>
+/// <param name="str2">WSTRING to compare</param>
+bool CaseInsensitiveWStringComparision(const std::wstring& str1, const std::wstring& str2)
+{
+    return std::equal(str1.begin(), str1.end(),
+        str2.begin(), str2.end(),
+        [](wchar_t a, wchar_t b) { return towlower(a) == towlower(b); });
+}
+
+/// <summary>
+/// Converst WSTRING to its lowercase counterpart
+/// </summary>
+/// <param name="str">WSTRING to lowercase</param>
+std::wstring WStringToLower(const std::wstring& str)
+{
+    std::wstring result;
+    result.resize(str.size());
+    std::transform(str.begin(), str.end(), result.begin(), towlower);
+    return result;
+}
+
+/// <summary>
+/// Return TRUE if STR starts with PREFIX
+/// </summary>
+/// <param name="str">String to compare</param>
+/// <param name="prefix">Prefix to compare</param>
+bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix)
+{
+    return (str.size() > prefix.size() &&
+        std::equal(prefix.begin(), prefix.end(), str.begin()));
+}
+
+/// <summary>
+/// Return TRUE if STR starts with PREFIX (case insensitive comparision)
+/// </summary>
+/// <param name="str">String to compare</param>
+/// <param name="prefix">Prefix to compare</param>
+bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstring& prefix)
+{
+    return WStringStartsWith(WStringToLower(str), WStringToLower(prefix));
+}
