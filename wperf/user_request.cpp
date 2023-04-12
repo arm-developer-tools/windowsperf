@@ -62,6 +62,7 @@ usage: wperf [options]
                           Means counting 1 second after every 60 second, and the result
                           is in.csv file in the same folder where wperf is invoked.
                           You can use -i and -d to change counting duration and interval.
+    -n N                  How many times count in timeline mode (disabled by default).
     -image_name           Specify the image name you want to sample.
     -pe_file              Specify the PE file.
     -pdb_file             Specify the PDB file.
@@ -89,7 +90,7 @@ user_request::user_request() : do_list{ false }, do_count(false), do_kernel(fals
     do_sample(false), do_version(false), do_verbose(false), do_test(false),
     do_help(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
     sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
-    sample_display_row(50), sample_display_short(true),
+    sample_display_row(50), sample_display_short(true), count_timeline(0),
     count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
 
 void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg, std::map<std::wstring, metric_desc>& builtin_metrics)
@@ -210,13 +211,14 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_pe_file = false;
     bool waiting_pdb_file = false;
     bool waiting_sample_display_row = false;
+    bool waiting_timeline_count = false;
 
     for (const auto& a : raw_args)
     {
         if (waiting_config)
         {
             waiting_config = false;
-            load_config(a, pmu_cfg);
+            load_config_metrics(a, pmu_cfg);
             continue;
         }
 
@@ -344,6 +346,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (waiting_timeline_count)
+        {
+            count_timeline = _wtoi(a.c_str());
+            waiting_timeline_count = false;
+            continue;
+        }
+
         if (waiting_dmc_idx)
         {
             int val = _wtoi(a.c_str());
@@ -458,6 +467,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (a == L"-n")
+        {
+            waiting_timeline_count = true;
+            continue;
+        }
+
         if (a == L"-sample-display-row")
         {
             waiting_sample_display_row = true;
@@ -569,7 +584,7 @@ void user_request::push_ioctl_grouped_event(enum evt_class e_class, struct evt_n
     ioctl_events[e_class].push_back(event);
 }
 
-void user_request::load_config(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg)
+void user_request::load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg)
 {
     std::wifstream config_file(config_name);
 

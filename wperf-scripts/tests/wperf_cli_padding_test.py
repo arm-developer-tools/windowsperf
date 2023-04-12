@@ -32,16 +32,9 @@
 
 import json
 from common import run_command, is_json, check_if_file_exists
+from common import get_result_from_test_results
 
 ### Test cases
-
-def get_result_from_test_results(j, Test_Name):
-    """ Return 'Result' from Test_Results[Test_Name] """
-    for test_result in j["Test_Results"]:
-        if Test_Name in test_result["Test_Name"]:
-            return test_result["Result"]
-    return None
-
 
 def wperf_test_no_params():
     """ We use this fixture to get values from `wperf test` which do not change with execution like gpc_num """

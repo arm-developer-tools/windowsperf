@@ -33,6 +33,7 @@ usage: wperf [options]
                           Means counting 1 second after every 60 second, and the result
                           is in.csv file in the same folder where wperf is invoked.
                           You can use -i and -d to change counting duration and interval.
+    -n N                  How many times count in timeline mode (disabled by default).
     -image_name           Specify the image name you want to sample.
     -pe_file              Specify the PE file.
     -pdb_file             Specify the PDB file.

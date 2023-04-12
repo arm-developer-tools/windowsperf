@@ -34,6 +34,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "pmu_device.h"
+
+inline constexpr uint32_t PARSE_INTERVAL_DEFAULT = 0x4000000;
 
 void parse_events_str_for_sample(std::wstring events_str,
     std::vector<struct evt_sample_src>& ioctl_events_sample,

@@ -57,7 +57,7 @@ public:
     void push_ioctl_normal_event(enum evt_class e_class, struct evt_noted event);
     void push_ioctl_padding_event(enum evt_class e_class, uint16_t event);
     void push_ioctl_grouped_event(enum evt_class e_class, struct evt_noted event, uint16_t group_num);
-    void load_config(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
+    void load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
 
     static void print_help();
 
@@ -76,6 +76,7 @@ public:
     uint8_t dmc_idx;
     double count_duration;
     double count_interval;
+    int count_timeline;
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;

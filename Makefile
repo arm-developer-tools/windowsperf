@@ -87,11 +87,11 @@
 # Use `make config=Release release` to package `wperf` and `wperf-driver`.
 #
 
-# By default we build for ARM64EC target. Define arch variable to change defalt
+# By default we build for ARM64EC target. Define arch variable to change default
 # value.
 make_arch=ARM64EC
 
-# By default we build with Debug configuration. Define config variable to change defalt
+# By default we build with Debug configuration. Define config variable to change default
 # value.
 make_config=Debug
 
@@ -137,7 +137,8 @@ clean:
 purge:
 	rm -rf wperf/ARM64 wperf/ARM64EC wperf/x64
 	rm -rf wperf-driver/ARM64 wperf-driver/ARM64EC wperf-driver/x64
-	rm -rf wperf-test/ARM64 wperf-test/x64
+	rm -rf wperf-test/ARM64 wperf-test/ARM64EC wperf-test/x64
+	rm -rf wperf-devgen/ARM64 wperf-devgen/x64
 	rm -rf ARM64/ ARM64EC/ x64/
 
 docs:

@@ -283,6 +283,8 @@ wmain(
             int64_t counting_interval_iter = request.count_interval > 0 ?
                 static_cast<int64_t>(request.count_interval * 2) : 0;
 
+            int counting_timeline_times = request.count_timeline;
+
             do
             {
                 pmu_device.reset(enable_bits);
@@ -359,11 +361,19 @@ wmain(
                     }
 
                     m_out.GetOutputStream() << L'\b' << "done\n";
+
                 }
 
                 if (m_outputType == TableOutputL::JSON || m_outputType == TableOutputL::ALL)
                 {
                     m_out.Print(m_globalJSON);
+                }
+
+                if (counting_timeline_times > 0)
+                {
+                    --counting_timeline_times;
+                    if (counting_timeline_times <= 0)
+                        break;
                 }
             } while (request.do_timeline && no_ctrl_c);
         }

@@ -32,6 +32,7 @@
 
 import json
 from common import run_command, is_json, check_if_file_exists
+from common import get_result_from_test_results
 
 ### Test cases
 
@@ -61,20 +62,13 @@ def test_wperf_test_json_file_output_valid(tmp_path):
     except:
         assert 0
 
-def test_wperf_test_event_sched():
-    """ Test `wperf test -e ...` ioctl_events output (event schedules) """
-    cmd = 'wperf test -e {inst_spec,vfp_spec},{ase_spec,br_immed_spec},crypto_spec,{ld_spec,st_spec} -json'
+def test_wperf_test_MIDR_reg():
+    """ Test if MIDR register is exposed with `wperf test`. """
+    cmd = 'wperf test -json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
-    num_gpc = int(json_output["Test_Results"][17]["Result"])
-    evt_indexes = json_output["Test_Results"][21]["Result"].split(',')
-    evt_indexes_set = set(evt_indexes)
-    evt_indexes_ref = {'27', '117', '119', '116', '120', '112', '113'}
-    evt_notes = json_output["Test_Results"][22]["Result"].split(',')
-    evt_notes_set = set(evt_notes)
-    evt_notes_ref = {'g0', 'g1', 'g2', 'e'}
-    num_paddings = evt_notes.count('p')
-    assert (len(evt_indexes) % num_gpc == 0
-            and evt_indexes_ref.issubset(evt_indexes_set)
-            and evt_notes_ref.issubset(evt_notes_set)
-            and num_paddings < 12)
+
+    midr_value = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [midr_value]")
+    assert len(midr_value) > 0
+    assert midr_value.startswith("0x")
+    assert int(midr_value, 16) != 0x00

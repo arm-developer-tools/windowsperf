@@ -1158,6 +1158,7 @@ NTSTATUS deviceControl(
         out->arch_id = (midr_value >> 16) & 0xf;
         out->rev_id = midr_value & 0xf;
         out->part_id = (midr_value >> 4) & 0xfff;
+        out->midr_value = midr_value;
 
         *outputSize = sizeof(struct hw_cfg);
         break;

@@ -85,3 +85,10 @@ def wperf_metric_events(metric):
         if metric == m["Metric"]:
             return m["Events"]
     return None
+
+def get_result_from_test_results(j, Test_Name):
+    """ Return 'Result' from Test_Results[Test_Name] """
+    for test_result in j["Test_Results"]:
+        if Test_Name in test_result["Test_Name"]:
+            return test_result["Result"]
+    return None

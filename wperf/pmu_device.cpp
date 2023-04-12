@@ -186,6 +186,7 @@ void pmu_device::timeline_init()
     if (!timeline_mode)
         return;
 
+    char buf[MAX_PATH];
     time_t rawtime;
     struct tm timeinfo;
 
@@ -203,23 +204,18 @@ void pmu_device::timeline_init()
         if ((e == EVT_DMC_CLK || e == EVT_DMC_CLKDIV2) && !(enc_bits & CTL_FLAG_DMC))
             continue;
 
-        char buf[256];
-        size_t length = strftime(buf, sizeof(buf), "%Y_%m_%d_%H_%M_%S.", &timeinfo);
-        std::string filename = std::string(buf, buf + strlen(buf));
-        if (all_cores_p())
-            snprintf(buf, sizeof(buf), "wperf_system_side_");
-        else
-            snprintf(buf, sizeof(buf), "wperf_core_%d_", cores_idx[0]);
-        std::string prefix(buf);
+        if (strftime(buf, sizeof(buf), "%Y_%m_%d_%H_%M_%S.", &timeinfo) == 0)
+            throw fatal_exception("timestamp conversion failed in timeline mode");
 
-        std::string suffix = MultiByteFromWideString(evt_class_name[e]);
+        std::string timestamp(buf);
+        std::string prefix("wperf_system_side_");
+        if (all_cores_p() == false)
+            prefix = "wperf_core_" + std::to_string(cores_idx[0]) + "_";
 
-        filename = prefix + filename + suffix + std::string(".csv");
-        if (!length)
-        {
-            std::cerr << "timeline output file name: " << filename << std::endl;
-            throw fatal_exception("open timeline output file failed");
-        }
+        std::string filename = prefix + timestamp + MultiByteFromWideString(evt_class_name[e]) + ".csv";
+
+        if (do_verbose)
+            m_out.GetOutputStream() << L"timeline file: " << L"'" << std::wstring(filename.begin(), filename.end()) << L"'" << std::endl;
 
         timeline_outfiles[e].open(filename);
     }
@@ -1696,6 +1692,8 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_result.push_back(IntToHexWideString(hw_cfg.variant_id));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [vendor_id]");
     col_test_result.push_back(IntToHexWideString(hw_cfg.vendor_id));
+    col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [midr_value]");
+    col_test_result.push_back(IntToHexWideString(hw_cfg.midr_value, 20));
 
     // Tests for event scheduling
     col_test_name.push_back(L"gpc_nums[EVT_CORE]");

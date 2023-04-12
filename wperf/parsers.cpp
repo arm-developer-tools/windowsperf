@@ -28,6 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <algorithm>
 #include <cwctype>
 #include <iostream>
 #include <sstream>
@@ -47,7 +48,7 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
 
     while (std::getline(event_stream, event, L','))
     {
-        uint32_t raw_event, interval = 0x4000000;
+        uint32_t raw_event, interval = PARSE_INTERVAL_DEFAULT;
         size_t delim_pos = event.find(L":");
         std::wstring str1;
 
@@ -65,12 +66,9 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
         {
             raw_event = static_cast<uint32_t>(std::stoi(str1, nullptr, 0));
         }
-        else if (str1[0] == L'r' &&
-            str1.length() == 5 &&
-            std::iswxdigit(str1[1]) &&
-            std::iswxdigit(str1[2]) &&
-            std::iswxdigit(str1[3]) &&
-            std::iswxdigit(str1[4]))
+        else if (str1.length() > 1 &&
+                 str1[0] == L'r' &&
+                 std::all_of(str1.begin() + 1 , str1.end(), std::iswxdigit))
         {
             raw_event = static_cast<uint32_t>(std::stoi(str1.substr(1, std::string::npos), NULL, 16));
         }
@@ -90,8 +88,7 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
         if (raw_event == 0x11)
             raw_event = CYCLE_EVT_IDX;
 
-        struct evt_sample_src _evt = { raw_event, interval };
-        ioctl_events_sample.push_back(_evt);
+        ioctl_events_sample.push_back({ raw_event, interval });
         sampling_inverval[raw_event] = interval;
     }
 }
@@ -143,14 +140,11 @@ void parse_events_str(std::wstring events_str,
                 group_size++;
             }
         }
-        else if (chars[0] == L'r' &&
-            event.length() == 5 &&
-            std::iswxdigit(chars[1]) &&
-            std::iswxdigit(chars[2]) &&
-            std::iswxdigit(chars[3]) &&
-            std::iswxdigit(chars[4]))
+        else if (event.length() > 1 &&
+            event[0] == L'r' &&
+            std::all_of(event.begin() + 1, event.end(), std::iswxdigit))
         {
-            raw_event = static_cast<uint16_t>(wcstol(chars + 1, NULL, 16));
+            raw_event = static_cast<uint16_t>(std::stoi(event.substr(1, std::string::npos), NULL, 16));
 
             if (group_size)
             {
