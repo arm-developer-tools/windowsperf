@@ -34,6 +34,8 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 
+#include <windows.h>
+#include "wperf/events.h"
 #include "wperf/parsers.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -111,6 +113,74 @@ namespace wperftest
 
 			Assert::AreEqual(ioctl_events_sample[6].index, (uint32_t)0x12345);
 			Assert::AreEqual(ioctl_events_sample[6].interval, PARSE_INTERVAL_DEFAULT);
+		}
+
+		/****************************************************************************/
+
+		TEST_METHOD(test_parse_events_str_EVT_CORE_rf_in_group)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"{rf}", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)1);
+			Assert::AreEqual(events[EVT_CORE][0].index, (uint16_t)0xF);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_CORE_2_raw_events_in_group)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"{r1b,r75}", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(groups[EVT_CORE].size(), (size_t)3);
+
+			Assert::AreEqual(groups[EVT_CORE][0].index, (uint16_t)0x2);
+			Assert::AreEqual(groups[EVT_CORE][1].index, (uint16_t)0x1B);
+			Assert::AreEqual(groups[EVT_CORE][2].index, (uint16_t)0x75);
+
+			Assert::IsTrue(groups[EVT_CORE][0].type == EVT_HDR);
+			Assert::IsTrue(groups[EVT_CORE][1].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][2].type == EVT_GROUPED);
+		}
+
+		TEST_METHOD(test_parse_events_str_EVT_CORE_raw_events_in_group_4)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"{r1b,r75},r74,r73,r70,r71", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)4);
+
+			Assert::AreEqual(events[EVT_CORE][0].index, (uint16_t)0x74);
+			Assert::AreEqual(events[EVT_CORE][1].index, (uint16_t)0x73);
+			Assert::AreEqual(events[EVT_CORE][2].index, (uint16_t)0x70);
+			Assert::AreEqual(events[EVT_CORE][3].index, (uint16_t)0x71);
+
+			Assert::AreEqual(groups[EVT_CORE].size(), (size_t)3);
+
+			Assert::AreEqual(groups[EVT_CORE][0].index, (uint16_t)0x2);
+			Assert::AreEqual(groups[EVT_CORE][1].index, (uint16_t)0x1B);
+			Assert::AreEqual(groups[EVT_CORE][2].index, (uint16_t)0x75);
+
+			Assert::IsTrue(groups[EVT_CORE][0].type == EVT_HDR);
+			Assert::IsTrue(groups[EVT_CORE][1].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][2].type == EVT_GROUPED);
 		}
 
 		/****************************************************************************/

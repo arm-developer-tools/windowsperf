@@ -171,9 +171,13 @@ void parse_events_str(std::wstring events_str,
                 }
 
                 chars = strip_str.c_str();
-                if (std::iswdigit(chars[0]))
+                if (std::iswdigit(strip_str[0]))
                 {
                     raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
+                }
+                else if (is_raw_event(strip_str))
+                {
+                    raw_event = static_cast<uint16_t>(std::stoi(strip_str.substr(1, std::string::npos), NULL, 16));
                 }
                 else
                 {
@@ -205,6 +209,10 @@ void parse_events_str(std::wstring events_str,
                 if (std::iswdigit(chars[0]))
                 {
                     raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
+                }
+                else if (is_raw_event(event))
+                {
+                    raw_event = static_cast<uint16_t>(std::stoi(event.substr(1, std::string::npos), NULL, 16));
                 }
                 else
                 {
