@@ -33,12 +33,8 @@
 #include <assert.h>
 #include "user_request.h"
 #include "exception.h"
+#include "padding.h"
 
-
-static bool sort_ioctl_events_sample(const struct evt_sample_src& a, const struct evt_sample_src& b)
-{
-    return a.index < b.index;
-}
 
 void user_request::print_help()
 {
@@ -135,64 +131,12 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
             throw fatal_exception("ERROR_CORES");
         }
 
-    set_event_padding(pmu_cfg, events, groups);
+    set_event_padding(ioctl_events, pmu_cfg, events, groups);
+    check_events(EVT_CORE, MAX_MANAGED_CORE_EVENTS);
+    check_events(EVT_DSU, MAX_MANAGED_DSU_EVENTS);
+    check_events(EVT_DMC_CLK, MAX_MANAGED_DMC_CLK_EVENTS);
+    check_events(EVT_DMC_CLKDIV2, MAX_MANAGED_DMC_CLKDIV2_EVENTS);
 }
-
-void user_request::set_event_padding(const struct pmu_device_cfg& pmu_cfg,
-    std::map<enum evt_class, std::deque<struct evt_noted>>& events,
-    std::map<enum evt_class, std::vector<struct evt_noted>>& groups)
-{
-    if (groups.size())
-    {
-        for (const auto& a : groups)
-        {
-            auto total_size = a.second.size();
-            enum evt_class e_class = a.first;
-
-            // We start with group_start === 1 because at "a" index [0] there is a EVT_HDR event.
-            // This event is not "an event". It is a placeholder which stores following group event size.
-            // Please note that we will read EVT_HDR.index for event group size here.
-            //
-            //  a.second vector contains:
-            //
-            //      EVT_HDR(m), EVT_m1, EVT_m2, ..., EVT_HDR(n), EVT_n1, EVT_n2, ...
-            //
-            for (uint16_t group_start = 1, group_size = a.second[0].index, group_num = 0; group_start < total_size; group_num++)
-            {
-                for (uint16_t elem_idx = group_start; elem_idx < (group_start + group_size); elem_idx++)
-                    push_ioctl_grouped_event(e_class, a.second[elem_idx], group_num);
-
-                padding_ioctl_events(e_class, pmu_cfg.gpc_nums[e_class], events[e_class]);
-
-                // Make sure we are not reading beyond last element in a.second vector.
-                // Here if there's another event we want to read next EVT_HDR to know next group size.
-                const uint16_t next_evt_hdr_idx = group_start + group_size;
-                if (next_evt_hdr_idx >= total_size)
-                    break;
-                uint16_t next_evt_group_size = a.second[next_evt_hdr_idx].index;
-                group_start += group_size + 1;
-                group_size = next_evt_group_size;
-            }
-        }
-    }
-
-    if (events.size())
-    {
-        for (const auto& a : events)
-        {
-            enum evt_class e_class = a.first;
-
-            for (const auto& e : a.second)
-                push_ioctl_normal_event(e_class, e);
-
-            if (groups.find(e_class) != groups.end())
-                padding_ioctl_events(e_class, pmu_cfg.gpc_nums[e_class]);
-        }
-    }
-
-    std::sort(ioctl_events_sample.begin(), ioctl_events_sample.end(), sort_ioctl_events_sample);
-}
-
 
 void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<enum evt_class, std::deque<struct evt_noted>>& events,
@@ -558,30 +502,22 @@ void user_request::show_events()
 
     for (const auto& a : ioctl_events)
     {
-        m_out.GetOutputStream() << L"  " << std::setw(18) << evt_class_name[a.first] << L":";
+        m_out.GetOutputStream() << L"  " << std::setw(4) << a.second.size() << std::setw(18) << evt_class_name[a.first] << L" events:";
         for (const auto& b : a.second)
             m_out.GetOutputStream() << L" " << IntToHexWideString(b.index);
         m_out.GetOutputStream() << std::endl;
     }
 }
 
-void user_request::push_ioctl_normal_event(enum evt_class e_class, struct evt_noted event)
+void user_request::check_events(enum evt_class evt, int max)
 {
-    ioctl_events[e_class].push_back(event);
-}
-
-void user_request::push_ioctl_padding_event(enum evt_class e_class, uint16_t event)
-{
-    ioctl_events[e_class].push_back({ event, EVT_PADDING, L"p" });
-}
-
-void user_request::push_ioctl_grouped_event(enum evt_class e_class, struct evt_noted event, uint16_t group_num)
-{
-    if (event.note == L"")
-        event.note = L"g" + std::to_wstring(group_num);
-    else
-        event.note = L"g" + std::to_wstring(group_num) + L"," + event.note;
-    ioctl_events[e_class].push_back(event);
+    if (ioctl_events.count(evt) &&
+        ioctl_events[evt].size() > MAX_MANAGED_CORE_EVENTS)
+    {
+        m_out.GetErrorOutputStream() << L"error: too many " << evt_class_name[evt] << L" (including padding) events: "
+            << ioctl_events[evt].size() << L" > " << max << std::endl;
+        throw fatal_exception("ERROR_MAX_EVENTS");
+    }
 }
 
 void user_request::load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg)
@@ -642,39 +578,4 @@ std::wstring user_request::trim(const std::wstring& str,
     const auto len = pos_end - pos_begin + 1;
 
     return str.substr(pos_begin, len);
-}
-
-void user_request::padding_ioctl_events(enum evt_class e_class, uint8_t gpc_num, std::deque<struct evt_noted>& padding_vector)
-{
-    auto event_num = ioctl_events[e_class].size();
-
-    if (!(event_num % gpc_num))
-        return;
-
-    auto event_num_after_padding = (event_num + gpc_num - 1) / gpc_num * gpc_num;
-    for (auto idx = 0; idx < (event_num_after_padding - event_num); idx++)
-    {
-        if (padding_vector.size())
-        {
-            struct evt_noted e = padding_vector.front();
-            padding_vector.pop_front();
-            push_ioctl_normal_event(e_class, e);
-        }
-        else
-        {
-            push_ioctl_padding_event(e_class, PMU_EVENT_INST_SPEC);
-        }
-    }
-}
-
-void user_request::padding_ioctl_events(enum evt_class e_class, uint8_t gpc_num)
-{
-    auto event_num = ioctl_events[e_class].size();
-
-    if (!(event_num % gpc_num))
-        return;
-
-    auto event_num_after_padding = (event_num + gpc_num - 1) / gpc_num * gpc_num;
-    for (auto idx = 0; idx < (event_num_after_padding - event_num); idx++)
-        push_ioctl_padding_event(e_class, PMU_EVENT_INST_SPEC);
 }

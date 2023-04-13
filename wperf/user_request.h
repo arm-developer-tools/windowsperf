@@ -48,15 +48,10 @@ public:
         std::map<enum evt_class, std::deque<struct evt_noted>>& events,
         std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
         std::map<std::wstring, metric_desc>& builtin_metrics);
-    void set_event_padding(const struct pmu_device_cfg& pmu_cfg,
-        std::map<enum evt_class, std::deque<struct evt_noted>>& events,
-        std::map<enum evt_class, std::vector<struct evt_noted>>& groups);
 
     bool has_events();
     void show_events();
-    void push_ioctl_normal_event(enum evt_class e_class, struct evt_noted event);
-    void push_ioctl_padding_event(enum evt_class e_class, uint16_t event);
-    void push_ioctl_grouped_event(enum evt_class e_class, struct evt_noted event, uint16_t group_num);
+    void check_events(enum evt_class evt, int max);
     void load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
 
     static void print_help();
@@ -93,6 +88,4 @@ private:
     }
 
     std::wstring trim(const std::wstring& str, const std::wstring& whitespace = L" \t");
-    void padding_ioctl_events(enum evt_class e_class, uint8_t gpc_num, std::deque<struct evt_noted>& padding_vector);
-    void padding_ioctl_events(enum evt_class e_class, uint8_t gpc_num);
 };

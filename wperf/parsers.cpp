@@ -40,6 +40,12 @@
 #include "output.h"
 #include "utils.h"
 
+
+static bool sort_ioctl_events_sample(const struct evt_sample_src& a, const struct evt_sample_src& b)
+{
+    return a.index < b.index;
+}
+
 static bool is_raw_event(const std::wstring& event)
 {
     return (event.length() > 1 &&
@@ -96,6 +102,8 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
         ioctl_events_sample.push_back({ raw_event, interval });
         sampling_inverval[raw_event] = interval;
     }
+
+    std::sort(ioctl_events_sample.begin(), ioctl_events_sample.end(), sort_ioctl_events_sample);
 }
 
 void parse_events_str(std::wstring events_str,

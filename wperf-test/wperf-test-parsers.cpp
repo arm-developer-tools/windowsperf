@@ -42,7 +42,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
 {
-	TEST_CLASS(wperftest_parsers)
+	TEST_CLASS(wperftest_parsers_sampling)
 	{
 	public:
 		TEST_METHOD(test_parse_events_str_for_sample_rf)
@@ -102,20 +102,25 @@ namespace wperftest
 			Assert::AreEqual(ioctl_events_sample[2].index, (uint32_t)0xDAB);
 			Assert::AreEqual(ioctl_events_sample[2].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[3].index, (uint32_t)0xDEAD);
+			Assert::AreEqual(ioctl_events_sample[3].index, (uint32_t)0x1A2B);
 			Assert::AreEqual(ioctl_events_sample[3].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[4].index, (uint32_t)0x1A2B);
+			Assert::AreEqual(ioctl_events_sample[4].index, (uint32_t)0xDEAD);
 			Assert::AreEqual(ioctl_events_sample[4].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[5].index, (uint32_t)0xFEDCB);
+			Assert::AreEqual(ioctl_events_sample[5].index, (uint32_t)0x12345);
 			Assert::AreEqual(ioctl_events_sample[5].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[6].index, (uint32_t)0x12345);
+			Assert::AreEqual(ioctl_events_sample[6].index, (uint32_t)0xFEDCB);
 			Assert::AreEqual(ioctl_events_sample[6].interval, PARSE_INTERVAL_DEFAULT);
 		}
+	};
 
-		/****************************************************************************/
+	/****************************************************************************/
+
+	TEST_CLASS(wperftest_parsers_counting)
+	{
+	public:
 
 		TEST_METHOD(test_parse_events_str_EVT_CORE_rf_in_group)
 		{
@@ -205,7 +210,7 @@ namespace wperftest
 			std::map<enum evt_class, std::deque<struct evt_noted>> events;
 			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
 			std::wstring note;
-			struct pmu_device_cfg pmu_cfg = {0};
+			struct pmu_device_cfg pmu_cfg = { 0 };
 
 			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
 
