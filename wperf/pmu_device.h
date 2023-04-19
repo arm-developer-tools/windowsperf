@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "events.h"
 #include "metric.h"
 #include "wperf-common/iorequest.h"
 

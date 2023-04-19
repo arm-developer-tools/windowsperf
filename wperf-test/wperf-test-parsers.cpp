@@ -37,6 +37,7 @@
 #include <windows.h>
 #include "wperf/events.h"
 #include "wperf/parsers.h"
+#include "wperf/exception.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -118,11 +119,158 @@ namespace wperftest
 
 	/****************************************************************************/
 
-	TEST_CLASS(wperftest_parsers_counting)
+	TEST_CLASS(wperftest_parsers_extra_events)
 	{
 	public:
 
-		TEST_METHOD(test_parse_events_str_EVT_CORE_rf_in_group)
+		TEST_METHOD(test_parse_events_extra_1_event_OK)
+		{
+			std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+			parse_events_extra(L"name1:0x1234", extra_core_events);
+
+			Assert::AreEqual(extra_core_events[EVT_CORE].size(), (size_t)1);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].name == L"name1");
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.num == 0x1234);
+		}
+
+		TEST_METHOD(test_parse_events_extra_1_event_max_val_OK)
+		{
+			std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+			parse_events_extra(L"name1:0xffff", extra_core_events);
+
+			Assert::AreEqual(extra_core_events[EVT_CORE].size(), (size_t)1);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].name == L"name1");
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.num == 0xffff);
+		}
+
+		TEST_METHOD(test_parse_events_extra_2_events_OK)
+		{
+			std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+			parse_events_extra(L"name1:0x1234,name2:0xabcd", extra_core_events);
+
+			Assert::AreEqual(extra_core_events[EVT_CORE].size(), (size_t)2);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].name == L"name1");
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.num == 0x1234);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][1].name == L"name2");
+			Assert::IsTrue(extra_core_events[EVT_CORE][1].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][1].hdr.num == 0xabcd);
+		}
+
+		TEST_METHOD(test_parse_events_extra_3_events_OK)
+		{
+			std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+			parse_events_extra(L"first:0x12,second:FF,third:12a", extra_core_events);
+
+			Assert::AreEqual(extra_core_events[EVT_CORE].size(), (size_t)3);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].name == L"first");
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][0].hdr.num == 0x12);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][1].name == L"second");
+			Assert::IsTrue(extra_core_events[EVT_CORE][1].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][1].hdr.num == 0xff);
+
+			Assert::IsTrue(extra_core_events[EVT_CORE][2].name == L"third");
+			Assert::IsTrue(extra_core_events[EVT_CORE][2].hdr.evt_class == EVT_CORE);
+			Assert::IsTrue(extra_core_events[EVT_CORE][2].hdr.num == 0x12a);
+		}
+
+		TEST_METHOD(test_parse_events_extra_whitespace_NOK)
+		{
+			{
+				auto wrapper_whitespace_in_name = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first:0x12,second:FF, third:12a", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_whitespace_in_name);
+			}
+
+			{
+				auto wrapper_whitespace_in_num = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first: 0x12,second:FF,third:12a", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_whitespace_in_num);
+			}
+
+			{
+				auto wrapper_whitespace_tab = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first:0x12,second:FF,third:12a\t", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_whitespace_tab);
+			}
+		}
+
+		TEST_METHOD(test_parse_events_extra_delim_NOK)
+		{
+			{
+				auto wrapper_no_delim_in_name = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first0x12,second:FF,third:12a", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_no_delim_in_name);
+			}
+
+			{
+				auto wrapper_no_delim_in_num = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first:0x12,second:FF,0x1234", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_no_delim_in_num);
+			}
+		}
+
+		TEST_METHOD(test_parse_events_extra_format_misc_NOK)
+		{
+			{
+				auto wrapper_empty_str = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_empty_str);
+			}
+
+			{
+				auto wrapper_extra_delim = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first:0x12:", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_delim);
+			}
+
+			{
+				auto wrapper_extra_large_num = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"first:0xffffaaaa", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_large_num);
+			}
+
+			{
+				auto wrapper_extra_large_num_2 = [=]() {
+					std::map<enum evt_class, std::vector<struct extra_event>> extra_core_events;
+					parse_events_extra(L"name1:0x1000,name2:0x10000", extra_core_events);;
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_large_num_2);
+			}
+		}
+	};
+
+	/****************************************************************************/
+
+	TEST_CLASS(wperftest_parsers_counting)
+	{
+		public:
+			TEST_METHOD(test_parse_events_str_EVT_CORE_rf_in_group)
 		{
 			std::map<enum evt_class, std::deque<struct evt_noted>> events;
 			std::map<enum evt_class, std::vector<struct evt_noted>> groups;

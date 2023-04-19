@@ -212,7 +212,8 @@ void pmu_device::timeline_init()
         if (all_cores_p() == false)
             prefix = "wperf_core_" + std::to_string(cores_idx[0]) + "_";
 
-        std::string filename = prefix + timestamp + MultiByteFromWideString(evt_class_name[e]) + ".csv";
+        std::string filename = prefix + timestamp +
+            MultiByteFromWideString(pmu_events::get_evt_class_name(static_cast<enum evt_class>(e))) + ".csv";
 
         if (do_verbose)
             m_out.GetOutputStream() << L"timeline file: " << L"'" << std::wstring(filename.begin(), filename.end()) << L"'" << std::endl;
@@ -460,7 +461,7 @@ void pmu_device::timeline_params(const std::map<enum evt_class, std::vector<stru
         timeline_outfile << L"Vendor," << vendor_name;
         timeline_outfile << std::endl;
 
-        timeline_outfile << L"Event class," << evt_class_name[e_class];
+        timeline_outfile << L"Event class," << pmu_events::get_evt_class_name(e_class);
         timeline_outfile << std::endl;
     }
 }
@@ -531,9 +532,9 @@ void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<stru
         
         for (uint32_t idx : iter)
         {
-            timeline_outfile << evt_class_name[e_class] << L" " << idx / i_inc << L",";
+            timeline_outfile << pmu_events::get_evt_class_name(e_class) << L" " << idx / i_inc << L",";
             for (uint32_t i = 0; i < comma_num2; i++)
-                timeline_outfile << evt_class_name[e_class] << L" " << idx / i_inc << L",";
+                timeline_outfile << pmu_events::get_evt_class_name(e_class) << L" " << idx / i_inc << L",";
             idx += i_inc;
         }
         timeline_outfile << std::endl;
@@ -547,7 +548,7 @@ void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<stru
                 {
                     if (unit_events[idx].type == EVT_PADDING)
                         continue;
-                    timeline_outfile << get_event_name(unit_events[idx].index, e_class) << L",";
+                    timeline_outfile << pmu_events::get_event_name(unit_events[idx].index, e_class) << L",";
                 }
             }
             else if (multiplexing)
@@ -557,7 +558,7 @@ void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<stru
                 {
                     if (unit_events[idx].type == EVT_PADDING)
                         continue;
-                    timeline_outfile << get_event_name(unit_events[idx].index) << L",sched_times,";
+                    timeline_outfile << pmu_events::get_event_name(unit_events[idx].index) << L",sched_times,";
                 }
             }
             else
@@ -567,7 +568,7 @@ void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<stru
                 {
                     if (unit_events[idx].type == EVT_PADDING)
                         continue;
-                    timeline_outfile << get_event_name(unit_events[idx].index) << L",";
+                    timeline_outfile << pmu_events::get_event_name(unit_events[idx].index) << L",";
                 }
             }
 
@@ -814,7 +815,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
                 {
                     if (evt->event_idx == CYCLE_EVT_IDX) {
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
@@ -822,7 +823,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
                     }
                     else {
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
                         col_event_note.push_back(events[j - 1].note);
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
@@ -846,13 +847,13 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
                 {
                     if (evt->event_idx == CYCLE_EVT_IDX) {
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                     }
                     else {
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
                         col_event_note.push_back(events[j - 1].note);
                     }
@@ -916,14 +917,14 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
                 col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
             }
             else {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
                 col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
@@ -933,13 +934,13 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
             }
             else {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
             }
@@ -1046,7 +1047,7 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
                     if (evt->event_idx == CYCLE_EVT_IDX) {
 
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
@@ -1054,7 +1055,7 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
                     }
                     else {
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                         col_event_note.push_back(events[j - 1].note);
                         col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
@@ -1079,13 +1080,13 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
                     if (evt->event_idx == CYCLE_EVT_IDX) {
 
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(L"fixed");
                         col_event_note.push_back(L"e");
                     }
                     else {
                         col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                        col_event_name.push_back(get_event_name((uint16_t)evt->event_idx));
+                        col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx));
                         col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                         col_event_note.push_back(events[j - 1].note);
                     }
@@ -1213,14 +1214,14 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
                 col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
             }
             else {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
                 col_scaled_value.push_back(IntToDecWithCommas(entry->scaled_value));
@@ -1230,13 +1231,13 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
         {
             if (entry->event_idx == CYCLE_EVT_IDX) {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(L"fixed");
                 col_event_note.push_back(L"e");
             }
             else {
                 col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-                col_event_name.push_back(get_event_name((uint16_t)entry->event_idx));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx));
                 col_event_idx.push_back(IntToHexWideString(entry->event_idx));
                 col_event_note.push_back(events[j - 1].note);
             }
@@ -1409,7 +1410,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
             {
                 col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
                 col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLK));
                 col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                 col_event_note.push_back(clk_events[j].note);
             }
@@ -1432,7 +1433,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
             {
                 col_pmu_id.push_back(L"dmc " + std::to_wstring(i));
                 col_counter_value.push_back(IntToDecWithCommas(evt->value));
-                col_event_name.push_back(get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2));
+                col_event_name.push_back(pmu_events::get_event_name((uint16_t)evt->event_idx, EVT_DMC_CLKDIV2));
                 col_event_idx.push_back(IntToHexWideString(evt->event_idx));
                 col_event_note.push_back(clkdiv2_events[j].note);
             }
@@ -1447,7 +1448,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
         struct agg_entry* entry = overall_clk.get() + j;
         col_pmu_id.push_back(L"overall");
         col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-        col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
+        col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLK));
         col_event_idx.push_back(IntToHexWideString(entry->event_idx));
         col_event_note.push_back(clk_events[j].note);
     }
@@ -1457,7 +1458,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
         struct agg_entry* entry = overall_clkdiv2.get() + j;
         col_pmu_id.push_back(L"overall");
         col_counter_value.push_back(IntToDecWithCommas(entry->counter_value));
-        col_event_name.push_back(get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
+        col_event_name.push_back(pmu_events::get_event_name((uint16_t)entry->event_idx, EVT_DMC_CLKDIV2));
         col_event_idx.push_back(IntToHexWideString(entry->event_idx));
         col_event_note.push_back(clkdiv2_events[j].note);
     }
@@ -1575,9 +1576,9 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
 
 void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
 {
-    // Print pre-defined events
+    
     {
-        // Query for available events
+        // Print pre-defined events:
         std::map<enum evt_class, std::vector<uint16_t>> events;
         events_query(events);
         std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
@@ -1588,11 +1589,22 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
 
         for (const auto& a : events)
         {
-            const wchar_t* prefix = evt_name_prefix[a.first];
+            const wchar_t* prefix = pmu_events::get_evt_name_prefix(a.first);
             for (auto b : a.second) {
-                col_alias_name.push_back(std::wstring(prefix) + std::wstring(get_event_name(b, a.first)));
-                col_raw_index.push_back(IntToHexWideString(b, 2));
-                col_event_type.push_back(L"[" + std::wstring(evt_class_name[a.first]) + std::wstring(L" PMU event") + L"]");
+                col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events::get_event_name(b, a.first)));
+                col_raw_index.push_back(IntToHexWideString(b, 4));
+                col_event_type.push_back(L"[" + std::wstring(pmu_events::get_evt_class_name(a.first)) + std::wstring(L" PMU event") + L"]");
+            }
+        }
+
+        // Print extra-events specified with -E <filename> or -E "e:v,e:v,e:v"
+        for (const auto& a : pmu_events::extra_events)
+        {
+            const wchar_t* prefix = pmu_events::get_evt_name_prefix(a.first);
+            for (const struct extra_event& b : a.second) {
+                col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events::get_event_name(b.hdr.num, a.first)));
+                col_raw_index.push_back(IntToHexWideString(b.hdr.num, 4));
+                col_event_type.push_back(L"[" + std::wstring(pmu_events::get_evt_class_name(a.first)) + std::wstring(L" PMU event*") + L"]");
             }
         }
 
@@ -1603,7 +1615,6 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
 
         m_globalListJSON.m_Events = table;
         m_out.Print(table);
-
     }
 
     // Print supported metrics

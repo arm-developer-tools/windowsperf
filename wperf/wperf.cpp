@@ -158,12 +158,14 @@ wmain(
     for (int i = 1; i < argc; i++)
         raw_args.push_back(argv[i]);
 
-    try{
+    try
+    {
         struct pmu_device_cfg pmu_cfg;
         pmu_device.get_pmu_device_cfg(pmu_cfg);
-        request.init(raw_args, pmu_cfg, pmu_device.builtin_metrics);
+        request.init(raw_args, pmu_cfg, pmu_device.builtin_metrics, pmu_events::extra_events);
         pmu_device.do_verbose = request.do_verbose;
-    } catch(std::exception&)
+    }
+    catch(std::exception&)
     {
         exit_code = EXIT_FAILURE;
         goto clean_exit;
@@ -679,7 +681,7 @@ wmain(
                         table.InsertExtra(L"interval", std::to_wstring(request.sampling_inverval[prev_evt_src]));
                         table.InsertExtra(L"printed_sample_num", std::to_wstring(printed_sample_num));
                         m_out.Print(table);
-                        table.m_event = GlobalStringType(get_event_name(static_cast<uint16_t>(prev_evt_src)));
+                        table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
                         m_globalSamplingJSON.m_samplingTables.push_back(table);
                         col_overhead.clear();
                         col_count.clear();
@@ -695,7 +697,7 @@ wmain(
 
                     m_out.GetOutputStream()
                         << L"======================== sample source: "
-                        << get_event_name(static_cast<uint16_t>(a.event_src)) << L", top "
+                        << pmu_events::get_event_name(static_cast<uint16_t>(a.event_src)) << L", top "
                         << std::dec << request.sample_display_row
                         << L" hot functions ========================" << std::endl;
 
@@ -742,7 +744,7 @@ wmain(
             table.InsertExtra(L"interval", std::to_wstring(request.sampling_inverval[prev_evt_src]));
             table.InsertExtra(L"printed_sample_num", std::to_wstring(printed_sample_num));
             m_out.Print(table);
-            table.m_event = GlobalStringType(get_event_name(static_cast<uint16_t>(prev_evt_src)));
+            table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
             m_globalSamplingJSON.m_samplingTables.push_back(table);
             m_globalSamplingJSON.sample_display_row = request.sample_display_row;
 

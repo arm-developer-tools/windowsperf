@@ -578,25 +578,9 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     context->event_num = core_event_num;
     KdPrint(("%!FUNC! enqueuing for action %d", context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
-    //WdfWorkItemFlush(queueContext->WorkItem);
-   
 
     return STATUS_SUCCESS;
 }
-
-// Execution DO_FUNC on CORE_IDX, then switch back
-//static VOID per_core_exec(PQUEUE_CONTEXT queueContext, UINT32 core_idx, VOID(*do_func)(VOID), VOID(*do_func2)(VOID))
-//{
-//    PWORK_ITEM_CTXT context;
-//    context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
-//    context->action = PMU_CTL_START;
-//    context->do_func = do_func;
-//    context->do_func2 = do_func2;
-//    context->core_idx = core_idx;
-//    KdPrint(("%!FUNC! %!LINE! enqueuing (%d) for action %d", core_idx, context->action));
-//    WdfWorkItemEnqueue(queueContext->WorkItem);
-//    //WdfWorkItemFlush(queueContext->WorkItem);
-//}
 
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 {
@@ -959,27 +943,6 @@ NTSTATUS deviceControl(
         if (ctl_flags & CTL_FLAG_DSU)
             dsu_func = dsu_ctl_funcs[action];
 
-        //int last_cluster = -1;
-        //for (auto k = 0; k < cores_count; k++)
-        //{
-        //    int i = ctl_req->cores_idx.cores_no[k];
-        //    VOID(*dsu_func2)(VOID) = dsu_func;
-
-        //    if (ctl_flags & CTL_FLAG_DSU)
-        //    {
-        //        int cluster_no = i / dsu_sizeCluster;
-
-        //        // This works only if ctl_req->cores_idx.cores_no[] is sorted
-        //        // We will only cofigure one core in cluster with per_core_exec
-        //        if (last_cluster != cluster_no)
-        //            last_cluster = cluster_no;
-        //        else
-        //            dsu_func2 = NULL;
-        //    }
-
-        //    if (core_func || dsu_func2)
-        //        per_core_exec(queueContext, i, core_func, dsu_func2);
-        //}
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
         context->action = PMU_CTL_START;

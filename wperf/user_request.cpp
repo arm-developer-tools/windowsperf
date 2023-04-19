@@ -28,7 +28,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <filesystem>
 #include <numeric>
+#include <sstream>
 #include <cwctype>
 #include <assert.h>
 #include "user_request.h"
@@ -65,6 +67,8 @@ usage: wperf [options]
     -sample-display-long  Display decorated symbol names.
     -sample-display-row   Set how many samples you want to see in the summary (50 by default).
     -C config_file        Provide customized config file which describes metrics etc.
+    -E config_file        Provide customized config file which describes custom events.
+    -E event_list         Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
     -c core_idx           Profile on the specified core. Skip -c to count on all cores.
     -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
     -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
@@ -89,7 +93,9 @@ user_request::user_request() : do_list{ false }, do_count(false), do_kernel(fals
     sample_display_row(50), sample_display_short(true), count_timeline(0),
     count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
 
-void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg, std::map<std::wstring, metric_desc>& builtin_metrics)
+void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+    std::map<std::wstring, metric_desc>& builtin_metrics,
+    std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
 {
     std::map<enum evt_class, std::deque<struct evt_noted>> events;
     std::map<enum evt_class, std::vector<struct evt_noted>> groups;
@@ -99,7 +105,7 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
     cores_idx.resize(pmu_cfg.core_num);
     std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
 
-    parse_raw_args(raw_args, pmu_cfg, events, groups, builtin_metrics);
+    parse_raw_args(raw_args, pmu_cfg, events, groups, builtin_metrics, extra_events);
 
     // Deduce image name and PDB file name from PE file name
     if (sample_pe_file.size())
@@ -141,7 +147,8 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
 void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<enum evt_class, std::deque<struct evt_noted>>& events,
     std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
-    std::map<std::wstring, metric_desc>& builtin_metrics)
+    std::map<std::wstring, metric_desc>& builtin_metrics,
+    std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
 {
     bool waiting_events = false;
     bool waiting_metrics = false;
@@ -149,7 +156,8 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_dmc_idx = false;
     bool waiting_duration = false;
     bool waiting_interval = false;
-    bool waiting_config = false;
+    bool waiting_metric_config = false;
+    bool waiting_events_config = false;
     bool waiting_filename = false;
     bool waiting_image_name = false;
     bool waiting_pe_file = false;
@@ -159,16 +167,29 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
     for (const auto& a : raw_args)
     {
-        if (waiting_config)
+        if (waiting_metric_config)
         {
-            waiting_config = false;
+            waiting_metric_config = false;
             load_config_metrics(a, pmu_cfg);
             continue;
         }
 
         if (a == L"-C")
         {
-            waiting_config = true;
+            waiting_metric_config = true;
+            continue;
+        }
+
+        if (waiting_events_config)
+        {
+            waiting_events_config = false;
+            load_config_events(a, extra_events);
+            continue;
+        }
+
+        if (a == L"-E")
+        {
+            waiting_events_config = true;
             continue;
         }
     }
@@ -184,9 +205,15 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
     for (const auto& a : raw_args)
     {
-        if (waiting_config)
+        if (waiting_metric_config)
         {
-            waiting_config = false;
+            waiting_metric_config = false;
+            continue;
+        }
+
+        if (waiting_events_config)
+        {
+            waiting_events_config = false;
             continue;
         }
 
@@ -340,9 +367,15 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-C")
+        if (a == L"-C") // Skip this one as it was handled before any other args
         {
-            waiting_config = true;
+            waiting_metric_config = true;
+            continue;
+        }
+
+        if (a == L"-E") // Skip this one as it was handled before any other args
+        {
+            waiting_events_config = true;
             continue;
         }
 
@@ -502,7 +535,7 @@ void user_request::show_events()
 
     for (const auto& a : ioctl_events)
     {
-        m_out.GetOutputStream() << L"  " << std::setw(4) << a.second.size() << std::setw(18) << evt_class_name[a.first] << L" events:";
+        m_out.GetOutputStream() << L"  " << std::setw(4) << a.second.size() << std::setw(18) << pmu_events::get_evt_class_name(a.first) << L" events:";
         for (const auto& b : a.second)
             m_out.GetOutputStream() << L" " << IntToHexWideString(b.index);
         m_out.GetOutputStream() << std::endl;
@@ -514,10 +547,34 @@ void user_request::check_events(enum evt_class evt, int max)
     if (ioctl_events.count(evt) &&
         ioctl_events[evt].size() > MAX_MANAGED_CORE_EVENTS)
     {
-        m_out.GetErrorOutputStream() << L"error: too many " << evt_class_name[evt] << L" (including padding) events: "
+        m_out.GetErrorOutputStream() << L"error: too many " << pmu_events::get_evt_class_name(evt) << L" (including padding) events: "
             << ioctl_events[evt].size() << L" > " << max << std::endl;
         throw fatal_exception("ERROR_MAX_EVENTS");
     }
+}
+
+// Please note that 'config_name' here is a file name or just command line with extra events
+void user_request::load_config_events(std::wstring config_name,
+    std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
+{
+    // If config_name is a openable file: parse file content
+    if (std::filesystem::exists(config_name))
+    {
+        std::wifstream  config_file(config_name);
+
+        if (!config_file.is_open())
+        {
+            m_out.GetErrorOutputStream() << L"open config file '" << config_name << "' failed" << std::endl;
+            throw fatal_exception("ERROR_CONFIG_FILE");
+        }
+
+        for (std::wstring line; std::getline(config_file, line); )
+        {
+            parse_events_extra(line, extra_events);
+        }
+    }
+    else
+        parse_events_extra(config_name, extra_events);  // config_name is "e:v,e:v,e:v" string
 }
 
 void user_request::load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg)

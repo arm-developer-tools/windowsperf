@@ -69,6 +69,25 @@ namespace wperftest
 			Assert::AreEqual(IntToHexWideString(ui16, 10), std::wstring(L"0x0000000256"));
 		}
 
+		TEST_METHOD(test_IntToHexWideStringNoPrefix)
+		{
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0, 4), std::wstring(L"0000"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(1, 4), std::wstring(L"0001"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(256, 4), std::wstring(L"0100"));
+		}
+
+		TEST_METHOD(test_IntToHexWideStringNoPrefix_wchar_t)
+		{
+			wchar_t wchar = 0x123;
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 4), std::wstring(L"0123"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 10), std::wstring(L"0000000123"));
+
+			uint16_t ui16 = 0x256;
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 4), std::wstring(L"0256"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 10), std::wstring(L"0000000256"));
+		}
+
+
 		TEST_METHOD(test_IntToDecWideString)
 		{
 			Assert::AreEqual(IntToDecWideString(0, 1), std::wstring(L"0"));

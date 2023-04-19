@@ -44,35 +44,35 @@ namespace wperftest
 
 		TEST_METHOD(test_get_core_event_index)
 		{
-			Assert::AreEqual(get_core_event_index(L"sw_incr"), 0x0);
-			Assert::AreEqual(get_core_event_index(L"Sw_incr"), 0x0);
-			Assert::AreEqual(get_core_event_index(L"SW_INCR"), 0x0);
+			Assert::AreEqual(pmu_events::get_core_event_index(L"sw_incr"), 0x0);
+			Assert::AreEqual(pmu_events::get_core_event_index(L"Sw_incr"), 0x0);
+			Assert::AreEqual(pmu_events::get_core_event_index(L"SW_INCR"), 0x0);
 
-			Assert::AreEqual(get_core_event_index(L"unaligned_ldst_retired"), 0x0F);
-			Assert::AreEqual(get_core_event_index(L"unalIGNED_Ldst_retired"), 0x0F);
-			Assert::AreEqual(get_core_event_index(L"UNALIGNED_LDST_RETIRED"), 0x0F);
+			Assert::AreEqual(pmu_events::get_core_event_index(L"unaligned_ldst_retired"), 0x0F);
+			Assert::AreEqual(pmu_events::get_core_event_index(L"unalIGNED_Ldst_retired"), 0x0F);
+			Assert::AreEqual(pmu_events::get_core_event_index(L"UNALIGNED_LDST_RETIRED"), 0x0F);
 		}
 
 		TEST_METHOD(test_get_dmc_clk_event_index)
 		{
-			Assert::AreEqual(get_dmc_clk_event_index(L"cycle_count"), 0x000);
-			Assert::AreEqual(get_dmc_clk_event_index(L"cYcle_Count"), 0x000);
-			Assert::AreEqual(get_dmc_clk_event_index(L"CYCLE_COUNT"), 0x000);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"cycle_count"), 0x000);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"cYcle_Count"), 0x000);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"CYCLE_COUNT"), 0x000);
 
-			Assert::AreEqual(get_dmc_clk_event_index(L"request"), 0x01);
-			Assert::AreEqual(get_dmc_clk_event_index(L"request"), 0x01);
-			Assert::AreEqual(get_dmc_clk_event_index(L"REQUEST"), 0x01);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"request"), 0x01);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"request"), 0x01);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"REQUEST"), 0x01);
 
-			Assert::AreEqual(get_dmc_clk_event_index(L"upload_stal"), 0x02);
-			Assert::AreEqual(get_dmc_clk_event_index(L"Upload_Stal"), 0x02);
-			Assert::AreEqual(get_dmc_clk_event_index(L"UPLOAD_STAL"), 0x02);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"upload_stal"), 0x02);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"Upload_Stal"), 0x02);
+			Assert::AreEqual(pmu_events::get_dmc_clk_event_index(L"UPLOAD_STAL"), 0x02);
 		}
 
 		TEST_METHOD(test_get_dmc_clkdiv2_event_index)
 		{
-			Assert::AreEqual(get_dmc_clkdiv2_event_index(L"cycle_count"), 0x0);
-			Assert::AreEqual(get_dmc_clkdiv2_event_index(L"Allocate"), 0x01);
-			Assert::AreEqual(get_dmc_clkdiv2_event_index(L"QUEUE_DEPTH"), 0x02);
+			Assert::AreEqual(pmu_events::get_dmc_clkdiv2_event_index(L"cycle_count"), 0x0);
+			Assert::AreEqual(pmu_events::get_dmc_clkdiv2_event_index(L"Allocate"), 0x01);
+			Assert::AreEqual(pmu_events::get_dmc_clkdiv2_event_index(L"QUEUE_DEPTH"), 0x02);
 		}
 	};
 }

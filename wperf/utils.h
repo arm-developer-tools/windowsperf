@@ -77,6 +77,23 @@ std::wstring IntToHexWideString(T Value, size_t Width = 4) {
 }
 
 /// <summary>
+/// Converts integer VALUE to hex WSTRING, e.g. 100 -> "0064" where
+/// WIDTH is total digit count (excluding 0x).
+/// </summary>
+/// <param name="Value">Value to convert to hex string</param>
+/// <param name="Width">Total digits to fill with</param>
+template<typename T>
+std::wstring IntToHexWideStringNoPrefix(T Value, size_t Width = 4) {
+    static_assert(std::is_integral<T>::value, "Integral type required in Value<T>");
+    std::wstringstream ss;
+    if (std::is_same<T, wchar_t>::value)
+        ss << std::setfill(L'0') << std::setw(Width) << std::hex << (uint32_t)Value;
+    else
+        ss << std::setfill(L'0') << std::setw(Width) << std::hex << Value;
+    return std::wstring(ss.str());
+}
+
+/// <summary>
 /// Function tokenizes string and returns vector in INT values.
 /// Example string input:
 ///
