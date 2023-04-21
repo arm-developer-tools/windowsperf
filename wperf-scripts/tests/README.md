@@ -4,7 +4,7 @@
 
 # Introduction
 
-This set of Python scripts is using [pyest](https://docs.pytest.org/) library to drive functional testing of [wperf]{../../README.md}.
+This set of Python scripts is using [pyest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md).
 
 ## Testing prerequisites
 

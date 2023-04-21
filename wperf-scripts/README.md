@@ -2,12 +2,30 @@
 
 [[_TOC_]]
 
-# arch_events_update.py
+# How to install all dependencies for Python scripts in this directory
+
+Use the command below to install the packages according to the configuration file `requirements.txt`.
+
+```
+>pip install -r requirements.txt
+```
+
+# Script library
+
+## Tests
+
+`wperf` regression tests written with Python (and `pytest). See [README.md](tests/README.md) for more details.
+
+## wperf-devcon PS1 script
+
+This script is wrapper for `devcon` command line tool. See [README.md](devcon/README.md) for more details.
+
+## arch_events_update.py
 
 `arch_events_update.py` script can fetch PMU events stored in [ARM-software/data/pmu](https://github.com/ARM-software/data/blob/master/pmu/) and output in format compatible with [armv8-arch-events.def](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-common/armv8-arch-events.def).
 
 ```
-> python3 arch_events_update.py
+>python3 arch_events_update.py
 usage: arch_events_update.py [-h] [-l] [-c CPU] [-o OUTPUT] [--license LICENSE]
 
 update the cpu's pmu events file!
