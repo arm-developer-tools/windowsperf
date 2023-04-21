@@ -1706,7 +1706,7 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [midr_value]");
     col_test_result.push_back(IntToHexWideString(hw_cfg.midr_value, 20));
 
-    // Tests for event scheduling
+    // Tests General Purpose Counters detection
     col_test_name.push_back(L"gpc_nums[EVT_CORE]");
     col_test_result.push_back(std::to_wstring(gpc_nums[EVT_CORE]));
     col_test_name.push_back(L"gpc_nums[EVT_DSU]");
@@ -1715,8 +1715,20 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_result.push_back(std::to_wstring(gpc_nums[EVT_DMC_CLK]));
     col_test_name.push_back(L"gpc_nums[EVT_DMC_CLKDIV2]");
     col_test_result.push_back(std::to_wstring(gpc_nums[EVT_DMC_CLKDIV2]));
+
+    // Tests Fixed Purpose Counters detection
+    col_test_name.push_back(L"fpc_nums[EVT_CORE]");
+    col_test_result.push_back(std::to_wstring(fpc_nums[EVT_CORE]));
+    col_test_name.push_back(L"fpc_nums[EVT_DSU]");
+    col_test_result.push_back(std::to_wstring(fpc_nums[EVT_DSU]));
+    col_test_name.push_back(L"fpc_nums[EVT_DMC_CLK]");
+    col_test_result.push_back(std::to_wstring(fpc_nums[EVT_DMC_CLK]));
+    col_test_name.push_back(L"fpc_nums[EVT_DMC_CLKDIV2]");
+    col_test_result.push_back(std::to_wstring(fpc_nums[EVT_DMC_CLKDIV2]));
+
+    // Tests for event scheduling
     std::wstring evt_indexes, evt_notes;
-    for (auto e : ioctl_events[EVT_CORE])
+    for (const auto& e : ioctl_events[EVT_CORE])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
         evt_notes += e.note + L",";
@@ -1735,7 +1747,7 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_result.push_back(evt_notes);
     evt_indexes.clear();
     evt_notes.clear();
-    for (auto e : ioctl_events[EVT_DSU])
+    for (const auto& e : ioctl_events[EVT_DSU])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
         evt_notes += e.note + L",";
@@ -1754,7 +1766,7 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_result.push_back(evt_notes);
     evt_indexes.clear();
     evt_notes.clear();
-    for (auto e : ioctl_events[EVT_DMC_CLK])
+    for (const auto& e : ioctl_events[EVT_DMC_CLK])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
         evt_notes += e.note + L",";
@@ -1773,7 +1785,7 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_result.push_back(evt_notes);
     evt_indexes.clear();
     evt_notes.clear();
-    for (auto e : ioctl_events[EVT_DMC_CLKDIV2])
+    for (const auto& e : ioctl_events[EVT_DMC_CLKDIV2])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
         evt_notes += e.note + L",";
