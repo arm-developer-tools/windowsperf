@@ -90,7 +90,7 @@ namespace wperftest
 			std::vector<struct evt_sample_src> ioctl_events_sample;
 			std::map<uint32_t, uint32_t> sampling_interval;
 
-			parse_events_str_for_sample(L"ra,r3c,rdab,rdead,r1a2b,rfedcb,r12345", ioctl_events_sample, sampling_interval);
+			parse_events_str_for_sample(L"ra,r3c,rdab,rdead,r1a2b,rfedc,r1234", ioctl_events_sample, sampling_interval);
 
 			Assert::AreEqual(ioctl_events_sample.size(), (size_t)7);
 
@@ -103,17 +103,44 @@ namespace wperftest
 			Assert::AreEqual(ioctl_events_sample[2].index, (uint32_t)0xDAB);
 			Assert::AreEqual(ioctl_events_sample[2].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[3].index, (uint32_t)0x1A2B);
+			Assert::AreEqual(ioctl_events_sample[3].index, (uint32_t)0x1234);
 			Assert::AreEqual(ioctl_events_sample[3].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[4].index, (uint32_t)0xDEAD);
+			Assert::AreEqual(ioctl_events_sample[4].index, (uint32_t)0x1A2B);
 			Assert::AreEqual(ioctl_events_sample[4].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[5].index, (uint32_t)0x12345);
+			Assert::AreEqual(ioctl_events_sample[5].index, (uint32_t)0xDEAD);
 			Assert::AreEqual(ioctl_events_sample[5].interval, PARSE_INTERVAL_DEFAULT);
 
-			Assert::AreEqual(ioctl_events_sample[6].index, (uint32_t)0xFEDCB);
+			Assert::AreEqual(ioctl_events_sample[6].index, (uint32_t)0xFEDC);
 			Assert::AreEqual(ioctl_events_sample[6].interval, PARSE_INTERVAL_DEFAULT);
+		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_misc)
+		{
+			{
+				std::vector<struct evt_sample_src> ioctl_events_sample;
+				std::map<uint32_t, uint32_t> sampling_interval;
+				parse_events_str_for_sample(L"rffff", ioctl_events_sample, sampling_interval);
+			}
+
+			{
+				auto wrapper_extra_large_num = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"r10000", ioctl_events_sample, sampling_interval);
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_large_num);
+			}
+
+			{
+				auto wrapper_extra_large_num_2 = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"r1,r10000", ioctl_events_sample, sampling_interval);
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_large_num_2);
+			}
 		}
 	};
 
@@ -368,6 +395,21 @@ namespace wperftest
 			Assert::AreEqual(events[EVT_CORE][0].index, (uint16_t)0x1B);
 		}
 
+		TEST_METHOD(test_parse_events_str_raw_event_max_num)
+		{
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"rffff", events, groups, note, pmu_cfg);
+
+			Assert::AreEqual(events[EVT_CORE].size(), (size_t)1);
+			Assert::AreEqual(events[EVT_CORE][0].index, (uint16_t)0xFFFF);
+		}
+
 		TEST_METHOD(test_parse_events_str_EVT_CORE_r_7_events)
 		{
 			std::map<enum evt_class, std::deque<struct evt_noted>> events;
@@ -529,6 +571,37 @@ namespace wperftest
 			Assert::AreEqual(events[EVT_DMC_CLKDIV2].size(), (size_t)1);
 
 			Assert::AreEqual(events[EVT_DMC_CLKDIV2][0].index, (uint16_t)0x12);
+		}
+
+		TEST_METHOD(test_parse_events_str_misc)
+		{
+			{
+				auto wrapper_extra_large_num = [=]() {
+					std::map<enum evt_class, std::deque<struct evt_noted>> events;
+					std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+					std::wstring note;
+					struct pmu_device_cfg pmu_cfg = { 0 };
+
+					pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+
+					parse_events_str(L"r10000", events, groups, note, pmu_cfg);
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_large_num);
+			}
+
+			{
+				auto wrapper_extra_large_num_2 = [=]() {
+					std::map<enum evt_class, std::deque<struct evt_noted>> events;
+					std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+					std::wstring note;
+					struct pmu_device_cfg pmu_cfg = { 0 };
+
+					pmu_cfg.gpc_nums[EVT_CORE] = 6;	// parse_events_str only uses gpc_nums[]
+
+					parse_events_str(L"r1,r10000", events, groups, note, pmu_cfg);
+				};
+				Assert::ExpectException<fatal_exception>(wrapper_extra_large_num_2);
+			}
 		}
 	};
 }

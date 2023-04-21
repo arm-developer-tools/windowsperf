@@ -48,6 +48,33 @@ static bool sort_ioctl_events_sample(const struct evt_sample_src& a, const struc
     return a.index < b.index;
 }
 
+static uint16_t get_raw_event_index(std::wstring event_num_str, int Base)
+{
+    uint16_t event_num;
+
+    try
+    {
+        int val = std::stoi(event_num_str, NULL, Base);
+
+        if (val > std::numeric_limits<uint16_t>::max())
+            throw std::out_of_range("extra event value out of range");
+
+        event_num = static_cast<uint16_t>(val);
+    }
+    catch (const std::invalid_argument& e)
+    {
+        m_out.GetErrorOutputStream() << e.what() << L" in " << event_num_str << std::endl;
+        throw fatal_exception("ERROR_EXTRA");
+    }
+    catch (const std::out_of_range& e)
+    {
+        m_out.GetErrorOutputStream() << e.what() << L" in " << event_num_str << std::endl;
+        throw fatal_exception("ERROR_EXTRA");
+    }
+
+    return event_num;
+}
+
 static bool is_raw_event(const std::wstring& event)
 {
     return (event.length() > 1 &&
@@ -59,7 +86,7 @@ static void push_raw_extra_event(uint16_t raw_event, enum evt_class e_class)
 {
     if (pmu_events::extra_events.count(e_class)
         && std::any_of(pmu_events::extra_events[e_class].begin(),
-            pmu_events::extra_events[e_class].begin(),
+            pmu_events::extra_events[e_class].end(),
             [raw_event](const auto& e) { return e.hdr.num == raw_event; }))
         return;
 
@@ -119,39 +146,24 @@ void parse_events_extra(std::wstring events_str, std::map<enum evt_class, std::v
                 throw fatal_exception("ERROR_EXTRA");
             }
 
-            try
-            {
-                int val = std::stoi(event_num_str, NULL, 16);
-
-                if (val > std::numeric_limits<uint16_t>::max())
-                    throw std::out_of_range("extra event value out of range");
-
-                event_num = static_cast<uint16_t>(val);
-            }
-            catch (const std::invalid_argument& e)
-            {
-                m_out.GetErrorOutputStream() << e.what() << L" in " << event << std::endl;
-                throw fatal_exception("ERROR_EXTRA");
-            }
-            catch (const std::out_of_range& e)
-            {
-                m_out.GetErrorOutputStream() << e.what() << L" in " << event << std::endl;
-                throw fatal_exception("ERROR_EXTRA");
-            }
+            event_num = get_raw_event_index(event_num_str, 16);
             
-            enum evt_class cls = EVT_CORE;
+            enum evt_class e_class = EVT_CORE;
 
             for (int e = EVT_CLASS_FIRST + 1; e < EVT_CLASS_NUM; e++)
             {
                 std::wstring prefix = pmu_events::get_evt_name_prefix(static_cast<enum evt_class>(e));
                 if (CaseInsensitiveWStringStartsWith(event_name, prefix))
                 {
-                    cls = pmu_events::get_event_class_from_prefix(WStringToLower(prefix));
+                    e_class = pmu_events::get_event_class_from_prefix(WStringToLower(prefix));
                     break;
                 }
             }
 
-            events[cls].push_back( { cls, event_num, WStringToLower(event_name)} );
+            if (std::any_of(events[e_class].begin(),
+                events[e_class].end(),
+                [event_num](const auto& e) { return e.hdr.num == event_num; }) == false)
+                events[e_class].push_back( { e_class, event_num, WStringToLower(event_name)} );
         }
     }
 }
@@ -164,7 +176,8 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
 
     while (std::getline(event_stream, event, L','))
     {
-        uint32_t raw_event, interval = PARSE_INTERVAL_DEFAULT;
+        uint16_t raw_event;
+        uint32_t interval = PARSE_INTERVAL_DEFAULT;
         size_t delim_pos = event.find(L":");
         std::wstring str1;
 
@@ -180,11 +193,13 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
 
         if (std::iswdigit(str1[0]))
         {
-            raw_event = static_cast<uint32_t>(std::stoi(str1, nullptr, 0));
+            raw_event = get_raw_event_index(str1, 0);
+            push_raw_extra_event(raw_event, EVT_CORE);
         }
         else if (is_raw_event(str1))
         {
-            raw_event = static_cast<uint32_t>(std::stoi(str1.substr(1, std::string::npos), NULL, 16));
+            raw_event = get_raw_event_index(str1.substr(1, std::string::npos), 16);
+            push_raw_extra_event(raw_event, EVT_CORE);
         }
         else
         {
@@ -195,14 +210,15 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
                 throw fatal_exception("ERROR_EVENT_SAMPLE");
             }
 
-            raw_event = static_cast<uint32_t>(idx);
+            raw_event = static_cast<uint16_t>(idx);
         }
 
         // convert to fixed cycle event to save one GPC
         if (raw_event == 0x11)
-            raw_event = CYCLE_EVT_IDX;
+            ioctl_events_sample.push_back({ CYCLE_EVT_IDX, interval });
+        else
+            ioctl_events_sample.push_back({ raw_event, interval });
 
-        ioctl_events_sample.push_back({ raw_event, interval });
         sampling_inverval[raw_event] = interval;
     }
 
@@ -253,7 +269,7 @@ void parse_events_str(std::wstring events_str,
         }
         else if (is_raw_event(event))
         {
-            raw_event = static_cast<uint16_t>(std::stoi(event.substr(1, std::string::npos), NULL, 16));
+            raw_event = get_raw_event_index(event.substr(1, std::string::npos), 16);
             push_raw_extra_event(raw_event, e_class);
 
             if (group_size)
@@ -286,12 +302,12 @@ void parse_events_str(std::wstring events_str,
                 chars = strip_str.c_str();
                 if (std::iswdigit(strip_str[0]))
                 {
-                    raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
+                    raw_event = get_raw_event_index(chars, 0);
                     push_raw_extra_event(raw_event, e_class);
                 }
                 else if (is_raw_event(strip_str))
                 {
-                    raw_event = static_cast<uint16_t>(std::stoi(strip_str.substr(1, std::string::npos), NULL, 16));
+                    raw_event = get_raw_event_index(strip_str.substr(1, std::string::npos), 16);
                     push_raw_extra_event(raw_event, e_class);
                 }
                 else
@@ -323,12 +339,12 @@ void parse_events_str(std::wstring events_str,
                 chars = event.c_str();
                 if (std::iswdigit(chars[0]))
                 {
-                    raw_event = static_cast<uint16_t>(wcstol(chars, NULL, 0));
+                    raw_event = get_raw_event_index(chars, 0);
                     push_raw_extra_event(raw_event, e_class);
                 }
                 else if (is_raw_event(event))
                 {
-                    raw_event = static_cast<uint16_t>(std::stoi(event.substr(1, std::string::npos), NULL, 16));
+                    raw_event = get_raw_event_index(event.substr(1, std::string::npos), 16);
                     push_raw_extra_event(raw_event, e_class);
                 }
                 else
