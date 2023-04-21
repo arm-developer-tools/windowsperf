@@ -51,7 +51,8 @@ Please build `wperf` application with `ARM64EC` configuration as it's requiring 
 You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
 
 ```
-> C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\DIA SDK\bin>regsvr32 msdia140.dll
+> cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin"
+> regsvr32 msdia140.dll
 ```
 
 ## Project requirements
