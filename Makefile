@@ -138,6 +138,7 @@ purge:
 	rm -rf wperf/ARM64 wperf/ARM64EC wperf/x64
 	rm -rf wperf-driver/ARM64 wperf-driver/ARM64EC wperf-driver/x64
 	rm -rf wperf-test/ARM64 wperf-test/ARM64EC wperf-test/x64
+	rm -rf wperf-lib/ARM64 wperf-lib/ARM64EC wperf-lib/x64
 	rm -rf wperf-devgen/ARM64 wperf-devgen/x64
 	rm -rf ARM64/ ARM64EC/ x64/
 
