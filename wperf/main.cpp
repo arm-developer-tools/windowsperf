@@ -69,47 +69,14 @@ wmain(
     _In_reads_(argc) wchar_t* argv[]
 )
 {
-    WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
-    HANDLE hDevice = INVALID_HANDLE_VALUE;
     auto exit_code = EXIT_SUCCESS;
 
-    if (argc < 2)
-    {
-        user_request::print_help();
-        return EXIT_SUCCESS;
-    }
-
-    if (!GetDevicePath(
-        (LPGUID)&GUID_DEVINTERFACE_WINDOWSPERF,
-        G_DevicePath,
-        sizeof(G_DevicePath) / sizeof(G_DevicePath[0])))
-    {
-        WindowsPerfDbgPrint("Error: Failed to find device path. GetLastError=%d\n", GetLastError());
-        return EXIT_FAILURE;
-    }
-
-    hDevice = CreateFile(G_DevicePath,
-        GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL,
-        OPEN_EXISTING,
-        0,
-        NULL);
-
-    if (hDevice == INVALID_HANDLE_VALUE) {
-        WindowsPerfDbgPrint("Error: Failed to open device. GetLastError=%d\n", GetLastError());
-        return EXIT_FAILURE;
-    }
-
-    //
-    // Port Begin
-    //
     user_request request;
     pmu_device pmu_device;
     wstr_vec raw_args;
 
     try {
-        pmu_device.init(hDevice);
+        pmu_device.init();
     }
     catch (std::exception&) {
         exit_code = EXIT_FAILURE;
@@ -701,13 +668,7 @@ wmain(
         goto clean_exit;
     }
 
-    //
-    // Port End
-    //
 clean_exit:
-    if (hDevice != INVALID_HANDLE_VALUE) {
-        CloseHandle(hDevice);
-    }
 
     return exit_code;
 }

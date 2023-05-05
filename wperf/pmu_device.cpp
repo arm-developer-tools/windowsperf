@@ -38,6 +38,7 @@
 #include "utils.h"
 #include "parsers.h"
 #include "wperf-common/public.h"
+#include "wperf.h"
 
 #include <cfgmgr32.h>
 #include <devpkey.h>
@@ -59,7 +60,7 @@ std::map<uint8_t, wchar_t*> pmu_device::arm64_vendor_names =
     {0xC0, L"Ampere Computing"}
 };
 
-pmu_device::pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0),
+pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0),
     dsu_cluster_size(0), has_dmc(false), dmc_num(0), enc_bits(0), core_num(0),
     dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0), do_verbose(false)
 {
@@ -70,9 +71,32 @@ pmu_device::pmu_device() : handle(NULL), count_kernel(false), has_dsu(false), ds
     memset(fpc_nums, 0, sizeof fpc_nums);
 }
 
-void pmu_device::init(HANDLE hDevice)
+HANDLE pmu_device::init_device()
 {
-    handle = hDevice;
+    WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
+    HANDLE hDevice = INVALID_HANDLE_VALUE;
+    const size_t buf_len = sizeof(G_DevicePath) / sizeof(G_DevicePath[0]);
+
+    if (GetDevicePath((LPGUID)&GUID_DEVINTERFACE_WINDOWSPERF, G_DevicePath, buf_len) == FALSE)
+        throw fatal_exception("Error: Failed to find device path");
+
+    hDevice = CreateFile(G_DevicePath,
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        0,
+        NULL);
+
+    if (hDevice == INVALID_HANDLE_VALUE)
+        throw fatal_exception("Error: Failed to open device");
+
+    return hDevice;
+}
+
+void pmu_device::init()
+{
+    m_device_handle = init_device();
 
     struct hw_cfg hw_cfg;
     query_hw_cfg(hw_cfg);
@@ -120,7 +144,7 @@ void pmu_device::init(HANDLE hDevice)
         assert(dsu_cluster_size <= USHRT_MAX);
         ctl.cluster_num = (uint16_t)dsu_cluster_num;
         ctl.cluster_size = (uint16_t)dsu_cluster_size;
-        BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
+        BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
         if (!status)
         {
             m_out.GetErrorOutputStream() << L"DSU_CTL_INIT failed" << std::endl;
@@ -162,7 +186,7 @@ void pmu_device::init(HANDLE hDevice)
         ctl->action = DMC_CTL_INIT;
         assert(dmc_regions.size() <= UCHAR_MAX);
         ctl->dmc_num = (uint8_t)dmc_regions.size();
-        BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
+        BOOL status = DeviceAsyncIoControl(m_device_handle, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
         if (!status)
         {
             m_out.GetErrorOutputStream() << L"DMC_CTL_INIT failed" << std::endl;
@@ -260,7 +284,7 @@ void pmu_device::timeline_release()
 pmu_device::~pmu_device()
 {
     timeline_release();
-    CloseHandle(handle);
+    CloseHandle(m_device_handle);
 }
 
 void pmu_device::set_sample_src(std::vector<struct evt_sample_src>& sample_sources, bool sample_kernel)
@@ -293,7 +317,7 @@ void pmu_device::set_sample_src(std::vector<struct evt_sample_src>& sample_sourc
 
     ctl->action = PMU_CTL_SAMPLE_SET_SRC;
     ctl->core_idx = cores_idx[0];   // Only one core for sampling!
-    BOOL status = DeviceAsyncIoControl(handle, ctl, (DWORD)sz, NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, ctl, (DWORD)sz, NULL, 0, &res_len);
     delete[] ctl;
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_SET_SRC failed");
@@ -309,7 +333,7 @@ bool pmu_device::get_sample(std::vector<FrameChain>& sample_info)
 
     PMUSamplePayload framesPayload = { 0 };
 
-    BOOL status = DeviceAsyncIoControl(handle, &hdr, sizeof(struct PMUCtlGetSampleHdr), &framesPayload, sizeof(PMUSamplePayload), &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &hdr, sizeof(struct PMUCtlGetSampleHdr), &framesPayload, sizeof(PMUSamplePayload), &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_GET failed");
 
@@ -331,7 +355,7 @@ void pmu_device::start_sample()
     ctl.action = PMU_CTL_SAMPLE_START;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_START failed");
 }
@@ -351,7 +375,7 @@ void pmu_device::stop_sample()
     ctl.action = PMU_CTL_SAMPLE_STOP;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
 
@@ -395,7 +419,7 @@ void pmu_device::start(uint32_t flags = CTL_FLAG_CORE)
 
     ctl.dmc_idx = dmc_idx;
     ctl.flags = flags;
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_START failed");
 }
@@ -411,7 +435,7 @@ void pmu_device::stop(uint32_t flags = CTL_FLAG_CORE)
     ctl.dmc_idx = dmc_idx;
     ctl.flags = flags;
 
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_STOP failed");
 }
@@ -426,7 +450,7 @@ void pmu_device::reset(uint32_t flags = CTL_FLAG_CORE)
     std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
     ctl.dmc_idx = dmc_idx;
     ctl.flags = flags;
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_RESET failed");
 }
@@ -625,7 +649,7 @@ void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::
         ctl2 = payload;
     }
 
-    BOOL status = DeviceAsyncIoControl(handle, buf.get(), (DWORD)acc_sz, NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, buf.get(), (DWORD)acc_sz, NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_ASSIGN_EVENTS failed");
 }
@@ -641,7 +665,7 @@ void pmu_device::core_events_read_nth(uint8_t core_no)
 
     LPVOID out_buf = core_outs.get() + core_no;
     size_t out_buf_len = sizeof(ReadOut);
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_READ_COUNTING failed");
 }
@@ -665,7 +689,7 @@ void pmu_device::dsu_events_read_nth(uint8_t core_no)
 
     LPVOID out_buf = dsu_outs.get() + (core_no / dsu_cluster_size);
     size_t out_buf_len = sizeof(DSUReadOut);
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
     if (!status)
         throw fatal_exception("DSU_CTL_READ_COUNTING failed");
 }
@@ -688,7 +712,7 @@ void pmu_device::dmc_events_read(void)
 
     LPVOID out_buf = dmc_idx == ALL_DMC_CHANNEL ? dmc_outs.get() : dmc_outs.get() + dmc_idx;
     size_t out_buf_len = dmc_idx == ALL_DMC_CHANNEL ? (sizeof(DMCReadOut) * dmc_regions.size()) : sizeof(DMCReadOut);
-    BOOL status = DeviceAsyncIoControl(handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
     if (!status)
         throw fatal_exception("DMC_CTL_READ_COUNTING failed");
 }
@@ -704,7 +728,7 @@ void pmu_device::do_version_query(_Out_ version_info& driver_ver)
     ctl.version.patch = PATCH;
 
     BOOL status = DeviceAsyncIoControl(
-        handle, &ctl, (DWORD)sizeof(struct pmu_ctl_ver_hdr), &driver_ver,
+        m_device_handle, &ctl, (DWORD)sizeof(struct pmu_ctl_ver_hdr), &driver_ver,
         (DWORD)sizeof(struct version_info), &res_len);
 
     if (!status)
@@ -721,7 +745,7 @@ void pmu_device::events_query(std::map<enum evt_class, std::vector<uint16_t>>& e
     // Armv8's architecture defined + vendor defined events should be within 2K at the moment.
     auto buf_size = 2048 * sizeof(uint16_t);
     std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(buf_size);
-    BOOL status = DeviceAsyncIoControl(handle, &action, (DWORD)sizeof(enum pmu_ctl_action), buf.get(), (DWORD)buf_size, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &action, (DWORD)sizeof(enum pmu_ctl_action), buf.get(), (DWORD)buf_size, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_QUERY_SUPP_EVENTS failed");
 
@@ -2040,7 +2064,7 @@ void pmu_device::query_hw_cfg(struct hw_cfg& out)
     DWORD res_len;
 
     enum pmu_ctl_action action = PMU_CTL_QUERY_HW_CFG;
-    BOOL status = DeviceAsyncIoControl(handle, &action, (DWORD)sizeof(enum pmu_ctl_action), &buf, (DWORD)sizeof(struct hw_cfg), &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, &action, (DWORD)sizeof(enum pmu_ctl_action), &buf, (DWORD)sizeof(struct hw_cfg), &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_QUERY_HW_CFG failed");
 

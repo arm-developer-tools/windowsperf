@@ -69,7 +69,8 @@ public:
     pmu_device();
     ~pmu_device();
 
-    void init(HANDLE hDevice);    
+    void init();
+    HANDLE init_device();
 
     // post_init members
     void post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx_init, bool timeline_mode_init, uint32_t enable_bits);
@@ -186,7 +187,7 @@ private:
     // Do not use this function for debug. Instead use WindowsPerfDbgPrint().
     void warning(const std::wstring wrn);
 
-    HANDLE handle;
+    HANDLE m_device_handle;
     uint32_t pmu_ver;
     const wchar_t* vendor_name;
     std::vector<uint8_t> cores_idx;                     // Cores
