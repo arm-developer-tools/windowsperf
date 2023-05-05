@@ -1659,10 +1659,11 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
     m_out.Print(m_globalListJSON);
 }
 
-void pmu_device::do_test(uint32_t enable_bits,
-    std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events)
+void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_  std::vector<std::wstring>& col_test_result,
+    _In_ uint32_t enable_bits, std::map<enum evt_class, _In_ std::vector<struct evt_noted>>& ioctl_events)
 {
-    std::vector<std::wstring> col_test_name, col_test_result;
+    col_test_name.clear();
+    col_test_result.clear();
 
     // Tests for request.ioctl_events
     col_test_name.push_back(L"request.ioctl_events [EVT_CORE]");
@@ -1820,6 +1821,13 @@ void pmu_device::do_test(uint32_t enable_bits,
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].note");
     col_test_result.push_back(evt_notes);
+}
+
+void pmu_device::do_test(uint32_t enable_bits,
+    std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events)
+{
+    std::vector<std::wstring> col_test_name, col_test_result;
+    do_test_prep_tests(col_test_name, col_test_result, enable_bits, ioctl_events);
 
     TableOutputL table(m_outputType);
     table.PresetHeaders<TestOutputTraitsL>();

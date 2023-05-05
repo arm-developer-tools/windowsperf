@@ -45,6 +45,11 @@ wperf-devgen/ARM64/
 wperf-devgen/ARM64EC/
 wperf-devgen/x64/
 
+# wperf-list build directories
+wperf-lib/ARM64/
+wperf-lib/ARM64EC/
+wperf-lib/x64/
+
 # Temporary files that should be masked
 tmp/
 
