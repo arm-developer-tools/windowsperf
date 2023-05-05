@@ -693,7 +693,7 @@ void pmu_device::dmc_events_read(void)
         throw fatal_exception("DMC_CTL_READ_COUNTING failed");
 }
 
-void pmu_device::version_query(version_info& driver_ver)
+void pmu_device::do_version_query(_Out_ version_info& driver_ver)
 {
     struct pmu_ctl_ver_hdr ctl;
     DWORD res_len;
@@ -1832,6 +1832,25 @@ void pmu_device::do_test(uint32_t enable_bits,
     TableOutputL table(m_outputType);
     table.PresetHeaders<TestOutputTraitsL>();
     table.Insert(col_test_name, col_test_result);
+    m_out.Print(table, true);
+}
+
+void pmu_device::do_version(_Out_ version_info& driver_ver)
+{
+    do_version_query(driver_ver);
+
+    std::vector<std::wstring> col_component, col_version;
+    col_component.push_back(L"wperf");
+    col_version.push_back(std::to_wstring(MAJOR) + L"." +
+        std::to_wstring(MINOR) + L"." +
+        std::to_wstring(PATCH));
+    col_component.push_back(L"wperf-driver");
+    col_version.push_back(std::to_wstring(driver_ver.major) + L"." +
+        std::to_wstring(driver_ver.minor) + L"." +
+        std::to_wstring(driver_ver.patch));
+    TableOutputL table(m_outputType);
+    table.PresetHeaders<VersionOutputTraitsL>();
+    table.Insert(col_component, col_version);
     m_out.Print(table, true);
 }
 

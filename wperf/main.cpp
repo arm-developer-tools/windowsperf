@@ -161,36 +161,22 @@ wmain(
         }
     }
 
-    version_info driver_ver;
-    pmu_device.version_query(driver_ver);
-
     if (request.do_version)
     {
-        std::vector<std::wstring> col_component, col_version;
-        col_component.push_back(L"wperf");
-        col_version.push_back(std::to_wstring(MAJOR) + L"." +
-            std::to_wstring(MINOR) + L"." +
-            std::to_wstring(PATCH));
-        col_component.push_back(L"wperf-driver");
-        col_version.push_back(std::to_wstring(driver_ver.major) + L"." +
-            std::to_wstring(driver_ver.minor) + L"." +
-            std::to_wstring(driver_ver.patch));
-        TableOutputL table(m_outputType);
-        table.PresetHeaders<VersionOutputTraitsL>();
-        table.Insert(col_component, col_version);
-        m_out.Print(table, true);
-        goto clean_exit;
-    }
+        version_info driver_ver;
+        pmu_device.do_version(driver_ver);
 
-    if (driver_ver.major != MAJOR || driver_ver.minor != MINOR
-        || driver_ver.patch != PATCH)
-    {
-        m_out.GetErrorOutputStream() << L"Version mismatch between wperf-driver and wperf.\n";
-        m_out.GetErrorOutputStream() << L"wperf-driver version: " << driver_ver.major << "."
-            << driver_ver.minor << "." << driver_ver.patch << "\n";
-        m_out.GetErrorOutputStream() << L"wperf version: " << MAJOR << "." << MINOR << "."
-            << PATCH << "\n";
-        exit_code = EXIT_FAILURE;
+        if (driver_ver.major != MAJOR || driver_ver.minor != MINOR
+            || driver_ver.patch != PATCH)
+        {
+            m_out.GetErrorOutputStream() << L"Version mismatch between wperf-driver and wperf.\n";
+            m_out.GetErrorOutputStream() << L"wperf-driver version: " << driver_ver.major << "."
+                << driver_ver.minor << "." << driver_ver.patch << "\n";
+            m_out.GetErrorOutputStream() << L"wperf version: " << MAJOR << "." << MINOR << "."
+                << PATCH << "\n";
+            exit_code = EXIT_FAILURE;
+        }
+
         goto clean_exit;
     }
 

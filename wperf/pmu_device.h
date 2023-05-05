@@ -104,7 +104,6 @@ public:
     void dsu_events_read_nth(uint8_t core_no);
     void dsu_events_read(void);
     void dmc_events_read(void);
-    void version_query(version_info& driver_ver);
     void events_query(std::map<enum evt_class, std::vector<uint16_t>>& events_out);
     void print_core_stat(std::vector<struct evt_noted>& events); 
     void print_dsu_stat(std::vector<struct evt_noted>& events, bool report_l3_metric);
@@ -117,6 +116,8 @@ public:
     void do_test(uint32_t enable_bits, std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events);
     void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_ std::vector<std::wstring>& col_test_result,
         _In_ uint32_t enable_bits, std::map<enum evt_class, _In_ std::vector<struct evt_noted>>& ioctl_events); // part of do_test()
+    void do_version(_Out_ version_info& driver_ver);
+    void do_version_query(_Out_ version_info& driver_ver);    // part of do_version()
 
     BOOL DeviceAsyncIoControl(_In_ HANDLE hDevice, _In_ LPVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite,
         _Out_ LPVOID lpOutBuffer, _In_ DWORD nOutBufferSize, _Out_ LPDWORD lpBytesReturned);
