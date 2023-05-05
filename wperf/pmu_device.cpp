@@ -1574,39 +1574,61 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
     }
 }
 
+void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_name,
+    _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type)
+{
+    std::map<enum evt_class, std::vector<uint16_t>> events;
+    events_query(events);
+
+    // Function will "refill" parameters
+    col_alias_name.clear();
+    col_raw_index.clear();
+    col_event_type.clear();
+
+    for (const auto& a : events)
+    {
+        const wchar_t* prefix = pmu_events::get_evt_name_prefix(a.first);
+        for (auto b : a.second) {
+            col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events::get_event_name(b, a.first)));
+            col_raw_index.push_back(IntToHexWideString(b, 4));
+            col_event_type.push_back(L"[" + std::wstring(pmu_events::get_evt_class_name(a.first)) + std::wstring(L" PMU event") + L"]");
+        }
+    }
+
+    // Add extra-events specified with -E <filename> or -E "e:v,e:v,e:v"
+    for (const auto& a : pmu_events::extra_events)
+    {
+        const wchar_t* prefix = pmu_events::get_evt_name_prefix(a.first);
+        for (const struct extra_event& b : a.second) {
+            col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events::get_event_name(b.hdr.num, a.first)));
+            col_raw_index.push_back(IntToHexWideString(b.hdr.num, 4));
+            col_event_type.push_back(L"[" + std::wstring(pmu_events::get_evt_class_name(a.first)) + std::wstring(L" PMU event*") + L"]");
+        }
+    }
+}
+
+void pmu_device::do_list_prep_metrics(_Out_ std::vector<std::wstring>& col_metric,
+    _Out_ std::vector<std::wstring>& col_events, _In_ const std::map<std::wstring, metric_desc>& metrics)
+{
+    col_metric.clear();
+    col_events.clear();
+
+    for (const auto& [key, value] : metrics) {
+        col_metric.push_back(key);
+        col_events.push_back(value.raw_str);
+    }
+}
+
 void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
 {
-    
+    // Print pre-defined events:
     {
-        // Print pre-defined events:
-        std::map<enum evt_class, std::vector<uint16_t>> events;
-        events_query(events);
-        std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
-
         m_out.GetOutputStream() << std::endl
             << L"List of pre-defined events (to be used in -e)"
             << std::endl << std::endl;
 
-        for (const auto& a : events)
-        {
-            const wchar_t* prefix = pmu_events::get_evt_name_prefix(a.first);
-            for (auto b : a.second) {
-                col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events::get_event_name(b, a.first)));
-                col_raw_index.push_back(IntToHexWideString(b, 4));
-                col_event_type.push_back(L"[" + std::wstring(pmu_events::get_evt_class_name(a.first)) + std::wstring(L" PMU event") + L"]");
-            }
-        }
-
-        // Print extra-events specified with -E <filename> or -E "e:v,e:v,e:v"
-        for (const auto& a : pmu_events::extra_events)
-        {
-            const wchar_t* prefix = pmu_events::get_evt_name_prefix(a.first);
-            for (const struct extra_event& b : a.second) {
-                col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events::get_event_name(b.hdr.num, a.first)));
-                col_raw_index.push_back(IntToHexWideString(b.hdr.num, 4));
-                col_event_type.push_back(L"[" + std::wstring(pmu_events::get_evt_class_name(a.first)) + std::wstring(L" PMU event*") + L"]");
-            }
-        }
+        std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
+        do_list_prep_events(col_alias_name, col_raw_index, col_event_type);
 
         TableOutputL table(m_outputType);
         table.PresetHeaders<PredefinedEventsOutputTraitsL>();
@@ -1619,16 +1641,12 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
 
     // Print supported metrics
     {
-        std::vector<std::wstring> col_metric, col_events;
-
         m_out.GetOutputStream() << std::endl
             << L"List of supported metrics (to be used in -m)"
             << std::endl << std::endl;
 
-        for (const auto& [key, value] : metrics) {
-            col_metric.push_back(key);
-            col_events.push_back(value.raw_str);
-        }
+        std::vector<std::wstring> col_metric, col_events;
+        do_list_prep_metrics(col_metric, col_events, metrics);
 
         TableOutputL table(m_outputType);
         table.PresetHeaders<MetricOutputTraitsL>();
