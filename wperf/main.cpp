@@ -139,26 +139,19 @@ wmain(
     }
 
     uint32_t enable_bits = 0;
-    for (const auto& a : request.ioctl_events)
+    try
     {
-        if (a.first == EVT_CORE)
-        {
-            enable_bits |= CTL_FLAG_CORE;
-        }
-        else if (a.first == EVT_DSU)
-        {
-            enable_bits |= CTL_FLAG_DSU;
-        }
-        else if (a.first == EVT_DMC_CLK || a.first == EVT_DMC_CLKDIV2)
-        {
-            enable_bits |= CTL_FLAG_DMC;
-        }
-        else
-        {
-            m_out.GetErrorOutputStream() << L"Unrecognized EVT_CLASS when mapping enable_bits: " << a.first << "\n";
-            exit_code = EXIT_FAILURE;
-            goto clean_exit;
-        }
+        std::vector<enum evt_class> e_classes;
+        for (const auto& [key, _] : request.ioctl_events)
+            e_classes.push_back(key);
+
+        enable_bits = pmu_device.enable_bits(e_classes);
+    }
+    catch (fatal_exception& e)
+    {
+        m_out.GetErrorOutputStream() << e.what() << std::endl;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
     }
 
     if (request.do_version)

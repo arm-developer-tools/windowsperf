@@ -2089,6 +2089,29 @@ uint32_t pmu_device::stop_bits()
     return stop_bits;
 }
 
+uint32_t pmu_device::enable_bits(_In_ std::vector<enum evt_class>& e_classes)
+{
+    for (const auto& e : e_classes)
+    {
+        if (e == EVT_CORE)
+        {
+            m_enable_bits |= CTL_FLAG_CORE;
+        }
+        else if (e == EVT_DSU)
+        {
+            m_enable_bits |= CTL_FLAG_DSU;
+        }
+        else if (e == EVT_DMC_CLK || e == EVT_DMC_CLKDIV2)
+        {
+            m_enable_bits |= CTL_FLAG_DMC;
+        }
+        else
+            throw fatal_exception("Unrecognized EVT_CLASS when mapping enable_bits");
+    }
+
+    return m_enable_bits;
+}
+
 #include "debug.h"
 
 #pragma warning(push)

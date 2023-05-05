@@ -125,6 +125,7 @@ public:
     void get_pmu_device_cfg(struct pmu_device_cfg& cfg);
 
     uint32_t stop_bits();
+    uint32_t enable_bits(_In_ std::vector<enum evt_class>& e_classes);
 
     uint8_t core_num;
     std::map<std::wstring, metric_desc> builtin_metrics;
@@ -200,4 +201,5 @@ private:
     uint32_t enc_bits;
     std::wofstream timeline_outfiles[EVT_CLASS_NUM];
     std::vector<std::pair<uint64_t, uint64_t>> dmc_regions;
+    uint32_t m_enable_bits;
 };
