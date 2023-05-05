@@ -211,11 +211,7 @@ wmain(
             if (SetConsoleCtrlHandler(&ctrl_handler, TRUE) == FALSE)
                 throw fatal_exception("SetConsoleCtrlHandler failed");
 
-            uint32_t stop_bits = CTL_FLAG_CORE;
-            if (pmu_device.has_dsu)
-                stop_bits |= CTL_FLAG_DSU;
-            if (pmu_device.has_dmc)
-                stop_bits |= CTL_FLAG_DMC;
+            uint32_t stop_bits = pmu_device.stop_bits();
 
             pmu_device.stop(stop_bits);
 

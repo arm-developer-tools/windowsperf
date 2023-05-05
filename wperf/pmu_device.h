@@ -124,6 +124,8 @@ public:
 
     void get_pmu_device_cfg(struct pmu_device_cfg& cfg);
 
+    uint32_t stop_bits();
+
     uint8_t core_num;
     std::map<std::wstring, metric_desc> builtin_metrics;
     bool has_dsu;

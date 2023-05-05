@@ -2078,6 +2078,17 @@ void pmu_device::get_pmu_device_cfg(struct pmu_device_cfg& cfg)
     cfg.has_dmc = has_dmc;
 }
 
+uint32_t pmu_device::stop_bits()
+{
+    uint32_t stop_bits = CTL_FLAG_CORE;
+    if (has_dsu)
+        stop_bits |= CTL_FLAG_DSU;
+    if (has_dmc)
+        stop_bits |= CTL_FLAG_DMC;
+
+    return stop_bits;
+}
+
 #include "debug.h"
 
 #pragma warning(push)
