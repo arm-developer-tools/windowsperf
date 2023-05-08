@@ -202,5 +202,5 @@ private:
     uint32_t enc_bits;
     std::wofstream timeline_outfiles[EVT_CLASS_NUM];
     std::vector<std::pair<uint64_t, uint64_t>> dmc_regions;
-    uint32_t m_enable_bits;
+    uint32_t m_enable_bits = 0;
 };
