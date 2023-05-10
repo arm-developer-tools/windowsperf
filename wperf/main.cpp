@@ -293,6 +293,9 @@ wmain(
             if (request.sample_pdb_file == L"")
                 throw fatal_exception("PDB file not specified");
 
+            if (request.cores_idx.size() > 1)
+                throw fatal_exception("you can specify only one core for sampling");
+
             std::vector<SectionDesc> sec_info;          // List of sections in executable
             std::vector<FuncSymDesc> sym_info;
             std::vector<std::wstring> sec_import;       // List of DLL imported by executable

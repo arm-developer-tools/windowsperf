@@ -70,6 +70,7 @@ usage: wperf [options]
     -E config_file        Provide customized config file which describes custom events.
     -E event_list         Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
     -c core_idx           Profile on the specified core. Skip -c to count on all cores.
+                          In sampling user must specify exactly one core with -c.
     -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
     -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
     -k                    Count kernel mode as well (disabled by default).
@@ -521,6 +522,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         }
 
         m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
+    }
+
+    if (do_sample && cores_idx.size() > 1)
+    {
+        m_out.GetErrorOutputStream() << L"sampling: you can specify 1 core with -c option"
+            << std::endl;
+        throw fatal_exception("ERROR_CORES");
     }
 }
 
