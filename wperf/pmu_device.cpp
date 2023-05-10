@@ -1353,10 +1353,14 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
             }
         }
 
+        double acc_miss_rate_pct = (acc_l3_cache_access_num != 0)
+            ? ((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100
+            : 100.0;
+
         col_cluster.push_back(L"all");
         col_cores.push_back(L"all");
         col_read_bandwith.push_back(DoubleToWideString(((double)(acc_l3_cache_access_num * 64)) / 1024.0 / 1024.0) + L"MB");
-        col_miss_rate.push_back(DoubleToWideString(((double)(acc_l3_cache_refill_num)) / ((double)(acc_l3_cache_access_num)) * 100) + L"%");
+        col_miss_rate.push_back(DoubleToWideString(acc_miss_rate_pct) + L"%");
 
         {
             TableOutputL table(m_outputType);
