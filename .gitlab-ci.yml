@@ -50,7 +50,7 @@ build_and_test:
   artifacts:
     paths:
       - wperf/ARM64/Release/wperf.exe
-      - ARM64/Release/wperf-devgen.exe
+      - wperf-devgen/ARM64/Release/wperf-devgen.exe
       - wperf-driver/ARM64/Release/wperf-driver
       - wperf-driver/ARM64/Release/wperf-driver.cer
     expire_in: 20 min
@@ -68,7 +68,7 @@ build_and_archive:
       cp wperf/ARM64/Release/wperf.exe release;
       cp wperf-driver/ARM64/Release/wperf-driver/* release/wperf-driver;
       cp wperf-driver/ARM64/Release/wperf-driver.pdb release/wperf-driver;
-      cp ARM64/Release/wperf-devgen.exe release;
+      cp wperf-devgen/ARM64/Release/wperf-devgen.exe release;
     - >
       $env:PATH += ";C:\wenv\arm64\python\tools";
       cp ci/ddf.py release;
