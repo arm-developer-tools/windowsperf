@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,6 +12,17 @@ typedef struct _VERSION_INFO
     unsigned int minor;
     unsigned int patch;
 } VERSION_INFO, *PVERSION_INFO;
+
+#define CORE_EVT (1 << 0) // Core PMU event
+// TODO: Add DSU_EVT, DMC_EVT etc.
+
+typedef struct _LIST_CONF
+{
+    // Each bit in list_event_types indicates whether certain types of events
+    // should be listed. For example, if list_event_types&CORE_EVT is set, core
+    // PMU events should be listed.
+    uint64_t list_event_types;
+} LIST_CONF, *PLIST_CONF;
 
 typedef enum _EVT_TYPE
 {
@@ -22,7 +35,8 @@ typedef enum _EVT_TYPE
 typedef struct _EVENT_INFO
 {
     EVT_TYPE type;
-    unsigned short id;
+    uint16_t id;
+    const wchar_t* name;
 } EVENT_INFO, *PEVENT_INFO;
 
 /// <summary>
@@ -78,24 +92,28 @@ bool wperf_version(PVERSION_INFO wperf_ver);
 /// <example> This example shows how to call the wperf_list_events routine.
 /// <code>
 /// wperf_init();
+/// LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
 /// EVENT_INFO einfo;
-/// if (wperf_list_events(NULL))
+/// if (wperf_list_events(&list_conf, NULL))
 /// {
-///   while (wperf_list_events(&einfo))
+///   while (wperf_list_events(&list_conf, &einfo))
 ///   {
-///     printf("Event type=%d, id=%u\n", einfo.type, einfo.id);
+///     printf("Event type=%d, id=%u, name=%ls\n", einfo.type, einfo.id, einfo.name);
 ///   }
 /// }
 /// wperf_close();
 /// </code>
 /// </example>
+/// <param name="list_conf">Pointer to a caller-allocated LIST_CONF struct.
+/// Users configure which type of PMU events to list through setting the fields
+/// in LIST_CONF (refer to the definition of LIST_CONF for more details).</param>
 /// <param name="einfo">Setting einfo to NULL, this routine will retrieve the
 /// full list of supported events internally and be ready for subsequent calls
 /// to yield event by event. When passed as a pointer to a caller-allocated
 /// EVENT_INFO struct. This lib routine will populate the struct pointed to by
 /// einfo with the next event from the list of supported events.</param>
 /// <returns></returns>
-bool wperf_list_events(PEVENT_INFO einfo);
+bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo);
 
 #ifdef __cplusplus
 }

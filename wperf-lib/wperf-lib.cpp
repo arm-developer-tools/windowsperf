@@ -33,6 +33,8 @@ extern "C" bool wperf_close()
 
         if (__pmu_cfg)
             delete __pmu_cfg;
+
+        __list_events.clear();
     }
     catch(...)
     {
@@ -70,7 +72,7 @@ extern "C" bool wperf_version(PVERSION_INFO wperf_ver)
     return true;
 }
 
-extern "C" bool wperf_list_events(PEVENT_INFO einfo)
+extern "C" bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo)
 {
     try
     {
@@ -82,13 +84,14 @@ extern "C" bool wperf_list_events(PEVENT_INFO einfo)
             __pmu_device->events_query(__list_events);
             __list_index = 0;
         }
-        else
+        else if (list_conf->list_event_types&CORE_EVT)
         {
             // Yield the next event.
             if (__list_index < __list_events[EVT_CORE].size())
             {
                 einfo->type = CORE_TYPE;
                 einfo->id = __list_events[EVT_CORE][__list_index];
+                einfo->name = pmu_events::get_core_event_name(einfo->id);
                 __list_index++;
             }
             else
@@ -96,6 +99,11 @@ extern "C" bool wperf_list_events(PEVENT_INFO einfo)
                 // No more to yield.
                 return false;
             }
+        }
+        else
+        {
+            // Only Core PMU events are supported for now.
+            return false;
         }
     }
     catch (...)
