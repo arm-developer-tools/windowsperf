@@ -322,6 +322,9 @@
   <ItemGroup>
     <ClCompile Include="wperf-lib.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="wperf-lib.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
