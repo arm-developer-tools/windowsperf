@@ -60,6 +60,8 @@ public:
     void load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
 
     static void print_help();
+    static void print_help_header();
+    static void print_help_usage();
 
     bool do_list;
     bool do_count;

@@ -36,9 +36,10 @@
 #include "user_request.h"
 #include "exception.h"
 #include "padding.h"
+#include "wperf-common/public.h"
 
 
-void user_request::print_help()
+void user_request::print_help_usage()
 {
     const wchar_t* wsHelp = LR"(
 usage: wperf [options]
@@ -86,6 +87,37 @@ usage: wperf [options]
 
     m_out.GetOutputStream() << wsHelp << std::endl;
 }
+
+//
+// This file will be modified with wperf's pre-build step
+//
+#include "gitver.h"
+
+void user_request::print_help_header()
+{
+    m_out.GetOutputStream() << L"WindowsPerf"
+        << L" ver. " << MAJOR << "." << MINOR << "." << PATCH
+        << L" ("
+        << WPERF_GIT_VER_STR
+        << L"/"
+#ifdef _DEBUG
+        << L"Debug"
+#else
+        << L"Release"
+#endif
+        << L") WOA profiling with performance counters."
+        << std::endl;
+
+    m_out.GetOutputStream() << L"Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues"
+        << std::endl;
+}
+
+void user_request::print_help()
+{
+    print_help_header();
+    print_help_usage();
+}
+
 
 user_request::user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
     do_sample(false), do_version(false), do_verbose(false), do_test(false),

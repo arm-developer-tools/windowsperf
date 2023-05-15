@@ -10,6 +10,9 @@
 
 tags
 
+# All files which have git version in them
+**/gitver.def
+
 # CLI build directory
 wperf/ARM64/
 wperf/ARM64/*

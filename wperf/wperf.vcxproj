@@ -261,6 +261,10 @@
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
+      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64EC'">
     <Link>
@@ -285,6 +289,12 @@
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -332,6 +342,10 @@
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
+      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64EC'">
     <Link>
@@ -360,6 +374,10 @@
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
+      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="events.cpp" />
