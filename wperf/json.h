@@ -135,23 +135,103 @@ public:
     }
 };
 
+template <typename CharType, typename Traits, int N = Traits::size - 1>
+struct JSONObjectTraits
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
+    typedef std::decay_t<decltype(std::get<N>(Traits::columns))> Type;
+
+    JSONObject<Type, false, false, CharType> m_property;
+    Type m_value;
+    JSONObjectTraits<CharType, Traits, N - 1> previous;
+
+    Type get_t()
+    {
+        return m_value;
+    }
+
+    void* get(int i)
+    {
+        if (i == N)
+        {
+            return (void*)&m_value;
+        }
+        else {
+            return previous.get(i);
+        }
+    }
+
+    void set(int i, StringType& key, void* val)
+    {
+        if (i == N)
+        {
+            m_value = *((Type*)val);
+            m_property.m_map[key] = *((Type*)val);
+        }
+        else {
+            previous.set(i, key, val);
+        }
+    }
+
+    friend OutputStream& operator<<(OutputStream& os, const JSONObjectTraits& json)
+    {
+        os << json.previous;
+
+        if constexpr (N > 0)
+        {
+            os << LiteralConstants<CharType>::m_comma;
+        }
+
+        os << json.m_property;
+
+        if constexpr (N == Traits::size - 1)
+        {
+            os << LiteralConstants<CharType>::m_cbracket_close;
+        }
+
+        return os;
+    }
+};
+
+template <typename CharType, typename Traits>
+struct JSONObjectTraits<CharType, Traits, -1>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
+
+    void get_t() {}
+    void* get(int) {}
+    void set(int, StringType&, void*) {}
+    friend OutputStream& operator<<(OutputStream& os, const JSONObjectTraits&)
+    {
+        os << LiteralConstants<CharType>::m_cbracket_open;
+        return os;
+    }
+};
+
 /*
 TableJSON is an implementation of a table using JSONObjects for compatibility with PrettyTable.
 */
-template <typename CharType=char>
+template <typename Traits, typename CharType = char>
 class TableJSON
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    typedef JSONObjectTraits<CharType, Traits> ElemT;
 
     JSONObject<
-        std::vector<JSONObject<StringType, false, true, CharType>>, true, false, CharType> m_properties;
+        std::vector<ElemT>, true, false, CharType> m_properties;
     JSONObject<StringType, false, false, CharType> m_additional_properties;
+    JSONObject<uint32_t, false, false, CharType> m_additional_uint_properties;
+    JSONObject<uint64_t, false, false, CharType> m_additional_uint64_properties;
 
     StringType m_key;
     std::vector<StringType> m_column_headers;
 
     bool m_hasAdditional = false;
+    bool m_hasAdditionalUint = false;
+    bool m_hasAdditionalUint64 = false;
 public:
     bool m_isEmbedded = false;
 
@@ -165,56 +245,56 @@ public:
     void SetKey(const StringType& key)
     {
         m_key = key;
-        m_properties.m_map[key] = std::vector<JSONObject<StringType, false, true, CharType>>();
+        m_properties.m_map[key] = std::vector<ElemT>();
     }
 
     template <int I = 0>
-    void Insert_(std::map<StringType, StringType>& map)
+    void Insert_(ElemT& element)
     {
-        JSONObject<StringType, false, CharType> value(map);
-        m_properties.m_map[m_key].push_back(map);
+        m_properties.m_map[m_key].push_back(element);
     }
 
     template <int I = 0, typename T, typename... Ts>
-    void Insert_(std::map<StringType, StringType>& map, T arg1, Ts... args)
+    void Insert_(ElemT& element, T arg1, Ts... args)
     {
-        if(m_column_headers.size() > I)
+        if (m_column_headers.size() > I)
         {
-            map[m_column_headers[I]] = arg1;
-            Insert_<I+1>(map, args...);
+            element.set(I, m_column_headers[I], (void*)&arg1);
+            Insert_<I + 1>(element, args...);
         }
     }
 
     template <typename... Ts>
     void InsertItem(Ts... args)
     {
-        std::map<StringType, StringType> map;
-        Insert_(map, args...);
+        ElemT element;
+        Insert_(element, args...);
     }
 
     template <int I = 0>
-    void InsertVector_(size_t){ }
+    void InsertVector_(size_t) { }
 
     template <int I = 0, typename T, typename... Ts>
     void InsertVector_(const size_t cur, T arg1, Ts... args)
     {
-        if(m_column_headers.size() > I)
+        if (m_column_headers.size() > I)
         {
-            if constexpr(I == 0)
+            if constexpr (I == 0)
             {
-                for(auto& elem: arg1)
+                for (auto& elem : arg1)
                 {
-                    JSONObject<StringType, false, true, CharType> value;
-                    value.m_map[m_column_headers[I]] = elem;
+                    ElemT value;
+                    value.set(I, m_column_headers[I], (void*)&elem);
                     m_properties.m_map[m_key].push_back(value);
                 }
-            } else {
-                for(auto i = 0; i < arg1.size();i++)
+            }
+            else {
+                for (auto i = 0; i < arg1.size(); i++)
                 {
-                    m_properties.m_map[m_key][cur + i].m_map[m_column_headers[I]] = arg1[i];
+                    m_properties.m_map[m_key][cur + i].set(I, m_column_headers[I], (void*)&arg1[i]);
                 }
             }
-            InsertVector_<I+1>(cur, args...);
+            InsertVector_<I + 1>(cur, args...);
         }
     }
 
@@ -225,23 +305,45 @@ public:
         InsertVector_(cur, args...);
     }
 
-    void InsertAdditional(StringType key, StringType additional)
+    template <typename T>
+    void InsertAdditional(const StringType& key, const T& additional)
     {
-        m_hasAdditional = true;
-        m_additional_properties.m_map[key] = additional;
+        if constexpr (std::is_same_v<T, StringType>)
+        {
+            m_hasAdditional = true;
+            m_additional_properties.m_map[key] = additional;
+        } 
+        else if constexpr(std::is_same_v<T,uint32_t>) {
+            m_hasAdditionalUint = true;
+            m_additional_uint_properties.m_map[key] = additional;
+        }
+        else if constexpr (std::is_same_v<T, uint64_t>) {
+            m_hasAdditionalUint64 = true;
+            m_additional_uint64_properties.m_map[key] = additional;
+        }
     }
 
     friend OutputStream& operator<<(OutputStream& os, const TableJSON& json)
     {
-        if(!json.m_isEmbedded)
+        if (!json.m_isEmbedded)
             os << LiteralConstants<CharType>::m_cbracket_open;
         os << json.m_properties;
-        if(json.m_hasAdditional)
+        if (json.m_hasAdditional)
         {
-             os << LiteralConstants<CharType>::m_comma;
+            os << LiteralConstants<CharType>::m_comma;
             os << json.m_additional_properties;
         }
-        if(!json.m_isEmbedded)
+        if (json.m_hasAdditionalUint)
+        {
+            os << LiteralConstants<CharType>::m_comma;
+            os << json.m_additional_uint_properties;
+        }
+        if (json.m_hasAdditionalUint64)
+        {
+            os << LiteralConstants<CharType>::m_comma;
+            os << json.m_additional_uint64_properties;
+        }
+        if (!json.m_isEmbedded)
             os << LiteralConstants<CharType>::m_cbracket_close;
         return os;
     }

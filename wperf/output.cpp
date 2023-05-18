@@ -34,4 +34,4 @@ OutputControlL m_out;
 WPerfStatJSON<GlobalCharType> m_globalJSON;
 WPerfListJSON<GlobalCharType> m_globalListJSON;
 WPerfSamplingJSON<GlobalCharType> m_globalSamplingJSON;
-TableOutputL::TableType m_outputType = TableOutputL::PRETTY;
+TableType m_outputType = PRETTY;

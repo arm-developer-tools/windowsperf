@@ -45,6 +45,7 @@ template <typename CharType>
 struct TableOutputTraits
 {
     inline const static std::tuple<> headers;
+    inline const static std::tuple<> columns;
     inline const static CharType* key;
     inline const static int size = 0;
 };
@@ -52,6 +53,8 @@ struct TableOutputTraits
 template <typename CharType>
 struct PredefinedEventsOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Alias Name"),
             LITERALCONSTANTS_GET("Raw Index"),
@@ -63,6 +66,8 @@ struct PredefinedEventsOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct MetricOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Metric"),
             LITERALCONSTANTS_GET("Events"));
@@ -73,6 +78,8 @@ struct MetricOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType, bool isMultiplexed = true>
 struct PerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<uint64_t, StringType, StringType, StringType, StringType, uint64_t> columns;
     inline const static int size = std::conditional_t<isMultiplexed, Integer<6>, Integer<4>>::value;
     inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("counter value"),
@@ -87,6 +94,8 @@ struct PerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType, bool isMultiplexed = true>
 struct SystemwidePerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<uint64_t, StringType, StringType, StringType, uint64_t> columns;
     inline const static int size = std::conditional_t<isMultiplexed, Integer<5>, Integer<4>>::value;
     inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("counter value"),
@@ -100,6 +109,8 @@ struct SystemwidePerformanceCounterOutputTraits : public TableOutputTraits<CharT
 template <typename CharType>
 struct PMUPerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, uint64_t, StringType, StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("pmu id"),
             LITERALCONSTANTS_GET("counter value"),
@@ -113,6 +124,8 @@ struct PMUPerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct L3CacheMetricOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType, StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("cluster"),
             LITERALCONSTANTS_GET("cores"),
@@ -125,6 +138,8 @@ struct L3CacheMetricOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct DDRMetricOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("channel"),
             LITERALCONSTANTS_GET("rw_bandwidth"));
@@ -135,6 +150,8 @@ struct DDRMetricOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct TestOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Test Name"),
             LITERALCONSTANTS_GET("Result"));
@@ -145,6 +162,8 @@ struct TestOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct VersionOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
     inline const static std::tuple<CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Component"),
             LITERALCONSTANTS_GET("Version"));
@@ -155,6 +174,8 @@ struct VersionOutputTraits : public TableOutputTraits<CharType>
 template <typename CharType>
 struct SamplingOutputTraits : public TableOutputTraits<CharType>
 {
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<double, uint32_t, StringType> columns;
     inline const static std::tuple<CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("overhead"),
             LITERALCONSTANTS_GET("count"),
@@ -163,18 +184,17 @@ struct SamplingOutputTraits : public TableOutputTraits<CharType>
     inline const static CharType* key = LITERALCONSTANTS_GET("samples");
 };
 
+enum TableType
+{
+    JSON,
+    PRETTY,
+    ALL,
+};
+
 // Generic TableOutput that handles instantiating and dispatching to the proper Table formating class.
-template <typename CharType>
+template <typename PresetTable, typename CharType>
 class TableOutput
 {
-public:
-    enum TableType
-    {
-        JSON,
-        PRETTY,
-        ALL,
-    };
-
 private:
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
@@ -182,24 +202,23 @@ private:
 
     TableType m_type;
 
-    void copy(const TableOutput& rhs)
+    void copy(const TableOutput<PresetTable, CharType>& rhs)
     {
         m_type = rhs.m_type;
         m_core = rhs.m_core;
         m_event = rhs.m_event;
         if (m_type == JSON || m_type == ALL)
         {
-            TableJSON<CharType> obj = rhs.m_tableJSON;
+            TableJSON<PresetTable, CharType> obj = rhs.m_tableJSON;
             m_tableJSON = obj;
         }
     }
 public:
-    TableJSON<CharType> m_tableJSON;
+    TableJSON<PresetTable, CharType> m_tableJSON;
     PrettyTable<CharType> m_tablePretty;
 
     StringType m_core;
     StringType m_event;
-
 
     TableOutput(TableType type) : m_type(type)
     {
@@ -212,19 +231,19 @@ public:
         copy(rhs);
     }
 
-    TableOutput& operator=(const TableOutput<CharType>& rhs)
+    TableOutput<PresetTable, CharType>& operator=(const TableOutput<PresetTable, CharType>& rhs)
     {
         copy(rhs);
         return *this;
     }
 
-    template <typename PresetTable, int I = 0>
+    template <int I = 0>
     void PresetHeaders()
     {
         if constexpr (I < PresetTable::size)
         {
             AddColumn(std::get<I>(PresetTable::headers));
-            PresetHeaders<PresetTable, I + 1>();
+            PresetHeaders<I + 1>();
         }
         else {
             SetKey(PresetTable::key);
@@ -254,9 +273,10 @@ public:
         m_tableJSON.SetKey(key);
     }
 
-    void InsertExtra(const StringType& key, const StringType& value)
+    template <typename T>
+    void InsertExtra(const StringType& key, const T& value)
     {
-        m_tableJSON.InsertAdditional(key, value);
+        m_tableJSON.InsertAdditional<T>(key, value);
     }
 
     StringStream Print(TableType type = PRETTY)
@@ -274,20 +294,29 @@ public:
 template <typename CharType>
 struct WPerfStatJSON
 {
+    using PerformanceCounterOutputTraitsTO = TableOutput<PerformanceCounterOutputTraits<CharType, false>, CharType>;
+    using MultiplexingPerformanceCounterOutputTraitsTO = TableOutput<PerformanceCounterOutputTraits<CharType, true>, CharType>;
+
+    using SystemwidePerformanceCounterOutputTraitsTO = TableOutput<SystemwidePerformanceCounterOutputTraits<CharType, false>, CharType>;
+    using MultiplexedSystemwidePerformanceCounterOutputTraitsTO = TableOutput<SystemwidePerformanceCounterOutputTraits<CharType, true>, CharType>;
+
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
 
-    std::vector<TableOutput<CharType>> m_corePerformanceTables;
-    std::vector<TableOutput<CharType>> m_DSUPerformanceTables;
-    TableOutput<CharType> m_coreOverall, m_DSUOverall, m_DMCDDDR, m_pmu, m_DSUL3metric;
-    bool m_multiplexing;
-    bool m_kernel;
-    double m_duration;
+    std::vector<std::variant<PerformanceCounterOutputTraitsTO, MultiplexingPerformanceCounterOutputTraitsTO>> m_corePerformanceTables;
+    std::vector<std::variant<PerformanceCounterOutputTraitsTO, MultiplexingPerformanceCounterOutputTraitsTO>> m_DSUPerformanceTables;
+    std::variant<SystemwidePerformanceCounterOutputTraitsTO, MultiplexedSystemwidePerformanceCounterOutputTraitsTO> m_coreOverall, m_DSUOverall;
+    TableOutput<L3CacheMetricOutputTraits<CharType>, CharType> m_DSUL3metric;
+    TableOutput<PMUPerformanceCounterOutputTraits<CharType>, CharType> m_pmu;
+    TableOutput<DDRMetricOutputTraits<CharType>, CharType> m_DMCDDDR;
+    bool m_multiplexing = false;
+    bool m_kernel = false;
+    double m_duration = 0.f;
 
     StringStream Print()
     {
         StringStream os;
-        enum TableOutput<CharType>::TableType jsonType = TableOutput<CharType>::JSON;
+        enum TableType jsonType = TableType::JSON;
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         {
             os << LITERALCONSTANTS_GET("\"core\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
@@ -313,12 +342,15 @@ struct WPerfStatJSON
                 else {
                     isFirst = false;
                 }
-                os << LiteralConstants<CharType>::m_quotes << table.m_core << LiteralConstants<CharType>::m_quotes;
-                os << LiteralConstants<CharType>::m_colon << table.Print(jsonType).str() << std::endl;
+                std::visit([&os, &jsonType](auto&& arg) {
+                    os << LiteralConstants<CharType>::m_quotes << arg.m_core << LiteralConstants<CharType>::m_quotes;
+                    os << LiteralConstants<CharType>::m_colon << arg.Print(jsonType).str() << std::endl;
+                }, table);
             }
             if (!m_corePerformanceTables.empty())
                 os << LiteralConstants<CharType>::m_comma << std::endl;
-            os << LITERALCONSTANTS_GET("\"overall\": ") << m_coreOverall.Print(jsonType).str() << std::endl;
+
+            std::visit([&os, &jsonType](auto&& arg) { os << LITERALCONSTANTS_GET("\"overall\": ") << arg.Print(jsonType).str() << std::endl; }, m_coreOverall);
             os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
         }
         os << LiteralConstants<CharType>::m_comma << std::endl;
@@ -334,13 +366,16 @@ struct WPerfStatJSON
                 else {
                     isFirst = false;
                 }
-                os << LiteralConstants<CharType>::m_quotes << table.m_core << LiteralConstants<CharType>::m_quotes;
-                os << LiteralConstants<CharType>::m_colon << table.Print(jsonType).str() << std::endl;
+                std::visit([&os, &jsonType](auto&& arg) {
+                    os << LiteralConstants<CharType>::m_quotes << arg.m_core << LiteralConstants<CharType>::m_quotes;
+                    os << LiteralConstants<CharType>::m_colon << arg.Print(jsonType).str() << std::endl;
+                }, table);
             }
             if (!m_DSUPerformanceTables.empty())
                 os << LiteralConstants<CharType>::m_comma << std::endl;
+
             os << LITERALCONSTANTS_GET("\"l3metric\": ") << m_DSUL3metric.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
-            os << LITERALCONSTANTS_GET("\"overall\": ") << m_DSUOverall.Print(jsonType).str() << std::endl;
+            std::visit([&os, &jsonType](auto&& arg) { os << LITERALCONSTANTS_GET("\"overall\": ") << arg.Print(jsonType).str() << std::endl; }, m_DSUOverall);
             os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
         }
         os << LiteralConstants<CharType>::m_comma << std::endl;
@@ -362,12 +397,13 @@ struct WPerfListJSON
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
 
-    TableOutput<CharType> m_Events, m_Metrics;
+    TableOutput<PredefinedEventsOutputTraits<CharType>, CharType> m_Events;
+    TableOutput<MetricOutputTraits<CharType>, CharType> m_Metrics;
 
     StringStream Print()
     {
         StringStream os;
-        enum TableOutput<CharType>::TableType jsonType = TableOutput<CharType>::JSON;
+        enum TableType jsonType = TableType::JSON;
         m_Events.m_tableJSON.m_isEmbedded = true;
         m_Metrics.m_tableJSON.m_isEmbedded = true;
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
@@ -384,23 +420,23 @@ struct WPerfSamplingJSON
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
 
-    std::vector<TableOutput<CharType>> m_samplingTables;
-    uint32_t sample_display_row;
-    uint64_t sample_generated;
-    uint64_t sample_dropped;
+    std::vector<TableOutput<SamplingOutputTraits<CharType>, CharType>> m_samplingTables;
+    uint32_t m_sample_display_row = 0;
+    uint64_t m_samples_generated = 0;
+    uint64_t m_samples_dropped = 0;
 
     StringStream Print()
     {
-        StringStream os;
-        enum TableOutput<CharType>::TableType jsonType = TableOutput<CharType>::JSON;
+        StringStream os{};
+        enum TableType jsonType = TableType::JSON;
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         {
             os << LITERALCONSTANTS_GET("\"sampling\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
-            os << LITERALCONSTANTS_GET("\"sample_display_row\": ") << sample_display_row;
+            os << LITERALCONSTANTS_GET("\"sample_display_row\": ") << m_sample_display_row;
             os << LiteralConstants<CharType>::m_comma << std::endl;
-            os << LITERALCONSTANTS_GET("\"sample_generated\": ") << sample_generated;
+            os << LITERALCONSTANTS_GET("\"samples_generated\": ") << m_samples_generated;
             os << LiteralConstants<CharType>::m_comma << std::endl;
-            os << LITERALCONSTANTS_GET("\"sample_dropped\": ") << sample_dropped;
+            os << LITERALCONSTANTS_GET("\"samples_dropped\": ") << m_samples_dropped;
             os << LiteralConstants<CharType>::m_comma << std::endl;
             bool isFirst = true;
             for (auto& table : m_samplingTables)
@@ -477,15 +513,15 @@ struct OutputControl
     {
         bool curIsQuiet = m_isQuiet;
         //If the user requested to be quiet but to output JSON results we disable quiet mode just
-        //tou output the JSON tables and then reenable it afterwards.
-        if ((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && m_isQuiet)
+        //to output the JSON tables and then reenable it afterwards.
+        if ((m_outputType == TableType::JSON || m_outputType == TableType::ALL) && m_isQuiet)
         {
             m_isQuiet = false;
         }
 
         GetOutputStream() << str;
 
-        if ((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && curIsQuiet)
+        if ((m_outputType == TableType::JSON || m_outputType == TableType::ALL) && curIsQuiet)
         {
             m_isQuiet = true;
         }
@@ -505,13 +541,14 @@ struct OutputControl
         }
     }
 
-    void Print(TableOutput<CharType>& table, bool printJson = false)
+    template <typename T>
+    void Print(TableOutput<T, CharType>& table, bool printJson = false)
     {
-        StringType s = table.Print(TableOutput<CharType>::PRETTY).str();
+        StringType s = table.Print(TableType::PRETTY).str();
         GetOutputStream() << s;
-        if ((m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL) && printJson)
+        if ((m_outputType == TableType::JSON || m_outputType == TableType::ALL) && printJson)
         {
-            StringType sj = table.Print(TableOutput<CharType>::JSON).str();
+            StringType sj = table.Print(TableType::JSON).str();
             if (!m_shouldWriteToFile)
             {
                 Print_(sj);
@@ -524,7 +561,7 @@ struct OutputControl
 
     void Print(WPerfStatJSON<CharType>& table)
     {
-        if (m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
+        if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
         {
             StringType s = table.Print().str();
             if (!m_shouldWriteToFile)
@@ -539,7 +576,7 @@ struct OutputControl
 
     void Print(WPerfListJSON<CharType>& table)
     {
-        if (m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
+        if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
         {
             StringType s = table.Print().str();
             if (!m_shouldWriteToFile)
@@ -554,7 +591,7 @@ struct OutputControl
 
     void Print(WPerfSamplingJSON<CharType>& table)
     {
-        if (m_outputType == TableOutput<CharType>::JSON || m_outputType == TableOutput<CharType>::ALL)
+        if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
         {
             StringType s = table.Print().str();
             if (!m_shouldWriteToFile)
@@ -571,7 +608,6 @@ struct OutputControl
 // Handy aliases, the L at the end of each stands for local.
 using GlobalCharType = wchar_t;
 using GlobalStringType = std::basic_string<GlobalCharType>;
-using TableOutputL = TableOutput<GlobalCharType>;
 using ColumnAlignL = enum PrettyTable<GlobalCharType>::ColumnAlign;
 using PredefinedEventsOutputTraitsL = PredefinedEventsOutputTraits<GlobalCharType>;
 
@@ -597,4 +633,4 @@ extern WPerfStatJSON<GlobalCharType> m_globalJSON;
 extern WPerfListJSON<GlobalCharType> m_globalListJSON;
 extern WPerfSamplingJSON<GlobalCharType> m_globalSamplingJSON;
 
-extern TableOutputL::TableType m_outputType;
+extern TableType m_outputType;

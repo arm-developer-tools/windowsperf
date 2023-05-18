@@ -141,6 +141,35 @@ public:
 		m_header_underline = Value;
 	}
 
+	template <int I, typename T>
+	void InsertSingle(T& val)
+	{
+		if constexpr (std::is_same_v<T, std::vector<StringType>>)
+		{
+			m_table[m_header[I]] = val;
+		} else {
+			std::vector<StringType> t_val;
+			for(auto& elem: val)
+			{
+				if constexpr (std::is_same_v<T, std::vector<uint64_t>>)
+				{
+					t_val.push_back(IntToDecWithCommas(elem));
+				}
+				else if constexpr (std::is_same_v<T, std::vector<double>>) {
+					t_val.push_back(DoubleToWideString(elem));
+				}
+				else if constexpr(std::is_same_v<T, std::vector<uint32_t>>) {
+					t_val.push_back(std::to_wstring(elem));
+				}
+				else {
+					t_val.push_back(StringType(elem));
+				}
+			}
+			m_table[m_header[I]] = t_val;
+		}
+
+	}
+
 	// Variadic function stop case.
 	template <int I = 0>
 	void Insert() {}
@@ -151,7 +180,7 @@ public:
 	{
 		if(m_header.size() > I)
 		{
-			m_table[m_header[I]] = arg1;
+			InsertSingle<I>(arg1);
 			Insert<I+1>(args...);
 		}
 	}

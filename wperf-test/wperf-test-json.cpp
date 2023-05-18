@@ -33,24 +33,36 @@
 #include "CppUnitTest.h"
 
 #include "wperf/json.h"
+#include "wperf/output.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
 {
+	template <typename CharType>
+	struct UnitTestOutputTraits : public TableOutputTraits<CharType>
+	{
+		typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+		inline const static std::tuple<StringType> columns;
+		inline const static std::tuple<CharType*> headers =
+			std::make_tuple(LITERALCONSTANTS_GET("column_header"));
+		inline const static int size = std::tuple_size_v<decltype(headers)>;
+		inline const static CharType* key = LITERALCONSTANTS_GET("json_key");
+	};
+
 	TEST_CLASS(wperftest_json)
 	{
 	public:		
 		TEST_METHOD(test_tablejson_char)
 		{
 			{
-				TableJSON<char> table;
+				TableJSON<UnitTestOutputTraits<char>, char> table;
 				std::stringstream ss;
 				ss << table;
 				Assert::AreEqual(std::string("{}"), ss.str());
 			}
 			{
-				TableJSON<char> table;
+				TableJSON<UnitTestOutputTraits<char>, char> table;
 				std::stringstream ss;
 				std::vector<std::string> vals = { };
 				table.SetKey("json_key");
@@ -60,7 +72,7 @@ namespace wperftest
 				Assert::AreEqual(std::string("{\"json_key\":[]}"), ss.str());
 			}
 			{
-				TableJSON<char> table;
+				TableJSON<UnitTestOutputTraits<char>, char> table;
 				std::stringstream ss;
 				std::vector<std::string> vals = { std::string("item1") };
 				table.SetKey("json_key");
@@ -75,13 +87,13 @@ namespace wperftest
 		TEST_METHOD(test_tablejson_wchar)
 		{
 			{
-				TableJSON<wchar_t> table;
+				TableJSON<UnitTestOutputTraits<wchar_t>, wchar_t> table;
 				std::wstringstream ss;
 				ss << table;
 				Assert::AreEqual(std::wstring(L"{}"), ss.str());
 			}
 			{
-				TableJSON<wchar_t> table;
+				TableJSON<UnitTestOutputTraits<wchar_t>, wchar_t> table;
 				std::wstringstream ss;
 				std::vector<std::wstring> vals = { };
 				table.SetKey(L"json_key");
@@ -91,7 +103,7 @@ namespace wperftest
 				Assert::AreEqual(std::wstring(L"{\"json_key\":[]}"), ss.str());
 			}
 			{
-				TableJSON<wchar_t> table;
+				TableJSON<UnitTestOutputTraits<wchar_t>, wchar_t> table;
 				std::wstringstream ss;
 				std::vector<std::wstring> vals = { std::wstring(L"item1") };
 				table.SetKey(L"json_key");

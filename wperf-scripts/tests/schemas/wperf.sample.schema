@@ -19,20 +19,20 @@
                             "required": ["count", "overhead", "symbol"],
                             "additionalProperties": false,
                             "properties": {
-                                "count": { "type": "string"},
-                                "overhead": { "type": "string" },
+                                "count": { "type": "integer"},
+                                "overhead": { "type": "number" },
                                 "symbol": { "type": "string" }
                             }
                         }
                     },
-                    "interval": { "type": "string" },
-                    "printed_sample_num": { "type": "string" }
+                    "interval": { "type": "integer" },
+                    "printed_sample_num": { "type": "integer" }
                 }
             },
             "properties": {
-                "sample_display_row": { "type": "number" },
-                "sample_generated": { "type": "number" },
-                "sample_dropped": { "type": "number" }
+                "sample_display_row": { "type": "integer" },
+                "samples_generated": { "type": "integer" },
+                "samples_dropped": { "type": "integer" }
             }
         }
     }

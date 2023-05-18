@@ -18,12 +18,12 @@
                                 "required": ["counter_value", "event_idx", "event_name", "event_note"],
                                 "additionalProperties": false,
                                 "properties": {
-                                    "counter_value": { "type": "string"},
+                                    "counter_value": { "type": "integer"},
                                     "event_idx": { "type": "string" },
                                     "event_name": { "type": "string" },
                                     "event_note": { "type": "string" },
                                     "multiplexed": { "type": "string" },
-                                    "scaled_value": { "type": "string" }
+                                    "scaled_value": { "type": "integer" }
                                 }
                             }
                         }
@@ -41,12 +41,12 @@
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "counter_value": { "type": "string"},
+                                    "counter_value": { "type": "integer"},
                                     "event_idx": { "type": "string" },
                                     "event_name": { "type": "string" },
                                     "event_note": { "type": "string" },
                                     "multiplexed": { "type": "string" },
-                                    "scaled_value": { "type": "string" }
+                                    "scaled_value": { "type": "integer" }
                                 }
                             }
                         }
@@ -69,12 +69,12 @@
                                 "required": ["counter_value", "event_idx", "event_name", "event_note"],
                                 "additionalProperties": false,
                                 "properties": {
-                                    "counter_value": { "type": "string"},
+                                    "counter_value": { "type": "integer"},
                                     "event_idx": { "type": "string" },
                                     "event_name": { "type": "string" },
                                     "event_note": { "type": "string" },
                                     "multiplexed": { "type": "string" },
-                                    "scaled_value": { "type": "string" }
+                                    "scaled_value": { "type": "integer" }
                                 }
                             }
                         }
@@ -110,12 +110,12 @@
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "counter_value": { "type": "string"},
+                                    "counter_value": { "type": "integer"},
                                     "event_idx": { "type": "string" },
                                     "event_name": { "type": "string" },
                                     "event_note": { "type": "string" },
                                     "multiplexed": { "type": "string" },
-                                    "scaled_value": { "type": "string" }
+                                    "scaled_value": { "type": "integer" }
                                 }
                             }
                         }
@@ -138,7 +138,7 @@
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
-                                    "counter_value": { "type": "string"},
+                                    "counter_value": { "type": "integer"},
                                     "event_idx": { "type": "string" },
                                     "event_name": { "type": "string" },
                                     "event_note": { "type": "string" },

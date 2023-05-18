@@ -457,7 +457,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--output")
         {
             waiting_filename = true;
-            m_outputType = TableOutputL::ALL;
+            m_outputType = TableType::ALL;
             continue;
         }
 
@@ -539,9 +539,9 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (a == L"-json")
         {
-            if (m_outputType != TableOutputL::ALL)
+            if (m_outputType != TableType::ALL)
             {
-                m_outputType = TableOutputL::JSON;
+                m_outputType = TableType::JSON;
                 m_out.m_isQuiet = true;
             }
             continue;
