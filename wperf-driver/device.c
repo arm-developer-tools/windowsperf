@@ -1837,7 +1837,7 @@ WindowsPerfDeviceCreate(
     if (!core_info)
     {
         KdPrint(("ExAllocatePoolWithTag: failed \n"));
-        return STATUS_FAIL_CHECK;
+        return STATUS_INSUFFICIENT_RESOURCES;
     }
     RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
 
