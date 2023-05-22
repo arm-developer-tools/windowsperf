@@ -141,7 +141,7 @@ public:
     uint8_t fpc_nums[EVT_CLASS_NUM];
 
     static std::map<uint8_t, wchar_t*> arm64_vendor_names;
-    ReadOut* get_core_outs() { return core_outs.get();  };
+    const ReadOut* get_core_outs() { return core_outs.get();  };
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };
 
 private:

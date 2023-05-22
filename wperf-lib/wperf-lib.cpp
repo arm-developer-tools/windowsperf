@@ -220,13 +220,13 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
             if (enable_bits & CTL_FLAG_CORE)
             {
                 __pmu_device->core_events_read();
-                ReadOut* core_outs = __pmu_device->get_core_outs();
+                const ReadOut* core_outs = __pmu_device->get_core_outs();
 
                 std::vector<uint8_t> counting_cores = __pmu_device->get_cores_idx();
                 for (auto i : counting_cores)
                 {
                     UINT32 evt_num = core_outs[i].evt_num;
-                    struct pmu_event_usr* evts = core_outs[i].evts;
+                    const struct pmu_event_usr* evts = core_outs[i].evts;
                     uint64_t round = core_outs[i].round;
                     for (UINT32 j = 0; j < evt_num; j++)
                     {
@@ -234,7 +234,7 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                         if (j >= 1 && (__ioctl_events[EVT_CORE][j - 1].type == EVT_PADDING))
                             continue;
 
-                        struct pmu_event_usr* evt = &evts[j];
+                        const struct pmu_event_usr* evt = &evts[j];
                         COUNTING_INFO counting_info;
                         counting_info.counter_value = evt->value;
                         counting_info.event_idx = evt->event_idx;
