@@ -175,7 +175,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj</AdditionalDependencies>
+      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
@@ -201,7 +201,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj</AdditionalDependencies>
+      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
@@ -254,7 +254,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj</AdditionalDependencies>
+      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
@@ -284,7 +284,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj</AdditionalDependencies>
+      <AdditionalDependencies>events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>

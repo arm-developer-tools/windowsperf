@@ -115,20 +115,11 @@ void pmu_device::init()
     // Only support metrics based on Arm's default core implementation
     if ((hw_cfg.vendor_id == 0x41 || hw_cfg.vendor_id == 0x51) && gpc_num >= 5)
     {
-
-        if (gpc_num == 5)
+        for (const auto& metric_name : metric_get_builtin_metric_names())
         {
-            set_builtin_metrics(L"imix", L"{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}");
+            std::wstring metric_str = metric_gen_metric_based_on_gpc_num(metric_name, gpc_num);
+            set_builtin_metrics(metric_name, metric_str);
         }
-        else
-        {
-            set_builtin_metrics(L"imix", L"{inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec}");
-        }
-
-        set_builtin_metrics(L"icache", L"{l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired}");
-        set_builtin_metrics(L"dcache", L"{l1d_cache,l1d_cache_refill,l2d_cache,l2d_cache_refill,inst_retired}");
-        set_builtin_metrics(L"itlb", L"{l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,inst_retired}");
-        set_builtin_metrics(L"dtlb", L"{l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}");
     }
 
     // Detect unCore PMU from Arm Ltd - System Cache

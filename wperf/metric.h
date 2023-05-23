@@ -48,3 +48,6 @@ struct metric_desc
     std::map<enum evt_class, std::vector<struct evt_noted>> groups;
     std::wstring raw_str;
 };
+
+std::vector<std::wstring> metric_get_builtin_metric_names();
+std::wstring metric_gen_metric_based_on_gpc_num(std::wstring name, uint8_t gpc_num);
