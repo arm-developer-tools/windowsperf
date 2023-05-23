@@ -18,6 +18,8 @@ static pmu_device* __pmu_device = nullptr;
 static struct pmu_device_cfg* __pmu_cfg = nullptr;
 static std::map<enum evt_class, std::vector<uint16_t>> __list_events;
 static size_t __list_index = 0;
+static std::vector<std::wstring> __list_metrics;
+static std::map<std::wstring, std::vector<uint16_t>> __list_metrics_events;
 static std::map<enum evt_class, std::vector<struct evt_noted>> __ioctl_events;
 static std::map<uint8_t, std::vector<COUNTING_INFO>> __countings;
 
@@ -49,6 +51,8 @@ extern "C" bool wperf_close()
             delete __pmu_cfg;
 
         __list_events.clear();
+        __list_metrics.clear();
+        __list_metrics_events.clear();
         __ioctl_events.clear();
         __countings.clear();
     }
@@ -62,6 +66,12 @@ extern "C" bool wperf_close()
 
 extern "C" bool wperf_driver_version(PVERSION_INFO driver_ver)
 {
+    if (!driver_ver || !__pmu_device)
+    {
+        // driver_ver and __pmu_device should not be NULL.
+        return false;
+    }
+
     try
     {
         struct version_info version;
@@ -81,6 +91,12 @@ extern "C" bool wperf_driver_version(PVERSION_INFO driver_ver)
 
 extern "C" bool wperf_version(PVERSION_INFO wperf_ver)
 {
+    if (!wperf_ver)
+    {
+        // wperf_ver should not be NULL.
+        return false;
+    }
+
     wperf_ver->major = MAJOR;
     wperf_ver->minor = MINOR;
     wperf_ver->patch = PATCH;
@@ -90,6 +106,12 @@ extern "C" bool wperf_version(PVERSION_INFO wperf_ver)
 
 extern "C" bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo)
 {
+    if (!list_conf || !__pmu_device)
+    {
+        // list_conf and __pmu_device should not be NULL.
+        return false;
+    }
+
     try
     {
         if (!einfo)
@@ -130,8 +152,145 @@ extern "C" bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo)
     return true;
 }
 
+extern "C" bool wperf_list_num_events(PLIST_CONF list_conf, int *num_events)
+{
+    if (!list_conf || !num_events)
+    {
+        // list_conf and num_events should not be NULL.
+        return false;
+    }
+
+    if (list_conf->list_event_types & CORE_EVT)
+    {
+        // Only core events are supported now.
+        *num_events = (int)__list_events[EVT_CORE].size();
+    }
+
+    return true;
+}
+
+extern "C" bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo)
+{
+    if (!list_conf || !__pmu_device)
+    {
+        // list_conf and __pmu_device should not be NULL.
+        return false;
+    }
+
+    static size_t metrics_index = 0;
+    static size_t event_index = 0;
+
+    try
+    {
+        if (!minfo)
+        {
+            // Initialize __list_metrics with the list of all builtin metrics.
+            // Initialize __list_metrics_events with the list of events for each metric.
+            __list_metrics.clear();
+            __list_metrics_events.clear();
+            metrics_index = 0;
+            event_index = 0;
+            std::map<std::wstring, metric_desc>& builtin_metrics = __pmu_device->builtin_metrics;
+            for (auto [metric, desc] : builtin_metrics)
+            {
+                __list_metrics.push_back(metric);
+                for (const auto& event : desc.groups[EVT_CORE])
+                {
+                    if (event.type != EVT_HDR)
+                    {
+                        __list_metrics_events[metric].push_back(event.index);
+                    }
+                }
+            }
+        }
+        else if (list_conf->list_event_types & CORE_EVT)
+        {
+            if (metrics_index >= __list_metrics.size())
+            {
+                // No more metrics.
+                return false;
+            }
+
+            auto& metric = __list_metrics[metrics_index];
+            if (event_index >= __list_metrics_events[metric].size())
+            {
+                // No more events for the current metric, move on to the next one.
+                metrics_index++;
+                event_index = 0;
+                if (metrics_index >= __list_metrics.size())
+                {
+                    // No more metrics.
+                    return false;
+                }
+                metric = __list_metrics[metrics_index];
+            }
+
+			// Yield the next event for the current metric.
+			minfo->metric_name = metric.c_str();
+			minfo->event_idx = __list_metrics_events[metric][event_index];
+			event_index++;
+        }
+        else
+        {
+            // Only Core PMU events are supported for now.
+            return false;
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+extern "C" bool wperf_list_num_metrics(PLIST_CONF list_conf, int *num_metrics)
+{
+    if (!list_conf || !num_metrics)
+    {
+        // list_conf and num_metrics should not be NULL.
+        return false;
+    }
+
+    if (list_conf->list_event_types & CORE_EVT)
+    {
+        // Only core events are supported now.
+        *num_metrics = (int)__list_metrics.size();
+    }
+
+    return true;
+}
+
+extern "C" bool wperf_list_num_metrics_events(PLIST_CONF list_conf, int *num_metrics_events)
+{
+    if (!list_conf || !num_metrics_events)
+    {
+        // list_conf and num_metrics_events should not be NULL.
+        return false;
+    }
+
+    if (list_conf->list_event_types & CORE_EVT)
+    {
+        // Only core events are supported now.
+        int num_events = 0;
+        for (auto& [_, events] : __list_metrics_events)
+        {
+            num_events += (int)events.size();
+        }
+        *num_metrics_events = num_events;
+    }
+
+    return true;
+}
+
 extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
 {
+    if (!stat_conf || !__pmu_device || !__pmu_cfg)
+    {
+        // stat_conf, __pmu_device and __pmu_cfg should not be NULL.
+        return false;
+    }
+
     static size_t event_index = 0;
     static size_t core_index = 0;
 
@@ -324,5 +483,17 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
         return false;
     }
 
+    return true;
+}
+
+extern "C" bool wperf_num_cores(int *num_cores)
+{
+    if (!num_cores || !__pmu_device)
+    {
+        // num_cores and __pmu_device should not be NULL.
+        return false;
+    }
+
+    *num_cores = __pmu_device->core_num;
     return true;
 }

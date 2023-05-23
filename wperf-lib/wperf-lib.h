@@ -39,6 +39,14 @@ typedef struct _EVENT_INFO
     const wchar_t* name;
 } EVENT_INFO, *PEVENT_INFO;
 
+typedef struct _METRIC_INFO
+{
+    /// Metric name
+    const wchar_t* metric_name;
+    /// Event ID
+    uint16_t event_idx;
+} METRIC_INFO, *PMETRIC_INFO;
+
 /// <summary>
 /// Initialize wperf-lib.
 /// </summary>
@@ -92,6 +100,7 @@ bool wperf_version(PVERSION_INFO wperf_ver);
 /// <example> This example shows how to call the wperf_list_events routine.
 /// <code>
 /// wperf_init();
+///
 /// LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
 /// EVENT_INFO einfo;
 /// if (wperf_list_events(&list_conf, NULL))
@@ -101,6 +110,7 @@ bool wperf_version(PVERSION_INFO wperf_ver);
 ///     printf("Event type=%d, id=%u, name=%ls\n", einfo.type, einfo.id, einfo.name);
 ///   }
 /// }
+///
 /// wperf_close();
 /// </code>
 /// </example>
@@ -112,8 +122,124 @@ bool wperf_version(PVERSION_INFO wperf_ver);
 /// to yield event by event. When passed as a pointer to a caller-allocated
 /// EVENT_INFO struct. This lib routine will populate the struct pointed to by
 /// einfo with the next event from the list of supported events.</param>
-/// <returns></returns>
+/// <returns>true if the call succeeds, false if not.</returns>
 bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo);
+
+/// <summary>
+/// Get the number of supported events. This must be called after wperf_list_events.
+/// </summary>
+/// <example> This example shows how to call the wperf_list_num_events routine.
+/// <code>
+/// wperf_init();
+///
+/// LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
+/// if (wperf_list_events(&list_conf, NULL))
+/// {
+///   int num_events;
+///   if (wperf_list_num_events(&list_conf, &num_events))
+///   {
+///     printf("num_events=%d\n", num_events);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="list_conf">Pointer to a caller-allocated LIST_CONF struct.
+/// Users configure which type of PMU events to list through setting the fields
+/// in LIST_CONF (refer to the definition of LIST_CONF for more details).</param>
+/// <param name="num_events">Pointer to a caller allocated int. This lib routine will
+/// fill the int pointed to by num_events with the number of supported events.</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_list_num_events(PLIST_CONF list_conf, int *num_events);
+
+/// <summary>
+/// Works like a generator, yields the next event from the list of events
+/// for all builtin metrics each time it's called.
+/// </summary>
+/// <example> This example shows how to call the wperf_list_metrics routine.
+/// <code>
+/// wperf_init();
+///
+/// LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
+/// METRIC_INFO minfo;
+/// if (wperf_list_metrics(&list_conf, NULL))
+/// {
+///   while (wperf_list_metrics(&list_conf, &minfo))
+///   {
+///     printf("Metric name=%ls, event_idx=%u\n", minfo.metric_name, minfo.event_idx);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="list_conf">Pointer to a caller-allocated LIST_CONF struct.
+/// Users configure which type of PMU events to list through setting the fields
+/// in LIST_CONF (refer to the definition of LIST_CONF for more details).</param>
+/// <param name="minfo">Setting minfo to NULL, this routine will retrieve the list
+/// of events for all builtin metrics internally and be ready for subsequent calls
+/// to yield event by event for all builtin metrics. When passed as a pointer to a
+/// caller-allocated METRIC__INFO struct. This lib routine will populate the struct
+/// pointed to by minfo with the next event from the list of events for all builtin
+/// metrics.</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo);
+
+/// <summary>
+/// Get the number of builtin metrics. This must be called after wperf_list_metrics.
+/// </summary>
+/// <example> This example shows how to call the wperf_list_num_metrics routine.
+/// <code>
+/// wperf_init();
+///
+/// LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
+/// if (wperf_list_metrics(&list_conf, NULL))
+/// {
+///   int num_metrics;
+///   if (wperf_list_num_metrics(&list_conf, &num_metrics))
+///   {
+///     printf("num_metrics=%d\n", num_metrics);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="list_conf">Pointer to a caller-allocated LIST_CONF struct.
+/// Users configure which type of PMU events to list through setting the fields
+/// in LIST_CONF (refer to the definition of LIST_CONF for more details).</param>
+/// <param name="num_metrics">Pointer to a caller allocated int. This lib routine will fill
+/// the int pointed to by num_metrics with the number of builtin metrics.</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_list_num_metrics(PLIST_CONF list_conf, int *num_metrics);
+
+/// <summary>
+/// Get the number of events for all builtin metrics. This must be called after wperf_list_metrics.
+/// </summary>
+/// <example> This example shows how to call the wperf_list_num_metrics_events routine.
+/// <code>
+/// wperf_init();
+///
+/// LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
+/// if (wperf_list_metrics(&list_conf, NULL))
+/// {
+///   int num_metrics_events;
+///   if (wperf_list_num_metrics_events(&list_conf, &num_metrics_events))
+///   {
+///     printf("num_metrics_events=%d\n", num_metrics_events);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="list_conf">Pointer to a caller-allocated LIST_CONF struct.
+/// Users configure which type of PMU events to list through setting the fields
+/// in LIST_CONF (refer to the definition of LIST_CONF for more details).</param>
+/// <param name="num_metrics_events"></param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_list_num_metrics_events(PLIST_CONF list_conf, int *num_metrics_events);
 
 // With this example "-e inst_spec,dp_spec,{ld_spec,st_spec} -m dcache",
 // normal events are inst_spec and dp_spec,
@@ -261,8 +387,28 @@ typedef struct _STAT_INFO
 /// to a caller-allocated STAT_INFO structure. The lib routine will populate the STAT_INFO
 /// pointed to by stat_info with the counter values and other related information defined
 /// in STAT_INFO for each requested event on each requestd core.</param>
-/// <returns></returns>
+/// <returns>true if the call succeeds, false if not.</returns>
 bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info);
+
+/// <summary>
+/// Get the number of CPU cores.
+/// </summary>
+/// <example> This example shows how to call the wperf_num_cores routine.
+/// <code>
+/// wperf_init();
+///
+/// int num_cores;
+/// if (wperf_num_cores(&num_cores))
+/// {
+///   printf("num_cores=%d\n", num_cores);
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="num_cores"></param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_num_cores(int *num_cores);
 
 #ifdef __cplusplus
 }
