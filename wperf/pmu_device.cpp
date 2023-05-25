@@ -248,6 +248,8 @@ void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
         if (hw_cfg.vendor_id == prod_conf.implementer && hw_cfg.part_id == prod_conf.part_num)
             if (m_product_metrics.count(prod_name))
             {
+                m_product_name = prod_name;     // Save for later
+
                 for (const auto& [metric_name, metric] : m_product_metrics[prod_name])
                 {
                     std::wstring raw_str = L"{" + metric.events_raw + L"}";
@@ -255,6 +257,21 @@ void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
                 }
                 break;
             }
+}
+
+std::wstring pmu_device::get_product_name_ext()
+{
+    std::wstring ret;
+    
+    if (m_product_name.size())
+    {
+        std::wstring product_name = m_product_configuration[m_product_name].product_name;
+        std::wstring arch_str = m_product_configuration[m_product_name].arch_str;
+        std::wstring pmu_architecture = m_product_configuration[m_product_name].pmu_architecture;
+        ret = product_name + L" (" + m_product_name + L")" + L", " + arch_str + L", " + pmu_architecture;
+    }
+
+    return ret;
 }
 
 void pmu_device::timeline_init()
@@ -1770,6 +1787,13 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     // Test for pmu_device.vendor_name
     col_test_name.push_back(L"pmu_device.vendor_name");
     col_test_result.push_back(vendor_name);
+
+    // Test for product name (if available)
+    col_test_name.push_back(L"pmu_device.product_name");
+    col_test_result.push_back(m_product_name);
+
+    col_test_name.push_back(L"pmu_device.product_name(extended)");
+    col_test_result.push_back(get_product_name_ext());
 
     // Tests for pmu_device.events_query(events)
     std::map<enum evt_class, std::vector<uint16_t>> events;

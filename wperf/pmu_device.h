@@ -170,9 +170,13 @@ public:
     uint8_t fpc_nums[EVT_CLASS_NUM];
 
     static std::map<uint8_t, wchar_t*> arm64_vendor_names;
+
+    // Telemetry Solution meta-data
     static std::map<std::wstring, struct product_configuration> m_product_configuration;
     static std::map<std::wstring, std::wstring> m_product_alias;
     std::map<std::wstring, std::map<std::wstring, struct product_metric>> m_product_metrics;     // [product] -> [metrics_name -> product_metric]
+    std::wstring m_product_name;        // Product name used to index Telemetry Solution data structures
+    std::wstring get_product_name_ext();    // Human friendly product string
 
     const ReadOut* get_core_outs() { return core_outs.get();  };
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };
