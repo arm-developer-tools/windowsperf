@@ -72,6 +72,7 @@ public:
     bool do_verbose;
     bool do_help;
     bool do_test;
+    bool do_annotate;
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;
     std::vector<uint8_t> cores_idx;

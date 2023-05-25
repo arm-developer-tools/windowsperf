@@ -31,7 +31,6 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include "dia2.h"
 
 #include "exception.h"
 #include "wperf-common\macros.h"
@@ -135,7 +134,6 @@ void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t&
     pe_file_stream.close();
 }
 
-
 void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short)
 {
     // Init DIA COM
@@ -230,6 +228,7 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
                         if (symbol->get_addressSection(&sec_idx) == S_OK && symbol->get_addressOffset(&sec_off) == S_OK)
                         {
                             FuncSymDesc sym_desc = { sec_idx, static_cast<uint32_t>(func_len), sec_off, func_name_wstr };
+                            read_function_lines(sym_desc, symbol, DiaSession);
                             sym_info.push_back(sym_desc);
                         }
                     }
@@ -246,6 +245,70 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
     DiaSymbol->Release();
     DiaSession->Release();
     CoUninitialize();
+}
+
+void read_function_lines(FuncSymDesc& funcSymDesc, IDiaSymbol* pSymbol, IDiaSession* pSession)
+{
+    ULONGLONG length = 0;
+    DWORD     isect = 0;
+    DWORD     offset = 0;
+
+    pSymbol->get_addressSection(&isect);
+    pSymbol->get_addressOffset(&offset);
+    pSymbol->get_length(&length);
+    if (isect != 0 && length > 0)
+    {
+        IDiaEnumLineNumbers* pLines;
+        if (SUCCEEDED(pSession->findLinesByAddr(
+            isect,
+            offset,
+            static_cast<DWORD>(length),
+            &pLines)))
+        {
+            IDiaLineNumber* pLine;
+            DWORD celt = 0;
+
+            while (SUCCEEDED(pLines->Next(1, &pLine, &celt)) && celt == 1)
+            {
+                DWORD offset_;
+                DWORD seg;
+                DWORD linenum;
+                DWORD colnum;
+                DWORD block_length;
+                DWORD rva;
+                BOOL isStatement = false;
+                IDiaSymbol* pComp;
+                IDiaSourceFile* pSrc;
+                BSTR fName;
+                ULONGLONG addr;
+
+                pLine->get_compiland(&pComp);
+                pLine->get_sourceFile(&pSrc);
+                pLine->get_addressSection(&seg);
+                pLine->get_addressOffset(&offset_);
+                pLine->get_lineNumber(&linenum);
+                pLine->get_columnNumber(&colnum);
+                pLine->get_virtualAddress(&addr);
+                pLine->get_length(&block_length);
+                pLine->get_relativeVirtualAddress(&rva);
+                pLine->get_statement(&isStatement);
+
+                pSrc->get_fileName(&fName);
+
+                funcSymDesc.lines.push_back(LineNumberDesc{
+                    std::wstring(fName),
+                    linenum,
+                    colnum,
+                    isStatement,
+                    seg,
+                    offset_,
+                    block_length,
+                    rva,
+                    addr });
+            }
+        }
+    }
+    std::sort(funcSymDesc.lines.begin(), funcSymDesc.lines.end(), [](LineNumberDesc& a, LineNumberDesc& b) -> bool { return a.lineNum < b.lineNum; });
 }
 
 bool sort_samples(const SampleDesc& a, const SampleDesc& b)

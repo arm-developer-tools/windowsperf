@@ -459,7 +459,8 @@ wmain(
                 {
                     if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
                     {
-                        sd.name = b.name;
+                        sd.desc = b;
+                        sd.module = 0;
                         found = true;
                         break;
                     }
@@ -492,7 +493,9 @@ wmain(
                             for (const auto& b : mmd.sym_info)
                                 if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
                                 {
-                                    sd.name = b.name + L":" + key;
+                                    sd.desc = b;
+                                    sd.desc.name = b.name + L":" + key;
+                                    sd.module = &mmd;
                                     found = true;
                                     break;
                                 }
@@ -501,7 +504,7 @@ wmain(
                 }
 
                 if (!found)
-                    sd.name = L"unknown";
+                    sd.desc.name = L"unknown";
 
                 for (uint32_t counter_idx = 0; counter_idx < 32; counter_idx++)
                 {
@@ -516,7 +519,7 @@ wmain(
                         event_src = request.ioctl_events_sample[counter_idx].index;
                     for (auto& c : resolved_samples)
                     {
-                        if (c.name == sd.name && c.event_src == event_src)
+                        if (c.desc.name == sd.desc.name && c.event_src == event_src)
                         {
                             c.freq++;
                             bool pc_found = false;
@@ -629,7 +632,7 @@ wmain(
 
                 col_overhead.push_back(((double)a.freq * 100 / (double)total_samples[group_idx]));// +L"%");
                 col_count.push_back(a.freq);
-                col_symbol.push_back(a.name);
+                col_symbol.push_back(a.desc.name);
 
                 if (request.do_verbose)
                 {
@@ -638,6 +641,73 @@ wmain(
                     for (int i = 0; i < 10 && i < a.pc.size(); i++)
                     {
                         m_out.GetOutputStream() << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
+                    }
+                }
+
+                if (request.do_annotate)
+                {
+                    std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
+                    std::vector<std::wstring> col_source_file, col_line_number, col_hits;
+                    if(a.desc.name != L"unknown")
+                    {
+                        m_out.GetOutputStream() << a.desc.name << std::endl;
+                        for (const auto& sample : a.pc)
+                        {
+                            bool found_line = false;
+                            ULONGLONG addr;
+                            if(a.module == NULL)
+                                addr = (sample.first - runtime_vaddr_delta) & 0xFFFFFF;
+                            else
+                            {
+                                UINT64 mod_vaddr_delta = (UINT64)a.module->handle;
+                                addr = (sample.first - mod_vaddr_delta) & 0xFFFFFF;
+                            }
+                            for (const auto& line : a.desc.lines)
+                            {
+                                if (line.virtualAddress <= addr && line.virtualAddress + line.length > addr)
+                                {
+                                    std::pair<std::wstring, DWORD> cur = std::make_pair(line.source_file, line.lineNum);
+                                    if (auto el = hotspots.find(cur); el == hotspots.end())
+                                    {
+                                        hotspots[cur] = sample.second;
+                                    }
+                                    else {
+                                        hotspots[cur] += sample.second;
+                                    }
+                                    found_line = true;
+                                }
+                            }
+                            if (!found_line)
+                            {
+                                std::cout << "No line for " << std::hex << addr << " found." << std::endl;
+                            }
+                        }
+
+                        std::vector<std::tuple<std::wstring, DWORD, uint64_t>>  sorting_annotate;
+                        for (auto& [key, val] : hotspots)
+                        {
+                            sorting_annotate.push_back(std::make_tuple(key.first, key.second, val));
+                        }
+                        
+                        std::sort(sorting_annotate.begin(), sorting_annotate.end(), [](std::tuple<std::wstring, DWORD, uint64_t>& a, std::tuple<std::wstring, DWORD, uint64_t>& b)->bool { return std::get<2>(a) > std::get<2>(b); });
+                        
+                        for (auto& el : sorting_annotate)
+                        {
+                            col_source_file.push_back(std::get<0>(el));
+                            col_line_number.push_back(std::to_wstring(std::get<1>(el)));
+                            col_hits.push_back(std::to_wstring(std::get<2>(el)));
+                        }
+
+                        if (col_source_file.size() > 0)
+                        {
+
+                            PrettyTable<GlobalCharType> annotateTable;
+                            annotateTable.AddColumn(L"Source file", PrettyTable<GlobalCharType>::LEFT);
+                            annotateTable.AddColumn(L"Line number", PrettyTable<GlobalCharType>::LEFT);
+                            annotateTable.AddColumn(L"Hits", PrettyTable<GlobalCharType>::LEFT);
+                            annotateTable.Insert(col_source_file, col_line_number, col_hits);
+                            m_out.GetOutputStream() << annotateTable << std::endl;
+                        }
                     }
                 }
 
