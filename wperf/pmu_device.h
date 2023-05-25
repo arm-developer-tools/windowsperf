@@ -62,6 +62,34 @@ struct pmu_device_cfg
     bool has_dmc;
 };
 
+struct product_alias
+{
+    std::wstring alias;
+    std::wstring name;
+};
+
+struct product_configuration
+{
+    std::wstring arch_str;
+    uint8_t implementer;
+    uint8_t major_revision;
+    uint8_t minor_revision;
+    uint8_t num_bus_slots;
+    uint8_t num_slots;
+    uint16_t part_num;
+    std::wstring pmu_architecture;
+    std::wstring product_name;
+};
+
+struct product_metric
+{
+    std::wstring name;              // :^)
+    std::wstring events_raw;        // Raw string of events, comma separated e.g. "cpu_cycles,stall_backend"
+    std::wstring metric_formula;    // Raw string with metric formula, e.g. "((STALL_BACKEND / CPU_CYCLES) * 100)"
+    std::wstring metric_unit;       // Raw string with metric unit "percent of cycles"
+    std::wstring title;             // Metric title / short description
+};
+
 
 class pmu_device
 {
@@ -71,6 +99,7 @@ public:
 
     void init();
     HANDLE init_device();
+    void hw_cfg_detected(struct hw_cfg& hw_cfg);
 
     // post_init members
     void post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx_init, bool timeline_mode_init, uint32_t enable_bits);
@@ -95,7 +124,7 @@ public:
     void timeline_header(const std::map<enum evt_class, std::vector<struct evt_noted>>& events);
     // Timeline
 
-    void set_builtin_metrics(std::wstring key, std::wstring raw_str);
+    void set_builtin_metrics(std::wstring metric_name, std::wstring raw_str);
     void start(uint32_t flags);
     void stop(uint32_t flags);
     void reset(uint32_t flags);
@@ -141,6 +170,10 @@ public:
     uint8_t fpc_nums[EVT_CLASS_NUM];
 
     static std::map<uint8_t, wchar_t*> arm64_vendor_names;
+    static std::map<std::wstring, struct product_configuration> m_product_configuration;
+    static std::map<std::wstring, std::wstring> m_product_alias;
+    std::map<std::wstring, std::map<std::wstring, struct product_metric>> m_product_metrics;     // [product] -> [metrics_name -> product_metric]
+
     const ReadOut* get_core_outs() { return core_outs.get();  };
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };
 

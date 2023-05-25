@@ -60,6 +60,32 @@ std::map<uint8_t, wchar_t*> pmu_device::arm64_vendor_names =
     {0xC0, L"Ampere Computing"}
 };
 
+std::map<std::wstring, struct product_configuration> pmu_device::m_product_configuration = {
+#define WPERF_TS_EVENTS(...)
+#define WPERF_TS_METRICS(...)
+#define WPERF_TS_PRODUCT_CONFIGURATION(A,B,C,D,E,F,G,H,I,J) {std::wstring(L##A),{std::wstring(L##B),C,D,E,F,G,H,std::wstring(L##I),std::wstring(L##J)}},
+#define WPERF_TS_ALIAS(...)
+#include "wperf-common/telemetry-solution-data.def"
+#undef WPERF_TS_EVENTS
+#undef WPERF_TS_METRICS
+#undef WPERF_TS_PRODUCT_CONFIGURATION
+#undef WPERF_TS_ALIAS
+};
+
+std::map<std::wstring, std::wstring> pmu_device::m_product_alias =
+{
+#define WPERF_TS_EVENTS(...)
+#define WPERF_TS_METRICS(...)
+#define WPERF_TS_PRODUCT_CONFIGURATION(...)
+#define WPERF_TS_ALIAS(A,B) {L##A,L##B},
+#include "wperf-common/telemetry-solution-data.def"
+#undef WPERF_TS_EVENTS
+#undef WPERF_TS_METRICS
+#undef WPERF_TS_PRODUCT_CONFIGURATION
+#undef WPERF_TS_ALIAS
+};
+
+
 pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0),
     dsu_cluster_size(0), has_dmc(false), dmc_num(0), enc_bits(0), core_num(0),
     dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0), do_verbose(false)
@@ -69,6 +95,18 @@ pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), has_dsu(f
 
     memset(gpc_nums, 0, sizeof gpc_nums);
     memset(fpc_nums, 0, sizeof fpc_nums);
+
+    {   // Initialize Telemetry Solution metrics from each product
+#       define WPERF_TS_EVENTS(...)
+#       define WPERF_TS_METRICS(A,B,C,D,E,F) m_product_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D),std::wstring(L##E),std::wstring(L##F) };
+#       define WPERF_TS_PRODUCT_CONFIGURATION(...)
+#       define WPERF_TS_ALIAS(...)
+#       include "wperf-common/telemetry-solution-data.def"
+#       undef WPERF_TS_EVENTS
+#       undef WPERF_TS_METRICS
+#       undef WPERF_TS_PRODUCT_CONFIGURATION
+#       undef WPERF_TS_ALIAS
+    }
 }
 
 HANDLE pmu_device::init_device()
@@ -112,15 +150,7 @@ void pmu_device::init()
     core_outs = std::make_unique<ReadOut[]>(core_num);
     memset(core_outs.get(), 0, sizeof(ReadOut) * core_num);
 
-    // Only support metrics based on Arm's default core implementation
-    if ((hw_cfg.vendor_id == 0x41 || hw_cfg.vendor_id == 0x51) && gpc_num >= 5)
-    {
-        for (const auto& metric_name : metric_get_builtin_metric_names())
-        {
-            std::wstring metric_str = metric_gen_metric_based_on_gpc_num(metric_name, gpc_num);
-            set_builtin_metrics(metric_name, metric_str);
-        }
-    }
+    hw_cfg_detected(hw_cfg);
 
     // Detect unCore PMU from Arm Ltd - System Cache
     has_dsu = detect_armh_dsu();
@@ -194,6 +224,37 @@ void pmu_device::init()
 
         set_builtin_metrics(L"ddr_bw", L"/dmc_clkdiv2/rdwr");
     }
+}
+
+void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
+{
+    // Support metrics based on Arm's default core implementation
+    if (hw_cfg.vendor_id == 0x41 || hw_cfg.vendor_id == 0x51)
+    {
+        for (const auto& metric_name : metric_get_builtin_metric_names())
+        {
+            std::wstring metric_str = metric_gen_metric_based_on_gpc_num(metric_name, hw_cfg.gpc_num);
+            set_builtin_metrics(metric_name, metric_str);
+        }
+    }
+
+    // Support metrics from detected HW via Telemetry Solution data
+    for (auto const& [alias, name] : m_product_alias)
+        if (m_product_configuration.count(name))
+            m_product_configuration[alias] = m_product_configuration[name];
+
+    // Add metrcs based on detected Telemetry Solution product
+    for (auto const& [prod_name, prod_conf] : m_product_configuration)
+        if (hw_cfg.vendor_id == prod_conf.implementer && hw_cfg.part_id == prod_conf.part_num)
+            if (m_product_metrics.count(prod_name))
+            {
+                for (const auto& [metric_name, metric] : m_product_metrics[prod_name])
+                {
+                    std::wstring raw_str = L"{" + metric.events_raw + L"}";
+                    set_builtin_metrics(metric_name, raw_str);
+                }
+                break;
+            }
 }
 
 void pmu_device::timeline_init()
@@ -385,7 +446,7 @@ void pmu_device::stop_sample()
     m_globalSamplingJSON.m_samples_dropped = summary.sample_dropped;
 }
 
-void pmu_device::set_builtin_metrics(std::wstring key, std::wstring raw_str)
+void pmu_device::set_builtin_metrics(std::wstring metric_name, std::wstring raw_str)
 {
     metric_desc mdesc;
     mdesc.raw_str = raw_str;
@@ -393,8 +454,8 @@ void pmu_device::set_builtin_metrics(std::wstring key, std::wstring raw_str)
     struct pmu_device_cfg pmu_cfg;
     get_pmu_device_cfg(pmu_cfg);
 
-    parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, key, pmu_cfg);
-    builtin_metrics[key] = mdesc;
+    parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, metric_name, pmu_cfg);
+    builtin_metrics[metric_name] = mdesc;
     mdesc.events.clear();
     mdesc.groups.clear();
 }
