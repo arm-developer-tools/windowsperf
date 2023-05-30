@@ -223,6 +223,7 @@ wmain(
                 {
                     pmu_device.core_events_read();
                     pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
+                    pmu_device.print_core_metrics(request.ioctl_events[EVT_CORE]);
                 }
 
                 if (enable_bits & CTL_FLAG_DSU)

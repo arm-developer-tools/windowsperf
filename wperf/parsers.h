@@ -49,5 +49,5 @@ void parse_events_str(std::wstring events_str,
     std::deque<struct evt_noted>>& events,
     std::map<enum evt_class,
     std::vector<struct evt_noted>>& groups,
-    std::wstring note,
+    std::wstring metric_name,
     const struct pmu_device_cfg& pmu_cfg);

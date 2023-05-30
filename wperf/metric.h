@@ -35,11 +35,14 @@
 #include <vector>
 
 
+#define EVT_NOTED_NO_GROUP      -1
 struct evt_noted
 {
     uint16_t index;
     enum evt_type type;
-    std::wstring note;
+    std::wstring note;          // Human readable string describing event
+    int group;                  // Event group number (-1 if not in group)
+    std::wstring metric;        // Name of metric, if event is part of metric
 };
 
 struct metric_desc

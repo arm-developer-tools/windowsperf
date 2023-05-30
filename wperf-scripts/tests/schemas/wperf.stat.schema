@@ -51,6 +51,24 @@
                             }
                         }
                     }
+                },
+                "ts_metric": {
+                    "type": "object",
+                    "properties": {
+                        "Telemetry_Solution_Metrics": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "core": { "type": "string" },
+                                    "product_name": { "type": "string" },
+                                    "metric_name": { "type": "string" },
+                                    "value": { "type": "string" },
+                                    "unit": { "type": "integer" }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },

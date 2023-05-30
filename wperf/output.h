@@ -136,6 +136,22 @@ struct L3CacheMetricOutputTraits : public TableOutputTraits<CharType>
 };
 
 template <typename CharType>
+struct TelemetrySolutionMetricOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType, StringType, StringType, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("core"),
+            LITERALCONSTANTS_GET("product_name"),
+            LITERALCONSTANTS_GET("metric_name"),
+            LITERALCONSTANTS_GET("value"),
+            LITERALCONSTANTS_GET("unit"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("Telemetry Solution Metrics");
+};
+
+
+template <typename CharType>
 struct DDRMetricOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
@@ -307,6 +323,7 @@ struct WPerfStatJSON
     std::vector<std::variant<PerformanceCounterOutputTraitsTO, MultiplexingPerformanceCounterOutputTraitsTO>> m_DSUPerformanceTables;
     std::variant<SystemwidePerformanceCounterOutputTraitsTO, MultiplexedSystemwidePerformanceCounterOutputTraitsTO> m_coreOverall, m_DSUOverall;
     TableOutput<L3CacheMetricOutputTraits<CharType>, CharType> m_DSUL3metric;
+    TableOutput<TelemetrySolutionMetricOutputTraits<CharType>, CharType> m_TSmetric;
     TableOutput<PMUPerformanceCounterOutputTraits<CharType>, CharType> m_pmu;
     TableOutput<DDRMetricOutputTraits<CharType>, CharType> m_DMCDDDR;
     bool m_multiplexing = false;
@@ -351,6 +368,8 @@ struct WPerfStatJSON
                 os << LiteralConstants<CharType>::m_comma << std::endl;
 
             std::visit([&os, &jsonType](auto&& arg) { os << LITERALCONSTANTS_GET("\"overall\": ") << arg.Print(jsonType).str() << std::endl; }, m_coreOverall);
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"ts_metric\": ") << m_TSmetric.Print(jsonType).str() << std::endl;
             os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
         }
         os << LiteralConstants<CharType>::m_comma << std::endl;
@@ -618,6 +637,7 @@ template <bool isMultiplexing>
 using SystemwidePerformanceCounterOutputTraitsL = SystemwidePerformanceCounterOutputTraits<GlobalCharType, isMultiplexing>;
 
 using L3CacheMetricOutputTraitsL = L3CacheMetricOutputTraits<GlobalCharType>;
+using TelemetrySolutionMetricOutputTraitsL = TelemetrySolutionMetricOutputTraits<GlobalCharType>;
 using PMUPerformanceCounterOutputTraitsL = PMUPerformanceCounterOutputTraits<GlobalCharType>;
 using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
 using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;

@@ -230,7 +230,7 @@ void parse_events_str(std::wstring events_str,
     std::deque<struct evt_noted>>& events,
     std::map<enum evt_class,
     std::vector<struct evt_noted>>& groups,
-    std::wstring note,
+    std::wstring metric_name,
     const struct pmu_device_cfg& pmu_cfg)
 {
     std::wistringstream event_stream(events_str);
@@ -381,9 +381,17 @@ void parse_events_str(std::wstring events_str,
             }
         }
 
+        std::wstring note = metric_name;
+
         if (push_group)
         {
-            groups[e_class].push_back({ raw_event, note == L"" ? EVT_GROUPED : EVT_METRIC_GROUPED, note });
+            // We know how many groups are now inserted fully by counting EVT_HDR marker which describes group in vector of events
+            // See below how and why we inser EVT_HDR to groups[e_class].
+            const auto cnt = std::count_if(groups[e_class].begin(), groups[e_class].end(),
+                                              [](const evt_noted& e) { return e.type == EVT_HDR; });
+
+            groups[e_class].push_back({ raw_event, note == L"" ? EVT_GROUPED : EVT_METRIC_GROUPED, note, static_cast<int>(cnt), metric_name });
+
             if (push_group_last)
             {
                 if (group_size > pmu_cfg.gpc_nums[e_class])
@@ -397,16 +405,16 @@ void parse_events_str(std::wstring events_str,
                 // Insert EVT_HDR in front of group we've just added. This entity
                 // will store information about following group of events.
                 auto it = groups[e_class].end();
-                groups[e_class].insert(std::prev(it, group_size), { group_size, EVT_HDR, note });
+                groups[e_class].insert(std::prev(it, group_size), { group_size, EVT_HDR, note, EVT_NOTED_NO_GROUP, metric_name });
                 group_size = 0;
             }
         }
         else
         {
             if (note == L"")
-                events[e_class].push_back({ raw_event, EVT_NORMAL, L"e" });
+                events[e_class].push_back({ raw_event, EVT_NORMAL, L"e", EVT_NOTED_NO_GROUP, metric_name });
             else
-                events[e_class].push_back({ raw_event, EVT_METRIC_NORMAL, L"e," + note });
+                events[e_class].push_back({ raw_event, EVT_METRIC_NORMAL, L"e," + note, EVT_NOTED_NO_GROUP, metric_name });
         }
     }
 }

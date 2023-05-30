@@ -136,9 +136,13 @@ public:
     void dsu_events_read(void);
     void dmc_events_read(void);
     void events_query(std::map<enum evt_class, std::vector<uint16_t>>& events_out);
+
     void print_core_stat(std::vector<struct evt_noted>& events); 
     void print_dsu_stat(std::vector<struct evt_noted>& events, bool report_l3_metric);
     void print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::vector<struct evt_noted>& clkdiv2_events, bool report_ddr_bw_metric);
+
+    void print_core_metrics(std::vector<struct evt_noted>& events);
+
     void do_list(const std::map<std::wstring, metric_desc>& metrics);
     void do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_name,
         _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type);   // part of do_list()

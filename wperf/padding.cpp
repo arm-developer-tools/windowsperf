@@ -172,6 +172,7 @@ void push_ioctl_grouped_event(std::map<enum evt_class, std::vector<struct evt_no
     enum evt_class e_class, struct evt_noted event, uint16_t group_num)
 {
     event.note = set_event_note(event, group_num);
+    event.group = static_cast<int>(group_num);
     ioctl_events[e_class].push_back(event);
 }
 

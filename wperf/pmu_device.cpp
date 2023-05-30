@@ -1069,6 +1069,89 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
     }
 }
 
+void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
+{
+    std::vector<std::wstring> col_core, col_product_name, col_metric_name, col_metric_value, metric_unit;
+
+    for (uint32_t i : cores_idx)
+    {
+        const uint32_t evt_num = core_outs[i].evt_num;
+        struct pmu_event_usr* evts = core_outs[i].evts;
+
+        std::map<std::wstring, std::set<int>> event_metrics;        // [metric_name] -> set of groups
+
+        for (const struct evt_noted& event : events)
+            if (event.metric.size())
+                event_metrics[event.metric].insert(event.group);
+
+        for (const auto& [metric, groups] : event_metrics)
+        {
+            for (const auto group : groups)
+            {
+                if (m_product_name.empty())
+                    break;
+
+                if (m_product_metrics.count(m_product_name) == 0)
+                    break;
+
+                if (m_product_metrics[m_product_name].count(metric) == 0)
+                    break;
+
+                const auto& product_metric = m_product_metrics[m_product_name][metric];
+
+                //if (do_verbose)
+                //{
+                //    std::wcout << L"Metric " << m_product_name << L"::" << product_metric.name << L", group " << group << L" (" << product_metric.title << L"):" << std::endl;
+                //    std::wcout << m_product_name << L"::" << product_metric.name << L" = " << product_metric.metric_formula << L", unit = [" << product_metric.metric_unit << L"]" << std::endl;
+                //}
+
+                std::map<std::wstring, double> vars;
+                const std::wstring& formula_sy = product_metric.metric_formula_sy;
+
+                for (auto it = events.begin(); it != events.end(); it++)
+                {
+                    const auto& event = *it;
+                    const auto index = it - events.begin() + 1;
+                    assert(index < evt_num);
+                    struct pmu_event_usr* evt = &evts[index];
+
+                    if (event.metric == metric && event.group == group)
+                    {
+                        std::wstring event_name = pmu_events::get_event_name((uint16_t)evt->event_idx);
+                        vars[event_name] = static_cast<double>(evt->value);
+                    }
+                }
+
+                double metric_value = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+                col_core.push_back(std::to_wstring(i));
+                col_product_name.push_back(m_product_name);
+                col_metric_name.push_back(product_metric.name);
+                col_metric_value.push_back(DoubleToWideString(metric_value));
+                metric_unit.push_back(product_metric.metric_unit);
+            }
+        }
+    }
+
+    if (col_core.size())
+    {
+        m_out.GetOutputStream() << std::endl;
+        m_out.GetOutputStream() << L"Telemetry Solution Metrics:" << std::endl;
+
+        TableOutput<TelemetrySolutionMetricOutputTraitsL, GlobalCharType> table(m_outputType);
+        table.PresetHeaders();
+        table.SetAlignment(0, ColumnAlignL::RIGHT);
+        table.SetAlignment(1, ColumnAlignL::LEFT);
+        table.SetAlignment(2, ColumnAlignL::LEFT);
+        table.SetAlignment(3, ColumnAlignL::RIGHT);
+        table.SetAlignment(4, ColumnAlignL::LEFT);
+        table.Insert(col_core, col_product_name, col_metric_name, col_metric_value, metric_unit);
+        m_globalJSON.m_TSmetric = table;
+        m_out.Print(table);
+    }
+
+}
+
 void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool report_l3_metric)
 {
     bool multiplexing = multiplexings[EVT_DSU];
