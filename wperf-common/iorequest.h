@@ -55,6 +55,7 @@ struct hw_cfg
     UINT8   pmu_ver;
     UINT8   fpc_num;
     UINT8   gpc_num;
+    UINT8   total_gpc_num;
     UINT8   vendor_id;
     UINT8   variant_id;
     UINT8   arch_id;
