@@ -86,6 +86,7 @@ struct product_metric
     std::wstring name;              // :^)
     std::wstring events_raw;        // Raw string of events, comma separated e.g. "cpu_cycles,stall_backend"
     std::wstring metric_formula;    // Raw string with metric formula, e.g. "((STALL_BACKEND / CPU_CYCLES) * 100)"
+    std::wstring metric_formula_sy; // Raw string with RPN equivalent expression of metric formula e.g. "STALL_BACKEND CPU_CYCLES / 100 *"
     std::wstring metric_unit;       // Raw string with metric unit "percent of cycles"
     std::wstring title;             // Metric title / short description
 };

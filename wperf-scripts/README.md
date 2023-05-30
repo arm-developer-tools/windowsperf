@@ -39,3 +39,12 @@ options:
   --license LICENSE     license file added to the script header
 ```
 
+## telemetry_events_update.py
+
+Script fetches Telemetry Solution CPU's PMU related information from [Telemetry Solution](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/data/pmu/cpu).
+
+Note: for simplicity we now hard-code CPUs available in above repository. In the future we will add enumeration functionality!
+
+```
+>python telemetry_events_update.py > ..\wperf-common\telemetry-solution-data.def
+```

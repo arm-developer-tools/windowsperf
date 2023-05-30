@@ -39,9 +39,9 @@ This script prompts a user to merge the PMU events stored in:
 
 import argparse
 import json
+import shunting_yard as sy
 import requests
 from requests.compat import urljoin
-
 
 URL = "https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/raw/main/data/pmu/cpu/"
 
@@ -123,10 +123,14 @@ def ts_parse_metrics(j, name):
     events_name_max_len += 4
 
     for metric in metrics:
+        formula = metrics[metric]["formula"]
+        formula_sy = sy.shunting_yard(formula)
+
         values = [ts_quote(name),
                   ts_align(ts_quote(metric), metric_name_max_len),
                   ts_align(ts_quote(','.join(metrics[metric]["events"]).lower()), events_name_max_len),
-                  ts_align(ts_quote(metrics[metric]["formula"]), formula_name_max_len),
+                  ts_align(ts_quote(formula).lower(), formula_name_max_len),
+                  ts_align(ts_quote(formula_sy).lower(), formula_name_max_len),
                   ts_align(ts_quote(metrics[metric]["units"]), units_name_max_len),
                   ts_quote(metrics[metric]["title"])]
         values = ','.join(values)

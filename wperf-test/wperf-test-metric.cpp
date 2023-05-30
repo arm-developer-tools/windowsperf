@@ -100,5 +100,89 @@ namespace wperftest_metric
 			Assert::AreEqual(metric_gen_metric_based_on_gpc_num(L"dtlb", 6), std::wstring(L"{l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}"));
 			Assert::AreEqual(metric_gen_metric_based_on_gpc_num(L"dtlb", 7), std::wstring(L"{l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}"));
 		}
+
+		// Shunting Yard Algorithm calculation
+		TEST_METHOD(test_metric_SY_Algorithm_calculations_bad_speculation)
+		{
+			std::wstring formula_sy = L"100 1 op_retired op_spec / - 1 stall_slot cpu_cycles 8 * / - * br_mis_pred 4 * cpu_cycles / + *";
+
+			std::map<std::wstring, double> vars = {
+				{std::wstring(L"op_retired"), 517},
+				{std::wstring(L"op_spec"), 2468},
+				{std::wstring(L"stall_slot"), 709},
+				{std::wstring(L"cpu_cycles"), 2456},
+				{std::wstring(L"br_mis_pred"), 1733},
+			};
+
+
+			double op_retired = vars[L"op_retired"];
+			double op_spec = vars[L"op_spec"];;
+			double stall_slot = vars[L"stall_slot"];;
+			double cpu_cycles = vars[L"cpu_cycles"];;
+			double br_mis_pred = vars[L"br_mis_pred"];;
+
+			double val_compute = (100 * (((1 - (op_retired / op_spec)) * (1 - (stall_slot / (cpu_cycles * 8)))) + ((br_mis_pred * 4) / cpu_cycles)));
+			double val_sy = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+			Assert::AreEqual(val_compute, val_sy);
+		}
+
+		TEST_METHOD(test_metric_SY_Algorithm_calculations_retiring)
+		{
+			std::wstring formula_sy = L"100 op_retired op_spec / * 1 stall_slot cpu_cycles 8 * / - *";
+
+			std::map<std::wstring, double> vars = {
+				{std::wstring(L"cpu_cycles"), 7},
+				{std::wstring(L"op_retired"), 2},
+				{std::wstring(L"op_spec"), 3},
+				{std::wstring(L"stall_slot"), 4},
+			};
+
+			double cpu_cycles = vars[L"cpu_cycles"];
+			double op_retired = vars[L"op_retired"];;
+			double op_spec = vars[L"op_spec"];;
+			double stall_slot = vars[L"stall_slot"];;
+
+			double val_compute = ((100 * (op_retired / op_spec)) * (1 - (stall_slot / (cpu_cycles * 8))));
+			double val_sy = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+			Assert::AreEqual(val_compute, val_sy);
+		}
+
+		TEST_METHOD(test_metric_SY_Algorithm_calculations_load_percentage)
+		{
+			std::wstring formula_sy = L"ld_spec inst_spec / 100 *";
+
+			{
+				std::map<std::wstring, double> vars = {
+					{std::wstring(L"ld_spec"), 7},
+					{std::wstring(L"inst_spec"), 2},
+				};
+
+				double ld_spec = vars[L"ld_spec"];
+				double inst_spec = vars[L"inst_spec"];;
+
+				double val_compute = ((ld_spec / inst_spec) * 100);
+				double val_sy = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+				Assert::AreEqual(val_compute, val_sy);
+			}
+
+			{
+				std::map<std::wstring, double> vars = {
+					{std::wstring(L"ld_spec"), 123456},
+					{std::wstring(L"inst_spec"), 7890},
+				};
+
+				double ld_spec = vars[L"ld_spec"];
+				double inst_spec = vars[L"inst_spec"];;
+
+				double val_compute = ((ld_spec / inst_spec) * 100);
+				double val_sy = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+				Assert::AreEqual(val_compute, val_sy);
+			}
+
+		}
 	};
 }

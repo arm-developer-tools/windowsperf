@@ -51,3 +51,7 @@ struct metric_desc
 
 std::vector<std::wstring> metric_get_builtin_metric_names();
 std::wstring metric_gen_metric_based_on_gpc_num(std::wstring name, uint8_t gpc_num);
+
+// Shunting Yard Algorithm calculation
+bool metris_token_is_operator(const std::wstring op);
+double metric_calculate_shunting_yard_expression(const std::map<std::wstring, double>& vars, const std::wstring& formula_sy);

@@ -28,9 +28,15 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <string>
-#include <vector>
+#include <algorithm>
+#include <iomanip>
+#include <list>
 #include <map>
+#include <stack>
+#include <string>
+#include <sstream>
+#include <vector>
+
 
 // Predefined simple metrics
 static std::vector<std::wstring> imix = { L"inst_spec", L"dp_spec", L"vfp_spec", L"ase_spec", L"ld_spec", L"st_spec" };
@@ -81,4 +87,55 @@ std::wstring metric_gen_metric_based_on_gpc_num(std::wstring name, uint8_t gpc_n
     }
 
     return result;
+}
+
+bool metris_token_is_operator(const std::wstring op)
+{
+    static std::vector<std::wstring> operators = { L"*", L"/", L"+", L"-" };
+    return std::find(operators.begin(), operators.end(), op) != operators.end();
+}
+
+double metric_calculate_shunting_yard_expression(const std::map<std::wstring, double>& vars, const std::wstring& formula_sy)
+{
+    // Tokenize formula
+    std::list<std::wstring> tokens;
+    std::wstring token;
+    std::wistringstream ss(formula_sy);
+
+    while (std::getline(ss, token, L' '))
+        tokens.push_back(token);
+
+    // Calculate SY formula
+    std::stack<double> stack;
+    while (tokens.size())
+    {
+        std::wstring t = tokens.front();
+        tokens.pop_front();
+
+        if (metris_token_is_operator(t))
+        {
+            double y = stack.top(); stack.pop();
+            double x = stack.top(); stack.pop();
+            double val = x; // x OP y
+
+            switch (t[0])
+            {
+            case L'*': val *= y; break;
+            case L'/': val /= y; break;
+            case L'+': val += y; break;
+            case L'-': val -= y; break;
+            }
+
+            stack.push(val);
+        }
+        else
+        {
+            if (vars.count(t))
+                stack.push(vars.at(t));
+            else
+                stack.push(_wtof(t.c_str()));
+        }
+    }
+
+    return stack.top();
 }
