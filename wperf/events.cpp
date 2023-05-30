@@ -102,7 +102,7 @@ const wchar_t* pmu_events::get_core_event_name(uint16_t index)
 {
     switch (index)
     {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) case b: return L##c;
+#define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) case b: return L##c;
 #include "wperf-common\armv8-arch-events.def"
 #undef WPERF_ARMV8_ARCH_EVENTS
     case 0xFFFF: return L"cycle";
@@ -147,7 +147,7 @@ const wchar_t* pmu_events::get_extra_event_name(uint16_t index, enum evt_class e
 
 int pmu_events::get_core_event_index(std::wstring name)
 {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) if (CaseInsensitiveWStringComparision(name, std::wstring(L##c))) return b;
+#define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) if (CaseInsensitiveWStringComparision(name, std::wstring(L##c))) return b;
 #include "wperf-common\armv8-arch-events.def"
 #undef WPERF_ARMV8_ARCH_EVENTS
     return -1;

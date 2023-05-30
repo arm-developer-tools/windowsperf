@@ -77,11 +77,16 @@ class ArchEventsUpdate:
         line_output = ""
         with open(json_file,"r",encoding='utf-8') as fjson:
             data = json.load(fjson)
+            architecture = data['architecture']
+
             for event in data['events']:
                 line_output = line_output + (self.wperf_arch_events + "(" \
+                    + (architecture + ',').ljust(16,' ')  \
                     + (event['name'] + ',').ljust(50,' ')  \
                     + '0x' + (hex(int(event['code']))[2:]).rjust(4,'0') \
-                    + ', \"' + event['name'].lower() + '\")\n')
+                    + ', \"' + (event['name'].lower() + '",').ljust(48, ' ')
+                    + '"' + event['description'].lower()
+                    + '\")\n')
         return line_output
 
 

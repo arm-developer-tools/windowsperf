@@ -82,14 +82,14 @@ static CoreInfo* core_info;
 
 enum
 {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) PMU_EVENT_##a = b,
+#define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) PMU_EVENT_##a = b,
 #include "wperf-common\armv8-arch-events.def"
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
 static UINT16 armv8_arch_core_events[] =
 {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) b,
+#define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) b,
 #include "wperf-common\armv8-arch-events.def"
 #undef WPERF_ARMV8_ARCH_EVENTS
 };

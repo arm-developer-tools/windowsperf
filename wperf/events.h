@@ -53,7 +53,7 @@ struct extra_event
 
 enum
 {
-#define WPERF_ARMV8_ARCH_EVENTS(a,b,c) PMU_EVENT_##a = b,
+#define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) PMU_EVENT_##a = b,
 #include "wperf-common\armv8-arch-events.def"
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
