@@ -6,14 +6,14 @@
 
 All changes you commit or submit by merge request should follow these simple guidelines:
 * Use merge requests.
-* Should build without new warnings or errors. Please use project's solution file to drive build and test process.
-* Please do not squash your Merge Request's commits into one commit. Split PR into many meaningful commit, we can review separately.
+* Should build without new warnings or errors. Please use the project's solution file to drive the build and test process.
+* Please do not squash your Merge Request commits into one commit. Split PR into many meaningful commits, we can review separately.
 * Code should be free from profanities in any language.
 
 # Commits in your merge requests should
 
-* One commit should represent one meaningful change. E.g. please do not add new header file and in the same commit update project solution.
-* Have short (72 chars or less) meaningful subject.
+* One commit should represent one meaningful change. E.g. Please do not add a new header file and in the same commit update project solution.
+* Have short (72 chars or less) meaningful subjects.
 * Have a useful subject prefixed (E.g.: `"wperf: Refactor header files"`). See next chapter for details.
 * Separate subject from body with a blank line.
 * Use the imperative mood in the subject line.
@@ -77,11 +77,11 @@ A good bug report, which is complete and self-contained, enables us to fix the b
 ## What we want
 
 Please include (if possible) all of the following items (if applicable):
-* Your operating system name and version. On Windows click `Start` –> `RUN` , type `winver` and press enter. You will see popup window with your OS version.
+* Your operating system name and version. On Windows click `Start` –> `RUN` , type `winver` and press enter. You will see a popup window with your OS version.
 * The complete command line that triggers the bug.
 * The Kernel driver debug logs. You can grab them with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) .
 * The MSVC toolchain warnings and errors present.
-* Current `WindowsPerf` source code version. You can obtain it with `git log -1` command executed in directory with project solution file.
+* Current `WindowsPerf` source code version. You can obtain it with `git log -1` command executed in the directory with the project solution file.
 * Describe any limitations of the current code.
 
 ## What we do not want

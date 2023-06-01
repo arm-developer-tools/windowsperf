@@ -11,7 +11,10 @@ You can build `wperf-driver` project from command line:
 ```
 
 # Kernel Driver Installation
-Kernel driver can be installed and removed on ARM64 machine with DevCon command.
+
+Kernel drivers can be installed and removed on ARM64 machines with DevCon command.
+
+Please note that we now release `WindowsPerf` with the signed Kernel driver `wperf-driver`. This driver can be installed on all ARM64 machines without tempering with SecureBoot or other critical security settings. Please refer to [releases](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases) to get the latest stable driver and user space application.
 
 First change directory to directory where your `wperf-driver` files (`wperf-driver.cat`, `wperf-driver.inf`, and `wperf-driver.sys`) are:
 
@@ -23,7 +26,7 @@ First change directory to directory where your `wperf-driver` files (`wperf-driv
 28/10/2022  10:06            33,712 wperf-driver.sys
 ```
 
-Use `DevCon Install` command to install driver and `DevCon Status` to check driver's status. You can also remove driver using `DevCon Remove` command. See examples below.
+Use `DevCon Install` command to install the driver and `DevCon Status` to check the driver's status. You can also remove the driver using the `DevCon Remove` command. See examples below.
 
 Note: We've prepared wrapper scripts for installation, removal and status check of the driver. Please see [wperf-scripts/devcon](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/devcon).
 
@@ -69,13 +72,13 @@ For more information about `devcon` command please visit [Device Console Command
 Please note that `devcon.exe` should be located in `c:\Program Files (x86)\Windows Kits\10\Tools\ARM64\` on your ARM64 machine.
 See some details [here](https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/writing-a-kmdf-driverbased-on-a-template#install-the-driver).
 
-If you face issue installing driver you might look at the last sections of `c:\windows\inf\setupapi.app.log` and `c:\windows\inf\setupapi.dev.log`. They might provide some hints.
+If you face issues installing the driver you might look at the last sections of `c:\windows\inf\setupapi.app.log` and `c:\windows\inf\setupapi.dev.log`. They might provide some hints.
 
 ## Extra step (installing non-signed driver)
 
 Use below steps at your own risk. 
 
-Currently `wperf-driver` is an unsigned driver. To enable installing unsigned driver on WOA ARM64 machines requires few extra steps.
+Currently `wperf-driver` is an unsigned driver. To enable installing an unsigned driver on WOA ARM64 machines requires a few extra steps.
 
 ### You must first enable test-signed code
 
@@ -87,15 +90,15 @@ Use the following BCDEdit command line (Administrator rights required):
 
 See [Enable Loading of Test Signed Drivers](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/the-testsigning-boot-configuration-option#enable-or-disable-use-of-test-signed-code) article for more details.
 
-Note: *This change takes affect after reboot*.
+Note: *This change takes effect after reboot*.
 
-After reboot you can try to install driver with `DevCon Install` command.
+After reboot you can try to install the driver with the `DevCon Install` command.
 
 This might further require you to:
 
 ### Second, Disable BitLocker on Windows 11
 
-If `BitLocker` is enabled on your machine and before you attempt to disable it make sure you have `BitLocker Recover Key` for your machine.
+If `BitLocker` is enabled on your machine and before you attempt to disable it make sure you have `BitLocker Recovery Key` for your machine.
 You can obtain it in advance with procedure described [here](https://support.microsoft.com/en-us/windows/finding-your-bitlocker-recovery-key-in-windows-6b71ad27-0b89-ea08-f143-056f5ab347d6).
 
 ### Third, Disable Secure Boot on your machine

@@ -28,7 +28,7 @@ WindowsPerf solution consists of few projects:
 * [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver) is a Kernel-Mode Driver Framework (KMDF) driver.
   * See [Using WDF to Develop a Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/using-the-framework-to-develop-a-driver) article for more details on KMDF.
   * Currently `wperf-driver` can communicate with one instance of `wperf`.
-* [wperf-test](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-test) contains unit tests for `wperf` project.
+* [wperf-test](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-test) contains unit tests for the `wperf` project.
 
 Other directories contain:
 * [wperf-common](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-common) contains common code between `wperf` and `wperf-driver` project. Mostly data structures describing IOCTRL binary protocol.
@@ -42,7 +42,7 @@ When contributing to this repository, please first read [CONTRIBUTING.md](https:
 
 ## Project resources
 
-For more information regarding project visit [WindowsPerf Wiki](https://linaro.atlassian.net/wiki/spaces/WPERF/overview).
+For more information regarding the project visit [WindowsPerf Wiki](https://linaro.atlassian.net/wiki/spaces/WPERF/overview).
 
 # Building WindowsPerf project
 
@@ -50,7 +50,7 @@ For more information regarding project visit [WindowsPerf Wiki](https://linaro.a
 * Both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation. You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
 * Please build `wperf` application with `ARM64EC` configuration as it's requiring [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022) support which is not available in `ARM64` mode.
   * You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
-  * If `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you’ve installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.
+  * If the `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you’ve installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.
 
 ```
 > cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin"
@@ -65,7 +65,7 @@ For more information regarding project visit [WindowsPerf Wiki](https://linaro.a
  * Windows Software Development Kit (SDK).
 * [Windows Driver Kit (WDK)](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk).
 
-Please note that SDK and WDK versions installed on your system must be compatible! First install Windows SDK using Visual Studio installer and after it’s installed proceed and install WDK which must match DSK version so that first three numbers of the version are the same. For example, SDK version `10.0.22621.1` and WDK `10.0.22621.382` is a match.
+Please note that SDK and WDK versions installed on your system must be compatible! First install Windows SDK using Visual Studio installer and after it’s installed proceed and install WDK which must match the DSK version so that the first three numbers of the version are the same. For example, the SDK version `10.0.22621.1` and WDK `10.0.22621.382` are a match.
 
 ### Code base
 
@@ -75,7 +75,7 @@ WindowsPerf solution is implemented in `C/C++17`.
 
 You can see `wperf-driver` debug printouts with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview). Kernel-Mode debug prints are produced with macros [DbgPrint](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprint) and [DbgPrintEx](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprintex).
 
-After adding sampling model we've moved to more robust tracing. For kernel driver traces please use [TraceView](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/traceview) application. You will need to present TraceView with `wperf-driver.pdb` file and you are ready to go!
+After adding a sampling model we've moved to more robust tracing. For kernel driver traces please use [TraceView](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/traceview) application. You will need to present the TraceView with the `wperf-driver.pdb` file and you are ready to go!
 
 Debugging Tools for Windows supports kernel debugging over a USB cable using EEM on an Arm device. Please refer to [Setting Up Kernel-Mode Debugging over USB EEM on an Arm device using KDNET](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-kernel-mode-debugging-over-usb-eem-arm-kdnet) article for more details.
 

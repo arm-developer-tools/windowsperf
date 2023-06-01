@@ -396,14 +396,14 @@ In this example we will build CPython from sources and execute simple instructio
 To achieve that we will:
 * Build CPython binaries targeting ARM64 from sources in debug mode.
 * Pin `python_d.exe` interactive console to core no. 1.
-* Try to calculate absurdly large integer number [Googolplex](https://en.wikipedia.org/wiki/Googolplex) to stress CPython and get simple workload.
-* Run counting and sampling to obtain some simple event invormation.
+* Try to calculate absurdly large integer number [Googolplex](https://en.wikipedia.org/wiki/Googolplex) to stress CPython and get a simple workload.
+* Run counting and sampling to obtain some simple event information.
 
 Let's go...
 
 ### CPython cross-build on x64 machine targeting ARM64
 
-Let's build locally CPython in debug mode. We will in this example cross-compile CPython to ARM64 target. Build machine is x64.
+Let's build CPython locally in debug mode. We will in this example cross-compile CPython to the ARM64 target. Build machine is x64.
 
 ```
 > git clone git@github.com:python/cpython.git
@@ -421,9 +421,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 ```
 
-Copy above CPython binaries from `PCbuild/arm64` directory to your ARM64 machine. Do not forget `Lib` directory containing extra libs CPython uses.
+Copy above CPython binaries from `PCbuild/arm64` directory to your ARM64 machine. Do not forget the `Lib` directory containing extra libs CPython uses.
 
-### Example 1: sampling Cpython executing Googolplex calculation
+### Example 1: sampling CPython executing Googolplex calculation
 
 Pin new CPython process on core no. 1:
 
@@ -431,10 +431,10 @@ Pin new CPython process on core no. 1:
 > start /affinity 2 python_d.exe
 ```
 
-Check with for example Task Manager if `python_d.exe` is running on core no. 1. Newly created CPython interactive window will allow us to execute example workload.
-In below example we will calculate very large integer `10^10^100`.
+Check with for example Task Manager if `python_d.exe` is running on core no. 1. Newly created CPython interactive window will allow us to execute example workloads.
+In the below example we will calculate a very large integer `10^10^100`.
 
-Note: [start](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/start) command line switch `/affinity <hexaffinity>` applies the specified processor affinity mask (expressed as a hexadecimal number) to the new application. In our example decimal `2` is `0x02` or `0b0010`. This value denotes core no. 1 as 1 is a 1st bit in the mask, where mask is indexed from 0 (zero).
+Note: [start](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/start) command line switch `/affinity <hexaffinity>` applies the specified processor affinity mask (expressed as a hexadecimal number) to the new application. In our example decimal `2` is `0x02` or `0b0010`. This value denotes core no. 1 as 1 is a 1st bit in the mask, where the mask is indexed from 0 (zero).
 
 ```
 Python 3.12.0a6+ (heads/main:1ff81c0cb6, Mar 14 2023, 16:26:50) [MSC v.1935 64 bit (ARM64)] on win32
@@ -466,9 +466,9 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 #### Sampling for `ld_spec` event which, by looking at counting is dominant (at least for `imix` metrics)
 
-Let's sample for `ld_spec` event. Please note that you can specify process image name and PDB file name with `-pdb_file python_d.pdb` and `-image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
+Let's sample the `ld_spec` event. Please note that you can specify the process image name and PDB file name with `-pdb_file python_d.pdb` and `-image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
 
-We can stop sampling by pressing `Ctrl-C` in `wperf` console or we can end process we are sampling.
+We can stop sampling by pressing `Ctrl-C` in the `wperf` console or we can end the process we are sampling.
 
 ```
 >wperf sample -e ld_spec:100000 -pe_file python_d.exe -c 1
@@ -498,13 +498,13 @@ sampling ....e.e.e.e.e.eCtrl-C received, quit counting... done!
   0.13%         1  _PyLong_New:python312_d.dll
 ```
 
-In above example we can see that majority of code executed by CPython's `python_d.exe` executable resides inside `python312_d.dll` DLL.
+In the above example we can see that the majority of code executed by CPython's `python_d.exe` executable resides inside the `python312_d.dll` DLL.
 
 Note that in `sampling ....e.e.e.e.e.` progressing printout `.` represents sample payload (of 128 samples)  received from the driver. 'e' represents an unsuccessful attempt to fetch whole sample payload. `wperf` is polling `wperf-driver` awaiting sample payload.
 
-### Example 2: sampling of Cpython executable on ARM64 running simple Fibonacci lambda:
+### Example 2: sampling of CPython executable on ARM64 running simple Fibonacci lambda:
 
-Let's execute new portion of code to see totally different sampling profile.
+Let's execute a new portion of code to see a totally different sampling profile.
 Please note that again CPython executes code from its `python312_d.dll`.
 
 ```
@@ -556,7 +556,7 @@ sampling ....ee.e.eCtrl-C received, quit counting... done!
 
 ## Verbose mode in sampling
 
-We've added also extra prints for verbose mode (`-v`). These add more information about sampling.
+We've also added extra prints for verbose mode (`-v`). These add more information about sampling.
 See verbose mode on for example 1:
 
 ```
@@ -712,5 +712,5 @@ IN above example:
                    0x000000007fff56054bec        2
 ```
 
-represents a set of samples which were coming from single symbol `x_mul` originated in `python312_d.dll` DLL.
+represents a set of samples which were coming from the single symbol `x_mul` originated in `python312_d.dll` DLL.
 Below hexadecimal values represent PC values which were sampled with corresponding sample count.
