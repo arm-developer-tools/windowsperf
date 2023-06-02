@@ -33,6 +33,7 @@
 import json
 from common import run_command, is_json, check_if_file_exists
 from common import get_result_from_test_results
+from common import arm64_vendor_names
 
 ### Test cases
 
@@ -72,3 +73,13 @@ def test_wperf_test_MIDR_reg():
     assert len(midr_value) > 0
     assert midr_value.startswith("0x")
     assert int(midr_value, 16) != 0x00
+
+def test_wperf_test_MIDR_vendor_id():
+    """ Test if MIDR register field `vendor_id` value is correct. """
+    cmd = 'wperf test -json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    vendor_id = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [vendor_id]")
+    
+    assert int(vendor_id, 16) in arm64_vendor_names.keys()

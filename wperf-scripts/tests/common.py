@@ -36,6 +36,23 @@ import os
 
 ### Common test runner code
 
+# See https://developer.arm.com/documentation/ddi0601/2020-12/AArch64-Registers/MIDR-EL1--Main-ID-Register
+arm64_vendor_names = {
+    0x41: "Arm Limited",
+    0x42: "Broadcomm Corporation",
+    0x43: "Cavium Inc",
+    0x44: "Digital Equipment Corporation",
+    0x46: "Fujitsu Ltd",
+    0x49: "Infineon Technologies AG",
+    0x4D: "Motorola or Freescale Semiconductor Inc",
+    0x4E: "NVIDIA Corporation",
+    0x50: "Applied Micro Circuits Corporation",
+    0x51: "Qualcomm Inc",
+    0x56: "Marvell International Ltd",
+    0x69: "Intel Corporation",
+    0xC0: "Ampere Computing"
+}
+
 def is_json(str_to_test):
     """ Test if string is in JSON format. """
     try:
