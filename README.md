@@ -4,7 +4,11 @@
 
 ## Introduction
 
-Take the Linux perf tool and port it to Windows on Arm with the same command line interface so that you can do deep performance analysis.
+WindowsPerf is (`Linux perf` inspired) Windows on Arm performance profiling tool. Profiling is based on ARM64 PMU and its HW counters. Currently, WindowsPerf is in the early stages of development, but already supports the counting model for obtaining aggregate counts of occurrences of special events, and sampling model for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels.
+
+WindowsPerf can instrument Arm CPU performance counters. As of now, it can collect:
+* Core PMU counters for all or specified CPU core.
+* unCore PMU counters, now system cache (DSU-520) and DRAM (DMC-620) are supported.
 
 Currently we support:
 * **counting model**, for obtaining aggregate counts of occurrences of special events, and
