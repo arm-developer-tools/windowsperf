@@ -436,28 +436,24 @@ wmain(
 
             std::vector<SampleDesc> resolved_samples;
 
-            // Search for symbols in image (executable)
-            uint64_t sec_base = 0;
-            for (auto& b : sym_info)
-            {
-                for (const auto& c : sec_info)
-                {
-                    if (c.idx == (b.sec_idx - 1))
-                    {
-                        sec_base = image_base + c.offset + runtime_vaddr_delta;
-                        break;
-                    }
-                }
-            }
-
             for (const auto& a : raw_samples)
             {
                 bool found = false;
                 SampleDesc sd;
+                uint64_t sec_base = 0;
 
                 // Search in symbol table for image (executable)
                 for (const auto& b : sym_info)
                 {
+                    for (const auto& c : sec_info)
+                    {
+                        if (c.idx == (b.sec_idx - 1))
+                        {
+                            sec_base = image_base + c.offset + runtime_vaddr_delta;
+                            break;
+                        }
+                    }
+
                     if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
                     {
                         sd.desc = b;
