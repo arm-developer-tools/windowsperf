@@ -334,6 +334,7 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
             event.event_idx = events[adjusted_idx + numFPC].event_idx;
             event.filter_bits = events[adjusted_idx + numFPC].filter_bits;
             event.counter_idx = i;
+            event.enable_irq = 0;
             event_enable(&event);
         }
 
