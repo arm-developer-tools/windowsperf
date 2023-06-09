@@ -93,6 +93,7 @@
       </WppGenerateUsingTemplateFile>
       <WppScanConfigurationData>trace.h</WppScanConfigurationData>
       <WppRecorderEnabled>false</WppRecorderEnabled>
+      <PreprocessorDefinitions>_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>

@@ -1819,12 +1819,15 @@ WindowsPerfDeviceCreate(
 
     // Finally, alloc PMU counters
     // 1) Query for free PMU counters
-    counter_idx_map = (UINT32 *)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT32) * numGPC, 'CIDM');
+    const size_t counter_idx_map_size = sizeof(UINT32) * AARCH64_MAX_HWC_SUPP;
+    counter_idx_map = (UINT32 *)ExAllocatePool2(POOL_FLAG_NON_PAGED, counter_idx_map_size, 'CIDM');
     if (counter_idx_map == NULL)
     {
         KdPrint(("ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
+    RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
+
     PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList;
     TmpCounterResourceList.Count = 1;
     TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
@@ -1846,8 +1849,17 @@ WindowsPerfDeviceCreate(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     KdPrint(("%d free general purpose hardware counters detected\n", numFreeCounters));
+
+#ifdef _DEBUG
+    for (UINT8 i = 0; i < numGPC; i++)
+    {
+        i %= AARCH64_MAX_HWC_SUPP;
+        KdPrint(("counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
+    }
+#endif
+
     // 2) Alloc PMU counters that are free
-    SIZE_T AllocationSize = sizeof(PHYSICAL_COUNTER_RESOURCE_LIST) + (sizeof(PHYSICAL_COUNTER_RESOURCE_DESCRIPTOR) * (numFreeCounters - 1));
+    size_t AllocationSize = sizeof(PHYSICAL_COUNTER_RESOURCE_LIST) + (sizeof(PHYSICAL_COUNTER_RESOURCE_DESCRIPTOR) * numGPC);
     PPHYSICAL_COUNTER_RESOURCE_LIST CounterResourceList = (PPHYSICAL_COUNTER_RESOURCE_LIST)ExAllocatePool2(POOL_FLAG_NON_PAGED, AllocationSize, 'CRCL');
     if (CounterResourceList == NULL)
     {
@@ -1876,12 +1888,12 @@ WindowsPerfDeviceCreate(
     numFreeGPC = numFreeCounters;
 
     // This driver expose private APIs (IOCTL commands), but also enable ThreadProfiling APIs.
-    HARDWARE_COUNTER counter_descs[AARCH64_MAX_HWC_SUPP];
-    RtlSecureZeroMemory(&counter_descs, sizeof(HARDWARE_COUNTER) * numFreeGPC);
+    HARDWARE_COUNTER counter_descs[AARCH64_MAX_HWC_SUPP] = {0};
+    RtlSecureZeroMemory(&counter_descs, sizeof(counter_descs));
     for (int i = 0; i < numFreeGPC; i++)
     {
         counter_descs[i].Type = PMCCounter;
-        counter_descs[i].Index = i;
+        counter_descs[i].Index = counter_idx_map[i];
 
         status = KeSetHardwareCounterConfiguration(&counter_descs[i], 1);
         if (status == STATUS_WMI_ALREADY_ENABLED)
@@ -1896,7 +1908,7 @@ WindowsPerfDeviceCreate(
     }
 
     core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * numCores, 'CORE');
-    if (!core_info)
+    if (core_info == NULL)
     {
         KdPrint(("ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -1911,8 +1923,9 @@ WindowsPerfDeviceCreate(
         if (status != STATUS_SUCCESS)
             return status;
 
-        RtlCopyMemory(core->events, default_events, sizeof(struct pmu_event_kernel) * ((size_t)numFreeGPC + numFPC));
         core->events_num = numFPC + numFreeGPC;
+        for (UINT32 k = 0; k < core->events_num; k++)
+            RtlCopyMemory(core->events + k, default_events + k, sizeof(struct pmu_event_kernel));
 
         // Initialize fields for sampling;
         KeInitializeSpinLock(&core->SampleLock);
