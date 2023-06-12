@@ -75,7 +75,7 @@ usage: wperf [options]
     -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
     -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
     -k                    Count kernel mode as well (disabled by default).
-    -h                    Show tool help.
+    -h / --help           Show tool help.
     --output              Enable JSON output to file.
     -q                    Quiet mode, no output is produced.
     -json                 Define output type as JSON.
@@ -531,7 +531,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-h")
+        if (a == L"-h" || a == L"--help")
         {
             do_help = true;
             continue;
