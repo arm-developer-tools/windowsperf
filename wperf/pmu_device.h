@@ -125,6 +125,11 @@ public:
     void timeline_header(const std::map<enum evt_class, std::vector<struct evt_noted>>& events);
     // Timeline
 
+    // Events
+    const wchar_t* pmu_events_get_evt_class_name(enum evt_class e_class);
+    const wchar_t* pmu_events_get_event_name(uint16_t index, enum evt_class e_class = EVT_CORE);
+    const wchar_t* pmu_events_get_evt_name_prefix(enum evt_class e_class);
+
     void set_builtin_metrics(std::wstring metric_name, std::wstring raw_str);
     void start(uint32_t flags);
     void stop(uint32_t flags);
