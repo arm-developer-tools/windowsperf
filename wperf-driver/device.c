@@ -78,7 +78,7 @@ static UINT64 dfr0_value;
 static UINT64 midr_value;
 static KEVENT SyncPMCEnc;
 static HANDLE pmc_resource_handle = NULL;
-static UINT32* counter_idx_map = NULL;
+static UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 
 static CoreInfo* core_info;
 
@@ -1685,9 +1685,6 @@ VOID WindowsPerfDeviceUnload()
     if (core_info)
         ExFreePoolWithTag(core_info, 'CORE');
 
-    if (counter_idx_map)
-        ExFreePoolWithTag(counter_idx_map, 'CIDM');
-
     if (dmc_array.dmcs)
     {
         for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
@@ -1819,16 +1816,10 @@ WindowsPerfDeviceCreate(
 
     // Finally, alloc PMU counters
     // 1) Query for free PMU counters
-    const size_t counter_idx_map_size = sizeof(UINT32) * AARCH64_MAX_HWC_SUPP;
-    counter_idx_map = (UINT32 *)ExAllocatePool2(POOL_FLAG_NON_PAGED, counter_idx_map_size, 'CIDM');
-    if (counter_idx_map == NULL)
-    {
-        KdPrint(("ExAllocatePoolWithTag: failed \n"));
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
+    const size_t counter_idx_map_size = sizeof(UINT32) * (AARCH64_MAX_HWC_SUPP + 1);
     RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
 
-    PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList;
+    PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
     TmpCounterResourceList.Count = 1;
     TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
     UINT8 numFreeCounters = 0;
@@ -1849,6 +1840,8 @@ WindowsPerfDeviceCreate(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     KdPrint(("%d free general purpose hardware counters detected\n", numFreeCounters));
+
+    counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
 
 #ifdef _DEBUG
     for (UINT8 i = 0; i < numGPC; i++)
