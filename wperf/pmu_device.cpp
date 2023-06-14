@@ -1953,7 +1953,7 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     for (const auto& e : ioctl_events[EVT_CORE])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += e.note + L",";
+        evt_notes += L"(" + e.note + L")" + L",";
     }
     if (!evt_indexes.empty() && evt_indexes.back() == L',')
     {
@@ -1972,7 +1972,7 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     for (const auto& e : ioctl_events[EVT_DSU])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += e.note + L",";
+        evt_notes += L"(" + e.note + L")" + L",";
     }
     if (!evt_indexes.empty() && evt_indexes.back() == L',')
     {
@@ -1991,7 +1991,7 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     for (const auto& e : ioctl_events[EVT_DMC_CLK])
     {
         evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += e.note + L",";
+        evt_notes += L"(" + e.note + L")" + L",";
     }
     if (!evt_indexes.empty() && evt_indexes.back() == L',')
     {

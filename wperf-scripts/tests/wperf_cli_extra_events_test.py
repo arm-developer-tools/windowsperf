@@ -48,8 +48,8 @@ def test_wperf_padding_1_event():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
 
     assert (len(evt_core_index) == 5)       #   128,129,130,130,131
-    assert (len(evt_core_note) == 5)        #   e,e,e,e,e
-    assert (all(elem == 'e' for elem in evt_core_note))    #   only 'e' in note
+    assert (len(evt_core_note) == 5)        #   (e),(e),(e),(e),(e)
+    assert (all(elem == '(e)' for elem in evt_core_note))    #   only '(e)' in note
 
     assert ('128' in evt_core_index)
     assert ('129' in evt_core_index)
