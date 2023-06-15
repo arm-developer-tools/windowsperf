@@ -47,6 +47,18 @@ build_and_test:
   script:
     - cmd.exe /c "C:/wenv/arm64/activate.bat" powershell -Command "MSBuild /p:Configuration=Release /p:Platform=ARM64"
     - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll
+    - >
+      ls;
+      $env:PATH += ";C:\wenv\arm64\python\tools";
+      cp wperf-driver\ARM64\Release\wperf-driver\* c:\ci\; 
+      cp wperf-driver\ARM64\Release\wperf-driver.cer c:\ci\;
+      cp wperf\ARM64\Release\wperf.exe c:\ci\;
+      cp -Recurse -Force .\wperf-scripts\tests c:\ci\;
+      cd c:\ci\;
+      $env:PATH += ";C:\ci";
+      python -m pip install pytest;
+      python -m pytest;
+      powershell .\tests\stress.ps1 5
   artifacts:
     paths:
       - wperf/ARM64/Release/wperf.exe
@@ -113,6 +125,7 @@ test_driver:
       ls;
       $env:PATH += ";C:\wenv\arm64\python\tools";
       python -m pip install pytest;
-      python -m pytest
+      python -m pytest;
+      powershell .\tests\stress.ps1 10
   rules:
       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
