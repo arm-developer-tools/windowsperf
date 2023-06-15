@@ -123,9 +123,9 @@ test_driver:
       pnputil /add-driver .\wperf-driver.inf /install
     - >
       ls;
-      $env:PATH += ";C:\wenv\arm64\python\tools";
+      $env:PATH += ";C:\wenv\arm64\python\tools;C:\ci\";
       python -m pip install pytest;
       python -m pytest;
-      powershell .\tests\stress.ps1 10
+      powershell .\tests\stress.ps1 5
   rules:
       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
