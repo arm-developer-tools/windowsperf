@@ -119,7 +119,7 @@ wperf-test:
 	devenv windowsperf.sln /Rebuild "$(make_config)|x64" /Project wperf-test\wperf-test.vcxproj 2>&1
 
 wperf-test-run:
-	vstest.console x64\$(make_config)\wperf-test.dll
+	vstest.console wperf-test\x64\$(make_config)\wperf-test.dll
 
 test: wperf-test wperf-test-run
 
