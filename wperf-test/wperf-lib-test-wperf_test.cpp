@@ -38,7 +38,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
 {
-	TEST_CLASS(wperftest_wperf_test)
+	TEST_CLASS(wperflibtest_wperf_test)
 	{
 	public:
 		TEST_METHOD(test_check_wperf_test_types)
