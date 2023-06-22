@@ -22,6 +22,7 @@ static std::vector<std::wstring> __list_metrics;
 static std::map<std::wstring, std::vector<uint16_t>> __list_metrics_events;
 static std::map<enum evt_class, std::vector<struct evt_noted>> __ioctl_events;
 static std::map<uint8_t, std::vector<COUNTING_INFO>> __countings;
+static std::vector<TEST_INFO> __tests;
 
 extern "C" bool wperf_init()
 {
@@ -55,6 +56,7 @@ extern "C" bool wperf_close()
         __list_metrics_events.clear();
         __ioctl_events.clear();
         __countings.clear();
+        __tests.clear();
     }
     catch(...)
     {
@@ -495,5 +497,158 @@ extern "C" bool wperf_num_cores(int *num_cores)
     }
 
     *num_cores = __pmu_device->core_num;
+    return true;
+}
+
+static inline void wperf_test_insert_int(const wchar_t *name, int result)
+{
+    TEST_INFO tinfo;
+    tinfo.name = name;
+    tinfo.type = INT_RESULT;
+    tinfo.int_result = result;
+    __tests.push_back(tinfo);
+}
+
+static inline void wperf_test_insert_bool(const wchar_t *name, bool result)
+{
+    TEST_INFO tinfo;
+    tinfo.name = name;
+    tinfo.type = BOOL_RESULT;
+    tinfo.bool_result = result;
+    __tests.push_back(tinfo);
+}
+
+static inline void wperf_test_insert_evt_note(const wchar_t *name, struct evt_noted result)
+{
+    TEST_INFO tinfo;
+    tinfo.name = name;
+    tinfo.type = EVT_NOTE_RESULT;
+    tinfo.evt_note_result.index = result.index;
+    tinfo.evt_note_result.type = result.type;
+    __tests.push_back(tinfo);
+}
+
+static inline void wperf_test_insert_wstring(const wchar_t *name, const wchar_t* result)
+{
+    TEST_INFO tinfo;
+    tinfo.name = name;
+    tinfo.type = WSTRING_RESULT;
+    tinfo.wstring_result = result;
+    __tests.push_back(tinfo);
+}
+
+extern "C" bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo)
+{
+    if (!tconf || !__pmu_device || !__pmu_cfg)
+    {
+        // tconf, __pmu_device, and __pmu_cfg should not be NULL.
+        return false;
+    }
+
+    static size_t test_index = 0;
+
+    try
+    {
+        if (!tinfo)
+        {
+            __ioctl_events.clear();
+            __tests.clear();
+            test_index = 0;
+            struct hw_cfg hw_cfg;
+            __pmu_device->query_hw_cfg(hw_cfg);
+
+            // Only CORE events are supported at the moment.
+            std::vector<enum evt_class> e_classes = { EVT_CORE };
+            uint32_t enable_bits = __pmu_device->enable_bits(e_classes);
+
+            // Tests for request.ioctl_events
+            wperf_test_insert_bool(L"request.ioctl_events [EVT_CORE]", enable_bits & CTL_FLAG_CORE);
+            wperf_test_insert_bool(L"request.ioctl_events [EVT_DSU]", enable_bits & CTL_FLAG_DSU);
+            wperf_test_insert_bool(L"request.ioctl_events [EVT_DMC_CLK/EVT_DMC_CLKDIV2]", enable_bits & CTL_FLAG_DMC);
+
+            // Test for pmu_device.vendor_name
+            wperf_test_insert_wstring(L"pmu_device.vendor_name", __pmu_device->get_vendor_name(hw_cfg.vendor_id));
+
+            // Test for product name (if available)
+            wperf_test_insert_wstring(L"pmu_device.product_name", __pmu_device->m_product_name.c_str());
+            wperf_test_insert_wstring(L"pmu_device.product_name(extended)", __pmu_device->get_product_name_ext().c_str());
+
+            // Tests for pmu_device.events_query(events)
+            std::map<enum evt_class, std::vector<uint16_t>> events;
+            __pmu_device->events_query(events);
+            wperf_test_insert_int(L"pmu_device.events_query(events) [EVT_CORE]", events.count(EVT_CORE) ? events[EVT_CORE].size() : 0);
+            wperf_test_insert_int(L"pmu_device.events_query(events) [EVT_DSU]", events.count(EVT_DSU) ? events[EVT_DSU].size() : 0);
+            wperf_test_insert_int(L"pmu_device.events_query(events) [EVT_DMC_CLK]", events.count(EVT_DMC_CLK) ? events[EVT_DMC_CLK].size() : 0);
+            wperf_test_insert_int(L"pmu_device.events_query(events) [EVT_DMC_CLKDIV2]", events.count(EVT_DMC_CLKDIV2) ? events[EVT_DMC_CLKDIV2].size() : 0);
+
+            // Tests for PMU_CTL_QUERY_HW_CFG
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [arch_id]", hw_cfg.arch_id);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [core_num]", hw_cfg.core_num);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [fpc_num]", hw_cfg.fpc_num);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [gpc_num]", hw_cfg.gpc_num);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [total_gpc_num]", hw_cfg.total_gpc_num);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [part_id]", hw_cfg.part_id);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [pmu_ver]", hw_cfg.pmu_ver);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [rev_id]", hw_cfg.rev_id);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [variant_id]", hw_cfg.variant_id);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [vendor_id]", hw_cfg.vendor_id);
+            wperf_test_insert_int(L"PMU_CTL_QUERY_HW_CFG [midr_value]", hw_cfg.midr_value);
+
+            // Tests General Purpose Counters detection
+            wperf_test_insert_int(L"gpc_nums[EVT_CORE]", __pmu_device->gpc_nums[EVT_CORE]);
+            wperf_test_insert_int(L"gpc_nums[EVT_DSU]", __pmu_device->gpc_nums[EVT_DSU]);
+            wperf_test_insert_int(L"gpc_nums[EVT_DMC_CLK]", __pmu_device->gpc_nums[EVT_DMC_CLK]);
+            wperf_test_insert_int(L"gpc_nums[EVT_DMC_CLKDIV2]", __pmu_device->gpc_nums[EVT_DMC_CLKDIV2]);
+
+            // Tests Fixed Purpose Counters detection
+            wperf_test_insert_int(L"fpc_nums[EVT_CORE]", __pmu_device->fpc_nums[EVT_CORE]);
+            wperf_test_insert_int(L"fpc_nums[EVT_DSU]", __pmu_device->fpc_nums[EVT_DSU]);
+            wperf_test_insert_int(L"fpc_nums[EVT_DMC_CLK]", __pmu_device->fpc_nums[EVT_DMC_CLK]);
+            wperf_test_insert_int(L"fpc_nums[EVT_DMC_CLKDIV2]", __pmu_device->fpc_nums[EVT_DMC_CLKDIV2]);
+
+            std::map<enum evt_class, std::deque<struct evt_noted>> events_map;
+            for (int i = 0; i < tconf->num_events; i++)
+            {
+                events_map[EVT_CORE].push_back({tconf->events[i], EVT_NORMAL, L"e"});
+            }
+            std::map<std::wstring, metric_desc>& metrics = __pmu_device->builtin_metrics;
+            for (int i = 0; i < tconf->num_metrics; i++)
+            {
+                const wchar_t* metric = tconf->metric_events[i];
+                if (metrics.find(metric) == metrics.end())
+                {
+                    // Not a valid builtin metric.
+                    return false;
+                }
+
+                metric_desc desc = metrics[metric];
+                for (const auto& x : desc.events)
+                    events_map[x.first].insert(events_map[x.first].end(), x.second.begin(), x.second.end());
+            }
+
+            std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+            set_event_padding(__ioctl_events, *__pmu_cfg, events_map, groups);
+
+            for (const auto& e : __ioctl_events[EVT_CORE])
+            {
+                wperf_test_insert_evt_note(L"ioctl_events[EVT_CORE]", e);
+            }
+        }
+        else
+        {
+            if (test_index >= __tests.size())
+            {
+                return false;
+            }
+
+            *tinfo = __tests[test_index];
+            test_index++;
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
+
     return true;
 }

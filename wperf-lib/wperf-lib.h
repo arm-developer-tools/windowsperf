@@ -339,6 +339,47 @@ typedef struct _STAT_INFO
     EVENT_NOTE evt_note;
 } STAT_INFO, *PSTAT_INFO;
 
+typedef struct _TEST_CONF
+{
+    /// The number of normal events to count.
+    /// With "-e inst_spec,dp_spec", this value is 2).
+    int num_events;
+    /// The list of normal events to count.
+    /// With "-e inst_spec,dp_spec", this array looks like {0x1B (ID of inst_spec), 0x73 (ID of dp_spec)}.
+    uint16_t* events;
+    /// The number of metrics to count.
+    /// With "-m dcache", this value is 1.
+    int num_metrics;
+    /// The list of metrics to count.
+    /// With "-m dcache", this looks like {"dcache"}.
+    const wchar_t** metric_events;
+} TEST_CONF, *PTEST_CONF;
+
+typedef enum _RESULT_TYPE
+{
+    INT_RESULT,
+    BOOL_RESULT,
+    EVT_NOTE_RESULT,
+    WSTRING_RESULT,
+} RESULT_TYPE;
+
+typedef struct _TEST_INFO
+{
+    /// Test name
+    const wchar_t* name;
+    /// Test result
+    RESULT_TYPE type;
+    union {
+        int int_result;
+        bool bool_result;
+        const wchar_t* wstring_result;
+        struct {
+            uint16_t index;
+            enum evt_type type;
+        } evt_note_result;
+    };
+} TEST_INFO, *PTEST_INFO;
+
 /// <summary>
 /// Works like a generator, yields the next STAT_INFO from the list of all STAT_INFOs
 /// each time it's called event by event for all requested cores.
@@ -409,6 +450,51 @@ bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info);
 /// <param name="num_cores"></param>
 /// <returns>true if the call succeeds, false if not.</returns>
 bool wperf_num_cores(int *num_cores);
+
+/// <summary>
+/// Works like a generator, yields the next TEST_INFO from the list of tests.
+/// </summary>
+/// <example> This example shows how to call the wperf_test routine.
+/// <code>
+/// wperf_init();
+///
+/// TEST_CONF test_conf = {};
+/// TEST_INFO tinfo = {};
+/// if (wperf_test(&test_conf, NULL))
+/// {
+///   while (wperf_test(&test_conf, &tinfo))
+///   {
+///     printf("%ls ", tinfo.name);
+///     if (tinfo.type == WSTRING_RESULT)
+///     {
+///         printf("%ls", tinfo.wstring_result);
+///     }
+///     else if (tinfo.type == BOOL_RESULT)
+///     {
+///         printf("%s", tinfo.bool_result ? "True", "False");
+///     }
+///     else if (tinfo.type == INT_RESULT)
+///     {
+///         printf("0x%x", tinfo.int_result);
+///     }
+///     printf("\n");
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="tconf">Pointer to a caller-allocated LIST_CONF struct.
+/// Users configure which type of PMU events to list configuration info on
+/// through setting the fields in TEST_CONF (refer to the definition of TEST_CONF
+/// for more details).</param>
+/// <param name="tinfo">Setting tinfo to NULL, this routine will retrieve the
+/// full list of configuration info internally and be ready for subsequent calls
+/// to yield each info. When passed as a pointer to a caller-allocated
+/// TEST_INFO struct, this lib routine will populate the struct pointed to by
+/// tinfo with the next info from the list of configuration info.</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo);
 
 #ifdef __cplusplus
 }

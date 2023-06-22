@@ -191,6 +191,10 @@ public:
     const ReadOut* get_core_outs() { return core_outs.get();  };
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };
 
+    void query_hw_cfg(struct hw_cfg& out);
+
+    const wchar_t* get_vendor_name(uint8_t vendor_id);
+
 private:
     /// <summary>
     /// This two dimentional array stores names of cores (DeviceDesc) for all (DSU clusers) x (cluster core no)
@@ -228,10 +232,6 @@ private:
     bool detect_armh_dsu();
     bool detect_armh_dma();
     
-    void query_hw_cfg(struct hw_cfg& out);
-
-    const wchar_t* get_vendor_name(uint8_t vendor_id);
-
     // Use this function to print to wcerr runtime warnings in verbose mode.
     // Do not use this function for debug. Instead use WindowsPerfDbgPrint().
     void warning(const std::wstring wrn);
