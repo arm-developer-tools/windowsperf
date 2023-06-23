@@ -42,8 +42,34 @@ namespace wperftest
 	{
 	public:
 
+	// Disable these tests if we are not on ARM64 platform
+#if defined(TEST_PLATFORM) && TEST_PLATFORM == x64
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_lib_version)
+		TEST_IGNORE()
+		END_TEST_METHOD_ATTRIBUTE()
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_lib_list_events)
+		TEST_IGNORE()
+		END_TEST_METHOD_ATTRIBUTE()
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_lib_list_metrics)
+		TEST_IGNORE()
+		END_TEST_METHOD_ATTRIBUTE()
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_lib_stat)
+		TEST_IGNORE()
+		END_TEST_METHOD_ATTRIBUTE()
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_lib_num_cores)
+		TEST_IGNORE()
+		END_TEST_METHOD_ATTRIBUTE()
+
+#endif
+
 		TEST_METHOD(test_lib_version)
 		{
+
 			Assert::IsTrue(wperf_init());
 
 			VERSION_INFO v;

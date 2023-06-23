@@ -40,6 +40,16 @@ namespace wperftest
 {
 	TEST_CLASS(wperflibtest_wperf_test)
 	{
+
+	// Disable these tests if we are not on ARM64 platform
+#if defined(TEST_PLATFORM) && TEST_PLATFORM == x64
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_check_wperf_test_types)
+		TEST_IGNORE()
+		END_TEST_METHOD_ATTRIBUTE()
+
+#endif
+
 	public:
 		TEST_METHOD(test_check_wperf_test_types)
 		{
