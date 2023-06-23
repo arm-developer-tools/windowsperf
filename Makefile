@@ -32,7 +32,7 @@
 # Makefile (GNU Make 3.81)
 #
 
-.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib
+.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib release
 
 #
 # *** INTRODUCTION ***
@@ -127,12 +127,12 @@ wperf-lib:
 test: wperf-test wperf-test-run
 
 release:
+	rm -rf release
 	mkdir release
-	tar zcf release/WinodwsPerf.tar.gz wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
-	tar acf release/WinodwsPerf.zip wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
-	tar jcf release/WinodwsPerf.tar.bz2 wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
-	tar Jcf release/WinodwsPerf.tar.xz wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
-	tar cf release/WinodwsPerf.tar wperf/$(make_arch)/$(make_config)/wperf.exe wperf-driver/$(make_arch)/$(make_config)/wperf-driver
+	copy wperf\$(make_arch)\$(make_config)\wperf.exe release
+	xcopy /E wperf-driver\ARM64\$(make_config)\wperf-driver release
+	copy wperf-lib\$(make_arch)\$(make_config)\wperf-lib.lib release
+	copy wperf-devgen\ARM64\$(make_config)\wperf-devgen.exe release
 
 clean:
 	devenv windowsperf.sln /Clean "$(make_config)|$(make_arch)" 2>&1
