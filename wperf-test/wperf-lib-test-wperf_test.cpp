@@ -44,14 +44,14 @@ namespace wperftest
 	// Disable these tests if we are not on ARM64 platform
 #if defined(TEST_PLATFORM) && TEST_PLATFORM == x64
 
-		BEGIN_TEST_METHOD_ATTRIBUTE(test_check_wperf_test_types)
+		BEGIN_TEST_METHOD_ATTRIBUTE(test_lib_check_wperf_test_types)
 		TEST_IGNORE()
 		END_TEST_METHOD_ATTRIBUTE()
 
 #endif
 
 	public:
-		TEST_METHOD(test_check_wperf_test_types)
+		TEST_METHOD(test_lib_check_wperf_test_types)
 		{
 			std::map<std::wstring, RESULT_TYPE> types = {
 				{ L"request.ioctl_events [EVT_CORE]", BOOL_RESULT },
@@ -86,7 +86,7 @@ namespace wperftest
 				{ L"ioctl_events[EVT_CORE]", EVT_NOTE_RESULT },
 			};
 
-			wperf_init();
+			Assert::IsTrue(wperf_init());
 			uint16_t events[] = { 0x1b /*inst_spec*/, 0x73 /*dp_spec*/ };
 			TEST_CONF test_conf = {
 				/* events */
@@ -106,7 +106,7 @@ namespace wperftest
 					Assert::IsTrue(tinfo.type == types[tinfo.name]);
 				}
 			}
-			wperf_close();
+			Assert::IsTrue(wperf_close());
 		}
 	};
 }
