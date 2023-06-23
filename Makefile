@@ -32,7 +32,7 @@
 # Makefile (GNU Make 3.81)
 #
 
-.PHONY: all clean docs test wperf wperf-driver wperf-test
+.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib
 
 #
 # *** INTRODUCTION ***
@@ -120,6 +120,9 @@ wperf-test:
 
 wperf-test-run:
 	vstest.console wperf-test\x64\$(make_config)\wperf-test.dll
+
+wperf-lib:
+	devenv windowsperf.sln /Rebuild "$(make_config)|${make_arch}" /Project wperf-lib\wperf-lib.vcxproj 2>&1
 
 test: wperf-test wperf-test-run
 
