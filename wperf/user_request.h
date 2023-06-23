@@ -61,6 +61,7 @@ public:
 
     static void print_help();
     static void print_help_header();
+    static void print_help_prompt();
     static void print_help_usage();
 
     bool do_list;

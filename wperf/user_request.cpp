@@ -112,6 +112,11 @@ void user_request::print_help_header()
         << std::endl;
 }
 
+void user_request::print_help_prompt()
+{
+    m_out.GetOutputStream() << L"Use --help for help." << std::endl;
+}
+
 void user_request::print_help()
 {
     print_help_header();
@@ -197,6 +202,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_pdb_file = false;
     bool waiting_sample_display_row = false;
     bool waiting_timeline_count = false;
+
+    if (raw_args.empty())
+    {
+        print_help_header();
+        print_help_prompt();
+    }
 
     for (const auto& a : raw_args)
     {
