@@ -281,6 +281,7 @@
     <ClCompile Include="wperf-test-pe_file.cpp" />
     <ClCompile Include="wperf-test-utils.cpp" />
     <ClCompile Include="wperf-test-json.cpp" />
+    <ClCompile Include="wperf-lib-test-lib.cpp" />
     <ClCompile Include="wperf-lib-test-wperf_test.cpp" />
   </ItemGroup>
   <ItemGroup>

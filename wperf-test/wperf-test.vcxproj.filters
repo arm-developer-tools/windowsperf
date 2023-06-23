@@ -42,6 +42,9 @@
     <ClCompile Include="wperf-test-metric.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="wperf-lib-test-lib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="wperf-lib-test-wperf_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
