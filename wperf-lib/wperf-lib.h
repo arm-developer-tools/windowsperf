@@ -357,7 +357,7 @@ typedef struct _TEST_CONF
 
 typedef enum _RESULT_TYPE
 {
-    INT_RESULT,
+    NUM_RESULT,
     BOOL_RESULT,
     EVT_NOTE_RESULT,
     WSTRING_RESULT,
@@ -370,7 +370,7 @@ typedef struct _TEST_INFO
     /// Test result
     RESULT_TYPE type;
     union {
-        int int_result;
+        uint64_t num_result;
         bool bool_result;
         const wchar_t* wstring_result;
         struct {
@@ -473,9 +473,9 @@ bool wperf_num_cores(int *num_cores);
 ///     {
 ///         printf("%s", tinfo.bool_result ? "True", "False");
 ///     }
-///     else if (tinfo.type == INT_RESULT)
+///     else if (tinfo.type == NUM_RESULT)
 ///     {
-///         printf("0x%x", tinfo.int_result);
+///         printf("0x%x", tinfo.num_result);
 ///     }
 ///     printf("\n");
 ///   }
