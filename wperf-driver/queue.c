@@ -30,11 +30,19 @@
 
 #include "driver.h"
 #include "wperf-common/iorequest.h"
+#include "queue.tmh"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
 #pragma alloc_text (PAGE, WindowsPerfTimerCreate)
 #endif
+
+NTSTATUS deviceControl(
+    _In_    PVOID   pBuffer,
+    _In_    ULONG   inputSize,
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext
+);
 
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
 
@@ -90,8 +98,9 @@ Return Value:
         WdfIoQueueDispatchSequential
         );
 
-    queueConfig.EvtIoRead   = WindowsPerfEvtIoRead;
-    queueConfig.EvtIoWrite  = WindowsPerfEvtIoWrite;
+    //queueConfig.EvtIoRead   = WindowsPerfEvtIoRead;
+    //queueConfig.EvtIoWrite  = WindowsPerfEvtIoWrite;
+    queueConfig.EvtIoDeviceControl = WindowsPerfEvtDeviceControl;
 
     //
     // Fill in a callback for destroy, and our QUEUE_CONTEXT size
@@ -162,6 +171,158 @@ Return Value:
     return status;
 }
 
+VOID
+WindowsPerfEvtDeviceControl(
+    IN WDFQUEUE Queue,
+    IN WDFREQUEST Request,
+    IN size_t OutputBufferLength,
+    IN size_t InputBufferLength,
+    IN ULONG IoControlCode
+)
+{
+    NTSTATUS Status;
+    WDFMEMORY memory;
+    PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
+
+    KdPrint(("%!FUNC! %!LINE! Queue 0x%p Request 0x%p OutputBufferLength %llu InputBufferLength %llu IoControlCode %lu",
+        Queue, Request, OutputBufferLength, InputBufferLength, IoControlCode));
+
+    if (OutputBufferLength > MAX_WRITE_LENGTH) {
+        KdPrint(("%!FUNC! %!LINE!  Buffer Length too big %Iu, Max is %d\n",
+            OutputBufferLength, MAX_WRITE_LENGTH));
+        WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
+        return;
+    }
+
+    // Get the memory buffer
+    Status = WdfRequestRetrieveInputMemory(Request, &memory);
+    if (!NT_SUCCESS(Status)) {
+        KdPrint(("%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n",
+            Status));
+        WdfVerifierDbgBreakPoint();
+        WdfRequestComplete(Request, Status);
+        return;
+    }
+
+    // Release previous buffer if set
+    if (queueContext->Buffer != NULL) {
+        ExFreePool(queueContext->Buffer);
+        queueContext->Buffer = NULL;
+        queueContext->Length = 0L;
+    }
+
+    queueContext->Buffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, max(OutputBufferLength, InputBufferLength), 'sam1');
+    // Set completion status information 
+    if (queueContext->Buffer == NULL) {
+        KdPrint(("%!FUNC! %!LINE!: Could not allocate %Iu byte buffer\n", max(OutputBufferLength, InputBufferLength)));
+        WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
+        return;
+    }
+
+    // Copy the memory in
+    Status = WdfMemoryCopyToBuffer(memory,
+        0,  // offset into the source memory
+        queueContext->Buffer,
+        InputBufferLength);
+    if (!NT_SUCCESS(Status)) {
+        KdPrint(("%!FUNC! %!LINE! WdfMemoryCopyToBuffer failed 0x%x\n", Status));
+        WdfVerifierDbgBreakPoint();
+
+        ExFreePool(queueContext->Buffer);
+        queueContext->Buffer = NULL;
+        queueContext->Length = 0L;
+
+        WdfRequestComplete(Request, Status);
+        return;
+    }
+
+    //
+    // Port Begin
+    //
+    ULONG outputSize;
+    Status = deviceControl(queueContext->Buffer, (ULONG)InputBufferLength, &outputSize, queueContext);
+    if (!NT_SUCCESS(Status)) {
+        KdPrint(("%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
+        WdfVerifierDbgBreakPoint();
+
+        ExFreePool(queueContext->Buffer);
+        queueContext->Buffer = NULL;
+        queueContext->Length = 0L;
+
+        WdfRequestComplete(Request, Status);
+        return;
+    }
+    KdPrint(("%!FUNC! %!LINE! deviceControl outputSize=%lu", outputSize));
+    //
+    // Port End
+    //
+
+    queueContext->Length = (ULONG)outputSize;
+    if (queueContext->Length > OutputBufferLength)
+    {
+        KdPrint(("%!FUNC! %!LINE! outputSize bigger than OutputBufferLenght"));
+        WdfVerifierDbgBreakPoint();
+        ExFreePool(queueContext->Buffer);
+        queueContext->Buffer = NULL;
+        queueContext->Length = 0L;
+        WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
+        return;
+    }
+    queueContext->CurrentRequest = Request;
+    queueContext->CurrentStatus = Status;
+
+    //
+    // No data to read
+    //
+    if ((queueContext->Buffer == NULL) || OutputBufferLength == 0 || queueContext->Length == 0) {
+        WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, (ULONG_PTR)0L);
+        return;
+    }
+
+    //
+    // Read what we have
+    //
+    if (queueContext->Length < OutputBufferLength) {
+        OutputBufferLength = queueContext->Length;
+    }
+
+    //
+    // Get the request memory
+    //
+    Status = WdfRequestRetrieveOutputMemory(Request, &memory);
+    if (!NT_SUCCESS(Status)) {
+        KdPrint(("%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n", Status));
+        WdfVerifierDbgBreakPoint();
+        WdfRequestCompleteWithInformation(Request, Status, 0L);
+        return;
+    }
+
+    // Copy the memory out
+    Status = WdfMemoryCopyFromBuffer(memory, // destination
+        0,      // offset into the destination memory
+        queueContext->Buffer,
+        OutputBufferLength);
+    if (!NT_SUCCESS(Status)) {
+        KdPrint(("%!FUNC! %!LINE!: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%llu \n",
+            Status, queueContext->Buffer, OutputBufferLength));
+        WdfRequestComplete(Request, Status);
+        return;
+    }
+
+    // Set transfer information
+    WdfRequestSetInformation(Request, (ULONG_PTR)OutputBufferLength);
+#if 0
+    // Mark the request is cancelable
+    WdfRequestMarkCancelable(Request, WindowsPerfEvtRequestCancel);
+
+    // Defer the completion to another thread from the timer dpc
+    queueContext->CurrentRequest = Request;
+    queueContext->CurrentStatus = Status;
+#endif
+    queueContext->CurrentRequest = NULL;
+    KdPrint(("%!FUNC! %!LINE! Completing request 0x%p, Status 0x%x \n", Request, Status));
+    WdfRequestComplete(Request, Status);
+}
 
 NTSTATUS
 WindowsPerfTimerCreate(
@@ -376,7 +537,7 @@ Return Value:
                              queueContext->Buffer,
                              Length );
     if( !NT_SUCCESS(Status) ) {
-        KdPrint(("WindowsPerfEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%zu \n",
+        KdPrint(("WindowsPerfEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%llu \n",
             Status, queueContext->Buffer, Length));
         WdfRequestComplete(Request, Status);
         return;
@@ -394,13 +555,6 @@ Return Value:
 
     return;
 }
-
-NTSTATUS deviceControl(
-    _In_    PVOID   pBuffer,
-    _In_    ULONG   inputSize,
-    _Out_   PULONG  outputSize,
-    _Inout_ PQUEUE_CONTEXT queueContext
-);
 
 VOID
 WindowsPerfEvtIoWrite(
@@ -555,6 +709,7 @@ Return Value:
 
 --*/
 {
+#if 0
     NTSTATUS      Status;
     WDFREQUEST     Request;
     WDFQUEUE queue;
@@ -594,4 +749,7 @@ Return Value:
     }
 
     return;
+#else
+    UNREFERENCED_PARAMETER(Timer);
+#endif
 }

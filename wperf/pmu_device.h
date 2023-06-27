@@ -172,7 +172,7 @@ public:
     void do_version(_Out_ version_info& driver_ver);
     void do_version_query(_Out_ version_info& driver_ver);    // part of do_version()
 
-    BOOL DeviceAsyncIoControl(_In_ HANDLE hDevice, _In_ LPVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite,
+    BOOL DeviceAsyncIoControl(_In_ HANDLE hDevice, _In_ ULONG IoControlCode, _In_ LPVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite,
         _Out_ LPVOID lpOutBuffer, _In_ DWORD nOutBufferSize, _Out_ LPDWORD lpBytesReturned);
 
     void get_pmu_device_cfg(struct pmu_device_cfg& cfg);

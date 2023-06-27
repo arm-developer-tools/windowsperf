@@ -76,7 +76,7 @@ struct version_info
 //
 enum pmu_ctl_action
 {
-	PMU_CTL_START,
+	PMU_CTL_START = 0x900,
 	PMU_CTL_STOP,
 	PMU_CTL_RESET,
 	PMU_CTL_QUERY_HW_CFG,

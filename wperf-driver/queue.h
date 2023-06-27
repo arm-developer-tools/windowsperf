@@ -96,6 +96,7 @@ EVT_WDF_IO_QUEUE_CONTEXT_DESTROY_CALLBACK WindowsPerfEvtIoQueueContextDestroy;
 EVT_WDF_REQUEST_CANCEL WindowsPerfEvtRequestCancel;
 EVT_WDF_IO_QUEUE_IO_READ WindowsPerfEvtIoRead;
 EVT_WDF_IO_QUEUE_IO_WRITE WindowsPerfEvtIoWrite;
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL WindowsPerfEvtDeviceControl;
 
 NTSTATUS
 WindowsPerfTimerCreate(

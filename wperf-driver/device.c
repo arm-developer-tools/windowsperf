@@ -281,6 +281,9 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
 
+    if (ctx == NULL)
+        return;
+
     CoreInfo* core = (CoreInfo*)ctx;
     UINT64 round = core->timer_round;
     UINT64 new_round = round + 1;
@@ -382,6 +385,9 @@ static VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
+
+    if (ctx == NULL)
+        return;
 
     CoreInfo* core = (CoreInfo*)ctx;
     if (core->prof_core != PROF_DISABLED)
@@ -1726,6 +1732,14 @@ WindowsPerfDeviceCreate(
     //
     #pragma warning(suppress: 28024)
     pnpPowerCallbacks.EvtDeviceSelfManagedIoRestart = WindowsPerfEvtDeviceSelfManagedIoStart;
+
+    //
+    // Set exclusive to TRUE so that no more than one app can talk to the
+    // control device at any time.
+    //
+    WdfDeviceInitSetExclusive(DeviceInit, TRUE);
+
+    WdfDeviceInitSetPowerPageable(DeviceInit);
 
     //
     // Register the PnP and power callbacks. Power policy related callbacks will be registered

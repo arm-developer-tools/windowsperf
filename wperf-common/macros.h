@@ -65,3 +65,18 @@
 // Currently we are having "cycles" as 1 (only) fixed counter
 #define FIXED_COUNTERS_NO                   1
 
+// From handy wdm.h macros
+#define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
+    ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
+)
+
+#define METHOD_BUFFERED 0
+#define FILE_READ_DATA            ( 0x0001 )    // file & pipe
+#define FILE_WRITE_DATA           ( 0x0002 )    // file & pipe
+
+#define WPERF_TYPE 40004
+
+#define DEFINE_CUSTOM_IOCTL(X) CTL_CODE( WPERF_TYPE, X, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA  )
+#define DEFINE_CUSTOM_IOCTL_RUNTIME(TO,FROM) {    \
+    (TO) = ((WPERF_TYPE) << 16) | ((FILE_READ_DATA | FILE_WRITE_DATA) << 14) | ((FROM) << 2) | (METHOD_BUFFERED);    \
+}
