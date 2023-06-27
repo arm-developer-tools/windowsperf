@@ -51,8 +51,6 @@ typedef struct _QUEUE_CONTEXT {
     PVOID       Buffer;
     ULONG       Length;
 
-    // Timer DPC for this queue
-    WDFTIMER    Timer;
     WDFWORKITEM WorkItem;
 
     // Virtual I/O

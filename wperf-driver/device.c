@@ -1916,9 +1916,6 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     IN  WDFDEVICE Device
     )
 {
-    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(Device));
-    LARGE_INTEGER DueTime;
-
     KdPrint(("--> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     //
@@ -1926,10 +1923,6 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     // into low power state.
     //
     WdfIoQueueStart(WdfDeviceGetDefaultQueue(Device));
-
-    DueTime.QuadPart = WDF_REL_TIMEOUT_IN_MS(100);
-
-    WdfTimerStart(queueContext->Timer,  DueTime.QuadPart);
 
     KdPrint(( "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
@@ -1949,8 +1942,6 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     IN  WDFDEVICE Device
     )
 {
-    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(Device));
-
     PAGED_CODE();
 
     KdPrint(("--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
@@ -1967,11 +1958,6 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     // device is restarted.
     //
     WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(Device));
-
-    //
-    // Stop the watchdog timer and wait for DPC to run to completion if it's already fired.
-    //
-    WdfTimerStop(queueContext->Timer, TRUE);
 
     KdPrint(( "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
