@@ -946,9 +946,9 @@ NTSTATUS deviceControl(
         VOID(*dmc_func)(UINT8, UINT8, struct dmcs_desc*) = NULL;
 
         if (ctl_flags & CTL_FLAG_CORE)
-            core_func = core_ctl_funcs[action];
+            core_func = core_ctl_funcs[action - PMU_CTL_ACTION_OFFSET];
         if (ctl_flags & CTL_FLAG_DSU)
-            dsu_func = dsu_ctl_funcs[action];
+            dsu_func = dsu_ctl_funcs[action - PMU_CTL_ACTION_OFFSET];
 
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
@@ -958,9 +958,9 @@ NTSTATUS deviceControl(
         KdPrint(("%!FUNC! %!LINE! enqueuing for action %d", context->action));
         WdfWorkItemEnqueue(queueContext->WorkItem);
 
-        if (ctl_flags & CTL_FLAG_DMC)
+        if ((ctl_flags & CTL_FLAG_DMC))
         {
-            dmc_func = dmc_ctl_funcs[action];
+            dmc_func = dmc_ctl_funcs[action - PMU_CTL_ACTION_OFFSET];
             dmc_idx = ctl_req->dmc_idx;
 
             if (dmc_idx == ALL_DMC_CHANNEL)

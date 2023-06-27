@@ -71,12 +71,14 @@ struct version_info
     UINT8 patch;
 };
 
+#define PMU_CTL_ACTION_OFFSET 0x900
+
 //
 // PMU communication
 //
 enum pmu_ctl_action
 {
-	PMU_CTL_START = 0x900,
+	PMU_CTL_START = PMU_CTL_ACTION_OFFSET,
 	PMU_CTL_STOP,
 	PMU_CTL_RESET,
 	PMU_CTL_QUERY_HW_CFG,
