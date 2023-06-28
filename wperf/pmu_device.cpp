@@ -1241,7 +1241,7 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
     bool multiplexing = multiplexings[EVT_DSU];
     bool print_note = false;
 
-    for (auto a : events)
+    for (auto &a : events)
     {
         if (a.type != EVT_NORMAL)
         {
