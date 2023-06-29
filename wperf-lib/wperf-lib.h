@@ -431,6 +431,139 @@ typedef struct _TEST_INFO
 /// <returns>true if the call succeeds, false if not.</returns>
 bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info);
 
+typedef struct _SAMPLE_CONF
+{
+    /// The PE file path.
+    const wchar_t *pe_file;
+    /// The PDB file path.
+    const wchar_t *pdb_file;
+    /// The name of the image to sample.
+    const wchar_t *image_name;
+    /// The index of the core on which the image runs.
+    uint8_t core_idx;
+    /// The number of normal events to sample.
+    /// With "-e inst_spec:100000,dp_spec:200000", this value is 2).
+    int num_events;
+    /// The list of normal events to sample.
+    /// With "-e inst_spec:100000,dp_spec:200000", this array looks like {0x1B (ID of inst_spec), 0x73 (ID of dp_spec)}.
+    uint16_t *events;
+    /// The list of sampling intervals for each sampled event.
+    /// With "-e inst_spec:100000,dp_spec:200000", this array looks like {100000, 200000}.
+    uint32_t *intervals;
+    /// Set this to true to get short symbol names, false to get long symbol names.
+    bool display_short;
+    /// Sampling duration in second.
+    uint64_t duration;
+    /// Set this to true if kernel mode should be included, false if not.
+    bool kernel_mode;
+} SAMPLE_CONF, *PSAMPLE_CONF;
+
+typedef struct _SAMPLE_INFO
+{
+    uint16_t event;
+    const wchar_t* symbol;
+    uint32_t count;
+    double overhead;
+} SAMPLE_INFO, *PSAMPLE_INFO;
+
+typedef struct _SAMPLE_STATS
+{
+    uint64_t sample_generated;
+    uint64_t sample_dropped;
+} SAMPLE_STATS, * PSAMPLE_STATS;
+
+/// <summary>
+/// Works like a generator, yields the next SAMPLE_INFO from the list of all SAMPLE_INFOs
+/// each time it's called sample by sample for all requested events.
+/// </summary>
+/// <example> This example shows how to call the wperf_sample routine.
+/// <code>
+/// wperf_init();
+///
+/// uint16_t sample_events[2] = { 0x70, 0x71 };
+/// uint32_t intervals[2] = { 100000, 200000 };
+/// SAMPLE_CONF sample_conf =
+/// {
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.exe", // pe_file
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.pdb", // pdb_file
+///   L"python_d.exe", // image_name
+///   1, // core_idx
+///   2, // num_events
+///   sample_events, // events
+///   intervals, // intervals
+///   true, // display_short
+///   10, // duration
+///   false // kernel_mode
+/// }
+///
+/// if (wperf_sample(&sample_conf, NULL))
+/// {
+///   SAMPLE_INFO sample_info;
+///   while (wperf_sample(&sample_conf, &sample_info))
+///   {
+///     printf("sample event=%u, name=%ls, count=%u, overhead=%f\n", sample_info.event, sample_info.symbol, sample_info.count, sample_info.overhead);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="sample_conf">Pointer to a caller-allocated SAMPLE_CONF struct. User configures
+/// the various parameters of the sampling mode through setting the fields in sample_conf
+/// (refer to the definition of SAMPLE_CONF for more details).</param>
+/// <param name="sample_info">Setting sample_info to NULL, this lib routine will collect
+/// samples for all the requested events internally and be ready for subsequent calls to
+/// yield sample info sample by sample for all requestd sampling events. When passed as a pointer
+/// to a caller-allocated SAMPLE_INFO structure. The lib routine will populate the SAMPLE_INFO
+/// pointed to by sample_info with the sample information defined in SAMPLE_INFO for each sample
+/// of each requested sampling event.</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info);
+
+/// <summary>
+/// Get sampling statistics.
+/// </summary>
+/// <example> This example shows how to call the wperf_sample_stats routine.
+/// <code>
+/// wperf_init();
+///
+/// uint16_t sample_events[2] = { 0x70, 0x71 };
+/// uint32_t intervals[2] = { 100000, 200000 };
+/// SAMPLE_CONF sample_conf =
+/// {
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.exe", // pe_file
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.pdb", // pdb_file
+///   L"python_d.exe", // image_name
+///   1, // core_idx
+///   2, // num_events
+///   sample_events, // events
+///   intervals, // intervals
+///   true, // display_short
+///   10, // duration
+///   false // kernel_mode
+/// }
+///
+/// if (wperf_sample(&sample_conf, NULL))
+/// {
+///   SAMPLE_STATS sample_stats;
+///   if (wperf_sample_stats(&sample_conf, &sample_stats))
+///   {
+///     printf("sample_generated=%llu, sample_dropped=%llu\n", sample_stats.sample_generated, sample_stats.sample_dropped);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="sample_conf">Pointer to a caller-allocated SAMPLE_CONF struct. User configures
+/// the various parameters of the sampling mode through setting the fields in sample_conf
+/// (refer to the definition of SAMPLE_CONF for more details).</param>
+/// <param name="sample_stats">Pointer to a caller-allocated SAMPLE_STATS structure. The lib routine
+/// will populate the SAMPLE_STATS pointed to by sample_stats with the sampling statistics (refer to
+/// the definition of SAMPLE_STATS for more details).</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_sample_stats(PSAMPLE_CONF sample_conf, PSAMPLE_STATS sample_stats);
+
 /// <summary>
 /// Get the number of CPU cores.
 /// </summary>
@@ -447,7 +580,8 @@ bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info);
 /// wperf_close();
 /// </code>
 /// </example>
-/// <param name="num_cores"></param>
+/// <param name="num_cores">Pointer to a caller allocated int. This lib routine will
+/// fill the int pointed to by num_cores with the number of cores.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
 bool wperf_num_cores(int *num_cores);
 

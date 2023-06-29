@@ -195,6 +195,8 @@ public:
 
     const wchar_t* get_vendor_name(uint8_t vendor_id);
 
+    struct pmu_sample_summary sample_summary;
+
 private:
     /// <summary>
     /// This two dimentional array stores names of cores (DeviceDesc) for all (DSU clusers) x (cluster core no)

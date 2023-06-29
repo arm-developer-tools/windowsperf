@@ -1,6 +1,9 @@
 #include "wperf-lib.h"
 #include "padding.h"
+#include "parsers.h"
+#include "pe_file.h"
 #include "pmu_device.h"
+#include "process_api.h"
 #include "wperf-common/public.h"
 #include <regex>
 
@@ -14,15 +17,23 @@ typedef struct _COUNTING_INFO
     EVENT_NOTE evt_note;
 } COUNTING_INFO;
 
+typedef struct _SAMPLING_INFO
+{
+    std::wstring symbol;
+    uint32_t count;
+    double overhead;
+} SAMPLING_INFO, *PSAMPLING_INFO;
+
 static pmu_device* __pmu_device = nullptr;
 static struct pmu_device_cfg* __pmu_cfg = nullptr;
 static std::map<enum evt_class, std::vector<uint16_t>> __list_events;
-static size_t __list_index = 0;
 static std::vector<std::wstring> __list_metrics;
 static std::map<std::wstring, std::vector<uint16_t>> __list_metrics_events;
 static std::map<enum evt_class, std::vector<struct evt_noted>> __ioctl_events;
 static std::map<uint8_t, std::vector<COUNTING_INFO>> __countings;
 static std::vector<TEST_INFO> __tests;
+static std::vector<uint16_t> __sample_events;
+static std::map<uint16_t, std::vector<SAMPLING_INFO>> __samples;
 
 extern "C" bool wperf_init()
 {
@@ -57,6 +68,8 @@ extern "C" bool wperf_close()
         __ioctl_events.clear();
         __countings.clear();
         __tests.clear();
+        __sample_events.clear();
+        __samples.clear();
     }
     catch(...)
     {
@@ -114,6 +127,8 @@ extern "C" bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo)
         return false;
     }
 
+    static size_t list_index = 0;
+
     try
     {
         if (!einfo)
@@ -122,17 +137,17 @@ extern "C" bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo)
             // with the list of all supported events.
             __list_events.clear();
             __pmu_device->events_query(__list_events);
-            __list_index = 0;
+            list_index = 0;
         }
         else if (list_conf->list_event_types&CORE_EVT)
         {
             // Yield the next event.
-            if (__list_index < __list_events[EVT_CORE].size())
+            if (list_index < __list_events[EVT_CORE].size())
             {
                 einfo->type = CORE_TYPE;
-                einfo->id = __list_events[EVT_CORE][__list_index];
+                einfo->id = __list_events[EVT_CORE][list_index];
                 einfo->name = pmu_events::get_core_event_name(einfo->id);
-                __list_index++;
+                list_index++;
             }
             else
             {
@@ -485,6 +500,352 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
         return false;
     }
 
+    return true;
+}
+
+extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
+{
+    if (!sample_conf || !__pmu_device)
+    {
+        // sample_conf and __pmu_device should not be NULL.
+        return false;
+    }
+
+    static size_t event_index = 0;
+    static size_t sample_index = 0;
+
+    try
+    {
+        if (!sample_info)
+        {
+            __sample_events.clear();
+            __samples.clear();
+            event_index = 0;
+            sample_index = 0;
+
+            if (wcslen(sample_conf->pe_file) == 0)
+            {
+                // PE file not specified.
+                return false;
+            }
+
+            if (wcslen(sample_conf->pdb_file) == 0)
+            {
+                // PDB file not specified.
+                return false;
+            }
+
+            if (sample_conf->core_idx >= __pmu_device->core_num)
+            {
+                // Invalid core index.
+                return false;
+            }
+
+            if (sample_conf->num_events < 1 || !sample_conf->events || !sample_conf->intervals)
+            {
+                // No event specified.
+                return false;
+            }
+
+            std::vector<uint8_t> cores_idx = { sample_conf->core_idx };
+            std::vector<enum evt_class> e_classes = { EVT_CORE };
+            uint32_t enable_bits = __pmu_device->enable_bits(e_classes);
+            __pmu_device->post_init(cores_idx, 0, false, enable_bits);
+
+            std::vector<SectionDesc> sec_info;          // List of sections in executable
+            std::vector<FuncSymDesc> sym_info;
+            std::vector<std::wstring> sec_import;       // List of DLL imported by executable
+            uint64_t static_entry_point, image_base;
+
+            parse_pe_file(sample_conf->pe_file, static_entry_point, image_base, sec_info, sec_import);
+            parse_pdb_file(sample_conf->pdb_file, sym_info, sample_conf->display_short);
+
+            uint32_t stop_bits = CTL_FLAG_CORE;
+
+            __pmu_device->stop(stop_bits);
+
+            std::vector<struct evt_sample_src> ioctl_events_sample;
+            for (int i = 0; i < sample_conf->num_events; i++)
+            {
+                ioctl_events_sample.push_back({ sample_conf->events[i], sample_conf->intervals[i] });
+            }
+            __pmu_device->set_sample_src(ioctl_events_sample, sample_conf->kernel_mode);
+
+            UINT64 runtime_vaddr_delta = 0;
+
+            std::map<std::wstring, PeFileMetaData> dll_metadata;        // [pe_name] -> PeFileMetaData
+            std::map<std::wstring, ModuleMetaData> modules_metadata;    // [mod_name] -> ModuleMetaData
+
+            HMODULE hMods[1024];
+            DWORD cbNeeded;
+            DWORD pid = FindProcess(sample_conf->image_name);
+            HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+
+            if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
+            {
+                for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+                {
+                    TCHAR szModName[MAX_PATH];
+                    TCHAR lpszBaseName[MAX_PATH];
+
+                    std::wstring name;
+                    if (GetModuleBaseNameW(process_handle, hMods[i], lpszBaseName, MAX_PATH))
+                    {
+                        name = lpszBaseName;
+                        modules_metadata[name].mod_name = name;
+                    }
+
+                    // Get the full path to the module's file.
+                    if (GetModuleFileNameEx(process_handle, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
+                    {
+                        std::wstring mod_path = szModName;
+                        modules_metadata[name].mod_path = mod_path;
+                        modules_metadata[name].handle = hMods[i];
+                    }
+                }
+            }
+
+            for (auto& [key, value] : modules_metadata)
+            {
+                std::wstring pdb_path = gen_pdb_name(value.mod_path);
+                std::ifstream ifile(pdb_path);
+                if (ifile) {
+                    PeFileMetaData pefile_metadata;
+                    parse_pe_file(value.mod_path, pefile_metadata);
+                    dll_metadata[value.mod_name] = pefile_metadata;
+
+                    parse_pdb_file(pdb_path, value.sym_info, sample_conf->display_short);
+                    ifile.close();
+                }
+            }
+
+            HMODULE module_handle = GetModule(process_handle, sample_conf->image_name);
+            MODULEINFO modinfo;
+            bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
+            if (ret)
+            {
+                runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
+            }
+
+            std::vector<FrameChain> raw_samples;
+            DWORD image_exit_code = 0;
+
+            __pmu_device->start_sample();
+
+            uint64_t t_count = sample_conf->duration;
+
+            while (t_count > 0)
+            {
+                t_count--;
+                Sleep(1000);
+                bool sample = __pmu_device->get_sample(raw_samples);
+
+                if (GetExitCodeProcess(process_handle, &image_exit_code))
+                    if (image_exit_code != STILL_ACTIVE)
+                        break;
+            }
+
+            __pmu_device->stop_sample();
+
+            CloseHandle(process_handle);
+
+            std::vector<SampleDesc> resolved_samples;
+
+            for (const auto& a : raw_samples)
+            {
+                bool found = false;
+                SampleDesc sd;
+                uint64_t sec_base = 0;
+
+                // Search in symbol table for image (executable)
+                for (const auto& b : sym_info)
+                {
+                    for (const auto& c : sec_info)
+                    {
+                        if (c.idx == (b.sec_idx - 1))
+                        {
+                            sec_base = image_base + c.offset + runtime_vaddr_delta;
+                            break;
+                        }
+                    }
+
+                    if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
+                    {
+                        sd.desc = b;
+                        sd.module = 0;
+                        found = true;
+                        break;
+                    }
+                }
+
+                // Nothing was found in base images, let's search inside modules loaded with
+                // images (such as DLLs).
+                // Note: at this point:
+                //  `dll_metadata` contains names of all modules loaded with image (executable)
+                //  `modules_metadata` contains e.g. symbols of image modules loaded which had
+                //                     PDB files present and we were able to load them.
+                if (!found)
+                {
+                    sec_base = 0;
+
+                    for (const auto& [key, value] : dll_metadata)
+                    {
+                        if (modules_metadata.count(key))
+                        {
+                            ModuleMetaData& mmd = modules_metadata[key];
+
+                            for (auto& b : mmd.sym_info)
+                                for (const auto& c : value.sec_info)
+                                    if (c.idx == (b.sec_idx - 1))
+                                    {
+                                        sec_base = (UINT64)mmd.handle + c.offset;
+                                        break;
+                                    }
+
+                            for (const auto& b : mmd.sym_info)
+                                if (a.pc >= (b.offset + sec_base) && a.pc < (b.offset + sec_base + b.size))
+                                {
+                                    sd.desc = b;
+                                    sd.desc.name = b.name + L":" + key;
+                                    sd.module = &mmd;
+                                    found = true;
+                                    break;
+                                }
+                        }
+                    }
+                }
+
+                if (!found)
+                    sd.desc.name = L"unknown";
+
+                for (uint32_t counter_idx = 0; counter_idx < 32; counter_idx++)
+                {
+                    if (!(a.ov_flags & (1i64 << (UINT64)counter_idx)))
+                        continue;
+
+                    bool inserted = false;
+                    uint32_t event_src;
+                    if (counter_idx == 31)
+                        event_src = CYCLE_EVT_IDX;
+                    else
+                        event_src = ioctl_events_sample[counter_idx].index;
+                    for (auto& c : resolved_samples)
+                    {
+                        if (c.desc.name == sd.desc.name && c.event_src == event_src)
+                        {
+                            c.freq++;
+                            bool pc_found = false;
+                            for (int i = 0; i < c.pc.size(); i++)
+                            {
+                                if (c.pc[i].first == a.pc)
+                                {
+                                    c.pc[i].second += 1;
+                                    pc_found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!pc_found)
+                                c.pc.push_back(std::make_pair(a.pc, 1));
+
+                            inserted = true;
+                            break;
+                        }
+                    }
+
+                    if (!inserted)
+                    {
+                        sd.freq = 1;
+                        sd.event_src = event_src;
+                        sd.pc.push_back(std::make_pair(a.pc, 1));
+                        resolved_samples.push_back(sd);
+                    }
+                }
+            }
+
+            std::sort(resolved_samples.begin(), resolved_samples.end(), sort_samples);
+
+            uint32_t prev_evt_src = 0;
+            if (resolved_samples.size() > 0)
+                prev_evt_src = resolved_samples[0].event_src;
+
+            std::vector<uint64_t> total_samples;
+            uint64_t acc = 0;
+            for (const auto& a : resolved_samples)
+            {
+                if (a.event_src != prev_evt_src)
+                {
+                    prev_evt_src = a.event_src;
+                    total_samples.push_back(acc);
+                    acc = 0;
+                }
+
+                acc += a.freq;
+            }
+            total_samples.push_back(acc);
+
+            int32_t group_idx = -1;
+            prev_evt_src = CYCLE_EVT_IDX - 1;
+
+            for (auto a : resolved_samples)
+            {
+                if (a.event_src != prev_evt_src)
+                {
+					__sample_events.push_back(a.event_src);
+                    prev_evt_src = a.event_src;
+                    group_idx++;
+                }
+
+                __samples[a.event_src].push_back({ a.desc.name, a.freq, (double)a.freq * 100 / (double)total_samples[group_idx] });
+            }
+        }
+        else
+        {
+            if (event_index >= __sample_events.size())
+            {
+                // No more events to yield.
+                return false;
+            }
+
+            uint16_t event_id = __sample_events[event_index];
+            if (sample_index >= __samples[event_id].size())
+            {
+                // Start over for the next event.
+                sample_index = 0;
+                event_index++;
+                if (event_index >= __sample_events.size())
+                {
+                    // No more events to yield.
+                    return false;
+                }
+                event_id = __sample_events[event_index];
+            }
+
+            sample_info->event = event_id;
+            sample_info->symbol = __samples[event_id][sample_index].symbol.c_str();
+            sample_info->count = __samples[event_id][sample_index].count;
+            sample_info->overhead = __samples[event_id][sample_index].overhead;
+            sample_index++;
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+extern "C" bool wperf_sample_stats(PSAMPLE_CONF sample_conf, PSAMPLE_STATS sample_stats)
+{
+    if (!sample_conf || !sample_stats || !__pmu_device)
+    {
+        // sample_conf, sample_stats and __pmu_device should not be NULL.
+        return false;
+    }
+
+    sample_stats->sample_generated = __pmu_device->sample_summary.sample_generated;
+    sample_stats->sample_dropped = __pmu_device->sample_summary.sample_dropped;
     return true;
 }
 

@@ -459,6 +459,8 @@ void pmu_device::stop_sample()
         m_out.GetOutputStream() << L"sample drop rate: " << std::dec << DoubleToWideString(drop_rate) << L"%" << std::endl;
     }
 
+    sample_summary.sample_generated = summary.sample_generated;
+    sample_summary.sample_dropped = summary.sample_dropped;
     m_globalSamplingJSON.m_samples_generated = summary.sample_generated;
     m_globalSamplingJSON.m_samples_dropped = summary.sample_dropped;
 }

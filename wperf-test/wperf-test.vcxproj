@@ -148,7 +148,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj;process_api.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -171,7 +171,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj;process_api.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64EC'">
@@ -194,7 +194,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj;process_api.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -215,7 +215,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj;process_api.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -243,7 +243,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj;process_api.obj</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -262,7 +262,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;wperf-lib.obj;process_api.obj</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
