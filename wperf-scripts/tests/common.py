@@ -109,3 +109,10 @@ def get_result_from_test_results(j, Test_Name):
         if Test_Name in test_result["Test_Name"]:
             return test_result["Result"]
     return None
+
+def wperf_test_no_params():
+    """ We use this fixture to get values from `wperf test` which do not change with execution like gpc_num """
+    cmd = 'wperf test -json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+    return json_output

@@ -34,15 +34,9 @@ import json
 import pytest
 from common import run_command, is_json, check_if_file_exists
 from common import get_result_from_test_results
+from common import wperf_test_no_params
 
 ### Test cases
-
-def wperf_test_no_params():
-    """ We use this fixture to get values from `wperf test` which do not change with execution like gpc_num """
-    cmd = 'wperf test -json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-    return json_output
 
 
 def test_wperf_padding_1_event():
