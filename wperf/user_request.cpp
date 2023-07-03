@@ -54,7 +54,7 @@ usage: wperf [options]
                           XXXX is hex value of the number without '0x' prefix.
                           when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
     -m m1, m2...          Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    -d N                  Specify counting duration(in s).The accuracy is 0.1s.
+    --timeout SEC         Specify counting duration(in s).The accuracy is 0.1s.
     sleep N               Like -d, for compatibility with Linux perf.
     -i N                  Specify counting interval(in s).To be used with -t.
     -t                    Enable timeline mode.It specifies -i 60 -d 1 implicitly.
@@ -459,7 +459,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-d" || a == L"sleep")
+        if (a == L"--timeout" || a == L"sleep")
         {
             waiting_duration = true;
             continue;
