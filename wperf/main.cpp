@@ -407,22 +407,33 @@ wmain(
             {
                 DWORD image_exit_code = 0;
 
+                int64_t sampling_duration_iter = request.count_duration > 0 ?
+                    static_cast<int64_t>(request.count_duration * 10) : _I64_MAX;
+                int64_t t_count1 = sampling_duration_iter;
+
                 pmu_device.start_sample();
 
                 m_out.GetOutputStream() << L"sampling ...";
+
                 do
                 {
-                    Sleep(1000);
-                    bool sample = pmu_device.get_sample(raw_samples);
-                    if (sample)
-                        m_out.GetOutputStream() << L".";
-                    else
-                        m_out.GetOutputStream() << L"e";
+                    t_count1--;
+                    Sleep(100);
+
+                    if ((t_count1 % 10) == 0)
+                    {
+                        if (pmu_device.get_sample(raw_samples))
+                            m_out.GetOutputStream() << L".";
+                        else
+                            m_out.GetOutputStream() << L"e";
+                    }
 
                     if (GetExitCodeProcess(process_handle, &image_exit_code))
                         if (image_exit_code != STILL_ACTIVE)
                             break;
-                } while (no_ctrl_c);
+                }
+                while (t_count1 > 0 && no_ctrl_c);
+
                 m_out.GetOutputStream() << " done!" << std::endl;
 
                 pmu_device.stop_sample();
