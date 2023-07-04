@@ -103,6 +103,59 @@ wmain(
 		printf("wperf_num_cores: %d\n", num_cores);
 	}
 
+	TEST_CONF test_conf = { 2, events, 0, nullptr };
+	TEST_INFO tinfo = {};
+	if (wperf_test(&test_conf, NULL))
+	{
+		while (wperf_test(&test_conf, &tinfo))
+		{
+			printf("wperf_test: %ls ", tinfo.name);
+			if (tinfo.type == WSTRING_RESULT)
+			{
+				printf("%ls", tinfo.wstring_result);
+			}
+			else if (tinfo.type == BOOL_RESULT)
+			{
+				printf("%s", tinfo.bool_result ? "True" : "False");
+			}
+			else if (tinfo.type == NUM_RESULT)
+			{
+				printf("0x%llx", tinfo.num_result);
+			}
+			printf("\n");
+		}
+	}
+
+	uint16_t sample_events[2] = { 0x70, 0x71 };
+	uint32_t intervals[2] = { 100000, 200000 };
+	SAMPLE_CONF sample_conf =
+	{
+		L"c:\\cpython\\PCbuild\\arm64\\python_d.exe", // pe_file
+		L"c:\\cpython\\PCbuild\\arm64\\python_d.pdb", // pdb_file
+		L"python_d.exe", // image_name
+		1, // core_idx
+		2, // num_events
+		sample_events, // events
+		intervals, // intervals
+		true, // display_short
+		10, // duration
+		false // kernel_mode
+	};
+	if (wperf_sample(&sample_conf, NULL))
+	{
+		SAMPLE_INFO sample_info;
+		while (wperf_sample(&sample_conf, &sample_info))
+		{
+			printf("wperf_sample: event=%u, name=%ls, count=%u, overhead=%f\n", sample_info.event, sample_info.symbol, sample_info.count, sample_info.overhead);
+		}
+
+		SAMPLE_STATS sample_stats;
+		if (wperf_sample_stats(&sample_conf, &sample_stats))
+		{
+			printf("wperf_sample_stats: sample_generated=%llu, sample_dropped=%llu\n", sample_stats.sample_generated, sample_stats.sample_dropped);
+		}
+	}
+
     if (!wperf_close())
         return 1;
 
