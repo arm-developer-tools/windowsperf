@@ -1804,14 +1804,36 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
 }
 
 void pmu_device::do_list_prep_metrics(_Out_ std::vector<std::wstring>& col_metric,
-    _Out_ std::vector<std::wstring>& col_events, _In_ const std::map<std::wstring, metric_desc>& metrics)
+    _Out_ std::vector<std::wstring>& col_events,
+    _Out_ std::vector<std::wstring>& col_formula,
+    _Out_ std::vector<std::wstring>& col_unit,
+    _Out_ std::vector<std::wstring>& col_desc,
+    _In_ const std::map<std::wstring, metric_desc>& metrics)
 {
     col_metric.clear();
     col_events.clear();
+    col_formula.clear();
+    col_unit.clear();
+    col_desc.clear();
 
     for (const auto& [key, value] : metrics) {
         col_metric.push_back(key);
         col_events.push_back(value.raw_str);
+
+        if (m_product_metrics.count(m_product_name)
+            && m_product_metrics[m_product_name].count(key))
+        {
+            struct product_metric& metric = m_product_metrics[m_product_name][key];
+            col_formula.push_back(metric.metric_formula);
+            col_unit.push_back(metric.metric_unit);
+            col_desc.push_back(metric.title);
+        }
+        else
+        {
+            col_formula.push_back(L"---");
+            col_unit.push_back(L"---");
+            col_desc.push_back(L"---");
+        }
     }
 }
 
@@ -1836,18 +1858,30 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
     }
 
     // Print supported metrics
+    m_out.GetOutputStream() << std::endl
+        << L"List of supported metrics (to be used in -m)"
+        << std::endl << std::endl;
+
+    std::vector<std::wstring> col_metric, col_events, col_formula, col_unit, col_desc;
+    do_list_prep_metrics(col_metric, col_events, col_formula, col_unit, col_desc, metrics);
+
+    if (do_verbose)
     {
-        m_out.GetOutputStream() << std::endl
-            << L"List of supported metrics (to be used in -m)"
-            << std::endl << std::endl;
+        TableOutput<MetricOutputTraitsL<true>, GlobalCharType> table(m_outputType);
+        table.PresetHeaders();
+        table.Insert(col_metric, col_events, col_formula, col_unit, col_desc);
 
-        std::vector<std::wstring> col_metric, col_events;
-        do_list_prep_metrics(col_metric, col_events, metrics);
-
-        TableOutput<MetricOutputTraitsL, GlobalCharType> table(m_outputType);
+        m_globalListJSON.isVerbose = do_verbose;
+        m_globalListJSON.m_Metrics = table;
+        m_out.Print(table);
+    }
+    else
+    {
+        TableOutput<MetricOutputTraitsL<false>, GlobalCharType> table(m_outputType);
         table.PresetHeaders();
         table.Insert(col_metric, col_events);
 
+        m_globalListJSON.isVerbose = do_verbose;
         m_globalListJSON.m_Metrics = table;
         m_out.Print(table);
     }

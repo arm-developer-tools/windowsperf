@@ -152,7 +152,9 @@ public:
     void do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_name,
         _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type);   // part of do_list()
     void do_list_prep_metrics(_Out_ std::vector<std::wstring>& col_metric,
-        _Out_ std::vector<std::wstring>& col_events, _In_ const std::map<std::wstring, metric_desc>& metrics);  // part of do_list()
+        _Out_ std::vector<std::wstring>& col_events, _Out_ std::vector<std::wstring>& col_formula,
+        _Out_ std::vector<std::wstring>& col_unit, _Out_ std::vector<std::wstring>& col_desc,
+        _In_ const std::map<std::wstring, metric_desc>& metrics);  // part of do_list()
     void do_test(uint32_t enable_bits, std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events);
     void do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_ std::vector<std::wstring>& col_test_result,
         _In_ uint32_t enable_bits, std::map<enum evt_class, _In_ std::vector<struct evt_noted>>& ioctl_events); // part of do_test()

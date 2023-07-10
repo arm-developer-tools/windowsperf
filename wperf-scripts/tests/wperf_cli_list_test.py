@@ -30,6 +30,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import json
 from common import run_command, is_json, check_if_file_exists
 
 ### Test cases
@@ -59,3 +60,32 @@ def test_wperf_list_json_file_output_valid(tmp_path):
         assert is_json(json)
     except:
         assert 0
+
+def test_wperf_list_json_verbose(tmp_path):
+    """ Test `wperf list` JSON output in verbose mode """
+
+    """
+    "Predefined_Metrics": [
+        {
+            "Metric": "backend_stalled_cycles",
+            "Events": "{cpu_cycles,stall_backend}",
+            "Formula": "((stall_backend / cpu_cycles) * 100)",
+            "Unit": "percent of cycles",
+            "Description": "Backend Stalled Cycles"
+        },
+    """
+
+    cmd = 'wperf list -v -json'
+    stdout, _ = run_command(cmd.split())
+    assert is_json(stdout)
+
+    json_output = json.loads(stdout)
+    assert 'Predefined_Metrics' in json_output
+    assert  len(json_output['Predefined_Metrics'])
+
+    for metric in json_output['Predefined_Metrics']:
+        assert 'Metric' in metric
+        assert 'Events' in metric
+        assert 'Formula' in metric
+        assert 'Unit' in metric
+        assert 'Description' in metric

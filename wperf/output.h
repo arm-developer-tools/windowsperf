@@ -63,15 +63,18 @@ struct PredefinedEventsOutputTraits : public TableOutputTraits<CharType>
     inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Events");
 };
 
-template <typename CharType>
+template <typename CharType, bool isVerbose = false >
 struct MetricOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
-    inline const static std::tuple<StringType, StringType> columns;
-    inline const static std::tuple<CharType*, CharType*> headers =
+    inline const static std::tuple<StringType, StringType, StringType, StringType, StringType> columns;
+    inline const static int size = std::conditional_t<isVerbose, Integer<5>, Integer<2>>::value;
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Metric"),
-            LITERALCONSTANTS_GET("Events"));
-    inline const static int size = std::tuple_size_v<decltype(headers)>;
+            LITERALCONSTANTS_GET("Events"),
+            LITERALCONSTANTS_GET("Formula"),
+            LITERALCONSTANTS_GET("Unit"),
+            LITERALCONSTANTS_GET("Description"));
     inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Metrics");
 };
 
@@ -417,17 +420,30 @@ struct WPerfListJSON
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
 
     TableOutput<PredefinedEventsOutputTraits<CharType>, CharType> m_Events;
-    TableOutput<MetricOutputTraits<CharType>, CharType> m_Metrics;
+
+    using MetricOutputTraitsTO = TableOutput<MetricOutputTraits<CharType, false>, CharType>;
+    using VerboseMetricOutputTraitsTO = TableOutput<MetricOutputTraits<CharType, true>, CharType>;
+
+    std::variant<MetricOutputTraitsTO, VerboseMetricOutputTraitsTO> m_Metrics;
+    bool isVerbose = false;
 
     StringStream Print()
     {
         StringStream os;
         enum TableType jsonType = TableType::JSON;
         m_Events.m_tableJSON.m_isEmbedded = true;
-        m_Metrics.m_tableJSON.m_isEmbedded = true;
+
+        std::visit([](auto&& arg) {
+            arg.m_tableJSON.m_isEmbedded = true;
+            }, m_Metrics);
+        
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         os << m_Events.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
-        os << m_Metrics.Print(jsonType).str() << std::endl;
+
+        std::visit([&os, &jsonType](auto&& arg) {
+            os << arg.Print(jsonType).str() << std::endl;
+            }, m_Metrics);
+
         os << LiteralConstants<CharType>::m_cbracket_close;
         return os;
     }
@@ -641,7 +657,10 @@ using TelemetrySolutionMetricOutputTraitsL = TelemetrySolutionMetricOutputTraits
 using PMUPerformanceCounterOutputTraitsL = PMUPerformanceCounterOutputTraits<GlobalCharType>;
 using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
 using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;
-using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType>;
+
+template <bool isVerbose>
+using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType, isVerbose>;
+
 using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
 using SamplingOutputTraitsL = SamplingOutputTraits<GlobalCharType>;
 
