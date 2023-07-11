@@ -24,6 +24,14 @@ typedef struct _SAMPLING_INFO
     double overhead;
 } SAMPLING_INFO, *PSAMPLING_INFO;
 
+typedef struct _SAMPLE_ANNOTATE_INFO
+{
+    std::wstring symbol;
+    std::wstring source_file;
+    uint32_t line_number;
+    uint64_t hits;
+} SAMPLE_ANNOTATE_INFO, *PSAMPLE_ANNOTATE_INFO;
+
 static pmu_device* __pmu_device = nullptr;
 static struct pmu_device_cfg* __pmu_cfg = nullptr;
 static std::map<enum evt_class, std::vector<uint16_t>> __list_events;
@@ -34,6 +42,9 @@ static std::map<uint8_t, std::vector<COUNTING_INFO>> __countings;
 static std::vector<TEST_INFO> __tests;
 static std::vector<uint16_t> __sample_events;
 static std::map<uint16_t, std::vector<SAMPLING_INFO>> __samples;
+static std::map<uint16_t, std::vector<SAMPLE_ANNOTATE_INFO>> __annotate_samples;
+static size_t __annotate_sample_event_index = 0;
+static size_t __annotate_sample_index = 0;
 
 extern "C" bool wperf_init()
 {
@@ -70,6 +81,7 @@ extern "C" bool wperf_close()
         __tests.clear();
         __sample_events.clear();
         __samples.clear();
+        __annotate_samples.clear();
     }
     catch(...)
     {
@@ -520,8 +532,11 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
         {
             __sample_events.clear();
             __samples.clear();
+            __annotate_samples.clear();
             event_index = 0;
             sample_index = 0;
+            __annotate_sample_event_index = 0;
+            __annotate_sample_index = 0;
 
             if (wcslen(sample_conf->pe_file) == 0)
             {
@@ -797,6 +812,54 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                 }
 
                 __samples[a.event_src].push_back({ a.desc.name, a.freq, (double)a.freq * 100 / (double)total_samples[group_idx] });
+
+                if (sample_conf->annotate)
+                {
+                    std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
+                    if (a.desc.name != L"unknown")
+                    {
+                        for (const auto& sample : a.pc)
+                        {
+                            bool found_line = false;
+                            ULONGLONG addr;
+                            if (a.module == NULL)
+                                addr = (sample.first - runtime_vaddr_delta) & 0xFFFFFF;
+                            else
+                            {
+                                UINT64 mod_vaddr_delta = (UINT64)a.module->handle;
+                                addr = (sample.first - mod_vaddr_delta) & 0xFFFFFF;
+                            }
+                            for (const auto& line : a.desc.lines)
+                            {
+                                if (line.virtualAddress <= addr && line.virtualAddress + line.length > addr)
+                                {
+                                    std::pair<std::wstring, DWORD> cur = std::make_pair(line.source_file, line.lineNum);
+                                    if (auto el = hotspots.find(cur); el == hotspots.end())
+                                    {
+                                        hotspots[cur] = sample.second;
+                                    }
+                                    else {
+                                        hotspots[cur] += sample.second;
+                                    }
+                                    found_line = true;
+                                }
+                            }
+                        }
+
+                        std::vector<std::tuple<std::wstring, DWORD, uint64_t>>  sorting_annotate;
+                        for (auto& [key, val] : hotspots)
+                        {
+                            sorting_annotate.push_back(std::make_tuple(key.first, key.second, val));
+                        }
+
+                        std::sort(sorting_annotate.begin(), sorting_annotate.end(), [](std::tuple<std::wstring, DWORD, uint64_t>& a, std::tuple<std::wstring, DWORD, uint64_t>& b)->bool { return std::get<2>(a) > std::get<2>(b); });
+
+                        for (auto& el : sorting_annotate)
+                        {
+                            __annotate_samples[a.event_src].push_back({ a.desc.name, std::get<0>(el), std::get<1>(el), std::get<2>(el) });
+                        }
+                    }
+                }
             }
         }
         else
@@ -833,6 +896,43 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
         return false;
     }
 
+    return true;
+}
+
+bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INFO annotate_info)
+{
+    if (!sample_conf || !annotate_info)
+    {
+        // sample_conf and annotate_info should not be NULL.
+        return false;
+    }
+
+    if (__annotate_sample_event_index >= __sample_events.size())
+    {
+        // No more events to yield.
+        return false;
+    }
+
+    uint16_t event_id = __sample_events[__annotate_sample_event_index];
+    if (__annotate_sample_index >= __annotate_samples[event_id].size())
+    {
+        // Start over for the next event.
+        __annotate_sample_index = 0;
+        __annotate_sample_event_index++;
+        if (__annotate_sample_event_index >= __sample_events.size())
+        {
+            // No more events to yield.
+            return false;
+        }
+        event_id = __sample_events[__annotate_sample_event_index];
+    }
+
+    annotate_info->event = event_id;
+    annotate_info->symbol = __annotate_samples[event_id][__annotate_sample_index].symbol.c_str();
+    annotate_info->source_file = __annotate_samples[event_id][__annotate_sample_index].source_file.c_str();
+    annotate_info->line_number = __annotate_samples[event_id][__annotate_sample_index].line_number;
+    annotate_info->hits = __annotate_samples[event_id][__annotate_sample_index].hits;
+    __annotate_sample_index++;
     return true;
 }
 

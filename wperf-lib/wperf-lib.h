@@ -456,6 +456,8 @@ typedef struct _SAMPLE_CONF
     uint64_t duration;
     /// Set this to true if kernel mode should be included, false if not.
     bool kernel_mode;
+    /// Set this to true if funtions should be annotated, false if not.
+    bool annotate;
 } SAMPLE_CONF, *PSAMPLE_CONF;
 
 typedef struct _SAMPLE_INFO
@@ -466,11 +468,20 @@ typedef struct _SAMPLE_INFO
     double overhead;
 } SAMPLE_INFO, *PSAMPLE_INFO;
 
+typedef struct _ANNOTATE_INFO
+{
+    uint16_t event;
+    const wchar_t* symbol;
+    const wchar_t* source_file;
+    uint32_t line_number;
+    uint64_t hits;
+} ANNOTATE_INFO, * PANNOTATE_INFO;
+
 typedef struct _SAMPLE_STATS
 {
     uint64_t sample_generated;
     uint64_t sample_dropped;
-} SAMPLE_STATS, * PSAMPLE_STATS;
+} SAMPLE_STATS, *PSAMPLE_STATS;
 
 /// <summary>
 /// Works like a generator, yields the next SAMPLE_INFO from the list of all SAMPLE_INFOs
@@ -519,6 +530,55 @@ typedef struct _SAMPLE_STATS
 /// of each requested sampling event.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
 bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info);
+
+/// <summary>
+/// Works like a generator, yields the next ANNOTATE_INFO from the list of all ANNOTATE_INFOs
+/// each time it's called sample by sample for all requested events. Compared to wperf_sample,
+/// this routine returns finer grained details like the line of source code where the event occurs.
+/// The wperf_sample API must be called first with sample_info set to NULL and sample_conf->annotate
+/// set to true before calling this API.
+/// </summary>
+/// <example> This example shows how to call the wperf_sample_annotate routine.
+/// <code>
+/// wperf_init();
+///
+/// uint16_t sample_events[2] = { 0x70, 0x71 };
+/// uint32_t intervals[2] = { 100000, 200000 };
+/// SAMPLE_CONF sample_conf =
+/// {
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.exe", // pe_file
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.pdb", // pdb_file
+///   L"python_d.exe", // image_name
+///   1, // core_idx
+///   2, // num_events
+///   sample_events, // events
+///   intervals, // intervals
+///   true, // display_short
+///   10, // duration
+///   false, // kernel_mode
+///   true, // annotate
+/// }
+///
+/// if (wperf_sample(&sample_conf, NULL))
+/// {
+///   ANNOTATE_INFO annotate_info;
+///   while (wperf_sample_annotate(&sample_conf, &annotate_info))
+///   {
+///     printf("wperf_sample_annotate: event=%u, name=%ls, source=%ls, line=%u, hits=%llu\n", annotate_info.event, annotate_info.symbol, annotate_info.source_file, annotate_info.line_number, annotate_info.hits);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <param name="sample_conf">Pointer to a caller-allocated SAMPLE_CONF struct. User configures
+/// the various parameters of the sampling mode through setting the fields in sample_conf
+/// (refer to the definition of SAMPLE_CONF for more details).</param>
+/// <param name="annotate_info">Pointer to a caller-allocated ANNOTATE_INFO structure. The lib
+/// routine will populate the ANNOTATE_INFO pointed to by annotate_info with the sample information
+/// defined in ANNOTATE_INFO for each requested sampling event.</param>
+/// <returns>true if the call succeeds, false if not.</returns>
+bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INFO annotate_info);
 
 /// <summary>
 /// Get sampling statistics.

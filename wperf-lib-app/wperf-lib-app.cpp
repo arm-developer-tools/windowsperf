@@ -139,7 +139,8 @@ wmain(
 		intervals, // intervals
 		true, // display_short
 		10, // duration
-		false // kernel_mode
+		false, // kernel_mode
+		true, // annotate
 	};
 	if (wperf_sample(&sample_conf, NULL))
 	{
@@ -153,6 +154,12 @@ wmain(
 		if (wperf_sample_stats(&sample_conf, &sample_stats))
 		{
 			printf("wperf_sample_stats: sample_generated=%llu, sample_dropped=%llu\n", sample_stats.sample_generated, sample_stats.sample_dropped);
+		}
+
+		ANNOTATE_INFO annotate_info;
+		while (wperf_sample_annotate(&sample_conf, &annotate_info))
+		{
+			printf("wperf_sample_annotate: event=%u, name=%ls, source=%ls, line=%u, hits=%llu\n", annotate_info.event, annotate_info.symbol, annotate_info.source_file, annotate_info.line_number, annotate_info.hits);
 		}
 	}
 
