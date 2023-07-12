@@ -647,18 +647,21 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
 
             __pmu_device->start_sample();
 
-            uint64_t t_count = sample_conf->duration;
+            int64_t sampling_duration_iter = sample_conf->duration > 0 ?
+                static_cast<int64_t>(sample_conf->duration * 10) : _I64_MAX;
+            int64_t t_count1 = sampling_duration_iter;
 
-            while (t_count > 0)
+            do
             {
-                t_count--;
-                Sleep(1000);
+                t_count1--;
+                Sleep(100);
                 bool sample = __pmu_device->get_sample(raw_samples);
 
                 if (GetExitCodeProcess(process_handle, &image_exit_code))
                     if (image_exit_code != STILL_ACTIVE)
                         break;
             }
+            while (t_count1 > 0);
 
             __pmu_device->stop_sample();
 

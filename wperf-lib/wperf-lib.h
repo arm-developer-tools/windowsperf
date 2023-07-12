@@ -452,8 +452,8 @@ typedef struct _SAMPLE_CONF
     uint32_t *intervals;
     /// Set this to true to get short symbol names, false to get long symbol names.
     bool display_short;
-    /// Sampling duration in second.
-    uint64_t duration;
+    /// Sampling duration (in seconds, accurary of 0.1 sec).
+    double duration;
     /// Set this to true if kernel mode should be included, false if not.
     bool kernel_mode;
     /// Set this to true if funtions should be annotated, false if not.
