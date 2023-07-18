@@ -96,7 +96,13 @@ pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), has_dsu(f
     memset(gpc_nums, 0, sizeof gpc_nums);
     memset(fpc_nums, 0, sizeof fpc_nums);
 
-    {   // Initialize Telemetry Solution metrics from each product
+    init_ts_metrics();
+    init_ts_events();
+    init_arm_events();
+}
+
+void pmu_device::init_ts_metrics()
+{   // Initialize Telemetry Solution metrics from each product
 #       define WPERF_TS_EVENTS(...)
 #       define WPERF_TS_METRICS(A,B,C,D,E,F,G) m_product_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D),std::wstring(L##E),std::wstring(L##F),std::wstring(L##G) };
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
@@ -106,7 +112,30 @@ pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), has_dsu(f
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
 #       undef WPERF_TS_ALIAS
-    }
+}
+
+void pmu_device::init_ts_events()
+{   // Initialize Telemetry Solution events for each product
+#       define WPERF_TS_EVENTS(A,B,C,D,E) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E) };
+#       define WPERF_TS_METRICS(...)
+#       define WPERF_TS_PRODUCT_CONFIGURATION(...)
+#       define WPERF_TS_ALIAS(...)
+#       include "wperf-common/telemetry-solution-data.def"
+#       undef WPERF_TS_EVENTS
+#       undef WPERF_TS_METRICS
+#       undef WPERF_TS_PRODUCT_CONFIGURATION
+#       undef WPERF_TS_ALIAS
+}
+
+void pmu_device::init_arm_events()
+{   // Initialize generic armv8-a and armv9-a
+#       define WPERF_ARMV8_ARCH_EVENTS(A,B,C,D,E) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E) };
+#       include "wperf-common/armv8-arch-events.def"
+#       undef WPERF_ARMV8_ARCH_EVENTS
+
+#       define WPERF_ARMV9_ARCH_EVENTS(A,B,C,D,E) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E) };
+#       include "wperf-common/armv9-arch-events.def"
+#       undef WPERF_ARMV9_ARCH_EVENTS
 }
 
 HANDLE pmu_device::init_device()
@@ -272,6 +301,59 @@ std::wstring pmu_device::get_product_name_ext()
     }
 
     return ret;
+}
+
+std::wstring pmu_device::get_all_product_name_str()
+{
+    std::wstring result;
+    auto products = get_product_names();
+
+    for (const auto& s : products)
+    {
+        if (result.empty())
+            result += s;
+        else
+            result += L"," + s;
+    }
+
+    return result;
+}
+
+std::wstring pmu_device::get_all_aliases_str()
+{
+    std::wstring result;
+    for (const auto& [key, value] : m_product_alias)
+    {
+        std::wstring s = L"(" + key + L":" + value + L")";
+        if (result.empty())
+            result += s;
+        else
+            result += L"," + s;
+    }
+
+    return result;
+}
+
+std::vector<std::wstring> pmu_device::get_product_names()
+{
+    std::set<std::wstring> products;
+    std::vector<std::wstring> result;
+
+    for (const auto& [key, value] : m_product_alias)
+        products.insert(key);
+
+    for (const auto& [key, value] : m_product_metrics)
+        products.insert(key);
+
+    for (const auto& [key, value] : m_product_events)
+        products.insert(key);
+
+    for (const auto& v : products)
+        result.push_back(v);
+
+    std::sort(result.begin(), result.end());
+
+    return result;
 }
 
 void pmu_device::timeline_init()
@@ -1930,6 +2012,12 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
 
     col_test_name.push_back(L"pmu_device.product_name(extended)");
     col_test_result.push_back(get_product_name_ext());
+
+    col_test_name.push_back(L"pmu_device.product []");
+    col_test_result.push_back(get_all_product_name_str());
+
+    col_test_name.push_back(L"pmu_device.m_product_alias");
+    col_test_result.push_back(get_all_aliases_str());
 
     // Tests for pmu_device.events_query(events)
     std::map<enum evt_class, std::vector<uint16_t>> events;

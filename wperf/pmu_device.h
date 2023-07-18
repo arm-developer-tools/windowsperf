@@ -81,6 +81,13 @@ struct product_configuration
     std::wstring product_name;
 };
 
+struct product_event
+{
+    std::wstring name;              // Event name
+    uint16_t index;                 // Event index
+    std::wstring title;             // Event title / short description
+};
+
 struct product_metric
 {
     std::wstring name;              // :^)
@@ -100,6 +107,10 @@ public:
 
     void init();
     HANDLE init_device();
+    void init_ts_metrics();
+    void init_ts_events();
+    void init_arm_events();
+
     void hw_cfg_detected(struct hw_cfg& hw_cfg);
 
     // post_init members
@@ -186,9 +197,13 @@ public:
     // Telemetry Solution meta-data
     static std::map<std::wstring, struct product_configuration> m_product_configuration;
     static std::map<std::wstring, std::wstring> m_product_alias;
+    std::map<std::wstring, std::map<std::wstring, struct product_event>> m_product_events;       // [product] -> [event_name -> product_event]
     std::map<std::wstring, std::map<std::wstring, struct product_metric>> m_product_metrics;     // [product] -> [metrics_name -> product_metric]
-    std::wstring m_product_name;        // Product name used to index Telemetry Solution data structures
-    std::wstring get_product_name_ext();    // Human friendly product string
+    std::wstring m_product_name;                        // Product name used to index Telemetry Solution data structures
+    std::wstring get_product_name_ext();                // Human friendly currently selected product string
+    std::wstring get_all_product_name_str();            // Human friendly list of available products comma separated string
+    std::wstring get_all_aliases_str();                 // Human friendly list of available alias -> product comma separated string
+    std::vector<std::wstring> get_product_names();      // Get all product names
 
     const ReadOut* get_core_outs() { return core_outs.get();  };
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };
