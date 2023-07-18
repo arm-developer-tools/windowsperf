@@ -153,7 +153,7 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
             m_out.GetOutputStream() << L"See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
             m_out.GetOutputStream() << L"Try registering this service with command:" << std::endl;
             m_out.GetOutputStream() << std::endl;
-            m_out.GetOutputStream() << L"\t" << L"> cd \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\DIA SDK\\bin\"" << std::endl;
+            m_out.GetOutputStream() << L"\t" << L"> cd \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\DIA SDK\\bin\arm64"" << std::endl;
             m_out.GetOutputStream() << L"\t" << L"> regsvr32 msdia140.dll" << std::endl;
         }
         else

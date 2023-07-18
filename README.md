@@ -57,7 +57,7 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
   * If the `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you’ve installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.
 
 ```
-> cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin"
+> cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin\arm64"
 > regsvr32 msdia140.dll
 ```
 
