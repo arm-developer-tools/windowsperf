@@ -157,7 +157,7 @@ public:
         _In_ const std::map<std::wstring, metric_desc>& metrics);  // part of do_list()
     void do_test(uint32_t enable_bits, std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events);
     void do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_ std::vector<std::wstring>& col_test_result,
-        _In_ uint32_t enable_bits, std::map<enum evt_class, _In_ std::vector<struct evt_noted>>& ioctl_events); // part of do_test()
+        _In_ uint32_t enable_bits, _In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events); // part of do_test()
     void do_version(_Out_ version_info& driver_ver);
     void do_version_query(_Out_ version_info& driver_ver);    // part of do_version()
 
@@ -232,6 +232,9 @@ private:
     bool all_cores_p() {
         return cores_idx.size() > 1;
     }
+
+    // wperf test helpers
+    void get_event_scheduling_test_data(_In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events, _Out_ std::wstring& evt_indexes, _Out_ std::wstring& evt_notes, enum evt_class e_class);
 
     bool detect_armh_dsu();
     bool detect_armh_dma();

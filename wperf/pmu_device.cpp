@@ -1889,8 +1889,25 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
     m_out.Print(m_globalListJSON);
 }
 
+void pmu_device::get_event_scheduling_test_data(_In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events,
+    _Out_ std::wstring& evt_indexes, _Out_ std::wstring& evt_notes, enum evt_class e_class)
+{
+    evt_indexes.clear();
+    evt_notes.clear();
+
+    for (const auto& e : ioctl_events[e_class])
+    {
+        evt_indexes += std::to_wstring(e.index) + L",";
+        evt_notes += L"(" + e.note + L")" + L",";
+    }
+    if (!evt_indexes.empty() && evt_indexes.back() == L',')
+        evt_indexes.pop_back();
+    if (!evt_notes.empty() && evt_notes.back() == L',')
+        evt_notes.pop_back();
+}
+
 void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_  std::vector<std::wstring>& col_test_result,
-    _In_ uint32_t enable_bits, std::map<enum evt_class, _In_ std::vector<struct evt_noted>>& ioctl_events)
+    _In_ uint32_t enable_bits, _In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events)
 {
     col_test_name.clear();
     col_test_result.clear();
@@ -1986,76 +2003,25 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
 
     // Tests for event scheduling
     std::wstring evt_indexes, evt_notes;
-    for (const auto& e : ioctl_events[EVT_CORE])
-    {
-        evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += L"(" + e.note + L")" + L",";
-    }
-    if (!evt_indexes.empty() && evt_indexes.back() == L',')
-    {
-        evt_indexes.pop_back();
-    }
-    if (!evt_notes.empty() && evt_notes.back() == L',')
-    {
-        evt_notes.pop_back();
-    }
+    get_event_scheduling_test_data(ioctl_events, evt_indexes, evt_notes, EVT_CORE);
     col_test_name.push_back(L"ioctl_events[EVT_CORE].index");
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_CORE].note");
     col_test_result.push_back(evt_notes);
-    evt_indexes.clear();
-    evt_notes.clear();
-    for (const auto& e : ioctl_events[EVT_DSU])
-    {
-        evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += L"(" + e.note + L")" + L",";
-    }
-    if (!evt_indexes.empty() && evt_indexes.back() == L',')
-    {
-        evt_indexes.pop_back();
-    }
-    if (!evt_notes.empty() && evt_notes.back() == L',')
-    {
-        evt_notes.pop_back();
-    }
+
+    get_event_scheduling_test_data(ioctl_events, evt_indexes, evt_notes, EVT_DSU);
     col_test_name.push_back(L"ioctl_events[EVT_DSU].index");
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DSU].note");
     col_test_result.push_back(evt_notes);
-    evt_indexes.clear();
-    evt_notes.clear();
-    for (const auto& e : ioctl_events[EVT_DMC_CLK])
-    {
-        evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += L"(" + e.note + L")" + L",";
-    }
-    if (!evt_indexes.empty() && evt_indexes.back() == L',')
-    {
-        evt_indexes.pop_back();
-    }
-    if (!evt_notes.empty() && evt_notes.back() == L',')
-    {
-        evt_notes.pop_back();
-    }
+
+    get_event_scheduling_test_data(ioctl_events, evt_indexes, evt_notes, EVT_DMC_CLK);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLK].index");
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLK].note");
     col_test_result.push_back(evt_notes);
-    evt_indexes.clear();
-    evt_notes.clear();
-    for (const auto& e : ioctl_events[EVT_DMC_CLKDIV2])
-    {
-        evt_indexes += std::to_wstring(e.index) + L",";
-        evt_notes += e.note + L",";
-    }
-    if (!evt_indexes.empty() && evt_indexes.back() == L',')
-    {
-        evt_indexes.pop_back();
-    }
-    if (!evt_notes.empty() && evt_notes.back() == L',')
-    {
-        evt_notes.pop_back();
-    }
+
+    get_event_scheduling_test_data(ioctl_events, evt_indexes, evt_notes, EVT_DMC_CLKDIV2);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].index");
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].note");
