@@ -386,7 +386,7 @@ void parse_events_str(std::wstring events_str,
         if (push_group)
         {
             // We know how many groups are now inserted fully by counting EVT_HDR marker which describes group in vector of events
-            // See below how and why we inser EVT_HDR to groups[e_class].
+            // See below how and why we insert EVT_HDR to groups[e_class].
             const auto cnt = std::count_if(groups[e_class].begin(), groups[e_class].end(),
                                               [](const evt_noted& e) { return e.type == EVT_HDR; });
 
@@ -396,7 +396,7 @@ void parse_events_str(std::wstring events_str,
             {
                 if (group_size > pmu_cfg.gpc_nums[e_class])
                 {
-                    m_out.GetErrorOutputStream() << L"event group size(" << group_size
+                    m_out.GetErrorOutputStream() << L"event group size(" << int(group_size)
                         << ") exceeds number of hardware PMU counter("
                         << pmu_cfg.gpc_nums[e_class] << ")" << std::endl;
                     throw fatal_exception("ERROR_GROUP");
