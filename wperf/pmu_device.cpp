@@ -272,6 +272,8 @@ void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
         if (m_product_configuration.count(name))
             m_product_configuration[alias] = m_product_configuration[name];
 
+    m_product_name = m_PRODUCT_ARMV8A;
+
     // Add metrcs based on detected Telemetry Solution product
     for (auto const& [prod_name, prod_conf] : m_product_configuration)
         if (hw_cfg.vendor_id == prod_conf.implementer && hw_cfg.part_id == prod_conf.part_num)
@@ -292,7 +294,8 @@ std::wstring pmu_device::get_product_name_ext()
 {
     std::wstring ret;
     
-    if (m_product_name.size())
+    if (m_product_configuration.count(m_product_name)
+        && m_product_name.size())
     {
         std::wstring product_name = m_product_configuration[m_product_name].product_name;
         std::wstring arch_str = m_product_configuration[m_product_name].arch_str;
@@ -1853,7 +1856,9 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
 }
 
 void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_name,
-    _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type)
+    _Out_ std::vector<std::wstring>& col_raw_index,
+    _Out_ std::vector<std::wstring>& col_event_type,
+    _Out_ std::vector<std::wstring>& col_desc)
 {
     std::map<enum evt_class, std::vector<uint16_t>> events;
     events_query(events);
@@ -1870,6 +1875,7 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
             col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events_get_event_name(b, a.first)));
             col_raw_index.push_back(IntToHexWideString(b, 4));
             col_event_type.push_back(L"[" + std::wstring(pmu_events_get_evt_class_name(a.first)) + std::wstring(L" PMU event") + L"]");
+            col_desc.push_back(L"---");
         }
     }
 
@@ -1881,6 +1887,7 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
             col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events_get_event_name(b.hdr.num, a.first)));
             col_raw_index.push_back(IntToHexWideString(b.hdr.num, 4));
             col_event_type.push_back(L"[" + std::wstring(pmu_events_get_evt_class_name(a.first)) + std::wstring(L" PMU event*") + L"]");
+            col_desc.push_back(L"---");
         }
     }
 }
@@ -1927,16 +1934,31 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
             << L"List of pre-defined events (to be used in -e)"
             << std::endl << std::endl;
 
-        std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type;
-        do_list_prep_events(col_alias_name, col_raw_index, col_event_type);
+        std::vector<std::wstring> col_alias_name, col_raw_index, col_event_type, col_event_desc;
+        do_list_prep_events(col_alias_name, col_raw_index, col_event_type, col_event_desc);
 
-        TableOutput<PredefinedEventsOutputTraitsL, GlobalCharType> table(m_outputType);
-        table.PresetHeaders();
-        table.SetAlignment(1, ColumnAlignL::RIGHT);
-        table.Insert(col_alias_name, col_raw_index, col_event_type);
+        if (do_verbose)
+        {
+            TableOutput<PredefinedEventsOutputTraitsL<true>, GlobalCharType> table(m_outputType);
+            table.PresetHeaders();
+            table.SetAlignment(1, ColumnAlignL::RIGHT);
+            table.Insert(col_alias_name, col_raw_index, col_event_type, col_event_desc);
 
-        m_globalListJSON.m_Events = table;
-        m_out.Print(table);
+            m_globalListJSON.isVerbose = do_verbose;
+            m_globalListJSON.m_Events = table;
+            m_out.Print(table);
+        }
+        else
+        {
+            TableOutput<PredefinedEventsOutputTraitsL<false>, GlobalCharType> table(m_outputType);
+            table.PresetHeaders();
+            table.SetAlignment(1, ColumnAlignL::RIGHT);
+            table.Insert(col_alias_name, col_raw_index, col_event_type);
+
+            m_globalListJSON.isVerbose = do_verbose;
+            m_globalListJSON.m_Events = table;
+            m_out.Print(table);
+        }
     }
 
     // Print supported metrics

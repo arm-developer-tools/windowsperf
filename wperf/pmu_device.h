@@ -161,7 +161,8 @@ public:
 
     void do_list(const std::map<std::wstring, metric_desc>& metrics);
     void do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_name,
-        _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type);   // part of do_list()
+        _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type,
+        _Out_ std::vector<std::wstring>& col_desc);   // part of do_list()
     void do_list_prep_metrics(_Out_ std::vector<std::wstring>& col_metric,
         _Out_ std::vector<std::wstring>& col_events, _Out_ std::vector<std::wstring>& col_formula,
         _Out_ std::vector<std::wstring>& col_unit, _Out_ std::vector<std::wstring>& col_desc,
@@ -199,11 +200,14 @@ public:
     static std::map<std::wstring, std::wstring> m_product_alias;
     std::map<std::wstring, std::map<std::wstring, struct product_event>> m_product_events;       // [product] -> [event_name -> product_event]
     std::map<std::wstring, std::map<std::wstring, struct product_metric>> m_product_metrics;     // [product] -> [metrics_name -> product_metric]
-    std::wstring m_product_name;                        // Product name used to index Telemetry Solution data structures
+    std::wstring m_product_name;     // Product name used to index Telemetry Solution data structures
     std::wstring get_product_name_ext();                // Human friendly currently selected product string
     std::wstring get_all_product_name_str();            // Human friendly list of available products comma separated string
     std::wstring get_all_aliases_str();                 // Human friendly list of available alias -> product comma separated string
     std::vector<std::wstring> get_product_names();      // Get all product names
+
+    const std::wstring m_PRODUCT_ARMV8A = L"armv8-a";
+    const std::wstring m_PRODUCT_ARMV9A = L"armv9-a";
 
     const ReadOut* get_core_outs() { return core_outs.get();  };
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };

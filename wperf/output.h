@@ -50,16 +50,17 @@ struct TableOutputTraits
     inline const static int size = 0;
 };
 
-template <typename CharType>
+template <typename CharType, bool isVerbose = false >
 struct PredefinedEventsOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
-    inline const static std::tuple<StringType, StringType, StringType> columns;
-    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+    inline const static std::tuple<StringType, StringType, StringType, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Alias Name"),
             LITERALCONSTANTS_GET("Raw Index"),
-            LITERALCONSTANTS_GET("Event Type"));
-    inline const static int size = std::tuple_size_v<decltype(headers)>;
+            LITERALCONSTANTS_GET("Event Type"),
+            LITERALCONSTANTS_GET("Description"));
+    inline const static int size = std::conditional_t<isVerbose, Integer<4>, Integer<3>>::value;
     inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Events");
 };
 
@@ -419,11 +420,13 @@ struct WPerfListJSON
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
 
-    TableOutput<PredefinedEventsOutputTraits<CharType>, CharType> m_Events;
+    using PredefinedEventsOutputTraitsTO = TableOutput<PredefinedEventsOutputTraits<CharType, false>, CharType>;
+    using VerbosePredefinedEventsOutputTraitsTO = TableOutput<PredefinedEventsOutputTraits<CharType, true>, CharType>;
 
     using MetricOutputTraitsTO = TableOutput<MetricOutputTraits<CharType, false>, CharType>;
     using VerboseMetricOutputTraitsTO = TableOutput<MetricOutputTraits<CharType, true>, CharType>;
 
+    std::variant<PredefinedEventsOutputTraitsTO, VerbosePredefinedEventsOutputTraitsTO> m_Events;
     std::variant<MetricOutputTraitsTO, VerboseMetricOutputTraitsTO> m_Metrics;
     bool isVerbose = false;
 
@@ -431,14 +434,20 @@ struct WPerfListJSON
     {
         StringStream os;
         enum TableType jsonType = TableType::JSON;
-        m_Events.m_tableJSON.m_isEmbedded = true;
+
+        std::visit([](auto&& arg) {
+            arg.m_tableJSON.m_isEmbedded = true;
+            }, m_Events);
 
         std::visit([](auto&& arg) {
             arg.m_tableJSON.m_isEmbedded = true;
             }, m_Metrics);
         
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
-        os << m_Events.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
+
+        std::visit([&os, &jsonType](auto&& arg) {
+            os << arg.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
+            }, m_Events);
 
         std::visit([&os, &jsonType](auto&& arg) {
             os << arg.Print(jsonType).str() << std::endl;
@@ -644,7 +653,9 @@ struct OutputControl
 using GlobalCharType = wchar_t;
 using GlobalStringType = std::basic_string<GlobalCharType>;
 using ColumnAlignL = enum PrettyTable<GlobalCharType>::ColumnAlign;
-using PredefinedEventsOutputTraitsL = PredefinedEventsOutputTraits<GlobalCharType>;
+
+template <bool isVerbose>
+using PredefinedEventsOutputTraitsL = PredefinedEventsOutputTraits<GlobalCharType, isVerbose>;
 
 template <bool isMultiplexing>
 using PerformanceCounterOutputTraitsL = PerformanceCounterOutputTraits<GlobalCharType, isMultiplexing>;
