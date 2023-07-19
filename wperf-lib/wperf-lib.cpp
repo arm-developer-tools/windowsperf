@@ -1050,7 +1050,6 @@ extern "C" bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo)
             wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [core_num]", hw_cfg.core_num);
             wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [fpc_num]", hw_cfg.fpc_num);
             wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [gpc_num]", hw_cfg.gpc_num);
-            wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [total_gpc_num]", hw_cfg.total_gpc_num);
             wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [part_id]", hw_cfg.part_id);
             wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [pmu_ver]", hw_cfg.pmu_ver);
             wperf_test_insert_num(L"PMU_CTL_QUERY_HW_CFG [rev_id]", hw_cfg.rev_id);
