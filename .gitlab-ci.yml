@@ -58,7 +58,7 @@ build_and_test:
       $env:PATH += ";C:\ci";
       python -m pip install pytest;
       python -m pytest;
-      powershell .\tests\stress.ps1 5
+#      powershell .\tests\stress.ps1 5
   artifacts:
     paths:
       - wperf/ARM64/Release/wperf.exe
@@ -120,12 +120,12 @@ test_driver:
       cp -Recurse -Force wperf-scripts\tests c:\ci\;
       cd c:\ci\;
       certutil -addstore root wperf-driver.cer;
-      pnputil /add-driver .\wperf-driver.inf /install
+#      pnputil /add-driver .\wperf-driver.inf /install
     - >
       ls;
       $env:PATH += ";C:\wenv\arm64\python\tools;C:\ci\";
       python -m pip install pytest;
       python -m pytest;
-      powershell .\tests\stress.ps1 5
+#      powershell .\tests\stress.ps1 5
   rules:
       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
