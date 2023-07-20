@@ -262,8 +262,8 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <PreBuildEvent>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
-      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR</Message>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64EC'">
@@ -290,10 +290,10 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <PreBuildEvent>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR)</Message>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -343,8 +343,8 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <PreBuildEvent>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
-      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR</Message>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64EC'">
@@ -375,8 +375,8 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <PreBuildEvent>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf\gitver.def</Command>
-      <Message>Generate wperf\gitver.def (WPERF_GIT_VER_STR)</Message>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

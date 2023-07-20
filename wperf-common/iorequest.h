@@ -31,6 +31,8 @@
 
 #include "wperf-common\macros.h"
 
+#define MAX_GITVER_SIZE 32
+
 //
 // Below structures represent binary protocol between wperf and wperf-driver
 //
@@ -69,6 +71,7 @@ struct version_info
     UINT8 major;
     UINT8 minor;
     UINT8 patch;
+    WCHAR gitver[MAX_GITVER_SIZE];
 };
 
 #define PMU_CTL_ACTION_OFFSET 0x900

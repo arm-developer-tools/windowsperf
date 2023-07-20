@@ -31,6 +31,7 @@
 
 #include <numeric>
 #include <assert.h>
+#include "wperf-common/gitver.h"
 #include "pmu_device.h"
 #include "exception.h"
 #include "events.h"
@@ -2174,18 +2175,20 @@ void pmu_device::do_version(_Out_ version_info& driver_ver)
 {
     do_version_query(driver_ver);
 
-    std::vector<std::wstring> col_component, col_version;
+    std::vector<std::wstring> col_component, col_version, col_gitver;
     col_component.push_back(L"wperf");
     col_version.push_back(std::to_wstring(MAJOR) + L"." +
         std::to_wstring(MINOR) + L"." +
         std::to_wstring(PATCH));
     col_component.push_back(L"wperf-driver");
+    col_gitver.push_back(WPERF_GIT_VER_STR);
     col_version.push_back(std::to_wstring(driver_ver.major) + L"." +
         std::to_wstring(driver_ver.minor) + L"." +
         std::to_wstring(driver_ver.patch));
+    col_gitver.push_back(driver_ver.gitver);
     TableOutput<VersionOutputTraitsL, GlobalCharType> table(m_outputType);
     table.PresetHeaders();
-    table.Insert(col_component, col_version);
+    table.Insert(col_component, col_version, col_gitver);
     m_out.Print(table, true);
 }
 

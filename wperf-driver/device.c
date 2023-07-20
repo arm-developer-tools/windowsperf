@@ -37,6 +37,7 @@
 #include "pmu.h"
 #include "coreinfo.h"
 #include "sysregs.h"
+#include "wperf-common\gitver.h"
 #include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"
 #include "wperf-common\inline.h"
@@ -1250,6 +1251,8 @@ NTSTATUS deviceControl(
         ver_info->major = MAJOR;
         ver_info->minor = MINOR;
         ver_info->patch = PATCH;
+        const wchar_t* gitver = WPERF_GIT_VER_STR;
+        memcpy(ver_info->gitver, gitver, sizeof(WPERF_GIT_VER_STR));
 
         *outputSize = sizeof(struct version_info);
         break;

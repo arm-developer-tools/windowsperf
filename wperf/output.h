@@ -183,10 +183,11 @@ template <typename CharType>
 struct VersionOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
-    inline const static std::tuple<StringType, StringType> columns;
-    inline const static std::tuple<CharType*, CharType*> headers =
+    inline const static std::tuple<StringType, StringType, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("Component"),
-            LITERALCONSTANTS_GET("Version"));
+            LITERALCONSTANTS_GET("Version"),
+            LITERALCONSTANTS_GET("GitVer"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("Version");
 };

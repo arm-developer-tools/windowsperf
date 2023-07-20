@@ -91,7 +91,7 @@ usage: wperf [options]
 //
 // This file will be modified with wperf's pre-build step
 //
-#include "gitver.h"
+#include "wperf-common\gitver.h"
 
 void user_request::print_help_header()
 {
