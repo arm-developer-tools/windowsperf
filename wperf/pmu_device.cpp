@@ -895,6 +895,27 @@ void pmu_device::events_query(std::map<enum evt_class, std::vector<uint16_t>>& e
 {
     events_out.clear();
 
+    std::map<enum evt_class, std::vector<uint16_t>> driver_events;
+    events_query_driver(driver_events);
+
+    // Push all CORE events for the products (decided by product name)
+    if (m_product_events.count(m_product_name))
+    {
+        for (const auto& [key, value] : m_product_events[m_product_name])
+            events_out[EVT_CORE].push_back(value.index);
+        std::sort(events_out[EVT_CORE].begin(), events_out[EVT_CORE].end());
+    }
+
+    // Copy not-CORE events to the output
+    for (const auto& [key, value] : driver_events)
+        if (key != EVT_CORE)
+            events_out[key] = value;
+}
+
+void pmu_device::events_query_driver(std::map<enum evt_class, std::vector<uint16_t>>& events_out)
+{
+    events_out.clear();
+
     enum pmu_ctl_action action = PMU_CTL_QUERY_SUPP_EVENTS;
     DWORD res_len;
 
@@ -1867,6 +1888,7 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
     col_alias_name.clear();
     col_raw_index.clear();
     col_event_type.clear();
+    col_desc.clear();
 
     for (const auto& a : events)
     {
@@ -1875,7 +1897,7 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
             col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events_get_event_name(b, a.first)));
             col_raw_index.push_back(IntToHexWideString(b, 4));
             col_event_type.push_back(L"[" + std::wstring(pmu_events_get_evt_class_name(a.first)) + std::wstring(L" PMU event") + L"]");
-            col_desc.push_back(L"---");
+            col_desc.push_back(std::wstring(pmu_events_get_evt_desc(b, a.first)));
         }
     }
 
@@ -1887,7 +1909,7 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
             col_alias_name.push_back(std::wstring(prefix) + std::wstring(pmu_events_get_event_name(b.hdr.num, a.first)));
             col_raw_index.push_back(IntToHexWideString(b.hdr.num, 4));
             col_event_type.push_back(L"[" + std::wstring(pmu_events_get_evt_class_name(a.first)) + std::wstring(L" PMU event*") + L"]");
-            col_desc.push_back(L"---");
+            col_desc.push_back(L"<extra event>");
         }
     }
 }
@@ -2432,12 +2454,27 @@ const wchar_t* pmu_device::pmu_events_get_evt_class_name(enum evt_class e_class)
 
 const wchar_t* pmu_device::pmu_events_get_event_name(uint16_t index, enum evt_class e_class)
 {
+    if (e_class == EVT_CORE && m_product_events.count(m_product_name))
+        for (const auto& [key, value] : m_product_events[m_product_name])
+            if (value.index == index)
+                return value.name.c_str();
+
     return pmu_events::get_event_name(index, e_class);
 }
 
 const wchar_t* pmu_device::pmu_events_get_evt_name_prefix(enum evt_class e_class)
 {
     return pmu_events::get_evt_name_prefix(e_class);
+}
+
+const wchar_t* pmu_device::pmu_events_get_evt_desc(uint16_t index, enum evt_class e_class)
+{
+    if (e_class == EVT_CORE && m_product_events.count(m_product_name))
+        for (const auto& [key, value] : m_product_events[m_product_name])
+            if (value.index == index)
+                return value.title.c_str();
+
+    return L"---";
 }
 
 #include "debug.h"

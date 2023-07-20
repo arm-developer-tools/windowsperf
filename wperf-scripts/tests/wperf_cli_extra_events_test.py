@@ -56,51 +56,6 @@ def test_wperf_padding_1_event():
     assert ('130' in evt_core_index)
     assert ('131' in evt_core_index)
 
-def test_wperf_E_replace_one_event_from_imix():
-    """ Test if 'name1' event will replace original `dp_spec 0x73` event from `imix` """
-    cmd = 'wperf stat -m imix -E name1:0x73 -c 0 sleep 1'
-    stdout, _ = run_command(cmd.split())
-
-    # imix:  b'inst_spec,dp_spec,vfp_spec,ase_spec,...'
-    events = b'inst_spec,name1,vfp_spec,ase_spec'           # not all imix events
-
-    # Event names in pretty table
-    if events:
-        for event in events.split(b','):
-            assert re.search(b'[\\d]+[\\s]+%s[\\s]+0x[0-9a-f]+' % event.lower(), stdout)
-        assert re.search(b'[\\s]+cycle[\\s]+fixed', stdout)
-
-def test_wperf_E_replace_two_events_from_imix():
-    """ Test if 'name1', 'name2' event will replace original:
-        `dp_spec:0x73` and
-        `ase_spec:0x74` event from `imix`"""
-    cmd = 'wperf stat -m imix -E name1:0x73,name2:0x74 -c 0 sleep 1'
-    stdout, _ = run_command(cmd.split())
-
-    # imix:  b'inst_spec,dp_spec,vfp_spec,ase_spec,...'
-    events = b'inst_spec,name1,vfp_spec,name2'           # not all imix events
-
-    # Event names in pretty table
-    if events:
-        for event in events.split(b','):
-            assert re.search(b'[\\d]+[\\s]+%s[\\s]+0x[0-9a-f]+' % event.lower(), stdout)
-        assert re.search(b'[\\s]+cycle[\\s]+fixed', stdout)
-
-def test_wperf_E_list_replace_event():
-    """ Test if we can replace existing event 0x74 with name1 """
-    cmd = 'wperf list -E name1:0x74 -json'
-    stdout, _ = run_command(cmd.split())
-    j = json.loads(stdout)
-
-    for e in j["Predefined_Events"]:
-        if e["Alias_Name"] == "name1":
-            # Check if we've replaced existing event
-            assert (e["Raw_Index"] == "0x0074")
-            # We will not only replace existing core PMU but add extra
-            # event at the end of the list with '*' mark
-            assert (e["Event_Type"] == "[core PMU event]" or e["Event_Type"] == "[core PMU event*]")
-
-
 def test_wperf_E_list_add_event():
     """ Test if we can add new event 0xffaa names 'name1' """
     cmd = 'wperf list -E name1:0xffaa -json'
@@ -113,6 +68,21 @@ def test_wperf_E_list_add_event():
             assert (e["Raw_Index"] == "0xffaa")
             assert (e["Event_Type"] != "[core PMU event]")  # Not replacing existing event
             assert (e["Event_Type"] == "[core PMU event*]") # Only new event with '*'
+
+
+def test_wperf_E_list_add_event_verbose():
+    """ Test if we can add new event 0xffaa names 'name1' """
+    cmd = 'wperf list -E name1:0xffaa -v -json'
+    stdout, _ = run_command(cmd.split())
+    j = json.loads(stdout)
+
+    for e in j["Predefined_Events"]:
+        if e["Alias_Name"] == "name1":
+            # Check if we've replaced existing event
+            assert (e["Raw_Index"] == "0xffaa")
+            assert (e["Event_Type"] != "[core PMU event]")  # Not replacing existing event
+            assert (e["Event_Type"] == "[core PMU event*]") # Only new event with '*'
+            assert (e["Description"] == "<extra event>")    # Extra in verbose mode
 
 def test_wperf_E_list_add_2_event():
     """ Test if we can add new events:

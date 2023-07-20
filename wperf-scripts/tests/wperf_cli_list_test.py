@@ -61,7 +61,7 @@ def test_wperf_list_json_file_output_valid(tmp_path):
     except:
         assert 0
 
-def test_wperf_list_json_verbose(tmp_path):
+def test_wperf_list_metric_json_verbose(tmp_path):
     """ Test `wperf list` JSON output in verbose mode """
 
     """
@@ -88,4 +88,31 @@ def test_wperf_list_json_verbose(tmp_path):
         assert 'Events' in metric
         assert 'Formula' in metric
         assert 'Unit' in metric
+        assert 'Description' in metric
+
+def test_wperf_list_events_json_verbose(tmp_path):
+    """ Test `wperf list` JSON output in verbose mode """
+
+    """
+    "Predefined_Events": [
+        {
+            "Alias_Name": "sw_incr",
+            "Raw_Index": "0x0000",
+            "Event_Type": "[core PMU event]",
+            "Description": "Instruction architecturally executed, Condition code check pass, software increment"
+        },
+    """
+
+    cmd = 'wperf list -v -json'
+    stdout, _ = run_command(cmd.split())
+    assert is_json(stdout)
+
+    json_output = json.loads(stdout)
+    assert 'Predefined_Events' in json_output
+    assert  len(json_output['Predefined_Events'])
+
+    for metric in json_output['Predefined_Events']:
+        assert 'Alias_Name' in metric
+        assert 'Raw_Index' in metric
+        assert 'Event_Type' in metric
         assert 'Description' in metric
