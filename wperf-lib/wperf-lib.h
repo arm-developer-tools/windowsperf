@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef WPERF_LIB_EXPORTS
+#define WPERF_LIB_API __declspec(dllexport)
+#else
+#define WPERF_LIB_API __declspec(dllimport)
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -51,13 +57,13 @@ typedef struct _METRIC_INFO
 /// Initialize wperf-lib.
 /// </summary>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_init();
+WPERF_LIB_API bool wperf_init();
 
 /// <summary>
 /// Close wperf-lib.
 /// </summary>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_close();
+WPERF_LIB_API bool wperf_close();
 
 /// <summary>
 /// Get wperf-driver's version.
@@ -74,7 +80,7 @@ bool wperf_close();
 /// <param name="driver_ver">Pointer to caller allocated VERSION_INFO
 /// which this routine will populate with wperf-driver's version info.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_driver_version(PVERSION_INFO driver_ver);
+WPERF_LIB_API bool wperf_driver_version(PVERSION_INFO driver_ver);
 
 /// <summary>
 /// Get wperf-lib's version.
@@ -91,7 +97,7 @@ bool wperf_driver_version(PVERSION_INFO driver_ver);
 /// <param name="wperf_ver">Pointer to caller allocated VERSION_INFO
 /// which this routine will populate with wperf-lib's version info.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_version(PVERSION_INFO wperf_ver);
+WPERF_LIB_API bool wperf_version(PVERSION_INFO wperf_ver);
 
 /// <summary>
 /// Works like a generator, yields the next element from the list of all
@@ -123,7 +129,7 @@ bool wperf_version(PVERSION_INFO wperf_ver);
 /// EVENT_INFO struct. This lib routine will populate the struct pointed to by
 /// einfo with the next event from the list of supported events.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo);
+WPERF_LIB_API bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo);
 
 /// <summary>
 /// Get the number of supported events. This must be called after wperf_list_events.
@@ -151,7 +157,7 @@ bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo);
 /// <param name="num_events">Pointer to a caller allocated int. This lib routine will
 /// fill the int pointed to by num_events with the number of supported events.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_list_num_events(PLIST_CONF list_conf, int *num_events);
+WPERF_LIB_API bool wperf_list_num_events(PLIST_CONF list_conf, int *num_events);
 
 /// <summary>
 /// Works like a generator, yields the next event from the list of events
@@ -184,7 +190,7 @@ bool wperf_list_num_events(PLIST_CONF list_conf, int *num_events);
 /// pointed to by minfo with the next event from the list of events for all builtin
 /// metrics.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo);
+WPERF_LIB_API bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo);
 
 /// <summary>
 /// Get the number of builtin metrics. This must be called after wperf_list_metrics.
@@ -212,7 +218,7 @@ bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo);
 /// <param name="num_metrics">Pointer to a caller allocated int. This lib routine will fill
 /// the int pointed to by num_metrics with the number of builtin metrics.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_list_num_metrics(PLIST_CONF list_conf, int *num_metrics);
+WPERF_LIB_API bool wperf_list_num_metrics(PLIST_CONF list_conf, int *num_metrics);
 
 /// <summary>
 /// Get the number of events for all builtin metrics. This must be called after wperf_list_metrics.
@@ -239,7 +245,7 @@ bool wperf_list_num_metrics(PLIST_CONF list_conf, int *num_metrics);
 /// in LIST_CONF (refer to the definition of LIST_CONF for more details).</param>
 /// <param name="num_metrics_events"></param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_list_num_metrics_events(PLIST_CONF list_conf, int *num_metrics_events);
+WPERF_LIB_API bool wperf_list_num_metrics_events(PLIST_CONF list_conf, int *num_metrics_events);
 
 // With this example "-e inst_spec,dp_spec,{ld_spec,st_spec} -m dcache",
 // normal events are inst_spec and dp_spec,
@@ -429,7 +435,7 @@ typedef struct _TEST_INFO
 /// pointed to by stat_info with the counter values and other related information defined
 /// in STAT_INFO for each requested event on each requestd core.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info);
+WPERF_LIB_API bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info);
 
 typedef struct _SAMPLE_CONF
 {
@@ -529,7 +535,7 @@ typedef struct _SAMPLE_STATS
 /// pointed to by sample_info with the sample information defined in SAMPLE_INFO for each sample
 /// of each requested sampling event.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info);
+WPERF_LIB_API bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info);
 
 /// <summary>
 /// Works like a generator, yields the next ANNOTATE_INFO from the list of all ANNOTATE_INFOs
@@ -578,7 +584,7 @@ bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info);
 /// routine will populate the ANNOTATE_INFO pointed to by annotate_info with the sample information
 /// defined in ANNOTATE_INFO for each requested sampling event.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INFO annotate_info);
+WPERF_LIB_API bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INFO annotate_info);
 
 /// <summary>
 /// Get sampling statistics.
@@ -622,7 +628,7 @@ bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INFO annotate_inf
 /// will populate the SAMPLE_STATS pointed to by sample_stats with the sampling statistics (refer to
 /// the definition of SAMPLE_STATS for more details).</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_sample_stats(PSAMPLE_CONF sample_conf, PSAMPLE_STATS sample_stats);
+WPERF_LIB_API bool wperf_sample_stats(PSAMPLE_CONF sample_conf, PSAMPLE_STATS sample_stats);
 
 /// <summary>
 /// Get the number of CPU cores.
@@ -643,7 +649,7 @@ bool wperf_sample_stats(PSAMPLE_CONF sample_conf, PSAMPLE_STATS sample_stats);
 /// <param name="num_cores">Pointer to a caller allocated int. This lib routine will
 /// fill the int pointed to by num_cores with the number of cores.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_num_cores(int *num_cores);
+WPERF_LIB_API bool wperf_num_cores(int *num_cores);
 
 /// <summary>
 /// Works like a generator, yields the next TEST_INFO from the list of tests.
@@ -688,7 +694,7 @@ bool wperf_num_cores(int *num_cores);
 /// TEST_INFO struct, this lib routine will populate the struct pointed to by
 /// tinfo with the next info from the list of configuration info.</param>
 /// <returns>true if the call succeeds, false if not.</returns>
-bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo);
+WPERF_LIB_API bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo);
 
 #ifdef __cplusplus
 }
