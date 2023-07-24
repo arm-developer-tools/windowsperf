@@ -157,6 +157,7 @@ struct pmu_ctl_hdr
 {
 	enum pmu_ctl_action action;
     struct pmu_ctl_cores_count_hdr cores_idx;
+    LONG period;
 	UINT8 dmc_idx;
 #define CTL_FLAG_CORE (0x1 << 0)
 #define CTL_FLAG_DSU  (0x1 << 1)

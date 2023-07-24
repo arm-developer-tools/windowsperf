@@ -574,6 +574,7 @@ void pmu_device::start(uint32_t flags = CTL_FLAG_CORE)
     ctl.cores_idx.cores_count = cores_idx.size();
     std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
 
+    ctl.period = PMU_CTL_START_PERIOD;
     ctl.dmc_idx = dmc_idx;
     ctl.flags = flags;
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_START, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);

@@ -1029,11 +1029,17 @@ NTSTATUS deviceControl(
                 core->timer_running = 1;
                 PRKDPC dpc = &(core->dpc);
 
+                const LONG DefaultPeriod = 100;
+                const LONGLONG ns100 = -10000;  // negative, the expiration time is relative to the current system time
                 LARGE_INTEGER DueTime;
-                LONG Period;
+                LONG Period = DefaultPeriod;
 
-                DueTime.QuadPart = do_multiplex ? -1000000 : -2000000;
-                Period = do_multiplex ? 100 : 200;
+                if (ctl_req->period >= PMU_CTL_START_PERIOD_MIN
+                    && ctl_req->period <= PMU_CTL_START_PERIOD)
+                    Period = ctl_req->period;
+
+                DueTime.QuadPart = do_multiplex ? (DefaultPeriod * ns100) : (2 * (LONGLONG)DefaultPeriod * ns100);
+                Period = do_multiplex ? DefaultPeriod : (2 * DefaultPeriod);
                 KDEFERRED_ROUTINE* dpc_routine = do_multiplex ? multiplex_dpc : overflow_dpc;
 
                 PROCESSOR_NUMBER ProcNumber;

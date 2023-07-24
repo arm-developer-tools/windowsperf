@@ -61,6 +61,9 @@
 
 #define FILTER_BIT_EXCL_EL1                 (1U << 31)
 
+#define PMU_CTL_START_PERIOD                100     // Default (and max) value
+#define PMU_CTL_START_PERIOD_MIN            10      // Minimal value for period
+
 // Define how many fixed counters are now handled
 // Currently we are having "cycles" as 1 (only) fixed counter
 #define FIXED_COUNTERS_NO                   1
