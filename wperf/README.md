@@ -11,15 +11,18 @@ You can build `wperf` project from command line:
 ```
 
 # Usage of wperf
+
 ```
 > wperf -h
+WindowsPerf ver. 2.4.7 (87931e30-dirty/Debug) WOA profiling with performance counters.
+Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
 
 usage: wperf [options]
 
     Options:
     list                  List supported events and metrics.
-    test                  Configuration information about driver and application confituration.
     stat                  Count events.If - e is not specified, then count default events.
+    test                  Configuration information about driver and application confituration.
     sample                Sample events. If -e is not specified, cycle counter will be the default sample source
     -e e1, e2...          Specify events to count.Event eN could be a symbolic name or in raw number.
                           Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
@@ -40,11 +43,14 @@ usage: wperf [options]
     -sample-display-long  Display decorated symbol names.
     -sample-display-row   Set how many samples you want to see in the summary (50 by default).
     -C config_file        Provide customized config file which describes metrics etc.
+    -E config_file        Provide customized config file which describes custom events.
+    -E event_list         Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
     -c core_idx           Profile on the specified core. Skip -c to count on all cores.
+                          In sampling user must specify exactly one core with -c.
     -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
     -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
     -k                    Count kernel mode as well (disabled by default).
-    -h                    Show tool help.
+    -h / --help           Show tool help.
     --output              Enable JSON output to file.
     -q                    Quiet mode, no output is produced.
     -json                 Define output type as JSON.
