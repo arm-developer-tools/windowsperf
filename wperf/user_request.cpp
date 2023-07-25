@@ -54,13 +54,13 @@ usage: wperf [options]
                           XXXX is hex value of the number without '0x' prefix.
                           when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
     -m m1, m2...          Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    --timeout SEC         Specify counting duration(in s).The accuracy is 0.1s.
-    sleep N               Like -d, for compatibility with Linux perf.
-    -i N                  Specify counting interval(in s).To be used with -t.
-    -t                    Enable timeline mode.It specifies -i 60 -d 1 implicitly.
+    --timeout SEC         Specify counting duration(in s). The accuracy is 0.1s.
+    sleep N               Like --timeout, for compatibility with Linux perf.
+    -i N                  Specify counting interval(in s). To be used with -t.
+    -t                    Enable timeline mode. It specifies -i 60 --timeout 1 implicitly.
                           Means counting 1 second after every 60 second, and the result
                           is in.csv file in the same folder where wperf is invoked.
-                          You can use -i and -d to change counting duration and interval.
+                          You can use -i and --timeout to change counting duration and interval.
     -n N                  How many times count in timeline mode (disabled by default).
     -image_name           Specify the image name you want to sample.
     -pe_file              Specify the PE file.
