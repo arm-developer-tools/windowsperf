@@ -40,6 +40,7 @@
 #include "parsers.h"
 #include "wperf-common/public.h"
 #include "wperf.h"
+#include "config.h"
 
 #include <cfgmgr32.h>
 #include <devpkey.h>
@@ -179,6 +180,8 @@ void pmu_device::init()
     vendor_name = get_vendor_name(hw_cfg.vendor_id);
     core_outs = std::make_unique<ReadOut[]>(core_num);
     memset(core_outs.get(), 0, sizeof(ReadOut) * core_num);
+
+    drvconfig::init();
 
     hw_cfg_detected(hw_cfg);
 
@@ -574,9 +577,10 @@ void pmu_device::start(uint32_t flags = CTL_FLAG_CORE)
     ctl.cores_idx.cores_count = cores_idx.size();
     std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
 
-    ctl.period = PMU_CTL_START_PERIOD;
     ctl.dmc_idx = dmc_idx;
     ctl.flags = flags;
+    drvconfig::get(L"count.period", ctl.period);
+
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_START, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_START failed");
@@ -2158,6 +2162,24 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].note");
     col_test_result.push_back(evt_notes);
+
+    // Configuration
+    std::vector<std::wstring> config_strs;
+    drvconfig::get_configs(config_strs);
+
+    for (auto& name : config_strs)
+    {
+        LONG l = 0;
+        std::wstring s = L"<unknown>";
+
+        col_test_name.push_back(L"config." + name);
+        if (drvconfig::get(name, l))
+            col_test_result.push_back(std::to_wstring(l));
+        else if (drvconfig::get(name, s))
+            col_test_result.push_back(s);
+        else
+            col_test_result.push_back(s);
+    }
 }
 
 void pmu_device::do_test(uint32_t enable_bits,

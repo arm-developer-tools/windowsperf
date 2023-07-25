@@ -1038,9 +1038,13 @@ NTSTATUS deviceControl(
                     && ctl_req->period <= PMU_CTL_START_PERIOD)
                     Period = ctl_req->period;
 
-                DueTime.QuadPart = do_multiplex ? (DefaultPeriod * ns100) : (2 * (LONGLONG)DefaultPeriod * ns100);
-                Period = do_multiplex ? DefaultPeriod : (2 * DefaultPeriod);
+                DueTime.QuadPart = do_multiplex ? (Period * ns100) : (2 * (LONGLONG)Period * ns100);
+                Period = do_multiplex ? Period : (2 * Period);
                 KDEFERRED_ROUTINE* dpc_routine = do_multiplex ? multiplex_dpc : overflow_dpc;
+
+                KdPrint(("%!FUNC! %!LINE! ctl_req->period = %d", ctl_req->period));
+                KdPrint(("%!FUNC! %!LINE! count.period = %d", Period));
+                KdPrint(("%!FUNC! %!LINE! DueTime.QuadPart = %lld", DueTime.QuadPart));
 
                 PROCESSOR_NUMBER ProcNumber;
                 KeGetProcessorNumberFromIndex(i, &ProcNumber);

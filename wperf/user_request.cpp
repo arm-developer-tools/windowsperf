@@ -37,6 +37,7 @@
 #include "exception.h"
 #include "padding.h"
 #include "wperf-common/public.h"
+#include "wperf/config.h"
 
 
 void user_request::print_help_usage()
@@ -77,6 +78,7 @@ usage: wperf [options]
     -k                    Count kernel mode as well (disabled by default).
     -h / --help           Show tool help.
     --output              Enable JSON output to file.
+    --config              Specify configuration parameters, format NAME=VALUE.
     -q                    Quiet mode, no output is produced.
     -json                 Define output type as JSON.
     -l                    Alias of 'list'.
@@ -202,6 +204,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_pdb_file = false;
     bool waiting_sample_display_row = false;
     bool waiting_timeline_count = false;
+    bool waiting_config = false;
 
     if (raw_args.empty())
     {
@@ -276,6 +279,14 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             waiting_filename = false;
             m_out.m_filename = a;
             m_out.m_shouldWriteToFile = true;
+            continue;
+        }
+
+        if (waiting_config)
+        {
+            waiting_config = false;
+            if (drvconfig::set(a) == false)
+                m_out.GetErrorOutputStream() << L"error: can't set '" << a << "' config" << std::endl;
             continue;
         }
 
@@ -469,6 +480,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         {
             waiting_filename = true;
             m_outputType = TableType::ALL;
+            continue;
+        }
+
+        if (a == L"--config")
+        {
+            waiting_config = true;
             continue;
         }
 

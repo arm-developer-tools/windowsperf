@@ -52,6 +52,7 @@ usage: wperf [options]
     -k                    Count kernel mode as well (disabled by default).
     -h / --help           Show tool help.
     --output              Enable JSON output to file.
+    --config              Specify configuration paramters, format NAME=VALUE.
     -q                    Quiet mode, no output is produced.
     -json                 Define output type as JSON.
     -l                    Alias of 'list'.

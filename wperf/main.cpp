@@ -43,6 +43,7 @@
 #include "events.h"
 #include "pmu_device.h"
 #include "user_request.h"
+#include "config.h"
 
 
 static bool no_ctrl_c = true;
