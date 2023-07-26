@@ -325,6 +325,8 @@ typedef struct _STAT_CONF
     double duration;
     /// Set this to true if kernel mode should be included, false if not.
     bool kernel_mode;
+    /// The counting timer period (in milliseconds). The default period is 100ms. The period should be between 10ms to 100ms (i.e., [10ms, 100ms]).
+    long period;
 } STAT_CONF, *PSTAT_CONF;
 
 typedef struct _STAT_INFO

@@ -1,4 +1,5 @@
 #include "wperf-lib.h"
+#include "config.h"
 #include "padding.h"
 #include "parsers.h"
 #include "pe_file.h"
@@ -390,6 +391,8 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
             double count_duration = stat_conf->duration;
             int64_t counting_duration_iter = count_duration > 0 ?
                 static_cast<int64_t>(count_duration * 10) : _I64_MAX;
+
+            drvconfig::set(L"count.period", std::to_wstring(stat_conf->period));
 
             __pmu_device->reset(enable_bits);
 
@@ -1095,6 +1098,24 @@ extern "C" bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo)
             for (const auto& e : __ioctl_events[EVT_CORE])
             {
                 wperf_test_insert_evt_note(L"ioctl_events[EVT_CORE]", e);
+            }
+
+            // Configuration
+            std::vector<std::wstring> config_strs;
+            drvconfig::get_configs(config_strs);
+
+            for (auto& name : config_strs)
+            {
+                LONG l = 0;
+                std::wstring s = L"<unknown>";
+
+                std::wstring config_name = L"config" + name;
+                if (drvconfig::get(name, l))
+                    wperf_test_insert_num(config_name.c_str(), l);
+                else if (drvconfig::get(name, s))
+                    wperf_test_insert_wstring(config_name.c_str(), s.c_str());
+                else
+                    wperf_test_insert_wstring(config_name.c_str(), s.c_str());
             }
         }
         else

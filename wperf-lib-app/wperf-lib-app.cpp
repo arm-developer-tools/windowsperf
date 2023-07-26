@@ -71,8 +71,9 @@ wmain(
 		{1/*num_groups*/, num_group_events/*num_group_events*/, gevents/*events*/}, // group_events
 		1, // num_metrics
 		metric_events, // metric_events
-		1, // duration
-		false // kernel_mode
+		0.1, // duration
+		false, // kernel_mode
+		10, // period
 	};
 	if (wperf_stat(&stat_conf, NULL))
 	{
