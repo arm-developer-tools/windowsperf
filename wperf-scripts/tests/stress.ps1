@@ -42,25 +42,25 @@ for($i=0; $i -lt $nloops;$i++)
     wperf stat -m dcache,icache,imix -c 0,1 sleep 1
     wperf stat -m dcache,icache,imix -c 0 sleep 1
 
-    wperf stat -m dcache,icache,imix -c 0,1,2,3,4 sleep 1   -json
-    wperf stat -m dcache,icache,imix -c 0,1,2,3 sleep 1     -json
-    wperf stat -m dcache,icache,imix -c 0,1,2 sleep 1       -json
-    wperf stat -m dcache,icache,imix -c 0,1 sleep 1         -json
-    wperf stat -m dcache,icache,imix -c 0 sleep 1           -json
+    wperf stat -m dcache,icache,imix -c 0,1,2,3,4 sleep 1   --json
+    wperf stat -m dcache,icache,imix -c 0,1,2,3 sleep 1     --json
+    wperf stat -m dcache,icache,imix -c 0,1,2 sleep 1       --json
+    wperf stat -m dcache,icache,imix -c 0,1 sleep 1         --json
+    wperf stat -m dcache,icache,imix -c 0 sleep 1           --json
 
-    wperf stat -m imix -c 0,1,2,3,4 sleep 1   -json
-    wperf stat -m dcache -c 0,1,2,3 sleep 1     -json
-    wperf stat -m dcache,icache -c 0,1,2 sleep 1       -json
-    wperf stat -m dcache,icache,imix -c 0,1 sleep 1         -json
-    wperf stat -m dcache,icache,imix -c 0 sleep 1           -json
-    wperf stat -m dcache,icache -c 0 sleep 1           -json
-    wperf stat -m dcache -c 0 sleep 1           -json
+    wperf stat -m imix -c 0,1,2,3,4 sleep 1   --json
+    wperf stat -m dcache -c 0,1,2,3 sleep 1     --json
+    wperf stat -m dcache,icache -c 0,1,2 sleep 1       --json
+    wperf stat -m dcache,icache,imix -c 0,1 sleep 1         --json
+    wperf stat -m dcache,icache,imix -c 0 sleep 1           --json
+    wperf stat -m dcache,icache -c 0 sleep 1           --json
+    wperf stat -m dcache -c 0 sleep 1           --json
 
 
     wperf list
     wperf test
-    wperf stat -m dcache,icache,imix -c 0,1            sleep 10  -json
-    wperf stat -m imix                                 sleep 10  -json
+    wperf stat -m dcache,icache,imix -c 0,1            sleep 10  --json
+    wperf stat -m imix                                 sleep 10  --json
 
     wperf stat --output _output_01.json -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 sleep 5
     wperf stat --output _output_02.json -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0 sleep 5

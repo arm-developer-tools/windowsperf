@@ -25,12 +25,16 @@ In below test directory we've added locally `wperf.exe`.
 C:\example\of\functional\testing> tree /f
 │   common.py
 │   wperf_cli_common_test.py
+|   wperf_cli_config_test.py
+|   wperf_cli_extra_events_test.py
 │   wperf_cli_json_validator_test.py
 │   wperf_cli_list_test.py
 │   wperf_cli_metrics_test.py
 │   wperf_cli_padding_test.py
 │   wperf_cli_stat_test.py
 │   wperf_cli_test_test.py
+|   wperf_cli_timeline_test.py
+|   wperf_lib_app_test.py
 │   wperf.exe
 │
 └───schemas

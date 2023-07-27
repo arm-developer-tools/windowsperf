@@ -129,7 +129,7 @@ def test_telemetry_solution_metrics_json(metric):
         pytest.skip("unsupported configuration")
         return
 
-    cmd = 'wperf stat -m ' + metric + ' -json -c 1 sleep 1'
+    cmd = 'wperf stat -m ' + metric + ' --json -c 1 sleep 1'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 

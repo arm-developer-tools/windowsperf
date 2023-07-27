@@ -20,45 +20,45 @@ Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
 usage: wperf [options]
 
     Options:
-    list                  List supported events and metrics.
-    stat                  Count events.If - e is not specified, then count default events.
-    test                  Configuration information about driver and application confituration.
-    sample                Sample events. If -e is not specified, cycle counter will be the default sample source
-    -e e1, e2...          Specify events to count.Event eN could be a symbolic name or in raw number.
-                          Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
-                          XXXX is hex value of the number without '0x' prefix.
-                          when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
-    -m m1, m2...          Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    --timeout SEC         Specify counting duration(in s). The accuracy is 0.1s.
-    sleep N               Like --timeout, for compatibility with Linux perf.
-    -i N                  Specify counting interval(in s). To be used with -t.
-    -t                    Enable timeline mode. It specifies -i 60 --timeout 1 implicitly.
-                          Means counting 1 second after every 60 second, and the result
-                          is in.csv file in the same folder where wperf is invoked.
-                          You can use -i and --timeout to change counting duration and interval.
-    -n N                  How many times count in timeline mode (disabled by default).
-    -image_name           Specify the image name you want to sample.
-    -pe_file              Specify the PE file.
-    -pdb_file             Specify the PDB file.
-    -sample-display-long  Display decorated symbol names.
-    -sample-display-row   Set how many samples you want to see in the summary (50 by default).
-    -C config_file        Provide customized config file which describes metrics etc.
-    -E config_file        Provide customized config file which describes custom events.
-    -E event_list         Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
-    -c core_idx           Profile on the specified core. Skip -c to count on all cores.
-                          In sampling user must specify exactly one core with -c.
-    -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
-    -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
-    -k                    Count kernel mode as well (disabled by default).
-    -h / --help           Show tool help.
-    --output              Enable JSON output to file.
-    --config              Specify configuration paramters, format NAME=VALUE.
-    -q                    Quiet mode, no output is produced.
-    -json                 Define output type as JSON.
-    -l                    Alias of 'list'.
-    -verbose              Enable verbose output.
-    -v                    Alias of '-verbose'.
-    -version              Show tool version.
+    list                   List supported events and metrics.
+    stat                   Count events.If - e is not specified, then count default events.
+    test                   Configuration information about driver and application confituration.
+    sample                 Sample events. If -e is not specified, cycle counter will be the default sample source
+    -e e1, e2...           Specify events to count.Event eN could be a symbolic name or in raw number.
+                           Symbolic name should be what's listed by 'perf list', raw number should  be rXXXX,
+                           XXXX is hex value of the number without '0x' prefix.
+                           when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
+    -m m1, m2...           Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
+    --timeout SEC          Specify counting duration(in s). The accuracy is 0.1s.
+    sleep N                Like --timeout, for compatibility with Linux perf.
+    -i N                   Specify counting interval(in s). To be used with -t.
+    -t                     Enable timeline mode. It specifies -i 60 --timeout 1 implicitly.
+                           Means counting 1 second after every 60 second, and the result
+                           is in.csv file in the same folder where wperf is invoked.
+                           You can use -i and --timeout to change counting duration and interval.
+    -n N                   How many times count in timeline mode (disabled by default).
+    --image_name           Specify the image name you want to sample.
+    --pe_file              Specify the PE file.
+    --pdb_file             Specify the PDB file.
+    --sample-display-long  Display decorated symbol names.
+    --sample-display-row   Set how many samples you want to see in the summary (50 by default).
+    -C config_file         Provide customized config file which describes metrics etc.
+    -E config_file         Provide customized config file which describes custom events.
+    -E event_list          Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
+    -c core_idx            Profile on the specified core. Skip -c to count on all cores.
+                           In sampling user must specify exactly one core with -c.
+    -c cpu_list            Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
+    --dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
+    -k                     Count kernel mode as well (disabled by default).
+    -h / --help            Show tool help.
+    --output               Enable JSON output to file.
+    --config               Specify configuration paramters, format NAME=VALUE.
+    -q                     Quiet mode, no output is produced.
+    --json                 Define output type as JSON.
+    -l                     Alias of 'list'.
+    --verbose              Enable verbose output.
+    -v                     Alias of '-verbose'.
+    --version              Show tool version.
 ```
 
 # WindowsPerf auxiliary command line options
@@ -347,16 +347,16 @@ System-wide Overall:
 ## JSON output
 
 You can output JSON instead of human readable tables with `wperf`. We've introduced three new command line flags which should help you emit JSON.
-Flag `-json` will emit JSON for tables with values.
-Quiet mode can be selected with `-q`. This will suppress human readable printouts. Please note that `-json` implies `-q`.
+Flag `--json` will emit JSON for tables with values.
+Quiet mode can be selected with `-q`. This will suppress human readable printouts. Please note that `--json` implies `-q`.
 You can also emit JSON to file directly with `--output <filename>`.
 
-Currently we support `-json` with `stat`, `list` and `test` commands.
+Currently we support `--json` with `stat`, `list` and `test` commands.
 
 ### Emit JSON output for simple counting with -json
 
 ```
-> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 -json sleep 1
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 --json sleep 1
 ```
 
 Will print on standard output:
@@ -473,12 +473,12 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 #### Sampling for `ld_spec` event which, by looking at counting is dominant (at least for `imix` metrics)
 
-Let's sample the `ld_spec` event. Please note that you can specify the process image name and PDB file name with `-pdb_file python_d.pdb` and `-image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
+Let's sample the `ld_spec` event. Please note that you can specify the process image name and PDB file name with `--pdb_file python_d.pdb` and `--image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
 
 We can stop sampling by pressing `Ctrl-C` in the `wperf` console or we can end the process we are sampling.
 
 ```
->wperf sample -e ld_spec:100000 -pe_file python_d.exe -c 1
+>wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1
 base address of 'python_d.exe': 0x7ff6e0a41270, runtime delta: 0x7ff5a0a40000
 sampling ....e.e.e.e.e.eCtrl-C received, quit counting... done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -522,7 +522,7 @@ Please note that again CPython executes code from its `python312_d.dll`.
 Sampling again for `ld_spec`:
 
 ```
->wperf sample -e ld_spec:10000 -pe_file python_d.exe -pdb_file python_d.pdb -image_name python_d.exe -c 1
+>wperf sample -e ld_spec:10000 --pe_file python_d.exe --pdb_file python_d.pdb --image_name python_d.exe -c 1
 base address of 'python_d.exe': 0x7ff6e0a41270, runtime delta: 0x7ff5a0a40000
 sampling ....ee.e.eCtrl-C received, quit counting... done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -567,7 +567,7 @@ We've also added extra prints for verbose mode (`-v`). These add more informatio
 See verbose mode on for example 1:
 
 ```
->wperf sample -e ld_spec:100000 -pe_file python_d.exe -c 1 -v
+>wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1 -v
 ================================
                     ADVAPI32.dll          0x000000007fff934e0000          C:\Windows\System32\ADVAPI32.dll
                     KERNEL32.DLL          0x000000007fff92270000          C:\Windows\System32\KERNEL32.DLL

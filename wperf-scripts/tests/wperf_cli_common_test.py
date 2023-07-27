@@ -41,22 +41,22 @@ def test_wperf_wrong_argument():
     assert b'unexpected arg' in stdout
 
 def test_wperf_version_json():
-    """ Test `wperf -version` JSON output  """
-    cmd = 'wperf -version -json'
+    """ Test `wperf --version` JSON output  """
+    cmd = 'wperf --version --json'
     stdout, _ = run_command(cmd.split())
     assert is_json(stdout)
 
 def test_wperf_version_json_file_output_exists(tmp_path):
-    """ Test `wperf -version` JSON output to file"""
+    """ Test `wperf --version` JSON output to file"""
     file_path = tmp_path / 'test.json'
-    cmd = 'wperf -version --output ' + str(file_path)
+    cmd = 'wperf --version --output ' + str(file_path)
     stdout, _ = run_command(cmd.split())
     assert check_if_file_exists(str(file_path))
 
 def test_wperf_version_json_file_output_valid(tmp_path):
-    """ Test `wperf -version` JSON output to file validity """
+    """ Test `wperf --version` JSON output to file validity """
     file_path = tmp_path / 'test.json'
-    cmd = 'wperf -version --output ' + str(file_path)
+    cmd = 'wperf --version --output ' + str(file_path)
     stdout, _ = run_command(cmd.split())
     try:
         f = open(file_path)

@@ -39,7 +39,7 @@ from common import arm64_vendor_names
 
 def test_wperf_test_json():
     """ Test `wperf test` JSON output  """
-    cmd = 'wperf test -json'
+    cmd = 'wperf test --json'
     stdout, _ = run_command(cmd.split())
     assert is_json(stdout)
 
@@ -65,7 +65,7 @@ def test_wperf_test_json_file_output_valid(tmp_path):
 
 def test_wperf_test_MIDR_reg():
     """ Test if MIDR register is exposed with `wperf test`. """
-    cmd = 'wperf test -json'
+    cmd = 'wperf test --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -76,7 +76,7 @@ def test_wperf_test_MIDR_reg():
 
 def test_wperf_test_MIDR_vendor_id():
     """ Test if MIDR register field `vendor_id` value is correct. """
-    cmd = 'wperf test -json'
+    cmd = 'wperf test --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 

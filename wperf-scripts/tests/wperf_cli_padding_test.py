@@ -40,7 +40,7 @@ from common import wperf_test_no_params
 
 def test_wperf_padding_1_event():
     """ Test one event, no multiplexing """
-    cmd = 'wperf test -e ase_spec -json'
+    cmd = 'wperf test -e ase_spec --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -56,7 +56,7 @@ def test_wperf_padding_1_event():
 
 def test_wperf_padding_8_events():
     """ Test two events, multiplexing """
-    cmd = 'wperf test -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -json'
+    cmd = 'wperf test -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -79,7 +79,7 @@ def test_wperf_padding_8_events():
 
 def test_wperf_padding_2_events():
     """ Test two events, no multiplexing """
-    cmd = 'wperf test -e vfp_spec,ase_spec -json'
+    cmd = 'wperf test -e vfp_spec,ase_spec --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -96,7 +96,7 @@ def test_wperf_padding_2_events():
 
 def test_wperf_padding_3_events_2repeated():
     """ Test three events where two are the same, no multiplexing """
-    cmd = 'wperf test -e vfp_spec,ase_spec,ase_spec -json'
+    cmd = 'wperf test -e vfp_spec,ase_spec,ase_spec --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -124,7 +124,7 @@ def test_wperf_padding_gpc_num_max():
     # gpc_num may be different on different machines. E.g. 5 or 6.
     cmd = 'wperf test -e '
     cmd += ','.join(list_of_events[:gpc_num])
-    cmd += ' -json'
+    cmd += ' --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -141,7 +141,7 @@ def test_wperf_padding_gpc_num_max():
 
 def test_wperf_padding_groups_1():
     """ Test groups {crypto_spec,vfp_spec} """
-    cmd = 'wperf test -e {crypto_spec,vfp_spec} -json'
+    cmd = 'wperf test -e {crypto_spec,vfp_spec} --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -165,7 +165,7 @@ def test_wperf_padding_groups_1():
 
 def test_wperf_padding_groups_2():
     """ Test groups crypto_spec,{vfp_spec,ase_spec} """
-    cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec} -json'
+    cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec} --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -208,7 +208,7 @@ def test_wperf_padding_groups_2():
 
 def test_wperf_padding_groups_3():
     """ Test groups crypto_spec,{vfp_spec,ase_spec},dp_spec """
-    cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec},dp_spec -json'
+    cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec},dp_spec --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -252,7 +252,7 @@ def test_wperf_padding_groups_3():
 
 def test_wperf_padding_groups_4():
     """ Test groups crypto_spec,{vfp_spec,ase_spec,dp_spec} """
-    cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec,dp_spec} -json'
+    cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec,dp_spec} --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -295,7 +295,7 @@ def test_wperf_padding_groups_4():
 
 def test_wperf_padding_m_imix():
     """ Test one metric (imix), this test is not checking if indexes are OK """
-    cmd = 'wperf test -m imix -json'
+    cmd = 'wperf test -m imix --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -313,7 +313,7 @@ def test_wperf_padding_m_imix():
 
 def test_wperf_padding_m_imix_icache():
     """ Test two metrics (imix + icache), this test is not checking if indexes are OK """
-    cmd = 'wperf test -m imix,icache -json'
+    cmd = 'wperf test -m imix,icache --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 

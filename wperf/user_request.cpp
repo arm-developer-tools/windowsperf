@@ -46,45 +46,45 @@ void user_request::print_help_usage()
 usage: wperf [options]
 
     Options:
-    list                  List supported events and metrics.
-    stat                  Count events.If - e is not specified, then count default events.
-    test                  Configuration information about driver and application confituration.
-    sample                Sample events. If -e is not specified, cycle counter will be the default sample source
-    -e e1, e2...          Specify events to count.Event eN could be a symbolic name or in raw number.
-                          Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
-                          XXXX is hex value of the number without '0x' prefix.
-                          when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
-    -m m1, m2...          Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    --timeout SEC         Specify counting duration(in s). The accuracy is 0.1s.
-    sleep N               Like --timeout, for compatibility with Linux perf.
-    -i N                  Specify counting interval(in s). To be used with -t.
-    -t                    Enable timeline mode. It specifies -i 60 --timeout 1 implicitly.
-                          Means counting 1 second after every 60 second, and the result
-                          is in.csv file in the same folder where wperf is invoked.
-                          You can use -i and --timeout to change counting duration and interval.
-    -n N                  How many times count in timeline mode (disabled by default).
-    -image_name           Specify the image name you want to sample.
-    -pe_file              Specify the PE file.
-    -pdb_file             Specify the PDB file.
-    -sample-display-long  Display decorated symbol names.
-    -sample-display-row   Set how many samples you want to see in the summary (50 by default).
-    -C config_file        Provide customized config file which describes metrics etc.
-    -E config_file        Provide customized config file which describes custom events.
-    -E event_list         Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
-    -c core_idx           Profile on the specified core. Skip -c to count on all cores.
-                          In sampling user must specify exactly one core with -c.
-    -c cpu_list           Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
-    -dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
-    -k                    Count kernel mode as well (disabled by default).
-    -h / --help           Show tool help.
-    --output              Enable JSON output to file.
-    --config              Specify configuration parameters, format NAME=VALUE.
-    -q                    Quiet mode, no output is produced.
-    -json                 Define output type as JSON.
-    -l                    Alias of 'list'.
-    -verbose              Enable verbose output.
-    -v                    Alias of '-verbose'.
-    -version              Show tool version.
+    list                   List supported events and metrics.
+    stat                   Count events.If - e is not specified, then count default events.
+    test                   Configuration information about driver and application confituration.
+    sample                 Sample events. If -e is not specified, cycle counter will be the default sample source
+    -e e1, e2...           Specify events to count.Event eN could be a symbolic name or in raw number.
+                           Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
+                           XXXX is hex value of the number without '0x' prefix.
+                           when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
+    -m m1, m2...           Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
+    --timeout SEC          Specify counting duration(in s). The accuracy is 0.1s.
+    sleep N                Like --timeout, for compatibility with Linux perf.
+    -i N                   Specify counting interval(in s). To be used with -t.
+    -t                     Enable timeline mode. It specifies -i 60 --timeout 1 implicitly.
+                           Means counting 1 second after every 60 second, and the result
+                           is in.csv file in the same folder where wperf is invoked.
+                           You can use -i and --timeout to change counting duration and interval.
+    -n N                   How many times count in timeline mode (disabled by default).
+    --image_name           Specify the image name you want to sample.
+    --pe_file              Specify the PE file.
+    --pdb_file             Specify the PDB file.
+    --sample-display-long  Display decorated symbol names.
+    --sample-display-row   Set how many samples you want to see in the summary (50 by default).
+    -C config_file         Provide customized config file which describes metrics etc.
+    -E config_file         Provide customized config file which describes custom events.
+    -E event_list          Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
+    -c core_idx            Profile on the specified core. Skip -c to count on all cores.
+                           In sampling user must specify exactly one core with -c.
+    -c cpu_list            Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
+    --dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
+    -k                     Count kernel mode as well (disabled by default).
+    -h / --help            Show tool help.
+    --output               Enable JSON output to file.
+    --config               Specify configuration parameters, format NAME=VALUE.
+    -q                     Quiet mode, no output is produced.
+    --json                 Define output type as JSON.
+    -l                     Alias of 'list'.
+    --verbose              Enable verbose output.
+    -v                     Alias of '-verbose'.
+    --version              Show tool version.
 )";
 
     m_out.GetOutputStream() << wsHelp << std::endl;
@@ -452,19 +452,19 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-image_name")
+        if (a == L"--image_name" || a == L"-image_name")
         {
             waiting_image_name = true;
             continue;
         }
 
-        if (a == L"-pe_file")
+        if (a == L"--pe_file" || a == L"-pe_file")
         {
             waiting_pe_file = true;
             continue;
         }
 
-        if (a == L"-pdb_file")
+        if (a == L"--pdb_file" || a == L"-pdb_file")
         {
             waiting_pdb_file = true;
             continue;
@@ -511,13 +511,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-sample-display-row")
+        if (a == L"--sample-display-row" || a == L"-sample-display-row")
         {
             waiting_sample_display_row = true;
             continue;
         }
 
-        if (a == L"-sample-display-long")
+        if (a == L"--sample-display-long" || a == L"-sample-display-long")
         {
             sample_display_short = false;
             continue;
@@ -535,25 +535,25 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-dmc")
+        if (a == L"--dmc" || a == L"-dmc")
         {
             waiting_dmc_idx = true;
             continue;
         }
 
-        if (a == L"-v" || a == L"-verbose")
+        if (a == L"-v" || a == L"--verbose" || a == L"-verbose")
         {
             do_verbose = true;
             continue;
         }
 
-        if (a == L"-annotate")
+        if (a == L"--annotate")
         {
             do_annotate = true;
             continue;
         }
 
-        if (a == L"-version")
+        if (a == L"--version" || a == L"-version")
         {
             do_version = true;
             continue;
@@ -571,7 +571,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-json")
+        if (a == L"--json" || a == L"-json")
         {
             if (m_outputType != TableType::ALL)
             {

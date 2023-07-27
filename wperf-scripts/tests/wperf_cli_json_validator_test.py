@@ -44,7 +44,7 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
     test_path = os.path.dirname(request.path)
     file_path = tmp_path / 'test.json'
     if "version" in scheme_name:
-        cmd_type = "-version"
+        cmd_type = "--version"
     elif "list" in scheme_name:
         cmd_type = "list"
     elif "test" in scheme_name:

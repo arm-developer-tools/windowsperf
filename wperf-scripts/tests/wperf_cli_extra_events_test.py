@@ -40,7 +40,7 @@ from common import wperf_list
 
 def test_wperf_padding_1_event():
     """ Test one event, no multiplexing """
-    cmd = 'wperf test -e r80,r81,r82,r82,r83 -json'
+    cmd = 'wperf test -e r80,r81,r82,r82,r83 --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -58,7 +58,7 @@ def test_wperf_padding_1_event():
 
 def test_wperf_E_list_add_event():
     """ Test if we can add new event 0xffaa names 'name1' """
-    cmd = 'wperf list -E name1:0xffaa -json'
+    cmd = 'wperf list -E name1:0xffaa --json'
     stdout, _ = run_command(cmd.split())
     j = json.loads(stdout)
 
@@ -72,7 +72,7 @@ def test_wperf_E_list_add_event():
 
 def test_wperf_E_list_add_event_verbose():
     """ Test if we can add new event 0xffaa names 'name1' """
-    cmd = 'wperf list -E name1:0xffaa -v -json'
+    cmd = 'wperf list -E name1:0xffaa -v --json'
     stdout, _ = run_command(cmd.split())
     j = json.loads(stdout)
 
@@ -89,7 +89,7 @@ def test_wperf_E_list_add_2_event():
     name1:0xffaa and
     xyz:0xeeee event.
     """
-    cmd = 'wperf list -E name1:0xffaa,xyz:0xeeee -json'
+    cmd = 'wperf list -E name1:0xffaa,xyz:0xeeee --json'
     stdout, _ = run_command(cmd.split())
     j = json.loads(stdout)
 

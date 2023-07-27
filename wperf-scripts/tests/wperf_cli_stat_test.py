@@ -66,7 +66,7 @@ N_CORES = os.cpu_count()
 ]
 )
 def test_wperf_stat_json(events,cores,metric,sleep):
-    """ Test `wperf stat -json` command line output.
+    """ Test `wperf stat --json` command line output.
 
         Use pytest.mark.parametrize to set up below command line switches:
 
@@ -82,7 +82,7 @@ def test_wperf_stat_json(events,cores,metric,sleep):
     if sleep:
         cmd += ['sleep', str(sleep)]
 
-    cmd += ['-json']
+    cmd += ['--json']
 
     stdout, _ = run_command(cmd)
     assert is_json(stdout)

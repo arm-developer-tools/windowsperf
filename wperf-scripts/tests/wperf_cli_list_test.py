@@ -37,7 +37,7 @@ from common import run_command, is_json, check_if_file_exists
 
 def test_wperf_list_json():
     """ Test `wperf list` JSON output  """
-    cmd = 'wperf list -json'
+    cmd = 'wperf list --json'
     stdout, _ = run_command(cmd.split())
     assert is_json(stdout)
 
@@ -75,7 +75,7 @@ def test_wperf_list_metric_json_verbose(tmp_path):
         },
     """
 
-    cmd = 'wperf list -v -json'
+    cmd = 'wperf list -v --json'
     stdout, _ = run_command(cmd.split())
     assert is_json(stdout)
 
@@ -103,7 +103,7 @@ def test_wperf_list_events_json_verbose(tmp_path):
         },
     """
 
-    cmd = 'wperf list -v -json'
+    cmd = 'wperf list -v --json'
     stdout, _ = run_command(cmd.split())
     assert is_json(stdout)
 

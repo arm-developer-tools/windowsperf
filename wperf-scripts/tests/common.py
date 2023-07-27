@@ -80,7 +80,7 @@ def check_if_file_exists(filename):
 
 def wperf_list():
     """ Test `wperf list` JSON output """
-    cmd = 'wperf list -json'
+    cmd = 'wperf list --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
     return json_output
@@ -112,7 +112,7 @@ def get_result_from_test_results(j, Test_Name):
 
 def wperf_test_no_params():
     """ We use this fixture to get values from `wperf test` which do not change with execution like gpc_num """
-    cmd = 'wperf test -json'
+    cmd = 'wperf test --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
     return json_output
