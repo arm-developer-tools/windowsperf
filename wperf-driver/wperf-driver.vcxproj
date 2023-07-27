@@ -80,7 +80,7 @@
     </DriverSign>
     <PreBuildEvent>
       <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
-      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR</Message>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -106,7 +106,7 @@
     </DriverSign>
     <PreBuildEvent>
       <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
-      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR</Message>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
