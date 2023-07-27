@@ -588,7 +588,7 @@ wmain(
             std::vector<double> col_overhead;
             std::vector<uint32_t> col_count;
 
-            for (auto a : resolved_samples)
+            for (auto &a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
                 {
