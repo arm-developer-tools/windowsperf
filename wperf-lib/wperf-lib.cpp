@@ -1109,7 +1109,7 @@ extern "C" bool wperf_test(PTEST_CONF tconf, PTEST_INFO tinfo)
                 LONG l = 0;
                 std::wstring s = L"<unknown>";
 
-                std::wstring config_name = L"config" + name;
+                std::wstring config_name = L"config." + name;
                 if (drvconfig::get(name, l))
                     wperf_test_insert_num(config_name.c_str(), l);
                 else if (drvconfig::get(name, s))

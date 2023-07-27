@@ -146,7 +146,8 @@ namespace wperftest
 				1, // num_metrics
 				metric_events, // metric_events
 				1, // duration
-				false // kernel_mode
+				false, // kernel_mode
+				10 // period
 			};
 
 			Assert::IsTrue(wperf_stat(&stat_conf, NULL));

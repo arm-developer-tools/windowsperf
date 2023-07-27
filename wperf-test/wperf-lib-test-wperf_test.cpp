@@ -84,6 +84,9 @@ namespace wperftest
 				{ L"fpc_nums[EVT_DMC_CLK]", NUM_RESULT },
 				{ L"fpc_nums[EVT_DMC_CLKDIV2]", NUM_RESULT },
 				{ L"ioctl_events[EVT_CORE]", EVT_NOTE_RESULT },
+				{ L"config.count.period", NUM_RESULT },
+				{ L"config.count.period_max", NUM_RESULT },
+				{ L"config.count.period_min", NUM_RESULT },
 			};
 
 			Assert::IsTrue(wperf_init());
