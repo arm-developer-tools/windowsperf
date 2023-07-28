@@ -8,7 +8,7 @@
             "minProperties": 4,
             "additionalProperties": {
                 "type": "object",
-                "required": [ "samples", "interval", "printed_sample_num" ],
+                "required": [ "samples", "interval", "printed_sample_num", "annotate" ],
                 "minProperties": 3,
                 "maxProperties": 3,
                 "properties": {
@@ -23,7 +23,33 @@
                                 "overhead": { "type": "number" },
                                 "symbol": { "type": "string" }
                             }
-                        }
+                        },
+                    },
+                    "annotate": {
+                        "type": "array",
+                        "items" : {
+                            "type": "object",
+                            "required": ["function_name", "source_code"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "function_name": { "type": "string" },
+                                "source_code": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": ["filename", "line_number", "hits"],
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "filename": { "type": "string" },
+                                            "line_number": { "type": "integer" },
+                                            "hits": { "type": "integer" }
+                                        }
+                                    }
+                                }
+
+                            }
+
+                        },
                     },
                     "interval": { "type": "integer" },
                     "printed_sample_num": { "type": "integer" }

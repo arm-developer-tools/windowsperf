@@ -588,6 +588,7 @@ wmain(
             std::vector<double> col_overhead;
             std::vector<uint32_t> col_count;
 
+            std::vector<std::pair<GlobalStringType, TableOutput<SamplingAnnotateOutputTraitsL, GlobalCharType>>> annotateTables;
             for (auto &a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
@@ -603,10 +604,11 @@ wmain(
                         table.InsertExtra(L"printed_sample_num", printed_sample_num);
                         m_out.Print(table);
                         table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
-                        m_globalSamplingJSON.m_samplingTables.push_back(table);
+                        m_globalSamplingJSON.m_map[table.m_event] = std::make_pair(table, annotateTables);
                         col_overhead.clear();
                         col_count.clear();
                         col_symbol.clear();
+                        annotateTables.clear();
                     }
                     prev_evt_src = a.event_src;
 
@@ -656,7 +658,8 @@ wmain(
                 if (request.do_annotate)
                 {
                     std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
-                    std::vector<std::wstring> col_source_file, col_line_number, col_hits;
+                    std::vector<std::wstring> col_source_file;
+                    std::vector<uint64_t> col_line_number, col_hits;
                     if(a.desc.name != L"unknown")
                     {
                         m_out.GetOutputStream() << a.desc.name << std::endl;
@@ -688,7 +691,7 @@ wmain(
                             }
                             if (!found_line)
                             {
-                                std::cout << "No line for " << std::hex << addr << " found." << std::endl;
+                                m_out.GetErrorOutputStream() << "No line for " << std::hex << addr << " found." << std::endl;
                             }
                         }
 
@@ -703,19 +706,17 @@ wmain(
                         for (auto& el : sorting_annotate)
                         {
                             col_source_file.push_back(std::get<0>(el));
-                            col_line_number.push_back(std::to_wstring(std::get<1>(el)));
-                            col_hits.push_back(std::to_wstring(std::get<2>(el)));
+                            col_line_number.push_back(std::get<1>(el));
+                            col_hits.push_back(std::get<2>(el));
                         }
 
                         if (col_source_file.size() > 0)
                         {
-
-                            PrettyTable<GlobalCharType> annotateTable;
-                            annotateTable.AddColumn(L"Source file", PrettyTable<GlobalCharType>::LEFT);
-                            annotateTable.AddColumn(L"Line number", PrettyTable<GlobalCharType>::LEFT);
-                            annotateTable.AddColumn(L"Hits", PrettyTable<GlobalCharType>::LEFT);
+                            TableOutput<SamplingAnnotateOutputTraitsL, GlobalCharType> annotateTable;
+                            annotateTable.PresetHeaders();
                             annotateTable.Insert(col_source_file, col_line_number, col_hits);
-                            m_out.GetOutputStream() << annotateTable << std::endl;
+                            m_out.Print(annotateTable);
+                            annotateTables.push_back(std::make_pair(a.desc.name, annotateTable));
                         }
                     }
                 }
@@ -733,7 +734,7 @@ wmain(
             table.InsertExtra(L"printed_sample_num", printed_sample_num);
             m_out.Print(table);
             table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
-            m_globalSamplingJSON.m_samplingTables.push_back(table);
+            m_globalSamplingJSON.m_map[table.m_event] = std::make_pair(table, annotateTables);
             m_globalSamplingJSON.m_sample_display_row = request.sample_display_row;
 
             if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)

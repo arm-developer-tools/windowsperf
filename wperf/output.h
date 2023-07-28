@@ -205,6 +205,19 @@ struct SamplingOutputTraits : public TableOutputTraits<CharType>
     inline const static CharType* key = LITERALCONSTANTS_GET("samples");
 };
 
+template <typename CharType>
+struct SamplingAnnotateOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, uint64_t, uint64_t> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("filename"),
+            LITERALCONSTANTS_GET("line_number"),
+            LITERALCONSTANTS_GET("hits"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("source_code");
+};
+
 enum TableType
 {
     JSON,
@@ -464,8 +477,13 @@ struct WPerfSamplingJSON
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
 
-    std::vector<TableOutput<SamplingOutputTraits<CharType>, CharType>> m_samplingTables;
+    using Samples = TableOutput<SamplingOutputTraits<CharType>, CharType>;
+    using AnnotateVector = std::vector<std::pair<StringType,TableOutput<SamplingAnnotateOutputTraits<CharType>, CharType>>>;
+
+    std::map<StringType, std::pair<Samples, AnnotateVector>> m_map;
+    
     uint32_t m_sample_display_row = 0;
     uint64_t m_samples_generated = 0;
     uint64_t m_samples_dropped = 0;
@@ -484,7 +502,7 @@ struct WPerfSamplingJSON
             os << LITERALCONSTANTS_GET("\"samples_dropped\": ") << m_samples_dropped;
             os << LiteralConstants<CharType>::m_comma << std::endl;
             bool isFirst = true;
-            for (auto& table : m_samplingTables)
+            for (auto& [key,value] : m_map)
             {
                 if (!isFirst)
                 {
@@ -493,8 +511,37 @@ struct WPerfSamplingJSON
                 else {
                     isFirst = false;
                 }
-                os << LiteralConstants<CharType>::m_quotes << table.m_event << LiteralConstants<CharType>::m_quotes;
-                os << LiteralConstants<CharType>::m_colon << table.Print(jsonType).str() << std::endl;
+
+                std::get<0>(value).m_tableJSON.m_isEmbedded = true;
+
+                os << LiteralConstants<CharType>::m_quotes << key << LiteralConstants<CharType>::m_quotes;
+                os << LiteralConstants<CharType>::m_colon;
+                os << LiteralConstants<CharType>::m_cbracket_open;
+                os << std::get<0>(value).Print(jsonType).str();
+                os << LiteralConstants<CharType>::m_comma << std::endl;
+                os << LITERALCONSTANTS_GET("\"annotate\": ");    
+                os << LiteralConstants<CharType>::m_bracket_open;
+                bool isFirstInside = true;
+                for(auto &[function_name, table] : std::get<1>(value))
+                {
+                    table.m_tableJSON.m_isEmbedded = true;
+                    if(!isFirstInside)
+                    {
+                        os << LiteralConstants<CharType>::m_comma << std::endl;
+                    }
+                    else {
+                        isFirstInside = false;
+                    }
+                    os << LiteralConstants<CharType>::m_cbracket_open;
+                    os << LITERALCONSTANTS_GET("\"function_name\": ");
+                    os << LiteralConstants<CharType>::m_quotes << function_name << LiteralConstants<CharType>::m_quotes;
+                    os << LiteralConstants<CharType>::m_comma << std::endl;
+                    os << table.Print(jsonType).str();
+                    os << LiteralConstants<CharType>::m_cbracket_close;
+                    
+                }
+                os << LiteralConstants<CharType>::m_bracket_close;
+                os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
             }
             os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
         }
@@ -675,6 +722,7 @@ using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType, isVerbose>;
 
 using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
 using SamplingOutputTraitsL = SamplingOutputTraits<GlobalCharType>;
+using SamplingAnnotateOutputTraitsL = SamplingAnnotateOutputTraits<GlobalCharType>;
 
 using OutputControlL = OutputControl<GlobalCharType>;
 
