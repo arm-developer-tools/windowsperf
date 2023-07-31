@@ -17,6 +17,7 @@ typedef struct _VERSION_INFO
     unsigned int major;
     unsigned int minor;
     unsigned int patch;
+    const wchar_t* gitver;
 } VERSION_INFO, *PVERSION_INFO;
 
 #define CORE_EVT (1 << 0) // Core PMU event
@@ -40,9 +41,14 @@ typedef enum _EVT_TYPE
 
 typedef struct _EVENT_INFO
 {
+    /// Event type
     EVT_TYPE type;
+    /// Event ID
     uint16_t id;
+    /// Event name
     const wchar_t* name;
+    /// Event desciption
+    const wchar_t* desc;
 } EVENT_INFO, *PEVENT_INFO;
 
 typedef struct _METRIC_INFO

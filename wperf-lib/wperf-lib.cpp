@@ -5,6 +5,7 @@
 #include "pe_file.h"
 #include "pmu_device.h"
 #include "process_api.h"
+#include "wperf-common/gitver.h"
 #include "wperf-common/public.h"
 #include <regex>
 
@@ -108,6 +109,7 @@ extern "C" bool wperf_driver_version(PVERSION_INFO driver_ver)
         driver_ver->major = version.major;
         driver_ver->minor = version.minor;
         driver_ver->patch = version.patch;
+        driver_ver->gitver = std::wstring(version.gitver).c_str();
     }
     catch (...)
     {
@@ -128,6 +130,7 @@ extern "C" bool wperf_version(PVERSION_INFO wperf_ver)
     wperf_ver->major = MAJOR;
     wperf_ver->minor = MINOR;
     wperf_ver->patch = PATCH;
+    wperf_ver->gitver = WPERF_GIT_VER_STR;
 
     return true;
 }
@@ -160,6 +163,7 @@ extern "C" bool wperf_list_events(PLIST_CONF list_conf, PEVENT_INFO einfo)
                 einfo->type = CORE_TYPE;
                 einfo->id = __list_events[EVT_CORE][list_index];
                 einfo->name = pmu_events::get_core_event_name(einfo->id);
+                einfo->desc = __pmu_device->pmu_events_get_evt_desc(einfo->id, EVT_CORE);
                 list_index++;
             }
             else
@@ -808,7 +812,7 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             int32_t group_idx = -1;
             prev_evt_src = CYCLE_EVT_IDX - 1;
 
-            for (auto a : resolved_samples)
+            for (auto &a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
                 {

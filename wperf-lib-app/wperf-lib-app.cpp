@@ -12,10 +12,10 @@ wmain(
 
 	VERSION_INFO v;
 	if (wperf_driver_version(&v))
-		printf("wperf_driver_version: %u.%u.%u\n", v.major, v.minor, v.patch);
+		printf("wperf_driver_version: %u.%u.%u gitver=%ls\n", v.major, v.minor, v.patch, v.gitver);
 
 	if (wperf_version(&v))
-		printf("wperf_version: %u.%u.%u\n", v.major, v.minor, v.patch);
+		printf("wperf_version: %u.%u.%u gitver=%ls\n", v.major, v.minor, v.patch, v.gitver);
 
 	LIST_CONF list_conf = { CORE_EVT /* Only list Core PMU events */ };
 	EVENT_INFO einfo;
@@ -30,7 +30,7 @@ wmain(
 
 		while (wperf_list_events(&list_conf, &einfo))
 		{
-			printf("wperf_list_events: type=%d, id=%u, name=%ls\n", einfo.type, einfo.id, einfo.name);
+			printf("wperf_list_events: type=%d, id=%u, name=%ls, desc=%ls\n", einfo.type, einfo.id, einfo.name, einfo.desc);
 		}
 	}
 
