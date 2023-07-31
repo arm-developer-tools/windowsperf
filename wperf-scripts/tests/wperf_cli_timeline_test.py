@@ -46,6 +46,8 @@ import re
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
+from common import wperf_metric_events, wperf_metric_is_available
+
 
 import pytest
 
@@ -150,3 +152,98 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
         # Find lines with counter values, e.g.. 80182394,86203106,38111732,89739,61892,20932002,
         pattern = r'([0-9]+,){%s}\n' % (gpc_num + 1)
         assert len(re.findall(pattern, cvs, re.DOTALL)) == N
+
+@pytest.mark.parametrize("N,SLEEP,KERNEL_MODE,EVENTS",
+[
+    (6, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec'),
+    (5, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec'),
+    (4, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb'),
+    (3, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill'),
+    (2, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill'),
+]
+)
+def test_wperf_timeline_core_file_output_multiplexing(N, SLEEP,KERNEL_MODE,EVENTS):
+    """ Test timeline (system - all cores) with multiplexing.  """
+    cmd = 'wperf stat -e %s -t -i 1 -n %s sleep %s -v' % (EVENTS, N, SLEEP)
+    if (KERNEL_MODE):
+        cmd += ' -k'
+
+    stdout, _ = run_command(cmd.split())
+
+    # Test for timeline file content
+    assert b"timeline file: 'wperf_system_side_" in stdout    # e.g. timeline file: 'wperf_system_side_2023_06_29_10_05_27.core.csv'
+
+    cvs_files = re.findall(rb'wperf_system_side_[a-z0-9_.]+', stdout)   # e.g. ['wperf_system_side_2023_06_29_10_05_27.core.csv']
+    assert len(cvs_files) == 1
+
+    expected_events = 'cycle,sched_times,'  # Multiplexing start with this
+
+    # We will weave in 'sched_times' between every event to match multiplexing column format
+    for event in EVENTS.split(","):
+        expected_events += event + ",sched_times,"
+
+    with open(cvs_files[0], 'r') as file:
+        cvs = file.read()
+
+        str_kernel_mode = "Kernel mode," + str(KERNEL_MODE).upper()
+
+        assert cvs.count("Multiplexing,TRUE") == 1
+        assert cvs.count("Event class,core") == 1
+        assert cvs.count(str_kernel_mode) == 1
+        assert expected_events in cvs
+
+        # Find lines with counter values, e.g.. 80182394,86203106,38111732,89739,61892,20932002,
+        pattern = r'([0-9]+,){%s}\n' % (len(expected_events.split(',')))
+        assert len(re.findall(pattern, cvs, re.DOTALL)) == N
+
+@pytest.mark.parametrize("C,N,METRICS",
+[
+    (0, 3, "l1d_cache_miss_ratio"),
+    (1, 2, "l1d_tlb_mpki"),
+    (2, 1, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+]
+)
+def test_wperf_timeline_ts_metrics(C, N, METRICS):
+    """ Test timeline with TS metrics. """
+    for metric in METRICS.split(","):
+        if not wperf_metric_is_available(metric):
+            pytest.skip("unsupported metric: " + metric)
+            return
+
+    cmd = 'wperf stat -m %s -t -i 1 -n %s -c %s sleep 1 -v' % (METRICS, N, C)
+    stdout, _ = run_command(cmd.split())
+
+    COLS = int()    # How many columns are in this timeline (events + metrics)
+
+    EVENTS = list()
+    for metric in METRICS.split(","):
+        metric_events = wperf_metric_events(metric).strip("{}").split(",")
+        EVENTS += metric_events
+        COLS += len(metric_events)
+
+    COLS += len(METRICS.split(","))
+
+    assert b"timeline file: 'wperf_core_%s" % (str.encode(str(C))) in stdout    # e.g. timeline file: 'wperf_core_1_2023_06_29_09_09_05.core.csv'
+    cvs_files = re.findall(rb'wperf_core_%s[a-z0-9_.]+' % (str.encode(str(C))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
+    assert len(cvs_files) == 1
+
+    expected_events_header = "cycle,"
+    COLS += 1
+
+    for event in EVENTS:
+        expected_events_header += event + ","
+
+    for metric in METRICS.split(","):
+        expected_events_header += "M@" + metric + ","   # Metrics start with "M@<metric_name>"
+
+    expected_cores = ("core %d" % (C) + ",") * COLS
+
+    with open(cvs_files[0], 'r') as file:
+        cvs = file.read()
+
+        assert expected_cores in cvs            # E.g.  core 2,core 2,core 2,core 2,core 2,core 2,core 2,
+        assert expected_events_header in cvs    # E.g.  cycle,l1d_cache,l1d_cache_refill,inst_retired,l1d_tlb_refill,M@l1d_cache_miss_ratio,M@l1d_tlb_mpki,
+
+        # Find lines with counter values, e.g.. 38111732,89739,61892,20932002,0.003,4.222
+        pattern = r'^((\d*\.*(?:\d+|[na]+),){%s})$' % (COLS)
+        assert len(re.findall(pattern, cvs, re.MULTILINE)) == N

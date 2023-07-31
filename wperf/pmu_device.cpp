@@ -41,9 +41,11 @@
 #include "wperf-common/public.h"
 #include "wperf.h"
 #include "config.h"
+#include "timeline.h"
 
 #include <cfgmgr32.h>
 #include <devpkey.h>
+
 
 std::map<uint8_t, wchar_t*> pmu_device::arm64_vendor_names =
 {
@@ -368,6 +370,8 @@ void pmu_device::timeline_init()
     if (!timeline_mode)
         return;
 
+    timeline::init();
+
     char buf[MAX_PATH];
     time_t rawtime;
     struct tm timeinfo;
@@ -400,7 +404,7 @@ void pmu_device::timeline_init()
         if (do_verbose)
             m_out.GetOutputStream() << L"timeline file: " << L"'" << std::wstring(filename.begin(), filename.end()) << L"'" << std::endl;
 
-        timeline_outfiles[e].open(filename);
+        timeline::timeline_headers[static_cast<enum evt_class>(e)].filename = filename;
     }
 }
 
@@ -429,19 +433,14 @@ void pmu_device::post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx
     timeline_init();
 }
 
-void pmu_device::timeline_release()
+void pmu_device::timeline_close()
 {
-    if (!timeline_mode)
-        return;
-
-    for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
-        if (enc_bits & (1 << e))
-            timeline_outfiles[e].close();
+    timeline::print();
 }
 
 pmu_device::~pmu_device()
 {
-    timeline_release();
+    timeline_close();
     CloseHandle(m_device_handle);
 }
 
@@ -624,31 +623,15 @@ void pmu_device::timeline_params(const std::map<enum evt_class, std::vector<stru
 
     bool multiplexing = multiplexings[EVT_CORE];
 
-    for (const auto& a : events)
+    for (const auto& [e_class, value] : events)
     {
-        enum evt_class e_class = a.first;
-        std::wofstream& timeline_outfile = timeline_outfiles[e_class];
+        auto& timeline_header = timeline::timeline_headers[e_class];
 
-        timeline_outfile << L"Multiplexing,";
-        timeline_outfile << (multiplexing ? L"TRUE" : L"FALSE");
-        timeline_outfile << std::endl;
-
-        if (e_class == EVT_CORE)
-        {
-            timeline_outfile << L"Kernel mode,";
-            timeline_outfile << (include_kernel ? L"TRUE" : L"FALSE");
-            timeline_outfile << std::endl;
-        }
-
-        timeline_outfile << L"Count interval,";
-        timeline_outfile << DoubleToWideString(count_interval);
-        timeline_outfile << std::endl;
-
-        timeline_outfile << L"Vendor," << vendor_name;
-        timeline_outfile << std::endl;
-
-        timeline_outfile << L"Event class," << pmu_events_get_evt_class_name(e_class);
-        timeline_outfile << std::endl;
+        timeline_header.multiplexing = multiplexing;
+        timeline_header.include_kernel = include_kernel;
+        timeline_header.count_interval = count_interval;
+        timeline_header.vendor_name = vendor_name;
+        timeline_header.event_class = pmu_events_get_evt_class_name(e_class);
     }
 }
 
@@ -661,9 +644,13 @@ void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<stru
 
     for (const auto& [e_class, unit_events] : events)
     {
-        std::wofstream& timeline_outfile = timeline_outfiles[e_class];
-        uint32_t real_event_num = 0;
+        auto& timeline_header = timeline::timeline_headers[e_class];
+        auto& timeline_header_cores = timeline::timeline_header_cores[e_class];
+        auto& timeline_header_event_names = timeline::timeline_header_event_names[e_class];
 
+        timeline_header.multiplexing = multiplexing;
+
+        uint32_t real_event_num = 0;
         for (const auto& e : unit_events)
         {
             if (e.type == EVT_PADDING)
@@ -712,55 +699,67 @@ void pmu_device::timeline_header(const std::map<enum evt_class, std::vector<stru
             std::copy(cores_idx.begin(), cores_idx.end(), iter.begin());
         }
 
-        timeline_outfile << std::endl;
-
         uint32_t i_inc = e_class == EVT_DSU ? dsu_cluster_size : 1;
         
+        // This sets string "core 0, core 1, ..."
         for (uint32_t idx : iter)
         {
-            timeline_outfile << pmu_events_get_evt_class_name(e_class) << L" " << idx / i_inc << L",";
+            std::wstring core_str = std::wstring(pmu_events_get_evt_class_name(e_class)) + L" " + std::to_wstring(idx / i_inc);
+
+            timeline_header_cores.push_back(core_str);
             for (uint32_t i = 0; i < comma_num2; i++)
-                timeline_outfile << pmu_events_get_evt_class_name(e_class) << L" " << idx / i_inc << L",";
+                timeline_header_cores.push_back(core_str);
             idx += i_inc;
         }
-        timeline_outfile << std::endl;
 
+        // This sets list of events
         uint32_t event_num = (uint32_t)unit_events.size();
         for (uint32_t i : iter)
         {
+            std::wstring event_str;
+
             if (e_class == EVT_DMC_CLK || e_class == EVT_DMC_CLKDIV2)
             {
                 for (uint32_t idx = 0; idx < event_num; idx++)
                 {
                     if (unit_events[idx].type == EVT_PADDING)
                         continue;
-                    timeline_outfile << pmu_events_get_event_name(unit_events[idx].index, e_class) << L",";
+
+                    event_str = std::wstring(pmu_events_get_event_name(unit_events[idx].index, e_class));
+                    timeline_header_event_names.push_back(event_str);
                 }
             }
             else if (multiplexing)
             {
-                timeline_outfile << L"cycle,sched_times,";
+                timeline_header_event_names.push_back(L"cycle");
+                timeline_header_event_names.push_back(L"sched_times");
+
                 for (uint32_t idx = 0; idx < event_num; idx++)
                 {
                     if (unit_events[idx].type == EVT_PADDING)
                         continue;
-                    timeline_outfile << pmu_events_get_event_name(unit_events[idx].index) << L",sched_times,";
+
+                    event_str = std::wstring(pmu_events_get_event_name(unit_events[idx].index));
+                    timeline_header_event_names.push_back(event_str);
+                    timeline_header_event_names.push_back(L"sched_times");
                 }
             }
             else
             {
-                timeline_outfile << L"cycle,";
+                timeline_header_event_names.push_back(L"cycle");
+
                 for (uint32_t idx = 0; idx < event_num; idx++)
                 {
                     if (unit_events[idx].type == EVT_PADDING)
                         continue;
-                    timeline_outfile << pmu_events_get_event_name(unit_events[idx].index) << L",";
+
+                    event_str = std::wstring(pmu_events_get_event_name(unit_events[idx].index));
+                    timeline_header_event_names.push_back(event_str);
                 }
             }
 
             i += i_inc;
         }
-        timeline_outfile << std::endl;
     }
 }
 
@@ -949,7 +948,9 @@ void pmu_device::events_query_driver(std::map<enum evt_class, std::vector<uint16
 
 void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
 {
-    bool multiplexing = multiplexings[EVT_CORE];
+    const enum evt_class e_class = EVT_CORE;
+
+    bool multiplexing = multiplexings[e_class];
     bool print_note = false;
 
     for (const auto& a : events)
@@ -970,6 +971,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
 
     uint32_t core_base = cores_idx[0];
     std::unique_ptr<agg_entry[]> overall;
+    std::vector<std::wstring> timeline_event_values;
 
     if (all_cores_p())
     {
@@ -1017,7 +1019,8 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
             {
                 if (timeline_mode)
                 {
-                    timeline_outfiles[EVT_CORE] << evt->value << L"," << evt->scheduled << L",";
+                    timeline_event_values.push_back(std::to_wstring(evt->value));
+                    timeline_event_values.push_back(std::to_wstring(evt->scheduled));
                 }
                 else
                 {
@@ -1049,7 +1052,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
             {
                 if (timeline_mode)
                 {
-                    timeline_outfiles[EVT_CORE] << evt->value << L",";
+                    timeline_event_values.push_back(std::to_wstring(evt->value));
                 }
                 else
                 {
@@ -1103,7 +1106,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
     }
 
     if (timeline_mode)
-        timeline_outfiles[EVT_CORE] << std::endl;
+        timeline::timeline_header_event_values[e_class].push_back(timeline_event_values);
 
     if (!overall)
         return;
@@ -1185,6 +1188,7 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
 
 void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
 {
+    const enum evt_class e_class = EVT_CORE;
     std::vector<std::wstring> col_core, col_product_name, col_metric_name, col_metric_value, metric_unit;
 
     for (uint32_t i : cores_idx)
@@ -1198,6 +1202,7 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
             if (event.metric.size())
                 event_metrics[event.metric].insert(event.group);
 
+        // Seach if we have metric we can calculate with the formula
         for (const auto& [metric, groups] : event_metrics)
         {
             for (const auto group : groups)
@@ -1212,12 +1217,6 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
                     break;
 
                 const auto& product_metric = m_product_metrics[m_product_name][metric];
-
-                //if (do_verbose)
-                //{
-                //    std::wcout << L"Metric " << m_product_name << L"::" << product_metric.name << L", group " << group << L" (" << product_metric.title << L"):" << std::endl;
-                //    std::wcout << m_product_name << L"::" << product_metric.name << L" = " << product_metric.metric_formula << L", unit = [" << product_metric.metric_unit << L"]" << std::endl;
-                //}
 
                 std::map<std::wstring, double> vars;
                 const std::wstring& formula_sy = product_metric.metric_formula_sy;
@@ -1241,13 +1240,29 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
                 col_core.push_back(std::to_wstring(i));
                 col_product_name.push_back(m_product_name);
                 col_metric_name.push_back(product_metric.name);
-                col_metric_value.push_back(DoubleToWideString(metric_value));
+                col_metric_value.push_back(DoubleToWideString(metric_value, 3));
                 metric_unit.push_back(product_metric.metric_unit);
             }
         }
     }
 
-    if (col_core.size())
+    if (timeline_mode && col_metric_name.size())    // Only add metrics to timeline when metric were calculated
+    {
+        timeline::timeline_header_metric_values[e_class].push_back(col_metric_value);
+        if (timeline::timeline_header_metric_names[e_class].empty())
+        {
+            // For every core we must print each metric
+            for (uint32_t i : cores_idx)
+                for (auto m=0; m< col_metric_name.size(); m++)
+                    timeline::timeline_header_cores[e_class].push_back(L"core " + std::to_wstring(i));
+
+            // Insert metrics names and values to a separate strcuture (we will concatenate it later in print)
+            timeline::timeline_header_metric_names[e_class].insert(timeline::timeline_header_metric_names[e_class].end(),
+                col_metric_name.begin(), col_metric_name.end());
+        }
+    }
+
+    if (!timeline_mode && col_core.size())
     {
         m_out.GetOutputStream() << std::endl;
         m_out.GetOutputStream() << L"Telemetry Solution Metrics:" << std::endl;
@@ -1263,15 +1278,16 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
         m_globalJSON.m_TSmetric = table;
         m_out.Print(table);
     }
-
 }
 
 void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool report_l3_metric)
 {
-    bool multiplexing = multiplexings[EVT_DSU];
+    const enum evt_class e_class = EVT_DSU;
+
+    bool multiplexing = multiplexings[e_class];
     bool print_note = false;
 
-    for (auto &a : events)
+    for (auto& a : events)
     {
         if (a.type != EVT_NORMAL)
         {
@@ -1288,6 +1304,7 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
     };
 
     std::unique_ptr<agg_entry[]> overall;
+    std::vector<std::wstring > event_values;
 
     if (all_cores_p())
     {
@@ -1339,7 +1356,8 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
             {
                 if (timeline_mode)
                 {
-                    timeline_outfiles[EVT_DSU] << evt->value << L"," << evt->scheduled << L",";
+                    event_values.push_back(std::to_wstring(evt->value));
+                    event_values.push_back(std::to_wstring(evt->scheduled));
                 }
                 else
                 {
@@ -1372,7 +1390,7 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
             {
                 if (timeline_mode)
                 {
-                    timeline_outfiles[EVT_DSU] << evt->value << L",";
+                    event_values.push_back(std::to_wstring(evt->value));
                 }
                 else
                 {
@@ -1397,7 +1415,7 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
         }
 
         // Print performance counter stats for DSU cluster
-        {          
+        {
             if (multiplexing)
             {
                 TableOutput<PerformanceCounterOutputTraitsL<true>, GlobalCharType> table(m_outputType);
@@ -1426,7 +1444,9 @@ void pmu_device::print_dsu_stat(std::vector<struct evt_noted>& events, bool repo
     }
 
     if (timeline_mode)
-        timeline_outfiles[EVT_DSU] << std::endl;
+    {
+        timeline::timeline_header_event_values[e_class].push_back(event_values);
+    }
 
     if (!overall)
     {
@@ -1667,6 +1687,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
     size_t clkdiv2_events_num = clkdiv2_events.size();
     size_t clk_events_num = clk_events.size();
     uint8_t ch_base = 0, ch_end = 0;
+    std::vector<std::wstring> event_values_clk, event_values_clkdiv2;
 
     if (dmc_idx == ALL_DMC_CHANNEL)
     {
@@ -1712,7 +1733,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
 
             if (timeline_mode)
             {
-                timeline_outfiles[EVT_DMC_CLK] << evt->value << L",";
+                event_values_clk.push_back(std::to_wstring(evt->value));
             }
             else
             {
@@ -1735,7 +1756,7 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
 
             if (timeline_mode)
             {
-                timeline_outfiles[EVT_DMC_CLKDIV2] << evt->value << L",";
+                event_values_clkdiv2.push_back(std::to_wstring(evt->value));
             }
             else
             {
@@ -1782,15 +1803,11 @@ void pmu_device::print_dmc_stat(std::vector<struct evt_noted>& clk_events, std::
 
         m_globalJSON.m_pmu = table;
         m_out.Print(table);
-
     }
-
-    if (timeline_mode)
+    else
     {
-        if (clk_events_num)
-            timeline_outfiles[EVT_DMC_CLK] << std::endl;
-        if (clkdiv2_events_num)
-            timeline_outfiles[EVT_DMC_CLKDIV2] << std::endl;
+        timeline::timeline_header_event_values[EVT_DMC_CLK].push_back(event_values_clk);
+        timeline::timeline_header_event_values[EVT_DMC_CLKDIV2].push_back(event_values_clkdiv2);
     }
 
     if (!overall_clk && !overall_clkdiv2)

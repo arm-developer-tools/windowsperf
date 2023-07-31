@@ -131,7 +131,7 @@ public:
 
     // Timeline
     void timeline_init();
-    void timeline_release();
+    void timeline_close();
     void timeline_params(const std::map<enum evt_class, std::vector<struct evt_noted>>& events, double count_interval, bool include_kernel);
     void timeline_header(const std::map<enum evt_class, std::vector<struct evt_noted>>& events);
     // Timeline
@@ -277,7 +277,6 @@ private:
     bool timeline_mode;
     bool count_kernel;
     uint32_t enc_bits;
-    std::wofstream timeline_outfiles[EVT_CLASS_NUM];
     std::vector<std::pair<uint64_t, uint64_t>> dmc_regions;
     uint32_t m_enable_bits = 0;
 };
