@@ -128,7 +128,7 @@ void user_request::print_help()
 
 user_request::user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
     do_sample(false), do_annotate(false), do_version(false), do_verbose(false), do_test(false),
-    do_help(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
+    do_help(false), do_export_perf_data(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
     sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
     sample_display_row(50), sample_display_short(true), count_timeline(0),
     count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
@@ -455,6 +455,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--image_name" || a == L"-image_name")
         {
             waiting_image_name = true;
+            continue;
+        }
+
+        if (a == L"--export_perf_data")
+        {
+            do_export_perf_data = true;
             continue;
         }
 

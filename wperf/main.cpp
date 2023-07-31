@@ -44,7 +44,7 @@
 #include "pmu_device.h"
 #include "user_request.h"
 #include "config.h"
-
+#include "perfdata.h"
 
 static bool no_ctrl_c = true;
 
@@ -66,8 +66,8 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
 
 int __cdecl
 wmain(
-    _In_ int argc,
-    _In_reads_(argc) wchar_t* argv[]
+    _In_ const int argc,
+    _In_reads_(argc) const wchar_t* argv[]
 )
 {
     auto exit_code = EXIT_SUCCESS;
@@ -286,6 +286,10 @@ wmain(
         }
         else if (request.do_sample)
         {
+            PerfDataWriter perfDataWriter;
+            if (request.do_export_perf_data)
+                perfDataWriter.WriteCommandLine(argc, argv);
+
             if (SetConsoleCtrlHandler(&ctrl_handler, TRUE) == FALSE)
                 throw fatal_exception("SetConsoleCtrlHandler failed for sampling");
 
@@ -402,8 +406,11 @@ wmain(
                 m_out.GetOutputStream() << L"base address of '" << request.sample_image_name
                     << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
                     << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
-            }
 
+                if (request.do_export_perf_data)
+                    perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, request.sample_image_name);
+            }
+            
             std::vector<FrameChain> raw_samples;
             {
                 DWORD image_exit_code = 0;
@@ -445,7 +452,7 @@ wmain(
             }
 
             CloseHandle(process_handle);
-
+            
             std::vector<SampleDesc> resolved_samples;
 
             for (const auto& a : raw_samples)
@@ -655,6 +662,21 @@ wmain(
                     }
                 }
 
+                if (request.do_export_perf_data)
+                {
+                    for (const auto& sample : a.pc)
+                    {
+                        ULONGLONG addr;
+                        if (a.module == NULL)
+                            addr = (sample.first - runtime_vaddr_delta) & 0xFFFFFF;
+                        else
+                        {
+                            UINT64 mod_vaddr_delta = (UINT64)a.module->handle;
+                            addr = (sample.first - mod_vaddr_delta) & 0xFFFFFF;
+                        }
+                        perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, addr, request.cores_idx[0]);
+                    }
+                }
                 if (request.do_annotate)
                 {
                     std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
@@ -724,6 +746,9 @@ wmain(
                 printed_sample_freq += a.freq;
                 printed_sample_num++;
             }
+            
+            if (request.do_export_perf_data)
+                perfDataWriter.Write();
 
             TableOutput<SamplingOutputTraitsL, GlobalCharType> table(m_outputType);
             table.PresetHeaders();
