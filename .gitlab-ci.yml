@@ -28,10 +28,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-default:
-    tags:
-        - win-arm64
-
 stages:
 - build
 - test
@@ -42,38 +38,65 @@ stages:
 # include:
 # - template: Security/SAST.gitlab-ci.yml
 
-build_and_test:
+build:
   stage: build
+  tags: 
+    - win-arm64-builder
   script:
     - cmd.exe /c "C:/wenv/arm64/activate.bat" powershell -Command "MSBuild /p:Configuration=Release /p:Platform=ARM64"
-    - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll
-    - >
-      ls;
-      $env:PATH += ";C:\wenv\arm64\python\tools";
-      cp wperf-driver\ARM64\Release\wperf-driver\* c:\ci\; 
-      cp wperf-driver\ARM64\Release\wperf-driver.cer c:\ci\;
-      cp wperf\ARM64\Release\wperf.exe c:\ci\;
-      cp -Recurse -Force .\wperf-scripts\tests c:\ci\;
-      cd c:\ci\;
-      $env:PATH += ";C:\ci";
-      python -m pip install pytest;
-      python -m pytest;
-#      powershell .\tests\stress.ps1 5
   artifacts:
     paths:
       - wperf/ARM64/Release/wperf.exe
       - wperf-devgen/ARM64/Release/wperf-devgen.exe
       - wperf-driver/ARM64/Release/wperf-driver
       - wperf-driver/ARM64/Release/wperf-driver.cer
-    expire_in: 20 min
+      - wperf-test/ARM64/Release/wperf-test.dll
+    expire_in: 60 min
   rules:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-build_and_archive:
-  stage: build
+cpp_test_wperf:
+  stage: test
+  tags:
+    - win-arm64-builder
+  retry: 2
+  needs:
+    - job: build
+      artifacts: true
   script:
-    - cmd.exe /c "C:/wenv/arm64/activate.bat" powershell -Command "MSBuild /p:Configuration=Release /p:Platform=ARM64"
+    - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll --TestCaseFilter:Name!~"test_lib"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+test_python:
+  stage: test
+  tags:
+    - win-arm64-tester
+  needs:
+    - job: build
+      artifacts: true
+  script:
+      - >
+        $env:PATH += ";C:\wenv\arm64\python\tools";
+        cp wperf\ARM64\Release\wperf.exe c:\ci\;
+        cp -Recurse -Force .\wperf-scripts\tests c:\ci\;
+        cd c:\ci\;
+        $env:PATH += ";C:\ci";
+        python -m pip install pytest;
+        python -m pytest;
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_python)/i'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+archive:
+  stage: build
+  tags:
+    - win-arm64-builder
+  needs:
+    - job: build
+      artifacts: true
+  script:
     - >
       mkdir release;
       mkdir release/wperf-driver;
@@ -96,18 +119,20 @@ build_and_archive:
       rm -Force wperf-driver.raw.ddf;
       rm -Force wperf-driver.ddf;
       cd ..;
-    - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll
+   # - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll
   artifacts:
     name: "$env:CI_JOB_STAGE-$env:CI_COMMIT_REF_NAME"
     paths:
       - release/
   rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(prep_release)/i'
 
 test_driver:
   stage: test
+  tags:
+    - win-arm64-tester
   needs:
-    - job: build_and_test
+    - job: build
       artifacts: true
   script:
     # Command to create device node on CI machine
@@ -128,4 +153,4 @@ test_driver:
       python -m pytest;
 #      powershell .\tests\stress.ps1 5
   rules:
-      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_driver)/i'
