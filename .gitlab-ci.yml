@@ -54,6 +54,7 @@ build:
     expire_in: 60 min
   rules:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 cpp_test_wperf:
   stage: test
