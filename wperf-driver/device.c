@@ -76,7 +76,6 @@ static ULONG numCores;
 static UINT8 numGPC;
 static UINT64 dfr0_value;
 static UINT64 midr_value;
-static KEVENT SyncPMCEnc;
 static HANDLE pmc_resource_handle = NULL;
 
 static CoreInfo* core_info;
@@ -458,10 +457,6 @@ static VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1
 
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
     KdPrint(("core %d PMC enabled\n", core_idx));
-
-    InterlockedIncrement(&cpunos);
-    if ((ULONG)cpunos >= numCores)
-        KeSetEvent(&SyncPMCEnc, 0, FALSE);
 }
 
 VOID free_pmu_resource(VOID)
@@ -1891,10 +1886,6 @@ WindowsPerfDeviceCreate(
         KeSetImportanceDpc(dpc, HighImportance);
         KeInsertQueueDpc(dpc, NULL, NULL);
     }
-
-    KeInitializeEvent(&SyncPMCEnc, NotificationEvent, FALSE);
-    KeWaitForSingleObject(&SyncPMCEnc, Executive, KernelMode, 0, NULL);
-    KeClearEvent(&SyncPMCEnc);
 
     PMIHANDLER isr = arm64_pmi_handler;
     status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);
