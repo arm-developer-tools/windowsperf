@@ -30,7 +30,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
 import re
 from common import run_command
 
@@ -39,14 +38,14 @@ import pytest
 ### Test cases
 
 
-def test_wperf_version():
+def test_wperf_cli_no_commands():
     """ Test no command line options output. """
     cmd = 'wperf'
     stdout, _ = run_command(cmd.split())
 
     """
     Output should be something like this:
-    
+
     WindowsPerf ver. 2.5.1 (4153c04e/Release) WOA profiling with performance counters.
     Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
     Use --help for help.
