@@ -80,12 +80,13 @@ test_python:
   script:
       - >
         $env:PATH += ";C:\wenv\arm64\python\tools";
-        cp wperf\ARM64\Release\wperf.exe c:\ci\;
-        cp -Recurse -Force .\wperf-scripts\tests c:\ci\;
-        cd c:\ci\;
-        $env:PATH += ";C:\ci";
+        $MPATH=$(pwd);cd c:\ci;mkdir $CI_JOB_ID; cd $MPATH;
+        cp wperf\ARM64\Release\wperf.exe c:\ci\$CI_JOB_ID;
+        cp -Recurse -Force .\wperf-scripts\tests c:\ci\$CI_JOB_ID;
+        cd c:\ci\$CI_JOB_ID;
+        $env:PATH += ";C:\ci\$CI_JOB_ID";
         python -m pip install pytest;
-        python -m pytest;
+        python -m pytest --maxfail=1;
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_python)/i'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -140,18 +141,19 @@ test_driver:
     # devgen /add /hardwareid "Root\WPERFDRIVER" /bus ROOT
     - >
       $env:PATH+=";C:\Program Files (x86)\Windows Kits\10\Tools\10.0.22621.0\arm64";
-      cp wperf-driver\ARM64\Release\wperf-driver\* c:\ci\; 
-      cp wperf-driver\ARM64\Release\wperf-driver.cer c:\ci\;
-      cp wperf\ARM64\Release\wperf.exe c:\ci\;
-      cp -Recurse -Force wperf-scripts\tests c:\ci\;
-      cd c:\ci\;
+      $MPATH=$(pwd);cd c:\ci;mkdir $CI_JOB_ID; cd $MPATH;
+      cp wperf-driver\ARM64\Release\wperf-driver\* c:\ci\$CI_JOB_ID; 
+      cp wperf-driver\ARM64\Release\wperf-driver.cer c:\ci\$CI_JOB_ID;
+      cp wperf\ARM64\Release\wperf.exe c:\ci\$CI_JOB_ID;
+      cp -Recurse -Force wperf-scripts\tests c:\ci\$CI_JOB_ID;
+      cd c:\ci\$CI_JOB_ID;
       certutil -addstore root wperf-driver.cer;
 #      pnputil /add-driver .\wperf-driver.inf /install
     - >
       ls;
-      $env:PATH += ";C:\wenv\arm64\python\tools;C:\ci\";
+      $env:PATH += ";C:\wenv\arm64\python\tools;C:\ci\$CI_JOB_ID";
       python -m pip install pytest;
-      python -m pytest;
+      python -m pytest --maxfail=1;
 #      powershell .\tests\stress.ps1 5
   rules:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_driver)/i'
