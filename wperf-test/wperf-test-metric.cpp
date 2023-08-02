@@ -182,7 +182,44 @@ namespace wperftest_metric
 
 				Assert::AreEqual(val_compute, val_sy);
 			}
-
 		}
+
+		TEST_METHOD(test_metric_SY_Algorithm_calculations_load_percentage_div_zero)
+		{
+			std::wstring formula_sy = L"ld_spec inst_spec / 100 *";
+
+			{
+				std::map<std::wstring, double> vars = {
+					{std::wstring(L"ld_spec"), 7},
+					{std::wstring(L"inst_spec"), 0},	// We force "divide by zero"
+				};
+
+				double ld_spec = vars[L"ld_spec"];
+				double inst_spec = vars[L"inst_spec"];;
+
+				double val_compute = 0;		// We return '0' for "divide by zero" formulas
+				double val_sy = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+				Assert::IsTrue(val_sy == 0);
+				Assert::AreEqual(val_compute, val_sy);
+			}
+
+			{
+				std::map<std::wstring, double> vars = {
+					{std::wstring(L"ld_spec"), 123456},
+					{std::wstring(L"inst_spec"), 0},	// We force "divide by zero"
+				};
+
+				double ld_spec = vars[L"ld_spec"];
+				double inst_spec = vars[L"inst_spec"];;
+
+				double val_compute = 0;		// We return '0' for "divide by zero" formulas
+				double val_sy = metric_calculate_shunting_yard_expression(vars, formula_sy);
+
+				Assert::IsTrue(val_sy == 0);
+				Assert::AreEqual(val_compute, val_sy);
+			}
+		}
+
 	};
 }

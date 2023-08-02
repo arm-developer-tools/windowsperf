@@ -121,7 +121,11 @@ double metric_calculate_shunting_yard_expression(const std::map<std::wstring, do
             switch (t[0])
             {
             case L'*': val *= y; break;
-            case L'/': val /= y; break;
+            case L'/':
+                if (y == 0)     // To avoid division by zero we return 0
+                    return 0;
+                val /= y;
+                break;
             case L'+': val += y; break;
             case L'-': val -= y; break;
             }

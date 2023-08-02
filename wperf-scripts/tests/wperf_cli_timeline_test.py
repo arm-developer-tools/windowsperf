@@ -245,5 +245,5 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
         assert expected_events_header in cvs    # E.g.  cycle,l1d_cache,l1d_cache_refill,inst_retired,l1d_tlb_refill,M@l1d_cache_miss_ratio,M@l1d_tlb_mpki,
 
         # Find lines with counter values, e.g.. 38111732,89739,61892,20932002,0.003,4.222
-        pattern = r'^((\d*\.*(?:\d+|[na]+),){%s})$' % (COLS)
+        pattern = r'^((\d*\.*\d+),){%s}$' % (COLS)
         assert len(re.findall(pattern, cvs, re.MULTILINE)) == N
