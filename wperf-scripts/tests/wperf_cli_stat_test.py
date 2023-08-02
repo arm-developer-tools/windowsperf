@@ -41,6 +41,7 @@ Usage:
 
 """
 
+import json
 import os
 import re
 from common import run_command, is_json, check_if_file_exists
@@ -235,3 +236,47 @@ def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_pat
         assert is_json(json)
     except:
         assert 0
+
+@pytest.mark.parametrize("flag,core",
+[
+    ("-k", 0),
+    ("-k", 1),
+    ("", 0),
+    ("", 1),
+]
+)
+def test_wperf_stat_K_flag(flag,core):
+    cmd = 'wperf stat -m imix -c %d %s --timeout 1' % (core, flag)
+    stdout, _ = run_command(cmd.split())
+
+    ## "included," vs "excluded,"
+    if (flag):
+        kernel_mode_str = b"included"
+    else:
+        kernel_mode_str = b"excluded"
+
+    k_str = b'Performance counter stats for core %d, no multiplexing, kernel mode %b,' % (core, kernel_mode_str)
+    assert k_str in stdout
+
+@pytest.mark.parametrize("flag,core",
+[
+    ("-k", 0),
+    ("-k", 1),
+    ("", 0),
+    ("", 1),
+]
+)
+def test_wperf_stat_K_flag_json(flag,core):
+    cmd = 'wperf stat -m imix -c %d %s --timeout 1 --json' % (core, flag)
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+
+    assert "core" in json_output
+    assert "Kernel_mode" in json_output["core"]     # Check if kernel mode flag is present
+    assert "Multiplexing" in json_output["core"]    # sanity check (no multiplexing this time
+    assert "%d" % core in json_output["core"]       # sanity check
+
+    assert json_output["core"]["Kernel_mode"] == bool(flag) #   bool("") ==> False, bool("-k") ==> True
+    assert json_output["core"]["Multiplexing"] == False
