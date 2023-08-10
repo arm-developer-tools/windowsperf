@@ -30,6 +30,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Windows.h>
 
+#define PATH_MAX 4096
+
 #define PERF_RECORD_MISC_CPUMODE_MASK		(7 << 0)
 #define PERF_RECORD_MISC_CPUMODE_UNKNOWN	(0 << 0)
 #define PERF_RECORD_MISC_KERNEL			(1 << 0)
@@ -661,6 +663,15 @@ namespace perfdata
 		UINT32 pid, tid;
 		UINT32 cpu, res;
 	};
+
+	struct perf_data_mmap_event {
+		struct perf_event_header header;
+		UINT32 pid, tid;
+		UINT64 start;
+		UINT64 len;
+		UINT64 pgoff;
+		char filename[PATH_MAX];
+	};
 }
 
 #include "user_request.h"
@@ -669,7 +680,7 @@ namespace perfdata
 class PerfDataWriter
 {
 public:
-	typedef std::variant<perfdata::perf_data_comm_event, perfdata::perf_data_sample_event> PerfEvent;
+	typedef std::variant<perfdata::perf_data_comm_event, perfdata::perf_data_sample_event, perfdata::perf_data_mmap_event> PerfEvent;
 
 private:
 	std::ofstream m_file;
@@ -700,11 +711,13 @@ private:
 
 	PerfEvent PerfDataWriter::get_comm_event(DWORD pid, std::wstring& command);
 	PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip, UINT32 cpu);
+	PerfEvent PerfDataWriter::get_mmap_event(DWORD pid, UINT64 addr, UINT64 len, std::wstring& filename, UINT64 pgoff);
 public:
 	enum PerfSupportedEventTypes
 	{
 		COMM,
-		SAMPLE
+		SAMPLE,
+		MMAP
 	};
 
 	PerfDataWriter()
@@ -762,6 +775,14 @@ public:
 			if constexpr (sizeof...(Ts) == 3)
 			{
 				event = get_sample_event(args...);
+			}
+			break;
+		}
+		case MMAP:
+		{
+			if constexpr (sizeof...(Ts) == 5)
+			{
+				event = get_mmap_event(args...);
 			}
 			break;
 		}

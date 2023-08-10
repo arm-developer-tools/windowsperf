@@ -326,6 +326,11 @@ wmain(
             DWORD pid = FindProcess(request.sample_image_name);
             HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
 
+            if (request.do_export_perf_data)
+            {
+                perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, request.sample_image_name);
+            }
+
             if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
             {
                 for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
@@ -346,6 +351,19 @@ wmain(
                         std::wstring mod_path = szModName;
                         modules_metadata[name].mod_path = mod_path;
                         modules_metadata[name].handle = hMods[i];
+
+                        MODULEINFO modinfo;
+                        if (GetModuleInformation(process_handle, hMods[i], &modinfo, sizeof(MODULEINFO)))
+                        {
+                            if (request.do_export_perf_data)
+                            {
+                                perfDataWriter.RegisterEvent(PerfDataWriter::MMAP, pid, reinterpret_cast<UINT64>(modinfo.lpBaseOfDll), modinfo.SizeOfImage, mod_path, 0);
+                            }
+                        }
+                        else {
+                            m_out.GetErrorOutputStream() << "Failed to get module " << szModName << " information" << std::endl;
+                        }
+
                     }
                 }
             }
@@ -406,9 +424,6 @@ wmain(
                 m_out.GetOutputStream() << L"base address of '" << request.sample_image_name
                     << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
                     << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
-
-                if (request.do_export_perf_data)
-                    perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, request.sample_image_name);
             }
             
             std::vector<FrameChain> raw_samples;
@@ -674,7 +689,7 @@ wmain(
                             UINT64 mod_vaddr_delta = (UINT64)a.module->handle;
                             addr = (sample.first - mod_vaddr_delta) & 0xFFFFFF;
                         }
-                        perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, addr, request.cores_idx[0]);
+                        perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, sample.first, request.cores_idx[0]);
                     }
                 }
                 if (request.do_annotate)

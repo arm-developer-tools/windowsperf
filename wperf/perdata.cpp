@@ -31,6 +31,8 @@
 #include "perfdata.h"
 #include <fstream>
 
+#define GET_64ALIGNED_SIZE(X) static_cast<UINT16>((std::ceil(static_cast<double>(X) / sizeof(UINT64)))*sizeof(UINT64))
+
 void PerfDataWriter::WriteCommandLine(const int argc, const wchar_t* argv[])
 {
 	m_cmdline.count = argc;
@@ -100,8 +102,8 @@ size_t PerfDataWriter::WriteDataSection(size_t offset)
 	{
 		std::visit([&](auto&& arg)
 		{
-			m_file.write(reinterpret_cast<char*>(&arg), sizeof(arg));
-			written += sizeof(arg);
+			m_file.write(reinterpret_cast<char*>(&arg), arg.header.size);
+			written += arg.header.size;
 		}, el);
 	}
 	return written;
@@ -118,7 +120,7 @@ PerfDataWriter::PerfEvent PerfDataWriter::get_comm_event(DWORD pid, std::wstring
 	event.tid = pid;
 
 	std::string token = MultiByteFromWideString(command.c_str());
-	memcpy(event.comm, token.c_str(), min(sizeof(char) * token.length(), 16));
+	memcpy(event.comm, token.c_str(), sizeof(char) * min(token.length(), 16));
 
 	var = event;
 	return var;
@@ -136,6 +138,29 @@ PerfDataWriter::PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip,
 	event.cpu = cpu;
 	event.ip = ip;
 
+	var = event;
+	return var;
+}
+
+PerfDataWriter::PerfEvent PerfDataWriter::get_mmap_event(DWORD pid, UINT64 addr, UINT64 len, std::wstring& filename, UINT64 pgoff)
+{
+	PerfDataWriter::PerfEvent var;
+	perfdata::perf_data_mmap_event event{ 0 };
+
+	std::string token = MultiByteFromWideString(filename.c_str());
+
+	event.header.size = sizeof(event) - sizeof(event.filename) + static_cast<UINT16>(GET_64ALIGNED_SIZE(token.size()+1));
+	event.header.type = perfdata::PERF_RECORD_MMAP;
+	event.header.misc = PERF_RECORD_MISC_USER;
+	event.pid = pid;
+	event.tid = pid;
+	event.start = addr;
+	event.len = len;
+	event.pgoff = pgoff;
+
+	memset(event.filename, 0, sizeof(char) * PATH_MAX);
+	memcpy(event.filename, token.c_str(), sizeof(char) * min(token.size()+1, PATH_MAX));
+	
 	var = event;
 	return var;
 }
