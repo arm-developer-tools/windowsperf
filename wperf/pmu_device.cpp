@@ -2127,6 +2127,8 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     col_test_result.push_back(IntToHexWideString(hw_cfg.fpc_num));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [gpc_num]");
     col_test_result.push_back(IntToHexWideString(hw_cfg.gpc_num));
+    col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [total_gpc_num]");
+    col_test_result.push_back(IntToHexWideString(hw_cfg.total_gpc_num));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [part_id]");
     col_test_result.push_back(IntToHexWideString(hw_cfg.part_id));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [pmu_ver]");
