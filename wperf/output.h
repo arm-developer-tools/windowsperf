@@ -218,6 +218,44 @@ struct SamplingAnnotateOutputTraits : public TableOutputTraits<CharType>
     inline const static CharType* key = LITERALCONSTANTS_GET("source_code");
 };
 
+template <typename CharType>
+struct SamplingModulesOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, uint64_t, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("name"),
+            LITERALCONSTANTS_GET("address"),
+            LITERALCONSTANTS_GET("path"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("modules");
+};
+
+template <typename CharType>
+struct SamplingPCOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<uint64_t, uint64_t> columns;
+    inline const static std::tuple<CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("address"),
+            LITERALCONSTANTS_GET("count"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("pcs");
+};
+
+template <typename CharType>
+struct SamplingModuleInfoOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, uint64_t, uint64_t> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("section"),
+            LITERALCONSTANTS_GET("offset"),
+            LITERALCONSTANTS_GET("virtual_size"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("modules_info");
+};
+
 enum TableType
 {
     JSON,
@@ -247,6 +285,7 @@ private:
             m_tableJSON = obj;
         }
     }
+    bool m_key_set = false;
 public:
     TableJSON<PresetTable, CharType> m_tableJSON;
     PrettyTable<CharType> m_tablePretty;
@@ -304,7 +343,11 @@ public:
 
     void SetKey(const StringType& key)
     {
-        m_tableJSON.SetKey(key);
+        if(!m_key_set)
+        {
+            m_tableJSON.SetKey(key);
+            m_key_set = true;
+        }
     }
 
     template <typename T>
@@ -480,13 +523,22 @@ struct WPerfSamplingJSON
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
 
     using Samples = TableOutput<SamplingOutputTraits<CharType>, CharType>;
+    using Modules = TableOutput<SamplingModulesOutputTraits<CharType>, CharType>;
+    using PCs = TableOutput<SamplingPCOutputTraits<CharType>, CharType>;
     using AnnotateVector = std::vector<std::pair<StringType,TableOutput<SamplingAnnotateOutputTraits<CharType>, CharType>>>;
-
-    std::map<StringType, std::pair<Samples, AnnotateVector>> m_map;
+    using ModulesInfo = std::vector<TableOutput<SamplingModuleInfoOutputTraits<CharType>, CharType>>;
+    std::map<StringType, std::tuple<Samples, AnnotateVector, PCs>> m_map;
     
+    Modules m_modules_table;
+    ModulesInfo m_modules_info_vector;
+
     uint32_t m_sample_display_row = 0;
     uint64_t m_samples_generated = 0;
     uint64_t m_samples_dropped = 0;
+    uint64_t m_base_address = 0;
+    uint64_t m_runtime_delta = 0;
+
+    bool m_verbose = false;
 
     StringStream Print()
     {
@@ -501,6 +553,33 @@ struct WPerfSamplingJSON
             os << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"samples_dropped\": ") << m_samples_dropped;
             os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"base_address\": ") << m_base_address;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"runtime_delta\": ") << m_runtime_delta;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            
+            if (m_verbose)
+            {
+                bool isFirst = true;
+                m_modules_table.m_tableJSON.m_isEmbedded = true;
+                os << m_modules_table.Print(jsonType).str();
+                os << LiteralConstants<CharType>::m_comma << std::endl;
+                os << LITERALCONSTANTS_GET("\"modules_info\": ");
+                os << LiteralConstants<CharType>::m_bracket_open;
+                for (auto& value : m_modules_info_vector)
+                {
+                    if(!isFirst)
+                    {
+                        os << LiteralConstants<CharType>::m_comma << std::endl;
+                    } else {
+                        isFirst = false;
+                    }
+                    os << value.Print(jsonType).str();
+                }
+                os << LiteralConstants<CharType>::m_bracket_close;                
+                os << LiteralConstants<CharType>::m_comma << std::endl;
+            }
+
             bool isFirst = true;
             for (auto& [key,value] : m_map)
             {
@@ -519,6 +598,12 @@ struct WPerfSamplingJSON
                 os << LiteralConstants<CharType>::m_cbracket_open;
                 os << std::get<0>(value).Print(jsonType).str();
                 os << LiteralConstants<CharType>::m_comma << std::endl;
+                if (m_verbose)
+                {
+                    std::get<2>(value).m_tableJSON.m_isEmbedded = true;
+                    os << std::get<2>(value).Print(jsonType).str();
+                    os << LiteralConstants<CharType>::m_comma << std::endl;
+                }
                 os << LITERALCONSTANTS_GET("\"annotate\": ");    
                 os << LiteralConstants<CharType>::m_bracket_open;
                 bool isFirstInside = true;

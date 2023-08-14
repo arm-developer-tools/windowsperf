@@ -443,12 +443,23 @@ wmain(
             if (request.do_verbose)
             {
                 m_out.GetOutputStream() << L"================================" << std::endl;
+                std::vector<GlobalStringType> col_name, col_path;
+                std::vector<ULONGLONG> col_address;
+                
+                m_globalSamplingJSON.m_verbose = true;
+                m_globalSamplingJSON.m_modules_table.PresetHeaders();
+                
                 for (const auto& [key, value] : modules_metadata)
                 {
                     m_out.GetOutputStream() << std::setw(32) << key
                         << std::setw(32) << IntToHexWideString((ULONGLONG)value.handle, 20)
                         << L"          " << value.mod_path << std::endl;
+                    col_name.push_back(key);
+                    col_address.push_back(reinterpret_cast<ULONGLONG>(value.handle));
+                    col_path.push_back(value.mod_path);
+
                 }
+                m_globalSamplingJSON.m_modules_table.Insert(col_name, col_address, col_path);
             }
 
             for (auto& [key, value] : modules_metadata)
@@ -472,14 +483,24 @@ wmain(
                 {
                     m_out.GetOutputStream() << std::setw(32) << key
                         << L"          " << value.pe_name << std::endl;
-
+                    TableOutput<SamplingModuleInfoOutputTraits<GlobalCharType>, GlobalCharType> module_info_table(m_outputType);
+                    module_info_table.SetKey(key);
+                    module_info_table.PresetHeaders();
+                    module_info_table.InsertExtra(L"pe_name", value.pe_name);
+                    std::vector<GlobalStringType> col_name;
+                    std::vector<uint64_t> col_offset, col_virtual_size;
                     for (auto& sec : value.sec_info)
                     {
                         m_out.GetOutputStream() << std::setw(32) << sec.name
                             << std::setw(32) << IntToHexWideString(sec.offset, 20)
                             << std::setw(32) << IntToHexWideString(sec.virtual_size)
                             << std::endl;
+                        col_name.push_back(sec.name);
+                        col_offset.push_back(sec.offset);
+                        col_virtual_size.push_back(sec.virtual_size);
                     }
+                    module_info_table.Insert(col_name, col_offset, col_virtual_size);
+                    m_globalSamplingJSON.m_modules_info_vector.push_back(module_info_table);
                 }
             }
 
@@ -504,6 +525,12 @@ wmain(
                 m_out.GetOutputStream() << L"base address of '" << request.sample_image_name
                     << L"': 0x" << std::hex << (UINT64)modinfo.EntryPoint
                     << L", runtime delta: 0x" << runtime_vaddr_delta << std::endl;
+
+                m_globalSamplingJSON.m_base_address = reinterpret_cast<UINT64>(modinfo.EntryPoint);
+                m_globalSamplingJSON.m_runtime_delta = runtime_vaddr_delta;
+
+                if (request.do_export_perf_data)
+                    perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, request.sample_image_name);
             }
             
             std::vector<FrameChain> raw_samples;
@@ -696,6 +723,7 @@ wmain(
             std::vector<uint32_t> col_count;
 
             std::vector<std::pair<GlobalStringType, TableOutput<SamplingAnnotateOutputTraitsL, GlobalCharType>>> annotateTables;
+            std::vector<uint64_t> col_pcs, col_pcs_count;
             for (auto &a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
@@ -711,11 +739,16 @@ wmain(
                         table.InsertExtra(L"printed_sample_num", printed_sample_num);
                         m_out.Print(table);
                         table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
-                        m_globalSamplingJSON.m_map[table.m_event] = std::make_pair(table, annotateTables);
+                        TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
+                        pcs_table.PresetHeaders();
+                        pcs_table.Insert(col_pcs, col_pcs_count);
+                        m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables, pcs_table);
                         col_overhead.clear();
                         col_count.clear();
                         col_symbol.clear();
                         annotateTables.clear();
+                        col_pcs.clear();
+                        col_pcs_count.clear();
                     }
                     prev_evt_src = a.event_src;
 
@@ -759,6 +792,8 @@ wmain(
                     for (int i = 0; i < 10 && i < a.pc.size(); i++)
                     {
                         m_out.GetOutputStream() << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
+                        col_pcs.push_back(a.pc[i].first);
+                        col_pcs_count.push_back(a.pc[i].second);
                     }
                 }
 
@@ -859,7 +894,10 @@ wmain(
             table.InsertExtra(L"printed_sample_num", printed_sample_num);
             m_out.Print(table);
             table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
-            m_globalSamplingJSON.m_map[table.m_event] = std::make_pair(table, annotateTables);
+            TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
+            pcs_table.PresetHeaders();
+            pcs_table.Insert(col_pcs, col_pcs_count);
+            m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables,pcs_table);
             m_globalSamplingJSON.m_sample_display_row = request.sample_display_row;
 
             if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
