@@ -33,6 +33,8 @@
 #include <string>
 
 #define MAX_PROCESSES					1024
+#define MAX_SPAWN_RETRIES				4
 
 DWORD FindProcess(std::wstring lpcszFileName);
 HMODULE GetModule(HANDLE pHandle, std::wstring pname);
+VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi);

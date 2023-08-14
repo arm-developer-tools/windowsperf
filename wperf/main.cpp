@@ -29,6 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Windows.h>
+#include <sysinfoapi.h>
 
 #include "wperf.h"
 #include "debug.h"
@@ -63,6 +64,25 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
     }
 }
 
+UINT32 GetNumaCount()
+{
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
+    DWORD returnLength = 0;
+    DWORD ret = GetLogicalProcessorInformation(buffer, &returnLength);
+    UINT32 count = returnLength / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+    std::shared_ptr<SYSTEM_LOGICAL_PROCESSOR_INFORMATION[]> buffer_raw(new SYSTEM_LOGICAL_PROCESSOR_INFORMATION[count]);
+    DWORD numaCount = 0;
+
+    ret = GetLogicalProcessorInformation(buffer_raw.get(), &returnLength);
+    for (auto i = 0u; i < count; i++)
+    {
+        if (buffer_raw[i].Relationship == RelationNumaNode)
+        {
+            numaCount++;
+        }
+    }
+    return numaCount;
+}
 
 int __cdecl
 wmain(
@@ -284,8 +304,26 @@ wmain(
                 }
             } while (request.do_timeline && no_ctrl_c);
         }
-        else if (request.do_sample)
+        else if (request.do_sample || request.do_record)
         {
+
+            // Validate cores as we don't support core indexes greater than 32 for the record command.
+            if (request.do_record)
+            {
+                if (GetNumaCount() != 1)
+                {
+                    throw fatal_exception("The 'record' command can't handle NUMA counts greater than 1.");
+                }
+
+                for (auto core : request.cores_idx)
+                {
+                    if (core > std::numeric_limits<DWORD_PTR>::digits)
+                    {
+                        throw fatal_exception("Unsupported core index for 'record'.");
+                    }
+                }
+            }
+
             PerfDataWriter perfDataWriter;
             if (request.do_export_perf_data)
                 perfDataWriter.WriteCommandLine(argc, argv);
@@ -323,8 +361,42 @@ wmain(
 
             HMODULE hMods[1024];
             DWORD cbNeeded;
-            DWORD pid = FindProcess(request.sample_image_name);
-            HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+            DWORD pid;
+            HANDLE process_handle;
+            PROCESS_INFORMATION pi;
+            TCHAR imageFileName[MAX_PATH];
+            ZeroMemory(&pi, sizeof(pi));
+
+            //If the user asked to record we should spawn the process ourselves.
+            if (request.do_record)
+            {
+                SpawnProcess(request.sample_pe_file.c_str(), request.record_commandline.c_str(), &pi);
+                pid = GetProcessId(pi.hProcess);
+                process_handle = pi.hProcess;
+                DWORD_PTR affinity_mask = 0;
+                for (auto core : request.cores_idx)
+                {
+                    affinity_mask |= 1ULL << core;
+                }
+
+                SetProcessAffinityMask(process_handle, affinity_mask);
+
+                if (request.do_verbose)
+                {
+                    m_out.GetOutputStream() << request.sample_pe_file << " pid is " << pid << std::endl;
+                }
+
+                DWORD len = GetModuleFileNameEx(pi.hProcess, NULL, imageFileName, MAX_PATH);
+                if (len == 0)
+                {
+                    m_out.GetErrorOutputStream() << "Error getting module name " << GetLastError() << "." << std::endl;
+                    throw fatal_exception("Unable to read module name.");
+                }
+            }
+            else {
+                pid = FindProcess(request.sample_image_name);
+            }
+            process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
 
             if (request.do_export_perf_data)
             {
@@ -411,12 +483,20 @@ wmain(
                 }
             }
 
-            HMODULE module_handle = GetModule(process_handle, request.sample_image_name);
+            HMODULE module_handle;
+            if (request.do_record)
+            {
+                module_handle = GetModule(process_handle, imageFileName);
+            }
+            else {
+                module_handle = GetModule(process_handle, request.sample_image_name);
+            }
+            
             MODULEINFO modinfo;
             bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
             if (!ret)
             {
-                m_out.GetOutputStream() << L"failed to query base address of '" << request.sample_image_name << L"'\n";
+                m_out.GetOutputStream() << L"failed to query base address of '" << request.sample_image_name << L"' with " << std::hex << GetLastError() << "\n";
             }
             else
             {
@@ -466,6 +546,11 @@ wmain(
                     << L" exited with code " << IntToHexWideString(image_exit_code) << std::endl;
             }
 
+            if (request.do_record)
+            {
+                TerminateProcess(pi.hProcess, 0);
+                CloseHandle(pi.hThread);
+            }
             CloseHandle(process_handle);
             
             std::vector<SampleDesc> resolved_samples;

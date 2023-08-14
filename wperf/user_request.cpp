@@ -127,7 +127,7 @@ void user_request::print_help()
 
 
 user_request::user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
-    do_sample(false), do_annotate(false), do_version(false), do_verbose(false), do_test(false),
+    do_sample(false), do_record(false), do_annotate(false), do_version(false), do_verbose(false), do_test(false),
     do_help(false), do_export_perf_data(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
     sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
     sample_display_row(50), sample_display_short(true), count_timeline(0),
@@ -164,7 +164,7 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
                 m_out.GetOutputStream() << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
         }
     }
-    else if (do_sample)
+    else if (do_sample || do_record)
     {
         m_out.GetErrorOutputStream() << "no pid or process name specified, sample address are not de-ASLRed" << std::endl;
         throw fatal_exception("ERROR_IMAGE_NAME");
@@ -189,7 +189,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
     std::map<std::wstring, metric_desc>& builtin_metrics,
     std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
-{
+{   
     bool waiting_events = false;
     bool waiting_metrics = false;
     bool waiting_core_idx = false;
@@ -205,6 +205,9 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_sample_display_row = false;
     bool waiting_timeline_count = false;
     bool waiting_config = false;
+    bool waiting_commandline = false;
+
+    bool sample_pe_file_given = false;
 
     if (raw_args.empty())
     {
@@ -252,6 +255,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
     for (const auto& a : raw_args)
     {
+        if (waiting_commandline)
+        {
+            record_commandline += a + L" ";
+            continue;
+        }
+
         if (waiting_metric_config)
         {
             waiting_metric_config = false;
@@ -266,7 +275,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (waiting_events)
         {
-            if (do_sample)
+            if (do_sample || do_record)
                 parse_events_str_for_sample(a, ioctl_events_sample, sampling_inverval);
             else
                 parse_events_str(a, events, groups, L"", pmu_cfg);
@@ -340,6 +349,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (waiting_pe_file)
         {
             sample_pe_file = a;
+            sample_pe_file_given = true;
             waiting_pe_file = false;
             continue;
         }
@@ -443,6 +453,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"stat")
         {
             do_count = true;
+            continue;
+        }
+
+        if (a == L"record")
+        {
+            do_record = true;
             continue;
         }
 
@@ -593,7 +609,20 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
+        if(do_record)
+        {
+            /*If we can't recognize the token we assume the rest is just the command line for the program that the user wants to run*/
+            waiting_commandline = true;
+            /* If we failed to find --pe_file than we just store it as the first token of the
+            record command line, otherwise the sample_pe_file given by the user takes precedence */
+            if (!sample_pe_file_given)
+            {
+                sample_pe_file = a;
+            }
+            record_commandline += a + L" ";
+        } else {
+            m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
+        }
     }
 
     if (do_sample && cores_idx.size() > 1)

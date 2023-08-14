@@ -69,6 +69,7 @@ public:
     bool do_kernel;
     bool do_timeline;
     bool do_sample;
+    bool do_record;
     bool do_version;
     bool do_verbose;
     bool do_help;
@@ -85,6 +86,7 @@ public:
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
+    std::wstring record_commandline;
     uint32_t sample_display_row;
     bool sample_display_short;
     std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;

@@ -33,6 +33,8 @@
 #include <tchar.h>
 #include <psapi.h>
 #include "process_api.h"
+#include "exception.h"
+#include "output.h"
 
 DWORD FindProcess(std::wstring lpcszFileName)
 {
@@ -100,4 +102,50 @@ HMODULE GetModule(HANDLE pHandle, std::wstring pname)
     }
 
     return nullptr;
+}
+
+VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi)
+{
+    STARTUPINFO si;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(pi, sizeof(*pi));
+
+    // Start the child process. 
+    if (!CreateProcess((LPWSTR)pe_file,     // Module name
+        (LPWSTR)command_line,               // Command line
+        NULL,                               // Process handle not inheritable
+        NULL,                               // Thread handle not inheritable
+        FALSE,                              // Set handle inheritance to FALSE
+        CREATE_NEW_CONSOLE,                 // Create a new console
+        NULL,                               // Use parent's environment block
+        NULL,                               // Use parent's starting directory 
+        &si,                                // Pointer to STARTUPINFO structure
+        pi)                                 // Pointer to PROCESS_INFORMATION structure
+        )
+    {
+        DWORD error = GetLastError();
+        m_out.GetErrorOutputStream() << "CreateProcess failed (0x" << std::hex << error << ")." << std::endl;
+        throw fatal_exception("CreateProcess failed");
+    }
+
+    //Wait for the process to properly start 
+    //[TODO] Make this configurable
+    Sleep(1000);
+    DWORD pid = GetProcessId(pi->hProcess);
+    USHORT retries = 0;
+    while (pid == 0 && retries < MAX_SPAWN_RETRIES)
+    {
+        Sleep(1000);
+        pid = GetProcessId(pi->hProcess);
+        retries++;
+    }
+    if (pid == 0)
+    {
+        TerminateProcess(pi->hProcess, 0);
+        CloseHandle(pi->hThread);
+        CloseHandle(pi->hProcess);
+        throw fatal_exception("Process took too long to spawn");
+    }
 }
