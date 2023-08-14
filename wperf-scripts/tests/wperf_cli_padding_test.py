@@ -31,6 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
+import pytest
 from common import run_command, is_json, check_if_file_exists
 from common import get_result_from_test_results
 from common import wperf_test_no_params
@@ -150,6 +151,10 @@ def test_wperf_padding_groups_1():
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
 
+    if gpc_num < 5:
+        pytest.skip("test assumes gpc_num is at least 5")
+        return
+
     assert (gpc_num >= 5)                        #   This test assumes number of General Purpose Counter is at least 5
 
     assert (len(set(evt_core_index)) == 3)       #   119,117,27,27,27...
@@ -174,7 +179,11 @@ def test_wperf_padding_groups_2():
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
 
-    assert (gpc_num >= 5)                       #   This test assumes number of General Purpose Counter is at least 5
+    if gpc_num < 5:
+        pytest.skip("test assumes gpc_num is at least 5")
+        return
+
+    assert (gpc_num >= 5)                 #   This test assumes number of General Purpose Counter is at least 5
 
     assert (len(set(evt_core_index)) == 4)      #   117,116,119,27,27,27,...
     assert (len(set(evt_core_note)) == 3)       #   (g0),(g0),(e),(p),(p),(p),....
@@ -216,6 +225,10 @@ def test_wperf_padding_groups_3():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
+
+    if gpc_num < 5:
+        pytest.skip("test assumes gpc_num is at least 5")
+        return
 
     assert (gpc_num >= 5)                           #   This test assumes number of General Purpose Counter is at least 5
 
@@ -260,6 +273,10 @@ def test_wperf_padding_groups_4():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
+
+    if gpc_num < 5:
+        pytest.skip("test assumes gpc_num is at least 5")
+        return
 
     assert (gpc_num >= 5)                           #   This test assumes number of General Purpose Counter is at least 5
 

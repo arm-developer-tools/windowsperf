@@ -74,9 +74,11 @@ static UINT32 dsu_evt_mask_hi;
 static LONG volatile cpunos;
 static ULONG numCores;
 static UINT8 numGPC;
+static UINT8 numFreeGPC;
 static UINT64 dfr0_value;
 static UINT64 midr_value;
 static HANDLE pmc_resource_handle = NULL;
+static UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 
 static CoreInfo* core_info;
 // Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
@@ -100,15 +102,25 @@ static UINT16 armv8_arch_core_events[] =
 // must sync with enum pmu_ctl_action
 static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
 
+static UINT64 core_read_counter_helper(UINT32 counter_idx)
+{
+    return CoreReadCounter(counter_idx_map[counter_idx]);
+}
+
+static VOID core_counter_set_type_helper(UINT32 counter_idx, __int64 evtype_val)
+{
+    CoreCouterSetType(counter_idx_map[counter_idx], evtype_val);
+}
+
 /* Enable/Disable the counter associated with the event */
 static VOID event_enable_counter(struct pmu_event_kernel* event)
 {
-    CoreCounterEnable(1U << event->counter_idx);
+    CoreCounterEnable(1U << counter_idx_map[event->counter_idx]);
 }
 
 static VOID event_disable_counter(struct pmu_event_kernel* event)
 {
-    CoreCounterDisable(1U << event->counter_idx);
+    CoreCounterDisable(1U << counter_idx_map[event->counter_idx]);
 }
 
 static VOID event_config_type(struct pmu_event_kernel* event)
@@ -118,17 +130,17 @@ static VOID event_config_type(struct pmu_event_kernel* event)
     if (event_idx == CYCLE_EVENT_IDX)
         _WriteStatusReg(PMCCFILTR_EL0, (__int64)event->filter_bits);
     else
-        CoreCouterSetType(event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
+        core_counter_set_type_helper(event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
 }
 
-static VOID event_enable_irq(struct pmu_event_kernel* event)
+static VOID core_counter_enable_irq_helper(UINT32 idx)
 {
-    CoreCounterEnableIrq(1U << event->counter_idx);
+    CoreCounterEnableIrq(1U << counter_idx_map[idx]);
 }
 
-static VOID event_disable_irq(struct pmu_event_kernel* event)
+static VOID core_counter_disable_irq_helper(UINT32 idx)
 {
-    CoreCounterIrqDisable(1U << event->counter_idx);
+    CoreCounterIrqDisable(1U << counter_idx_map[idx]);
 }
 
 static VOID event_enable(struct pmu_event_kernel* event)
@@ -138,9 +150,9 @@ static VOID event_enable(struct pmu_event_kernel* event)
     event_config_type(event);
 
     if (event->enable_irq)
-        event_enable_irq(event);
+        core_counter_enable_irq_helper(event->counter_idx);
     else
-        event_disable_irq(event);
+        core_counter_disable_irq_helper(event->counter_idx);
 
     event_enable_counter(event);
 }
@@ -148,6 +160,7 @@ static VOID event_enable(struct pmu_event_kernel* event)
 #define WRITE_COUNTER(N) case N: _WriteStatusReg(PMEVCNTR##N##_EL0, (__int64)val); break;
 static VOID core_write_counter(UINT32 counter_idx, __int64 val)
 {
+    counter_idx = counter_idx_map[counter_idx];
     switch(counter_idx)
     {
         WRITE_COUNTER(0);
@@ -218,7 +231,7 @@ static UINT64 event_get_counting(struct pmu_event_kernel* event, UINT64 core_idx
         return get_fixed_counter_value(core_idx);
     }
 
-    return CoreReadCounter(event->counter_idx);
+    return core_read_counter_helper(event->counter_idx);
 }
 
 #define PMOVSCLR_VALID_BITS_MASK 0xffffffffULL
@@ -324,8 +337,8 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
         struct pmu_event_pseudo* events = core->events;
         UINT32 events_num = core->events_num;
 
-        UINT32 event_start_idx1 = (numGPC * round) % (events_num - numFPC);
-        UINT32 event_start_idx2 = (numGPC * new_round) % (events_num - numFPC);
+        UINT32 event_start_idx1 = (numFreeGPC * round) % (events_num - numFPC);
+        UINT32 event_start_idx2 = (numFreeGPC * new_round) % (events_num - numFPC);
 
         CoreCounterStop();
 
@@ -334,17 +347,17 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
         events[0].value += get_fixed_counter_value(core->idx); //_ReadStatusReg(PMCCNTR_EL0);
         events[0].scheduled += 1;
 
-        for (UINT32 i = 0; i < numGPC; i++)
+        for (UINT32 i = 0; i < numFreeGPC; i++)
         {
             UINT32 adjusted_idx = (event_start_idx1 + i) % (events_num - numFPC);
-            events[adjusted_idx + numFPC].value += CoreReadCounter(i);
+            events[adjusted_idx + numFPC].value += core_read_counter_helper(i);
             events[adjusted_idx + numFPC].scheduled += 1;
         }
 
         update_last_fixed_counter(core->idx);
         CoreCounterReset();
 
-        for (UINT32 i = 0; i < numGPC; i++)
+        for (UINT32 i = 0; i < numFreeGPC; i++)
         {
             UINT32 adjusted_idx = (event_start_idx2 + i) % (events_num - numFPC);
 
@@ -477,7 +490,7 @@ static VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1
     
     CoreCounterReset();
 
-    UINT32 up_limit = numGPC + numFPC;
+    UINT32 up_limit = numFreeGPC + numFPC;
     for (UINT32 i = 0; i < up_limit; i++)
         event_enable(default_events + i);
 
@@ -570,13 +583,13 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     }
 
     KdPrint(("IOCTL: assign %d events (%s)\n",
-        core_event_num, core_event_num > numGPC ? "multiplexing" : "no-multiplexing"));
+        core_event_num, core_event_num > numFreeGPC ? "multiplexing" : "no-multiplexing"));
 
     for (UINT32 i = core_base; i < core_end; i++)
     {
         CoreInfo* core = &core_info[i];
         core->events_num = core_event_num + numFPC;
-        UINT32 init_num = core_event_num <= numGPC ? core_event_num : numGPC;
+        UINT32 init_num = core_event_num <= numFreeGPC ? core_event_num : numFreeGPC;
         struct pmu_event_pseudo* events = &core->events[0];
 
         RtlSecureZeroMemory(&events[numFPC], sizeof(struct pmu_event_pseudo) * (MAX_MANAGED_CORE_EVENTS - numFPC));
@@ -650,7 +663,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
 
             CoreInfo* core = &core_info[i];
-            UINT32 init_num = context->event_num <= numGPC ? context->event_num : numGPC;
+            UINT32 init_num = context->event_num <= numFreeGPC ? context->event_num : numFreeGPC;
             struct pmu_event_pseudo* events = &core->events[0];
             for (UINT32 j = 0; j < init_num; j++)
             {
@@ -753,16 +766,16 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             }
             else
             {
-                CoreCouterSetType(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
+                core_counter_set_type_helper(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
                 ov_mask |= 1ULL << gpc_num;
-                CoreCounterEnableIrq(1U << gpc_num);
+                core_counter_enable_irq_helper(gpc_num);
                 core_write_counter(gpc_num, (__int64)val);
                 gpc_num++;
             }
         }
 
-        for (; gpc_num < numGPC; gpc_num++)
-            CoreCounterIrqDisable(1U << gpc_num);
+        for (; gpc_num < numFreeGPC; gpc_num++)
+            core_counter_disable_irq_helper(gpc_num);
         CoreInfo* core = core_info + context->core_idx;
         core->ov_mask = ov_mask;
         break;
@@ -906,8 +919,8 @@ NTSTATUS deviceControl(
 
         int sample_src_num = (inputSize - sizeof(PMUSampleSetSrcHdr)) / sizeof(SampleSrcDesc);
         // rough check
-        if (sample_src_num > (numGPC + numFPC))
-            sample_src_num = numGPC + numFPC;
+        if (sample_src_num > (numFreeGPC + numFPC))
+            sample_src_num = numFreeGPC + numFPC;
 
         CoreInfo *core = core_info + core_idx;
         int gpc_num = 0;
@@ -1025,7 +1038,7 @@ NTSTATUS deviceControl(
 
                 if (ctl_flags & CTL_FLAG_CORE)
                 {
-                    UINT8 do_core_multiplex = !!(core->events_num > (UINT32)(numGPC + numFPC));
+                    UINT8 do_core_multiplex = !!(core->events_num > (UINT32)(numFreeGPC + numFPC));
                     core->prof_core = do_core_multiplex ? PROF_MULTIPLEX : PROF_NORMAL;
                     do_multiplex |= do_core_multiplex;
                 }
@@ -1157,7 +1170,8 @@ NTSTATUS deviceControl(
         struct hw_cfg* out = (struct hw_cfg*)pBuffer;
         out->core_num = (UINT16)numCores;
         out->fpc_num = numFPC;
-        out->gpc_num = numGPC;
+        out->gpc_num = numFreeGPC;
+        out->total_gpc_num = numGPC;
         out->pmu_ver = (dfr0_value >> 8) & 0xf;
         out->vendor_id = (midr_value >> 24) & 0xff;
         out->variant_id = (midr_value >> 20) & 0xf;
@@ -1856,7 +1870,58 @@ WindowsPerfDeviceCreate(
     KdPrint(("%d cores detected\n", numCores));
 
     // Finally, alloc PMU counters
-    status = HalAllocateHardwareCounters(NULL, 0, NULL, &pmc_resource_handle);
+    // 1) Query for free PMU counters
+    const size_t counter_idx_map_size = sizeof(UINT32) * (AARCH64_MAX_HWC_SUPP + 1);
+    RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
+
+    PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
+    TmpCounterResourceList.Count = 1;
+    TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
+    UINT8 numFreeCounters = 0;
+    for (UINT32 i = 0; i < numGPC; i++)
+    {
+        TmpCounterResourceList.Descriptors[0].u.CounterIndex = i;
+        status = HalAllocateHardwareCounters(NULL, 0, &TmpCounterResourceList, &pmc_resource_handle);
+        if (status == STATUS_SUCCESS)
+        {
+            counter_idx_map[numFreeCounters] = i;
+            numFreeCounters++;
+            HalFreeHardwareCounters(pmc_resource_handle);
+        }
+    }
+    if (numFreeCounters == 0)
+    {
+        KdPrint(("HAL: counters allocated by other kernel modules\n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    KdPrint(("%d free general purpose hardware counters detected\n", numFreeCounters));
+
+    counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
+
+#ifdef _DEBUG
+    for (UINT8 i = 0; i < numGPC; i++)
+    {
+        i %= AARCH64_MAX_HWC_SUPP;
+        KdPrint(("counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
+    }
+#endif
+
+    // 2) Alloc PMU counters that are free
+    size_t AllocationSize = sizeof(PHYSICAL_COUNTER_RESOURCE_LIST) + (sizeof(PHYSICAL_COUNTER_RESOURCE_DESCRIPTOR) * numGPC);
+    PPHYSICAL_COUNTER_RESOURCE_LIST CounterResourceList = (PPHYSICAL_COUNTER_RESOURCE_LIST)ExAllocatePool2(POOL_FLAG_NON_PAGED, AllocationSize, 'CRCL');
+    if (CounterResourceList == NULL)
+    {
+        KdPrint(("ExAllocatePoolWithTag: failed \n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    for (UINT32 i = 0; i < numFreeCounters; i++)
+    {
+        CounterResourceList->Descriptors[i].u.CounterIndex = counter_idx_map[i];
+        CounterResourceList->Descriptors[i].Type = ResourceTypeSingle;
+    }
+
+    status = HalAllocateHardwareCounters(NULL, 0, CounterResourceList, &pmc_resource_handle);
+    ExFreePoolWithTag(CounterResourceList, 'CRCL');
     if (status == STATUS_INSUFFICIENT_RESOURCES)
     {
         KdPrint(("HAL: counters allocated by other kernel modules\n"));
@@ -1868,14 +1933,15 @@ WindowsPerfDeviceCreate(
         KdPrint(("HAL: allocate failed 0x%x\n", status));
         return status;
     }
+    numFreeGPC = numFreeCounters;
 
     // This driver expose private APIs (IOCTL commands), but also enable ThreadProfiling APIs.
-    HARDWARE_COUNTER counter_descs[AARCH64_MAX_HWC_SUPP];
-    RtlSecureZeroMemory(&counter_descs, sizeof(HARDWARE_COUNTER) * numGPC);
-    for (int i = 0; i < numGPC; i++)
+    HARDWARE_COUNTER counter_descs[AARCH64_MAX_HWC_SUPP] = {0};
+    RtlSecureZeroMemory(&counter_descs, sizeof(counter_descs));
+    for (int i = 0; i < numFreeGPC; i++)
     {
         counter_descs[i].Type = PMCCounter;
-        counter_descs[i].Index = i;
+        counter_descs[i].Index = counter_idx_map[i];
 
         status = KeSetHardwareCounterConfiguration(&counter_descs[i], 1);
         if (status == STATUS_WMI_ALREADY_ENABLED)
@@ -1890,7 +1956,7 @@ WindowsPerfDeviceCreate(
     }
 
     core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * numCores, 'CORE');
-    if (!core_info)
+    if (core_info == NULL)
     {
         KdPrint(("ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -1915,8 +1981,9 @@ WindowsPerfDeviceCreate(
         if (status != STATUS_SUCCESS)
             return status;
 
-        RtlCopyMemory(core->events, default_events, sizeof(struct pmu_event_kernel) * ((size_t)numGPC + numFPC));
-        core->events_num = numFPC + numGPC;
+        core->events_num = numFPC + numFreeGPC;
+        for (UINT32 k = 0; k < core->events_num; k++)
+            RtlCopyMemory(core->events + k, default_events + k, sizeof(struct pmu_event_kernel));
 
         // Initialize fields for sampling;
         KeInitializeSpinLock(&core->SampleLock);
