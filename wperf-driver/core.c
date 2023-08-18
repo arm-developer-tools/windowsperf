@@ -74,7 +74,9 @@ VOID CoreCounterIrqDisable(UINT32 mask)
 
 VOID CoreCounterReset(VOID)
 {
-    UINT32 pmcr = ARMV8_PMCR_P | ARMV8_PMCR_C | ARMV8_PMCR_LC;
+    // Removed (ARMV8_PMCR_C | ARMV8_PMCR_LC) to avoid reseting the 
+    // fixed counter as some architectures make use of it for system measurements.
+    UINT32 pmcr = ARMV8_PMCR_P;
     if (has_long_event_support)
         pmcr |= ARMV8_PMCR_LP;
 

@@ -62,4 +62,5 @@ typedef struct core_info
     UINT64 sample_dropped;
     UINT32 sample_interval[AARCH64_MAX_HWC_SUPP + numFPC];
     UINT64 ov_mask;
+    UINT64 idx;
 } CoreInfo;

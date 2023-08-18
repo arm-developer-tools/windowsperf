@@ -79,6 +79,9 @@ static UINT64 midr_value;
 static HANDLE pmc_resource_handle = NULL;
 
 static CoreInfo* core_info;
+// Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
+// See comment on CoreCounterReset() for an explanation.
+static UINT64* last_fpc_read = NULL;
 
 enum
 {
@@ -185,12 +188,35 @@ static VOID core_write_counter(UINT32 counter_idx, __int64 val)
     }
 }
 
-static UINT64 event_get_counting(struct pmu_event_kernel* event)
+// Just update last_fpc_read, this is the fixed counter equivalent to CoreCounterReset
+static void update_last_fixed_counter(UINT64 core_idx)
+{
+    last_fpc_read[core_idx] = _ReadStatusReg(PMCCNTR_EL0);
+}
+
+// For the fixed counter we are getting the delta from the last readings.
+static UINT64 get_fixed_counter_value(UINT64 core_idx)
+{
+    UINT64 curr = _ReadStatusReg(PMCCNTR_EL0);
+
+    // We no longer reset the fixed counter so we need to keep track of its last value
+    UINT64 delta = curr - last_fpc_read[core_idx];
+
+    // Just to avoid astronomical numbers when something weird happens
+    delta = curr < last_fpc_read[core_idx] ? 0 : delta;
+
+    last_fpc_read[core_idx] = curr;
+    return delta;
+}
+
+static UINT64 event_get_counting(struct pmu_event_kernel* event, UINT64 core_idx)
 {
     UINT32 event_idx = event->event_idx;
 
     if (event_idx == CYCLE_EVENT_IDX)
-        return _ReadStatusReg(PMCCNTR_EL0);
+    {
+        return get_fixed_counter_value(core_idx);
+    }
 
     return CoreReadCounter(event->counter_idx);
 }
@@ -267,10 +293,11 @@ static VOID update_core_counting(CoreInfo* core)
 
     for (UINT32 i = 0; i < events_num; i++)
     {
-        events[i].value += event_get_counting((struct pmu_event_kernel*)&events[i]);
+        events[i].value += event_get_counting((struct pmu_event_kernel*)&events[i], core->idx);
         events[i].scheduled += 1;
     }
 
+    update_last_fixed_counter(core->idx);
     CoreCounterReset();
     CoreCounterStart();
 }
@@ -304,7 +331,7 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
 
         //Only one FPC, cycle counter
         //We will improve the logic handling FPC later
-        events[0].value += _ReadStatusReg(PMCCNTR_EL0);
+        events[0].value += get_fixed_counter_value(core->idx); //_ReadStatusReg(PMCCNTR_EL0);
         events[0].scheduled += 1;
 
         for (UINT32 i = 0; i < numGPC; i++)
@@ -314,6 +341,7 @@ static VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sy
             events[adjusted_idx + numFPC].scheduled += 1;
         }
 
+        update_last_fixed_counter(core->idx);
         CoreCounterReset();
 
         for (UINT32 i = 0; i < numGPC; i++)
@@ -446,7 +474,7 @@ static VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1
     UNREFERENCED_PARAMETER(ctx);
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
-
+    
     CoreCounterReset();
 
     UINT32 up_limit = numGPC + numFPC;
@@ -456,6 +484,7 @@ static VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1
     CoreCounterStart();
 
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
+    update_last_fixed_counter(core_idx);
     KdPrint(("core %d PMC enabled\n", core_idx));
 }
 
@@ -704,6 +733,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     case PMU_CTL_SAMPLE_SET_SRC:
     {
+        update_last_fixed_counter(core_idx);
         CoreCounterStop();
         CoreCounterReset();
 
@@ -1685,6 +1715,9 @@ VOID WindowsPerfDeviceUnload()
     if (core_info)
         ExFreePoolWithTag(core_info, 'CORE');
 
+    if (last_fpc_read)
+        ExFreePoolWithTag(last_fpc_read, 'LAST');
+
     if (dmc_array.dmcs)
     {
         for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
@@ -1864,9 +1897,19 @@ WindowsPerfDeviceCreate(
     }
     RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
 
+    last_fpc_read = (UINT64*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT64) * numCores, 'LAST');
+    if (!last_fpc_read)
+    {
+        KdPrint(("%s:%d - ExAllocatePool2: failed\n", __FUNCTION__, __LINE__));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    RtlSecureZeroMemory(last_fpc_read, sizeof(UINT64)* numCores);
+
     for (ULONG i = 0; i < numCores; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &core_info[i];        
+        core->idx = i;
+
         PROCESSOR_NUMBER ProcNumber;
         status = KeGetProcessorNumberFromIndex(i, &ProcNumber);
         if (status != STATUS_SUCCESS)
