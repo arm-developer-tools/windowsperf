@@ -51,7 +51,7 @@ def test_wperf_cli_no_commands():
     Use --help for help.
     """
 
-    ver_str = re.findall(rb'WindowsPerf ver\. \d+\.\d+\.\d+ \([0-9a-fA-F]+\/[ReleaseDebug]+\)', stdout)
+    ver_str = re.findall(rb'WindowsPerf ver\. \d+\.\d+\.\d+ \(([0-9a-fA-F]+(-[a-zA-Z]+)?\/[ReleaseDebug]+)\)', stdout)
     assert len(ver_str) == 1    # ['WindowsPerf ver. 2.5.1 (4153c04e/Release)']
 
     assert b'WOA profiling with performance counters' in stdout
