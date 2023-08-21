@@ -30,7 +30,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
+r"""
 # Description
 
 This is ustress test bench build script. It contains all functions needed to:
@@ -104,6 +104,23 @@ def get_make_CPU_name(product_name):
     product_name = product_name.replace('-', '_').upper()
     return product_name
 
+def get_CPUs_supported_by_ustress():
+    """ Get list of CPUs supported by ustress. """
+    cpus = []
+    with open(TS_USTRESS_HEADER) as couinfo_h:
+        cpuinfo_header = couinfo_h.read()
+        cpus = re.findall(r'defined\(CPU_([A-Z0-9_]+)\)', cpuinfo_header)    # E.g. ['NEOVERSE_V1', 'NEOVERSE_N1', 'NEOVERSE_N2', 'NONE']
+    return cpus
+
+
+# Skip whole module if ustress is not supported by this CPU
+_cpus = get_CPUs_supported_by_ustress()
+_product_name = get_product_name()
+_product_name_cpus = get_make_CPU_name(_product_name)
+
+if _product_name_cpus not in _cpus:
+    pytest.skip("skipping as ustress do not support CPU=%s" % (_product_name_cpus), allow_module_level=True)
+
 
 def test_ustress_bench_compatibility_tests():
     """ Check if this bench can run on HW we are currently on. """
@@ -115,10 +132,7 @@ def test_ustress_bench_compatibility_tests():
     assert os.path.isdir(TS_USTRESS_DIR)
 
     ### Check type of CPU is supported and get CPU list from header file
-    with open(TS_USTRESS_HEADER) as couinfo_h:
-        cpuinfo_header = couinfo_h.read()
-        cpus = re.findall(r'defined\(CPU_([A-Z0-9_]+)\)', cpuinfo_header)    # E.g. ['NEOVERSE_V1', 'NEOVERSE_N1', 'NEOVERSE_N2', 'NONE']
-
+    cpus = get_CPUs_supported_by_ustress()
     assert len(cpus) > 0
 
     ### Check product name of HW we are now on, it must be supported by ustress
