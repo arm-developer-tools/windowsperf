@@ -89,7 +89,7 @@ test_python:
         cd c:\ci\$CI_JOB_ID;
         $env:PATH += ";C:\ci\$CI_JOB_ID";
         python -m pip install pytest;
-        python -m pytest --maxfail=1;
+        cd tests;python -m pytest --maxfail=1;
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_python)/i'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
