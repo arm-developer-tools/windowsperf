@@ -32,6 +32,9 @@ stages:
 - build
 - test
 
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
 # CI machines are not yet setup to run this
 # sast:
 #   stage: test
