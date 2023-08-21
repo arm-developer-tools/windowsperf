@@ -104,7 +104,7 @@ HMODULE GetModule(HANDLE pHandle, std::wstring pname)
     return nullptr;
 }
 
-VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi)
+VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi, uint32_t delay)
 {
     STARTUPINFO si;
 
@@ -131,8 +131,7 @@ VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_I
     }
 
     //Wait for the process to properly start 
-    //[TODO] Make this configurable
-    Sleep(1000);
+    Sleep(delay);
     DWORD pid = GetProcessId(pi->hProcess);
     USHORT retries = 0;
     while (pid == 0 && retries < MAX_SPAWN_RETRIES)

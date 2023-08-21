@@ -370,7 +370,7 @@ wmain(
             //If the user asked to record we should spawn the process ourselves.
             if (request.do_record)
             {
-                SpawnProcess(request.sample_pe_file.c_str(), request.record_commandline.c_str(), &pi);
+                SpawnProcess(request.sample_pe_file.c_str(), request.record_commandline.c_str(), &pi, request.record_spawn_delay);
                 pid = GetProcessId(pi.hProcess);
                 process_handle = pi.hProcess;
                 DWORD_PTR affinity_mask = 0;

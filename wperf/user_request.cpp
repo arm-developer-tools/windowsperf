@@ -68,6 +68,8 @@ usage: wperf [options]
     --pdb_file             Specify the PDB file.
     --sample-display-long  Display decorated symbol names.
     --sample-display-row   Set how many samples you want to see in the summary (50 by default).
+    --record_spawn_delay   Set the waiting time, in milliseconds, before reading process data after spawning it with 'record'.
+                           Default value is 1000ms.
     -C config_file         Provide customized config file which describes metrics etc.
     -E config_file         Provide customized config file which describes custom events.
     -E event_list          Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
@@ -206,6 +208,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_timeline_count = false;
     bool waiting_config = false;
     bool waiting_commandline = false;
+    bool waiting_record_spawn_delay = false;
 
     bool sample_pe_file_given = false;
 
@@ -389,6 +392,15 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (waiting_record_spawn_delay)
+        {
+            uint32_t val = _wtoi(a.c_str());
+            assert(val <= UINT32_MAX);
+            record_spawn_delay = val;
+            waiting_record_spawn_delay = false;
+            continue;
+        }
+
         if (waiting_dmc_idx)
         {
             int val = _wtoi(a.c_str());
@@ -477,6 +489,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--export_perf_data")
         {
             do_export_perf_data = true;
+            continue;
+        }
+
+        if (a == L"--record_spawn_delay")
+        {
+            waiting_record_spawn_delay = true;
             continue;
         }
 

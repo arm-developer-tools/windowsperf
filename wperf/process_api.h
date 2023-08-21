@@ -37,4 +37,4 @@
 
 DWORD FindProcess(std::wstring lpcszFileName);
 HMODULE GetModule(HANDLE pHandle, std::wstring pname);
-VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi);
+VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi, uint32_t delay);

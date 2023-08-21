@@ -83,6 +83,7 @@ public:
     double count_duration;
     double count_interval;
     int count_timeline;
+    uint32_t record_spawn_delay = 1000;
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
