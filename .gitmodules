@@ -1,0 +1,3 @@
+[submodule "wperf-scripts/tests/telemetry-solution"]
+	path = wperf-scripts/tests/telemetry-solution
+	url = https://gitlab.arm.com/telemetry-solution/telemetry-solution

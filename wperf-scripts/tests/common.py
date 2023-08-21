@@ -67,11 +67,12 @@ def get_schema(schema_name, test_path):
         json_schema = json.loads(file.read())
     return json_schema
 
-def run_command(args):
+def run_command(args, cwd = None):
     """ Run command and capture stdout and stderr for parsing. """
     process = subprocess.Popen(args,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         cwd=cwd)
     stdout, stderr = process.communicate()
     return stdout, stderr
 
