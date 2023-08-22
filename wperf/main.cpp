@@ -211,6 +211,38 @@ wmain(
 
             int counting_timeline_times = request.count_timeline;
 
+            // === Spawn counting process ===
+            bool do_count_process_spawn = request.sample_pe_file.size();
+            DWORD pid;
+            HANDLE process_handle = NULL;
+            PROCESS_INFORMATION pi;
+            ZeroMemory(&pi, sizeof(pi));
+            // === Spawn counting process ===
+
+            if (do_count_process_spawn)
+            {
+                if (request.cores_idx.size() > 1)
+                    throw fatal_exception("you can specify only one core for process spawn");
+
+                if (request.cores_idx[0] >= std::numeric_limits<DWORD_PTR>::digits)
+                    throw fatal_exception("Unsupported core index for 'stat' process spawn.");
+
+                SpawnProcess(request.sample_pe_file.c_str(), request.record_commandline.c_str(), &pi, request.record_spawn_delay);
+                pid = GetProcessId(pi.hProcess);
+                process_handle = pi.hProcess;
+
+                DWORD_PTR affinity_mask = 0;
+                for (auto core : request.cores_idx)
+                    affinity_mask |= 1ULL << core;
+
+                SetProcessAffinityMask(process_handle, affinity_mask);
+
+                if (request.do_verbose)
+                    m_out.GetOutputStream() << request.sample_pe_file << " pid is " << pid << std::endl;
+
+                process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+            }
+
             do
             {
                 pmu_device.reset(enable_bits);
@@ -226,12 +258,17 @@ wmain(
                 wchar_t progress_map[] = { L'/', L'|', L'\\', L'-' };
                 int64_t t_count1 = counting_duration_iter;
 
+                DWORD image_exit_code = 0;
                 while (t_count1 > 0 && no_ctrl_c)
                 {
                     m_out.GetOutputStream() << L'\b' << progress_map[progress_map_index % 4];
                     t_count1--;
                     Sleep(100);
                     progress_map_index++;
+
+                    if (GetExitCodeProcess(process_handle, &image_exit_code))
+                        if (image_exit_code != STILL_ACTIVE)
+                            break;
                 }
                 m_out.GetOutputStream() << L'\b' << "done\n";
 
@@ -302,7 +339,18 @@ wmain(
                     if (counting_timeline_times <= 0)
                         break;
                 }
+
+                if (image_exit_code != STILL_ACTIVE)
+                    break;
+
             } while (request.do_timeline && no_ctrl_c);
+
+            if (do_count_process_spawn)
+            {
+                TerminateProcess(pi.hProcess, 0);
+                CloseHandle(pi.hThread);
+                CloseHandle(process_handle);
+            }
         }
         else if (request.do_sample || request.do_record)
         {

@@ -630,7 +630,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if(do_record)
+        if (do_record || do_count)
         {
             /*If we can't recognize the token we assume the rest is just the command line for the program that the user wants to run*/
             waiting_commandline = true;
