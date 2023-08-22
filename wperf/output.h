@@ -532,6 +532,9 @@ struct WPerfSamplingJSON
     Modules m_modules_table;
     ModulesInfo m_modules_info_vector;
 
+    StringType m_pdb_file;
+    StringType m_pe_file;
+
     uint32_t m_sample_display_row = 0;
     uint64_t m_samples_generated = 0;
     uint64_t m_samples_dropped = 0;
@@ -547,6 +550,10 @@ struct WPerfSamplingJSON
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         {
             os << LITERALCONSTANTS_GET("\"sampling\": ") << LiteralConstants<CharType>::m_cbracket_open << std::endl;
+            os << LITERALCONSTANTS_GET("\"pe_file\": ") << LiteralConstants<CharType>::m_quotes <<  m_pe_file << LiteralConstants<CharType>::m_quotes;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LITERALCONSTANTS_GET("\"pdb_file\": ") << LiteralConstants<CharType>::m_quotes << m_pdb_file << LiteralConstants<CharType>::m_quotes;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"sample_display_row\": ") << m_sample_display_row;
             os << LiteralConstants<CharType>::m_comma << std::endl;
             os << LITERALCONSTANTS_GET("\"samples_generated\": ") << m_samples_generated;

@@ -4,8 +4,8 @@
     "properties": {
         "sampling": {
             "type": "object",
-            "required": [ "sample_display_row", "sample_generated", "sample_dropped" ],
-            "minProperties": 4,
+            "required": [ "sample_display_row", "sample_generated", "sample_dropped", "pe_file", "pdb_file" ],
+            "minProperties": 6,
             "additionalProperties": {
                 "type": "object",
                 "required": [ "samples", "interval", "printed_sample_num", "annotate" ],
@@ -58,6 +58,8 @@
             "properties": {
                 "sample_display_row": { "type": "integer" },
                 "samples_generated": { "type": "integer" },
+                "pe_file": { "type" : "string" },
+                "pdb_file": { "type" : "string" },
                 "samples_dropped": { "type": "integer" }
             }
         }

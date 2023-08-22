@@ -388,6 +388,9 @@ wmain(
             if (request.cores_idx.size() > 1)
                 throw fatal_exception("you can specify only one core for sampling");
 
+            m_globalSamplingJSON.m_pe_file = request.sample_pe_file;
+            m_globalSamplingJSON.m_pdb_file = request.sample_pdb_file;
+
             std::vector<SectionDesc> sec_info;          // List of sections in executable
             std::vector<FuncSymDesc> sym_info;
             std::vector<std::wstring> sec_import;       // List of DLL imported by executable
@@ -518,8 +521,9 @@ wmain(
                 if (ifile) {
                     PeFileMetaData pefile_metadata;
                     parse_pe_file(value.mod_path, pefile_metadata);
+                    pefile_metadata.pdb_file = pdb_path;
                     dll_metadata[value.mod_name] = pefile_metadata;
-
+                    
                     parse_pdb_file(pdb_path, value.sym_info, request.sample_display_short);
                     ifile.close();
                 }
@@ -536,6 +540,7 @@ wmain(
                     module_info_table.SetKey(key);
                     module_info_table.PresetHeaders();
                     module_info_table.InsertExtra(L"pe_name", value.pe_name);
+                    module_info_table.InsertExtra(L"pdb_file", value.pdb_file);
                     std::vector<GlobalStringType> col_name;
                     std::vector<uint64_t> col_offset, col_virtual_size;
                     for (auto& sec : value.sec_info)

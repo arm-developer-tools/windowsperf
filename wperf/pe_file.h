@@ -86,6 +86,7 @@ typedef struct
 typedef struct
 {
     std::wstring pe_name;
+    std::wstring pdb_file;
     uint64_t static_entry_point;
     uint64_t image_base;
     std::vector<SectionDesc> sec_info;
