@@ -721,3 +721,20 @@ IN above example:
 
 represents a set of samples which were coming from the single symbol `x_mul` originated in `python312_d.dll` DLL.
 Below hexadecimal values represent PC values which were sampled with corresponding sample count.
+
+## Using the `record` command
+
+The `record` command spawns the process and pins it to the core specified by the `-c` option. You can either use
+`--pe_file` to let WindowsPerf know which process to spawn or after all the options to WindowsPerf just type the command
+you would like to execute. For example:
+
+`> wperf record -e vfp_spec -c 1 --pe_file main.exe --timeout 1`
+
+or
+
+`> wperf record -e vfp_spec -c 1 --timeout 1 main.exe`
+
+If you want to pass command line arguments to your application you can just call it after all WindowsPerf options, all command line arguments are going to be passed
+verbatim to the program that is being spawned. If you want to execute the CPython example above using this approach you could just type:
+
+`> wperf record -e ld_spec:100000 -c 1 --timeout 30 python_d.exe -c 10**10**1000`

@@ -50,6 +50,9 @@ usage: wperf [options]
     stat                   Count events.If - e is not specified, then count default events.
     test                   Configuration information about driver and application confituration.
     sample                 Sample events. If -e is not specified, cycle counter will be the default sample source
+    record                 Same as sample but also automatically spawns the process and pins it to the core specified by '-c'. 
+                           You can define the process to spawn via '--pe_file' or use the end of the command line to write the command.
+                           All command line arguments afterwards are passed verbatim to the command.
     -e e1, e2...           Specify events to count.Event eN could be a symbolic name or in raw number.
                            Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
                            XXXX is hex value of the number without '0x' prefix.
