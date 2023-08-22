@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define MAX_DEVPATH_LENGTH              256
+#define MAX_MODULES                     1024
 
 BOOL
 GetDevicePath(

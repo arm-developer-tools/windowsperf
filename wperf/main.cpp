@@ -359,7 +359,8 @@ wmain(
             std::map<std::wstring, PeFileMetaData> dll_metadata;        // [pe_name] -> PeFileMetaData
             std::map<std::wstring, ModuleMetaData> modules_metadata;    // [mod_name] -> ModuleMetaData
 
-            HMODULE hMods[1024];
+            const size_t hMods_size = sizeof(HMODULE) * MAX_MODULES;
+            auto hMods = std::make_unique<HMODULE[]>(MAX_MODULES);     // HMODULE hMods[1024];
             DWORD cbNeeded;
             DWORD pid;
             HANDLE process_handle;
@@ -403,7 +404,7 @@ wmain(
                 perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, request.sample_image_name);
             }
 
-            if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
+            if (EnumProcessModules(process_handle, hMods.get(), hMods_size, &cbNeeded))
             {
                 for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
                 {
