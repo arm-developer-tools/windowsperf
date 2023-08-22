@@ -218,7 +218,6 @@ wmain(
             PROCESS_INFORMATION pi;
             ZeroMemory(&pi, sizeof(pi));
             // === Spawn counting process ===
-
             if (do_count_process_spawn)
             {
                 if (request.cores_idx.size() > 1)
@@ -266,7 +265,7 @@ wmain(
                     Sleep(100);
                     progress_map_index++;
 
-                    if (GetExitCodeProcess(process_handle, &image_exit_code))
+                    if (do_count_process_spawn && GetExitCodeProcess(process_handle, &image_exit_code))
                         if (image_exit_code != STILL_ACTIVE)
                             break;
                 }
@@ -340,7 +339,7 @@ wmain(
                         break;
                 }
 
-                if (image_exit_code != STILL_ACTIVE)
+                if (do_count_process_spawn && image_exit_code != STILL_ACTIVE)
                     break;
 
             } while (request.do_timeline && no_ctrl_c);
