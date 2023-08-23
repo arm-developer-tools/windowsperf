@@ -1907,13 +1907,15 @@ WindowsPerfDeviceCreate(
 #endif
 
     // 2) Alloc PMU counters that are free
-    size_t AllocationSize = sizeof(PHYSICAL_COUNTER_RESOURCE_LIST) + (sizeof(PHYSICAL_COUNTER_RESOURCE_DESCRIPTOR) * numGPC);
+    size_t AllocationSize = FIELD_OFFSET(PHYSICAL_COUNTER_RESOURCE_LIST, Descriptors[numFreeCounters]);
     PPHYSICAL_COUNTER_RESOURCE_LIST CounterResourceList = (PPHYSICAL_COUNTER_RESOURCE_LIST)ExAllocatePool2(POOL_FLAG_NON_PAGED, AllocationSize, 'CRCL');
     if (CounterResourceList == NULL)
     {
         KdPrint(("ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
+    RtlSecureZeroMemory(CounterResourceList, AllocationSize);
+    CounterResourceList->Count = numFreeCounters;
     for (UINT32 i = 0; i < numFreeCounters; i++)
     {
         CounterResourceList->Descriptors[i].u.CounterIndex = counter_idx_map[i];
