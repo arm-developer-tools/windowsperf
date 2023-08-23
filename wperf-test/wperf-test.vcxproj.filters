@@ -51,6 +51,9 @@
     <ClCompile Include="wperf-test-config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="wperf-test-output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">

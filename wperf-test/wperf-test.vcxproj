@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="Project/urations">
     <ProjectConfiguration Include="Debug|ARM64EC">
@@ -279,6 +279,7 @@
     <ClCompile Include="wperf-test-config.cpp" />
     <ClCompile Include="wperf-test-events.cpp" />
     <ClCompile Include="wperf-test-metric.cpp" />
+    <ClCompile Include="wperf-test-output.cpp" />
     <ClCompile Include="wperf-test-padding.cpp" />
     <ClCompile Include="wperf-test-parsers.cpp" />
     <ClCompile Include="wperf-test-pe_file.cpp" />

@@ -693,17 +693,35 @@ struct OutputControl
         }
     }
 
+    StringType EscapeStr(StringType& str)
+    {
+        StringType res = LITERALCONSTANTS_GET("");
+        StringType::size_type n = str.find('\\');
+        StringType::size_type lastn = 0;
+
+        while (n != StringType::npos)
+        {
+            res += str.substr(lastn, n - lastn) + LITERALCONSTANTS_GET("\\");
+            lastn = n;
+            n = str.find(L'\\', lastn + 1);
+        }
+        res += str.substr(lastn, str.size() - lastn);
+        return res;
+    }
+
     void Print_(StringType& str)
     {
+        StringType eStr = str;
         bool curIsQuiet = m_isQuiet;
         //If the user requested to be quiet but to output JSON results we disable quiet mode just
         //to output the JSON tables and then reenable it afterwards.
         if ((m_outputType == TableType::JSON || m_outputType == TableType::ALL) && m_isQuiet)
         {
             m_isQuiet = false;
+            eStr = EscapeStr(str);
         }
 
-        GetOutputStream() << str;
+        GetOutputStream() << eStr;
 
         if ((m_outputType == TableType::JSON || m_outputType == TableType::ALL) && curIsQuiet)
         {
@@ -717,7 +735,7 @@ struct OutputControl
         file.open(m_filename, std::fstream::out | std::fstream::trunc);
         if (file.is_open())
         {
-            file << str;
+            file << EscapeStr(str);
             file.close();
         }
         else {
