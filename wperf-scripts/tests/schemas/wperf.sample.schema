@@ -4,13 +4,13 @@
     "properties": {
         "sampling": {
             "type": "object",
-            "required": [ "sample_display_row", "sample_generated", "sample_dropped", "pe_file", "pdb_file" ],
-            "minProperties": 6,
+            "required": [ "sample_display_row", "samples_generated", "samples_dropped", "pe_file", "pdb_file" ],
+            "minProperties": 5,
             "additionalProperties": {
                 "type": "object",
                 "required": [ "samples", "interval", "printed_sample_num", "annotate" ],
-                "minProperties": 3,
-                "maxProperties": 3,
+                "minProperties": 4,
+                "maxProperties": 5,
                 "properties": {
                     "samples": {
                         "type": "array",
@@ -51,16 +51,65 @@
 
                         },
                     },
+                    "pcs": {  
+                      "type": "array",                      
+                      "items": {
+                        "type": "object",
+                        "required": [ "address", "count" ],
+                      	"properties": {
+                        	"address": { "type" : "integer" },
+                        	"count": { "type": "integer" }
+                        }
+                      },
+                    },
                     "interval": { "type": "integer" },
                     "printed_sample_num": { "type": "integer" }
                 }
             },
             "properties": {
+                "base_address" : { "type": "integer" },
+                "runtime_delta" : { "type": "integer" },
                 "sample_display_row": { "type": "integer" },
                 "samples_generated": { "type": "integer" },
                 "pe_file": { "type" : "string" },
                 "pdb_file": { "type" : "string" },
-                "samples_dropped": { "type": "integer" }
+                "samples_dropped": { "type": "integer" },
+                "modules": {
+                  	"type": "array",
+                    "items": {
+                    	"type": "object",
+                        "required": ["name", "address", "path"],
+                        "properties": {
+                          "name" : { "type": "string" },
+                          "address": { "type": "integer" },
+                          "path": { "type": "string" },
+                        }
+                    }
+                },
+                "modules_info": { 
+                	"type" : "array",
+                    "items": {
+                      "type": "object",
+                      "required": [ "pdb_file", "pe_name" ],
+                      "properties": {
+                        "pdb_file": { "type": "string" },
+                        "pe_name": { "type": "string" }
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [ "section", "offset", "virtual_size" ],
+                          "properties": {
+                           	"section": { "type" : "string" },
+                            "offset": { "type": "integer" },
+                            "virtual_size": { "type" : "integer" }
+                              
+                          }
+                        }
+                      }
+                    }
+                }
             }
         }
     }
