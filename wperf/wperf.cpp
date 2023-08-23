@@ -77,7 +77,7 @@ GetDevicePath(
     if (deviceInterfaceListLength <= 1) {
         bRet = FALSE;
         WindowsPerfDbgPrint("Error: No active device interfaces found.\n"
-                            "       Is the sample driver loaded?");
+                            "       Is the driver loaded? You can get the latest driver from https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases");
         goto clean0;
     }
 
