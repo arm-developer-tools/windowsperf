@@ -144,7 +144,7 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
 
         cores_str = str()
         for C in range(0, N_CORES):
-            for i in range(0, gpc_num + 1):
+            for _ in range(0, gpc_num + 1):
                 cores_str += f"core {C},"
 
         assert cvs.count(cores_str) == 1

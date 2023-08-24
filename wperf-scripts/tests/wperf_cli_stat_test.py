@@ -228,7 +228,7 @@ def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_pat
         cmd += ['sleep', str(sleep)]
 
     cmd += ['--output', str(file_path)]
-    stdout, _ = run_command(cmd)
+    _, _ = run_command(cmd)
     try:
         f = open(file_path)
         json = f.read()
