@@ -51,7 +51,7 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
         cmd_type = "test"
     elif "stat" in scheme_name:
         cmd_type = "stat -e cpu_cycles sleep 1"
-    cmd = 'wperf {} --output {}'.format(cmd_type, str(file_path))
+    cmd = f'wperf {cmd_type} --output {file_path}'
     stdout, _ = run_command(cmd.split())
 
     with open(str(file_path)) as json_file:

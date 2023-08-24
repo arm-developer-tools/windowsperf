@@ -49,7 +49,7 @@ import pytest
 )
 def test_wperf_config_set_count_period(period):
     """ Test one event, no multiplexing """
-    cmd = 'wperf test --json --config count.period=%d' % period
+    cmd = f'wperf test --json --config count.period={period}'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 

@@ -77,7 +77,7 @@ def test_wperf_timeline_system_n3():
 )
 def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
     """ Test timeline (core X) file format output.  """
-    cmd = 'wperf stat -m imix -c %s -t -i 1 -n %s -v sleep %s' % (C, N, SLEEP)
+    cmd = f'wperf stat -m imix -c {C} -t -i 1 -n {N} -v sleep {SLEEP}'
     stdout, _ = run_command(cmd.split())
 
     json_output = wperf_test_no_params()      # get output from `wperf test`
@@ -101,7 +101,7 @@ def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
         assert cvs.count("Count interval,1.00") == 1
         assert cvs.count("Event class,core") == 1
         assert cvs.count("cycle,inst_spec,dp_spec,vfp_spec,") == 1  # This should be checked dynamically
-        assert cvs.count("core %s," % (C)) == gpc_num + 1  # +1 for cycle fixed counter
+        assert cvs.count(f"core {C},") == gpc_num + 1  # +1 for cycle fixed counter
 
         # Find lines with counter values, e.g.. 80182394,86203106,38111732,89739,61892,20932002,
         pattern = r'([0-9]+,){%s}\n' % (gpc_num + 1)
@@ -115,7 +115,7 @@ def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
 )
 def test_wperf_timeline_system_n_file_output(N, SLEEP):
     """ Test timeline (system - all cores) file format output.  """
-    cmd = 'wperf stat -m imix -t -i 1 -n %s -v sleep %s' % (N, SLEEP)
+    cmd = f'wperf stat -m imix -t -i 1 -n {N} -v sleep {SLEEP}'
     stdout, _ = run_command(cmd.split())
 
     json_output = wperf_test_no_params()      # get output from `wperf test`
@@ -145,7 +145,7 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
         cores_str = str()
         for C in range(0, N_CORES):
             for i in range(0, gpc_num + 1):
-                cores_str += "core %s," % (C)
+                cores_str += f"core {C},"
 
         assert cvs.count(cores_str) == 1
 
@@ -164,7 +164,7 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
 )
 def test_wperf_timeline_core_file_output_multiplexing(N, SLEEP,KERNEL_MODE,EVENTS):
     """ Test timeline (system - all cores) with multiplexing.  """
-    cmd = 'wperf stat -e %s -t -i 1 -n %s sleep %s -v' % (EVENTS, N, SLEEP)
+    cmd = f'wperf stat -e {EVENTS} -t -i 1 -n {N} sleep {SLEEP} -v'
     if (KERNEL_MODE):
         cmd += ' -k'
 
@@ -210,7 +210,7 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
             pytest.skip("unsupported metric: " + metric)
             return
 
-    cmd = 'wperf stat -m %s -t -i 1 -n %s -c %s sleep 1 -v' % (METRICS, N, C)
+    cmd = f'wperf stat -m {METRICS} -t -i 1 -n {N} -c {C} sleep 1 -v'
     stdout, _ = run_command(cmd.split())
 
     COLS = int()    # How many columns are in this timeline (events + metrics)
@@ -236,7 +236,7 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
     for metric in METRICS.split(","):
         expected_events_header += "M@" + metric + ","   # Metrics start with "M@<metric_name>"
 
-    expected_cores = ("core %d" % (C) + ",") * COLS
+    expected_cores = (f"core {C},") * COLS
 
     with open(cvs_files[0], 'r') as file:
         cvs = file.read()

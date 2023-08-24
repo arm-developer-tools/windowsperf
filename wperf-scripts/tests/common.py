@@ -63,7 +63,7 @@ def is_json(str_to_test):
 
 def get_schema(schema_name, test_path):
     """ Get JSON Object for schema with name `schema_name` """
-    with open("{}/schemas/wperf.{}.schema".format(test_path, schema_name)) as file:
+    with open(f"{test_path}/schemas/wperf.{schema_name}.schema") as file:
         json_schema = json.loads(file.read())
     return json_schema
 

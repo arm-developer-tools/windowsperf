@@ -246,7 +246,7 @@ def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_pat
 ]
 )
 def test_wperf_stat_K_flag(flag,core):
-    cmd = 'wperf stat -m imix -c %d %s --timeout 1' % (core, flag)
+    cmd = f'wperf stat -m imix -c {core} {flag} --timeout 1'
     stdout, _ = run_command(cmd.split())
 
     ## "included," vs "excluded,"
@@ -267,7 +267,7 @@ def test_wperf_stat_K_flag(flag,core):
 ]
 )
 def test_wperf_stat_K_flag_json(flag,core):
-    cmd = 'wperf stat -m imix -c %d %s --timeout 1 --json' % (core, flag)
+    cmd = f'wperf stat -m imix -c {core} {flag} --timeout 1 --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
 
@@ -276,7 +276,7 @@ def test_wperf_stat_K_flag_json(flag,core):
     assert "core" in json_output
     assert "Kernel_mode" in json_output["core"]     # Check if kernel mode flag is present
     assert "Multiplexing" in json_output["core"]    # sanity check (no multiplexing this time
-    assert "%d" % core in json_output["core"]       # sanity check
+    assert f"{core}" in json_output["core"]       # sanity check
 
     assert json_output["core"]["Kernel_mode"] == bool(flag) #   bool("") ==> False, bool("-k") ==> True
     assert json_output["core"]["Multiplexing"] == False
