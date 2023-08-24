@@ -49,7 +49,7 @@ This is ustress test bench build script. It contains all functions needed to:
   * Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
   * install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
 
---- 
+---
 
 See configuration needed to build those tests:
 > %comspec% /k "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
@@ -77,8 +77,10 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 
 """
 
+import csv
 import os
 import re
+from statistics import median
 from common import run_command
 from common import wperf_test_no_params, get_result_from_test_results
 
@@ -119,7 +121,7 @@ _product_name = get_product_name()
 _product_name_cpus = get_make_CPU_name(_product_name)
 
 if _product_name_cpus not in _cpus:
-    pytest.skip("skipping as ustress do not support CPU=%s" % (_product_name_cpus), allow_module_level=True)
+    pytest.skip(f'skipping as ustress do not support CPU={_product_name_cpus}' % (), allow_module_level=True)
 
 
 def test_ustress_bench_compatibility_tests():
@@ -173,8 +175,7 @@ def test_ustress_bench_build_ustress__make_cpu():
     ### Build ustress for this platform
     product_name = get_product_name()
     CPU = get_make_CPU_name(product_name)
-    stdout, _ = run_command("make CPU=%s" % (CPU), TS_USTRESS_DIR)   # Build all tests
-    print (stdout)
+    stdout, _ = run_command(f"make CPU={CPU}", TS_USTRESS_DIR)   # Build all tests
 
     # Build sanity checks, e.g.:
     # clang -std=c11 -O2 -g -Wall -pedantic -DCPU_NEOVERSE_N1  --target=arm64-pc-windows-msvc -o branch_direct_workload.exe branch_direct_workload.c
@@ -183,3 +184,74 @@ def test_ustress_bench_build_ustress__make_cpu():
     assert targets > 0
     assert dcpus > 0
     assert targets == dcpus
+
+
+################################################################################################
+#      Below are micro-benchmarks which we will execute and check timeline (metric output)
+################################################################################################
+
+def get_metric_values(cvs_file_path, metric):
+    """ Return list of values from timeline CVS file (for one core only). """
+    result = []
+    metric_column = "M@" + metric   # This is how we encode metric column in CVS timeline file
+
+    with open(cvs_file_path, newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+
+        """ Example 'row'(s):
+            ['core', '1,core', '1,core', '1,core', '1,']
+            ['cycle,l1d_cache,l1d_cache_refill,M@l1d_cache_miss_ratio,']
+            ['163757124,46340967,2007747,0.043,']
+            ['77863232,31287908,780320,0.025,']
+            ['34097420,8487530,356686,0.042,']
+            ['41752921,9459244,411182,0.043,']
+            ['54506416,17393294,576923,0.033,']
+        """
+        metric_col_index = -1       # Nothing found yet ( < 0 )
+        for row in spamreader:
+            if metric_col_index >= 0 and len(row) > metric_col_index:
+                val = float(row[metric_col_index])
+                result.append(val)
+
+            # Find row with event names and metric(s) names
+            # Below you will find rows with event count and metric values
+            if metric_column in row:
+                metric_col_index = row.index(metric_column)
+
+    return result
+
+@pytest.mark.parametrize("core,N,I,metric,benchmark,param,threshold ",
+[
+    (7, 5, 1, "l1d_cache_miss_ratio", "l1d_cache_workload.exe", 10, 0.91),
+]
+)
+def test_ustress_execute_micro_benchmark(core,N,I,metric,benchmark,param,threshold):
+    r""" Execute 'telemetry-solution\tools\ustress\<NAME> <PARAM>' and measure timeline's <METRIC>.
+        Note: This function only works for CSV timeline files with ONE metric calculated (on one core)
+
+        <CORE>      - CPU number to count on (and spawn micro-benchmark process)
+        <N>         - how many times count in timeline
+        <I>         - interval between counts (in seconds)
+        <METRIC>    - name of metric to check (and read from CSV file)
+        <BENCHMARK> - micro-benchmark to execute
+        <PARAM>     - micro-benchmark command line parameter, in ustress case a benchmark execution in seconds (approx.)
+        <THRESHOLD> - median of all metric measurements must be above this value or test fails
+    """
+
+    ## Execute benchmark
+    benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
+    stdout, _ = run_command(f"wperf stat -v -c {core} -m {metric} -t -n {N} -i {I} --timeout 1 {benchmark_path} {param}")
+
+    # Get timeline CVS filename from stdout (we get this with `-v`)
+    cvs_files = re.findall(rb'wperf_core_%s[a-z0-9_.]+' % (str.encode(str(core))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
+    assert len(cvs_files) == 1
+
+    metric_values = get_metric_values(cvs_files[0], metric)
+    med = median(metric_values)
+
+    assert len(metric_values) == N      # We should get <N> rows in CSV file with metric values
+
+    if not med >= threshold:
+        pytest.skip(f"{benchmark} metric '{metric}' median {med} < {threshold} -- threshold not reached")
+
+    assert med >= threshold             # Check if median is above threshold
