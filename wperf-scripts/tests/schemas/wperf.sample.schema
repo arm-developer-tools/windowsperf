@@ -4,69 +4,73 @@
     "properties": {
         "sampling": {
             "type": "object",
-            "required": [ "sample_display_row", "samples_generated", "samples_dropped", "pe_file", "pdb_file" ],
+            "required": [ "sample_display_row", "samples_generated", "samples_dropped", "pe_file", "pdb_file", "events" ],
             "minProperties": 5,
-            "additionalProperties": {
-                "type": "object",
-                "required": [ "samples", "interval", "printed_sample_num", "annotate" ],
-                "minProperties": 4,
-                "maxProperties": 5,
-                "properties": {
-                    "samples": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "required": ["count", "overhead", "symbol"],
-                            "additionalProperties": false,
-                            "properties": {
-                                "count": { "type": "integer"},
-                                "overhead": { "type": "number" },
-                                "symbol": { "type": "string" }
-                            }
-                        },
-                    },
-                    "annotate": {
-                        "type": "array",
-                        "items" : {
-                            "type": "object",
-                            "required": ["function_name", "source_code"],
-                            "additionalProperties": false,
-                            "properties": {
-                                "function_name": { "type": "string" },
-                                "source_code": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "required": ["filename", "line_number", "hits"],
-                                        "additionalProperties": false,
-                                        "properties": {
-                                            "filename": { "type": "string" },
-                                            "line_number": { "type": "integer" },
-                                            "hits": { "type": "integer" }
-                                        }
-                                    }
-                                }
-
-                            }
-
-                        },
-                    },
-                    "pcs": {  
-                      "type": "array",                      
-                      "items": {
-                        "type": "object",
-                        "required": [ "address", "count" ],
-                      	"properties": {
-                        	"address": { "type" : "integer" },
-                        	"count": { "type": "integer" }
-                        }
-                      },
-                    },
-                    "interval": { "type": "integer" },
-                    "printed_sample_num": { "type": "integer" }
-                }
-            },
             "properties": {
+              "events": {
+                	"type" : "array",
+                     "items": {
+                        "type": "object",
+                        "required": [ "type", "samples", "interval", "printed_sample_num", "annotate" ],
+                        "minProperties": 4,
+                        "maxProperties": 6,
+                        "properties": {
+                          	"type": { "type" : "string" },
+                            "samples": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": ["count", "overhead", "symbol"],
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "count": { "type": "integer"},
+                                        "overhead": { "type": "number" },
+                                        "symbol": { "type": "string" }
+                                    }
+                                },
+                            },
+                            "annotate": {
+                                "type": "array",
+                                "items" : {
+                                    "type": "object",
+                                    "required": ["function_name", "source_code"],
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "function_name": { "type": "string" },
+                                        "source_code": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": ["filename", "line_number", "hits"],
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "filename": { "type": "string" },
+                                                    "line_number": { "type": "integer" },
+                                                    "hits": { "type": "integer" }
+                                                }
+                                            }
+                                        }
+
+                                    }
+
+                                },
+                            },
+                            "pcs": {  
+                            "type": "array",                      
+                            "items": {
+                                "type": "object",
+                                "required": [ "address", "count" ],
+                                "properties": {
+                                    "address": { "type" : "integer" },
+                                    "count": { "type": "integer" }
+                                }
+                            },
+                            },
+                            "interval": { "type": "integer" },
+                            "printed_sample_num": { "type": "integer" }
+                        }
+                    }
+              	},
                 "base_address" : { "type": "integer" },
                 "runtime_delta" : { "type": "integer" },
                 "sample_display_row": { "type": "integer" },

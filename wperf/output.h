@@ -586,6 +586,8 @@ struct WPerfSamplingJSON
                 os << LiteralConstants<CharType>::m_bracket_close;                
                 os << LiteralConstants<CharType>::m_comma << std::endl;
             }
+            
+            os << LITERALCONSTANTS_GET("\"events\": [");
 
             bool isFirst = true;
             for (auto& [key,value] : m_map)
@@ -598,11 +600,12 @@ struct WPerfSamplingJSON
                     isFirst = false;
                 }
 
+                os << LITERALCONSTANTS_GET("{\"type\":");
                 std::get<0>(value).m_tableJSON.m_isEmbedded = true;
 
                 os << LiteralConstants<CharType>::m_quotes << key << LiteralConstants<CharType>::m_quotes;
-                os << LiteralConstants<CharType>::m_colon;
-                os << LiteralConstants<CharType>::m_cbracket_open;
+                os << LiteralConstants<CharType>::m_comma;
+
                 os << std::get<0>(value).Print(jsonType).str();
                 os << LiteralConstants<CharType>::m_comma << std::endl;
                 if (m_verbose)
@@ -635,6 +638,7 @@ struct WPerfSamplingJSON
                 os << LiteralConstants<CharType>::m_bracket_close;
                 os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
             }
+            os << LiteralConstants<CharType>::m_bracket_close;
             os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
         }
         os << LiteralConstants<CharType>::m_cbracket_close;
