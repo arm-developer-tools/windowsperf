@@ -535,9 +535,9 @@ wmain(
                 {
                     m_out.GetOutputStream() << std::setw(32) << key
                         << L"          " << value.pe_name << std::endl;
-                    TableOutput<SamplingModuleInfoOutputTraits<GlobalCharType>, GlobalCharType> module_info_table(m_outputType);
-                    module_info_table.SetKey(key);
+                    TableOutput<SamplingModuleInfoOutputTraits<GlobalCharType>, GlobalCharType> module_info_table(m_outputType);                    
                     module_info_table.PresetHeaders();
+                    module_info_table.InsertExtra(L"module", key);
                     module_info_table.InsertExtra(L"pe_name", value.pe_name);
                     module_info_table.InsertExtra(L"pdb_file", value.pdb_file);
                     std::vector<GlobalStringType> col_name;

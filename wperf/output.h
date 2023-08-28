@@ -253,7 +253,7 @@ struct SamplingModuleInfoOutputTraits : public TableOutputTraits<CharType>
             LITERALCONSTANTS_GET("offset"),
             LITERALCONSTANTS_GET("virtual_size"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
-    inline const static CharType* key = LITERALCONSTANTS_GET("modules_info");
+    inline const static CharType* key = LITERALCONSTANTS_GET("sections");
 };
 
 enum TableType
