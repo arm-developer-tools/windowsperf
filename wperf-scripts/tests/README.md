@@ -4,7 +4,7 @@
 
 # Introduction
 
-This set of Python scripts is using [pyest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md).
+This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md).
 
 ## Testing prerequisites
 
@@ -16,53 +16,57 @@ This set of Python scripts is using [pyest](https://docs.pytest.org/) library to
 * [wperf](../../wperf/README.md) application must be present in the same directory as tests or be on system environment PATH.
 * To test if `wperf` JSON output is valid test directory must contain `schemes/` sub-directory.
   * Note: if `schemas` directory is missing JSON output tests will fail (and not skipped).
+* Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` sub-module is pulled with git.
+
+### ustress framework test bench
+
+We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests?ref_type=heads). It allow users to build, execute `ustress` micro-benchmarks and track with timeline specified metrics.
+
+Tests in [wperf_cli_ustress_bench_test.py](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/wperf_cli_ustress_bench_test.py?ref_type=heads) require also:
+
+* `[vcvarsall.bat] Environment initialized for: 'arm64'.
+* GNU Make 3.81.
+* clang targeting `aarch64-pc-windows-msvc`.
+
+See:
+* [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
+* !327+, !330+ and !339+.
 
 ## Testing directory structure
 
 In below test directory we've added locally `wperf.exe`.
 
+### Go to regression test directory
+
 ```
-C:\example\of\functional\testing> tree /f
-│   common.py
-│   wperf_cli_common_test.py
-|   wperf_cli_config_test.py
-|   wperf_cli_extra_events_test.py
-│   wperf_cli_json_validator_test.py
-│   wperf_cli_list_test.py
-│   wperf_cli_metrics_test.py
-│   wperf_cli_padding_test.py
-│   wperf_cli_stat_test.py
-│   wperf_cli_test_test.py
-|   wperf_cli_timeline_test.py
-|   wperf_lib_app_test.py
-│   wperf.exe
-│
-└───schemas
-        wperf.list.schema
-        wperf.sample.schema
-        wperf.stat.schema
-        wperf.test.schema
-        wperf.version.schema
+> cd windowsperf\wperf-scripts\tests
 ```
 
 ### Test execution
 
-In directory `C:\example\of\functional\testing` from above example type `pytest`:
-
 ```
 >pytest
-================================================= test session starts =================================================
+=============================== test session starts ===============================
 platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
-rootdir: C:\example\of\functional\testing
-collected 71 items
+rootdir: C:\windowsperf\wperf-scripts\tests, configfile: pytest.ini
+collected 140 items
 
-wperf_cli_common_test.py ....                                                                                    [  5%]
-wperf_cli_json_validator_test.py ....                                                                            [ 11%]
-wperf_cli_list_test.py ...                                                                                       [ 15%]
-wperf_cli_metrics_test.py ........                                                                               [ 26%]
-wperf_cli_padding_test.py .........                                                                              [ 39%]
-wperf_cli_stat_test.py .......................................                                                   [ 94%]
-wperf_cli_test_test.py ....                                                                                      [100%]
+wperf_cli_common_test.py ....                                                [  2%]
+wperf_cli_config_test.py .....                                               [  6%]
+wperf_cli_extra_events_test.py ....                                          [  9%]
+wperf_cli_info_str_test.py .                                                 [ 10%]
+wperf_cli_json_validator_test.py ....                                        [ 12%]
+wperf_cli_list_test.py .....                                                 [ 16%]
+wperf_cli_metrics_test.py ................                                   [ 27%]
+wperf_cli_padding_test.py ...........                                        [ 35%]
+wperf_cli_record_test.py ..............                                      [ 45%]
+wperf_cli_stat_test.py ...................................................   [ 82%]
+wperf_cli_test_test.py .....                                                 [ 85%]
+wperf_cli_timeline_test.py ..............                                    [ 95%]
+wperf_cli_ustress_bench_test.py .....                                        [ 99%]
+wperf_lib_app_test.py s                                                      [100%]
 
-=========================================== 71 passed in 162.97s (0:02:42) ============================================
+============================= short test summary info =============================
+SKIPPED [1] wperf_lib_app_test.py:44: Can not run wperf-lib-app.exe
+================= 139 passed, 1 skipped in 236.35s (0:03:56) ======================
 ```
