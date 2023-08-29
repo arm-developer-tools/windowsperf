@@ -83,6 +83,7 @@ import re
 from statistics import median
 from common import run_command
 from common import wperf_test_no_params, get_result_from_test_results
+from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 
 import pytest
 
@@ -95,28 +96,8 @@ TS_USTRESS_HEADER = os.path.join(TS_USTRESS_DIR, "cpuinfo.h")
 
 ### Test cases
 
-
-def get_product_name():
-    """ Get `product_name` form `wperf test` command. """
-    json_wperf_test = wperf_test_no_params()
-    return get_result_from_test_results(json_wperf_test, "pmu_device.product_name")    # e.g. "armv8-a" or "neoverse-n1"
-
-def get_make_CPU_name(product_name):
-    """ Get CPU name used in Makefile for ustress. """
-    product_name = product_name.replace('-', '_').upper()
-    return product_name
-
-def get_CPUs_supported_by_ustress():
-    """ Get list of CPUs supported by ustress. """
-    cpus = []
-    with open(TS_USTRESS_HEADER) as couinfo_h:
-        cpuinfo_header = couinfo_h.read()
-        cpus = re.findall(r'defined\(CPU_([A-Z0-9_]+)\)', cpuinfo_header)    # E.g. ['NEOVERSE_V1', 'NEOVERSE_N1', 'NEOVERSE_N2', 'NONE']
-    return cpus
-
-
 # Skip whole module if ustress is not supported by this CPU
-_cpus = get_CPUs_supported_by_ustress()
+_cpus = get_CPUs_supported_by_ustress(TS_USTRESS_HEADER)
 _product_name = get_product_name()
 _product_name_cpus = get_make_CPU_name(_product_name)
 
@@ -134,7 +115,7 @@ def test_ustress_bench_compatibility_tests():
     assert os.path.isdir(TS_USTRESS_DIR)
 
     ### Check type of CPU is supported and get CPU list from header file
-    cpus = get_CPUs_supported_by_ustress()
+    cpus = get_CPUs_supported_by_ustress(TS_USTRESS_HEADER)
     assert len(cpus) > 0
 
     ### Check product name of HW we are now on, it must be supported by ustress

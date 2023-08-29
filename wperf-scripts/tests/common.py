@@ -33,6 +33,7 @@
 import json
 import subprocess
 import os
+import re
 
 ### Common test runner code
 
@@ -77,6 +78,7 @@ def run_command(args, cwd = None):
     return stdout, stderr
 
 def check_if_file_exists(filename):
+    """ Return True if FILENAME exists. """
     return os.path.isfile(filename)
 
 def wperf_list():
@@ -90,8 +92,8 @@ def wperf_list():
 def wperf_metric_is_available(metric):
     """ Check if given `metric` is available """
     json_output = wperf_list()
-    for m in json_output["Predefined_Metrics"]:
-        if metric == m["Metric"]:
+    for metrics in json_output["Predefined_Metrics"]:
+        if metric == metrics["Metric"]:
             return True
     return False
 
@@ -99,9 +101,9 @@ def wperf_metric_is_available(metric):
 def wperf_metric_events(metric):
     """ Return list of events for given `metric` """
     json_output = wperf_list()
-    for m in json_output["Predefined_Metrics"]:
-        if metric == m["Metric"]:
-            return m["Events"]
+    for metrics in json_output["Predefined_Metrics"]:
+        if metric == metrics["Metric"]:
+            return metrics["Events"]
     return None
 
 def get_result_from_test_results(j, Test_Name):
@@ -117,3 +119,21 @@ def wperf_test_no_params():
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
     return json_output
+
+def get_product_name():
+    """ Get `product_name` form `wperf test` command. """
+    json_wperf_test = wperf_test_no_params()
+    return get_result_from_test_results(json_wperf_test, "pmu_device.product_name")    # e.g. "armv8-a" or "neoverse-n1"
+
+def get_make_CPU_name(product_name):
+    """ Get CPU name used in Makefile for ustress. """
+    product_name = product_name.replace('-', '_').upper()
+    return product_name
+
+def get_CPUs_supported_by_ustress(ts_ustress_header):
+    """ Get list of CPUs supported by ustress. """
+    cpus = []
+    with open(ts_ustress_header) as couinfo_h:
+        cpuinfo_header = couinfo_h.read()
+        cpus = re.findall(r'defined\(CPU_([A-Z0-9_]+)\)', cpuinfo_header)    # E.g. ['NEOVERSE_V1', 'NEOVERSE_N1', 'NEOVERSE_N2', 'NONE']
+    return cpus
