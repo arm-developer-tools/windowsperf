@@ -310,6 +310,7 @@ private:
 	/// <returns>Length of longest column cell in Column</returns>
 	size_t GetColumnMaxWidth(std::vector<StringType> Column)
 	{
+		if (Column.empty()) return 0;
 		auto max_len = std::max_element(Column.begin(), Column.end(), [](PrettyTable<CharType>::StringType a, PrettyTable<CharType>::StringType b) {
 			return a.length() < b.length();
 			});
