@@ -148,3 +148,141 @@ VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_I
         throw fatal_exception("Process took too long to spawn");
     }
 }
+
+std::vector<DWORD> EnumerateThreads(DWORD pid)
+{
+    std::vector<DWORD> thread_ids;
+    // TH32CS_SNAPTHREAD return all threads for all pids so we have to filter manually
+    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (h != INVALID_HANDLE_VALUE) {
+        THREADENTRY32 te{ 0 };
+        te.dwSize = sizeof(te);
+        if (Thread32First(h, &te)) {
+            do {
+                if (te.dwSize >= 
+                    FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
+                {
+                    if(te.th32OwnerProcessID == pid)
+                    {
+                        thread_ids.push_back(te.th32ThreadID);
+                    }
+                }
+                te.dwSize = sizeof(te);
+            } while (Thread32Next(h, &te));
+        }
+        CloseHandle(h);
+    }
+    return thread_ids;
+};
+
+VOID GetHardwareInfo(HardwareInformation& hinfo)
+{
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buffer = NULL;
+    DWORD returnLength = 0;
+    
+    GetLogicalProcessorInformationEx(RelationAll, buffer, &returnLength);
+    auto buffer_raw = std::make_unique<char[]>(returnLength);
+
+    if (!GetLogicalProcessorInformationEx(RelationAll, reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(buffer_raw.get()), &returnLength))
+    {
+        throw fatal_exception("Error getting logical processor information");
+    }
+
+    size_t offset = 0;
+    char* cur = buffer_raw.get();
+
+    hinfo.m_groupCount = 0;
+    hinfo.m_fullProcessorCount = 0;
+    hinfo.m_groupInformation.clear();
+
+    while (offset < returnLength)
+    {
+        PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX pointer = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(cur);
+        if (pointer->Relationship == RelationGroup)
+        {
+            PGROUP_RELATIONSHIP gR = reinterpret_cast<PGROUP_RELATIONSHIP>(&pointer->Group);
+            
+            hinfo.m_groupCount += gR->ActiveGroupCount;
+            for (auto i = 0; i < gR->ActiveGroupCount; i++)
+            {
+                HardwareInformation::GroupInformation groupInfo;
+                groupInfo.m_processorCount = gR->GroupInfo[i].ActiveProcessorCount;
+                groupInfo.m_affinityMask = gR->GroupInfo[i].ActiveProcessorMask;
+
+                hinfo.m_fullProcessorCount += groupInfo.m_processorCount;
+                hinfo.m_groupInformation.push_back(groupInfo);
+            }
+        }
+        offset += pointer->Size;
+        cur += pointer->Size;
+    }
+}
+
+BOOL SetAffinity(HardwareInformation& hInfo, DWORD pid, UINT8 core)
+{
+    DWORD_PTR affinity_mask = 0;
+
+    //We could just use translated_core/group as core % 64 and core / 64
+    //However, this will fail if/when Microsoft changes the processour group max size
+    //So we're taking the slower path. Also we don't know how Windows would behave
+    //with hotplug processors so this is safer.
+    UINT8 translated_core = 0;
+    WORD translated_group = 0;
+    UINT32 accCores = 0;
+    for (auto groupInfo : hInfo.m_groupInformation)
+    {
+        if (core >= groupInfo.m_processorCount + accCores)
+        {
+            accCores += groupInfo.m_processorCount;
+            translated_group++;
+        }
+        else {
+            translated_core = core - static_cast<UINT8>(accCores);
+            break;
+        }        
+    }
+
+    affinity_mask |= 1ULL << translated_core;
+
+    // Sanity check
+    if (!(affinity_mask & hInfo.m_groupInformation[translated_group].m_affinityMask))
+    {
+        m_out.GetErrorOutputStream() << "Affinity mask is not a subset of group's " << translated_group << " affinity mask" << std::endl;
+        return false;
+    }
+
+    // Set thread affinity for all threads. We can't change the group affinity
+    // of a process so this is the only way to pin a job to a core.
+    auto tids = EnumerateThreads(pid);
+    for (auto thread : tids)
+    {
+        auto threadHandle = OpenThread(THREAD_ALL_ACCESS, false, thread);
+        if (!threadHandle)
+        {
+            m_out.GetErrorOutputStream() << "Error opening thread for TID " << thread << " with error " << GetLastError() << std::endl;
+            return false;
+        }
+
+        GROUP_AFFINITY groupAffinity{ 0 };
+
+        groupAffinity.Mask = affinity_mask;
+        groupAffinity.Group = translated_group;
+
+        if (!SetThreadGroupAffinity(threadHandle, &groupAffinity, NULL))
+        {
+            CloseHandle(threadHandle);
+            m_out.GetErrorOutputStream() << "Error setting thread group affinity " << GetLastError() << std::endl;
+            return false;
+        }
+
+        if (!SetThreadAffinityMask(threadHandle, affinity_mask))
+        {
+            CloseHandle(threadHandle);
+            m_out.GetErrorOutputStream() << "Error setting thread affinity " << GetLastError() << std::endl;
+            return false;
+        }
+        CloseHandle(threadHandle);
+    }
+
+    return true;
+}

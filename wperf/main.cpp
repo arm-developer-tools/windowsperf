@@ -64,26 +64,6 @@ static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
     }
 }
 
-UINT32 GetNumaCount()
-{
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
-    DWORD returnLength = 0;
-    DWORD ret = GetLogicalProcessorInformation(buffer, &returnLength);
-    UINT32 count = returnLength / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-    std::shared_ptr<SYSTEM_LOGICAL_PROCESSOR_INFORMATION[]> buffer_raw(new SYSTEM_LOGICAL_PROCESSOR_INFORMATION[count]);
-    DWORD numaCount = 0;
-
-    ret = GetLogicalProcessorInformation(buffer_raw.get(), &returnLength);
-    for (auto i = 0u; i < count; i++)
-    {
-        if (buffer_raw[i].Relationship == RelationNumaNode)
-        {
-            numaCount++;
-        }
-    }
-    return numaCount;
-}
-
 int __cdecl
 wmain(
     _In_ const int argc,
@@ -179,6 +159,9 @@ wmain(
 
         if (request.do_count)
         {
+            HardwareInformation hardwareInformation{ 0 };
+            GetHardwareInfo(hardwareInformation);
+
             if (!request.has_events())
             {
                 m_out.GetErrorOutputStream() << "no event specified\n";
@@ -223,18 +206,17 @@ wmain(
                 if (request.cores_idx.size() > 1)
                     throw fatal_exception("you can specify only one core for process spawn");
 
-                if (request.cores_idx[0] >= std::numeric_limits<DWORD_PTR>::digits)
-                    throw fatal_exception("Unsupported core index for 'stat' process spawn.");
-
                 SpawnProcess(request.sample_pe_file.c_str(), request.record_commandline.c_str(), &pi, request.record_spawn_delay);
                 pid = GetProcessId(pi.hProcess);
                 process_handle = pi.hProcess;
 
-                DWORD_PTR affinity_mask = 0;
-                for (auto core : request.cores_idx)
-                    affinity_mask |= 1ULL << core;
-
-                SetProcessAffinityMask(process_handle, affinity_mask);
+                if (!SetAffinity(hardwareInformation, pid, request.cores_idx[0]))
+                {
+                    TerminateProcess(pi.hProcess, 0);
+                    CloseHandle(pi.hThread);
+                    CloseHandle(process_handle);
+                    throw fatal_exception("Error setting affinity");
+                }
 
                 if (request.do_verbose)
                     m_out.GetOutputStream() << request.sample_pe_file << " pid is " << pid << std::endl;
@@ -353,24 +335,9 @@ wmain(
         }
         else if (request.do_sample || request.do_record)
         {
-
-            // Validate cores as we don't support core indexes greater than 32 for the record command.
-            if (request.do_record)
-            {
-                if (GetNumaCount() != 1)
-                {
-                    throw fatal_exception("The 'record' command can't handle NUMA counts greater than 1.");
-                }
-
-                for (auto core : request.cores_idx)
-                {
-                    if (core > std::numeric_limits<DWORD_PTR>::digits)
-                    {
-                        throw fatal_exception("Unsupported core index for 'record'.");
-                    }
-                }
-            }
-
+            HardwareInformation hardwareInformation{ 0 };
+            GetHardwareInfo(hardwareInformation);
+            
             PerfDataWriter perfDataWriter;
             if (request.do_export_perf_data)
                 perfDataWriter.WriteCommandLine(argc, argv);
@@ -424,13 +391,14 @@ wmain(
                 SpawnProcess(request.sample_pe_file.c_str(), request.record_commandline.c_str(), &pi, request.record_spawn_delay);
                 pid = GetProcessId(pi.hProcess);
                 process_handle = pi.hProcess;
-                DWORD_PTR affinity_mask = 0;
-                for (auto core : request.cores_idx)
-                {
-                    affinity_mask |= 1ULL << core;
-                }
 
-                SetProcessAffinityMask(process_handle, affinity_mask);
+                if (!SetAffinity(hardwareInformation, pid, request.cores_idx[0]))
+                {
+                    TerminateProcess(pi.hProcess, 0);
+                    CloseHandle(pi.hThread);
+                    CloseHandle(process_handle);
+                    throw fatal_exception("Error setting affinity");
+                }
 
                 if (request.do_verbose)
                 {

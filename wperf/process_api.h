@@ -29,12 +29,29 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <psapi.h>
 #include <string>
+#include <vector>
+#include <tlhelp32.h>
+#include <psapi.h>
 
 #define MAX_PROCESSES					1024
 #define MAX_SPAWN_RETRIES				4
 
+struct HardwareInformation
+{
+    struct GroupInformation
+    {
+        UINT32 m_processorCount;
+        KAFFINITY m_affinityMask;
+    };
+    UINT32 m_groupCount;
+    UINT32 m_fullProcessorCount;
+    std::vector<GroupInformation> m_groupInformation;
+};
+
+VOID GetHardwareInfo(HardwareInformation &hinfo);
 DWORD FindProcess(std::wstring lpcszFileName);
 HMODULE GetModule(HANDLE pHandle, std::wstring pname);
 VOID SpawnProcess(const wchar_t* pe_file, const wchar_t* command_line, PROCESS_INFORMATION* pi, uint32_t delay);
+BOOL SetAffinity(HardwareInformation& hInfo, DWORD pid, UINT8 core);
+std::vector<DWORD> EnumerateThreads(DWORD pid);
