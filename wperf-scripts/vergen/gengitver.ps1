@@ -32,4 +32,12 @@ $param1 = $args[0]
 
 $git_commit_sha = git describe --long --always --dirty --exclude=* --abbrev=8
 $define_str = "#define WPERF_GIT_VER_STR L`"" + $git_commit_sha + "`""
-$define_str | Out-File $param1
+try {
+    # Since we do this individually for both wperf and wperf-driver sometimes this script
+    # is called twice and we need to wait for the first one to finish
+    $define_str | Out-File $param1
+} catch {
+    Start-Sleep -Seconds 1
+    $define_str | Out-File $param1
+}
+
