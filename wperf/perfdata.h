@@ -47,6 +47,17 @@ namespace perfdata
 	// These data structures have been copied from the kernel. See files under
 	// tools/perf/util.
 
+	enum perf_type_id {
+		PERF_TYPE_HARDWARE = 0,
+		PERF_TYPE_SOFTWARE = 1,
+		PERF_TYPE_TRACEPOINT = 2,
+		PERF_TYPE_HW_CACHE = 3,
+		PERF_TYPE_RAW = 4,
+		PERF_TYPE_BREAKPOINT = 5,
+
+		PERF_TYPE_MAX,				/* non-ABI */
+	};
+
 	//
 	// From tools/perf/util/header.h
 	//
@@ -661,6 +672,7 @@ namespace perfdata
 		struct perf_event_header header;
 		UINT64 ip; // Instruction point
 		UINT32 pid, tid;
+		UINT64 id;
 		UINT32 cpu, res;
 	};
 
@@ -686,7 +698,8 @@ private:
 	std::ofstream m_file;
 	perfdata::perf_file_header m_file_header { 0 };
 	std::vector<perfdata::perf_file_attr> m_attributes;
-	
+	std::vector<UINT64> m_sampling_events;
+
 	std::vector<PerfEvent> m_events;
 
 	perfdata::perf_data_multi_string m_cmdline { 0 };
@@ -706,12 +719,14 @@ private:
 	}
 
 	size_t WriteAttributeSection(size_t data_offset);
+	size_t WriteIDs(size_t offset);
 	size_t WriteFeatures(size_t file_section_offset, size_t data_offset);
 	size_t WriteDataSection(size_t offset);
 
 	PerfEvent PerfDataWriter::get_comm_event(DWORD pid, std::wstring& command);
-	PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip, UINT32 cpu);
+	PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip, UINT32 cpu, UINT64 event_type);
 	PerfEvent PerfDataWriter::get_mmap_event(DWORD pid, UINT64 addr, UINT64 len, std::wstring& filename, UINT64 pgoff);
+	
 public:
 	enum PerfSupportedEventTypes
 	{
@@ -731,13 +746,6 @@ public:
 		m_file_header.event_types.offset = 0;
 		m_file_header.event_types.size = 0;
 
-		perfdata::perf_file_attr fattr { 0 };
-		fattr.attr.size = sizeof(perfdata::perf_event_attr);
-		fattr.attr.sample_type = perfdata::PERF_SAMPLE_IP | perfdata::PERF_SAMPLE_TID | perfdata::PERF_SAMPLE_CPU;
-		fattr.ids.offset = 0;
-		fattr.ids.size = 0;
-		m_attributes.push_back(fattr);
-
 		m_cmdline.count = 0;
 		m_cmdline.data = NULL;
 	}
@@ -756,6 +764,23 @@ public:
 
 	void WriteCommandLine(const int argc, const wchar_t* argv[]);
 
+	void RegisterSampleEvent(UINT64 windows_perf_sampling_event)
+	{
+		perfdata::perf_file_attr fattr{ 0 };
+		fattr.attr.size = sizeof(perfdata::perf_event_attr);
+		fattr.attr.sample_type = perfdata::PERF_SAMPLE_IP | perfdata::PERF_SAMPLE_TID | perfdata::PERF_SAMPLE_CPU | perfdata::PERF_SAMPLE_ID;
+		fattr.attr.mmap = 1;
+		fattr.attr.type = perfdata::PERF_TYPE_HARDWARE;
+
+		// [TODO] Understand how to actually map WindowsPerf events here
+		fattr.attr.config = 0;
+
+		fattr.ids.offset = 0;
+		fattr.ids.size = sizeof(UINT64);
+		m_attributes.push_back(fattr);
+		m_sampling_events.push_back(windows_perf_sampling_event);
+	}
+
 	template <typename... Ts>
 	void RegisterEvent(PerfSupportedEventTypes type, Ts... args)
 	{
@@ -772,7 +797,7 @@ public:
 		}
 		case SAMPLE:
 		{
-			if constexpr (sizeof...(Ts) == 3)
+			if constexpr (sizeof...(Ts) == 4)
 			{
 				event = get_sample_event(args...);
 			}

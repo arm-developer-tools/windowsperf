@@ -371,6 +371,14 @@ wmain(
 
             pmu_device.set_sample_src(request.ioctl_events_sample, request.do_kernel);
 
+            if (request.do_export_perf_data)
+            {
+                for (auto& events_sample : request.ioctl_events_sample)
+                {
+                    perfDataWriter.RegisterSampleEvent(events_sample.index);
+                }
+            }
+
             UINT64 runtime_vaddr_delta = 0;
 
             std::map<std::wstring, PeFileMetaData> dll_metadata;        // [pe_name] -> PeFileMetaData
@@ -830,7 +838,7 @@ wmain(
                             UINT64 mod_vaddr_delta = (UINT64)a.module->handle;
                             addr = (sample.first - mod_vaddr_delta) & 0xFFFFFF;
                         }
-                        perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, sample.first, request.cores_idx[0]);
+                        perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, sample.first, request.cores_idx[0], a.event_src);
                     }
                 }
                 if (request.do_annotate)

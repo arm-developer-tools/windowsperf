@@ -94,6 +94,21 @@ size_t PerfDataWriter::WriteFeatures(size_t file_section_offset, size_t data_off
 	return written;
 }
 
+size_t PerfDataWriter::WriteIDs(size_t data_offset)
+{
+	m_file.seekp(data_offset);
+	size_t written = 0;
+	UINT32 sampling_event_idx = 0;
+	for (auto& el : m_sampling_events)
+	{
+		m_file.write(reinterpret_cast<char *>(&el), sizeof(el));
+		m_attributes[sampling_event_idx].ids.offset = data_offset + written;
+		sampling_event_idx++;
+		written += sizeof(el);
+	}
+	return written;
+}
+
 size_t PerfDataWriter::WriteDataSection(size_t offset)
 {
 	m_file.seekp(offset);
@@ -126,7 +141,7 @@ PerfDataWriter::PerfEvent PerfDataWriter::get_comm_event(DWORD pid, std::wstring
 	return var;
 }
 
-PerfDataWriter::PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip, UINT32 cpu)
+PerfDataWriter::PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip, UINT32 cpu, UINT64 event_type)
 {
 	PerfDataWriter::PerfEvent var;
 	perfdata::perf_data_sample_event event {0};
@@ -137,6 +152,7 @@ PerfDataWriter::PerfEvent PerfDataWriter::get_sample_event(DWORD pid, UINT64 ip,
 	event.tid = pid;
 	event.cpu = cpu;
 	event.ip = ip;
+	event.id = event_type;
 
 	var = event;
 	return var;
@@ -169,13 +185,18 @@ void PerfDataWriter::Write(std::string filename)
 {
 	size_t offset = 0;
 	m_file.open(filename.c_str(), std::ios::binary);
+	
+	offset += sizeof(perfdata::perf_file_header);
+	offset += WriteIDs(offset);
 
+	m_file_header.attrs.offset = offset;
 	m_file_header.attrs.size = sizeof(perfdata::perf_file_attr) * m_attributes.size();
 
-	offset += sizeof(perfdata::perf_file_header);
 	offset += WriteAttributeSection(offset);
-	m_file_header.data.offset = offset;
+	
+	m_file_header.data.offset = offset;	
 	m_file_header.data.size = WriteDataSection(offset);
+
 	offset += m_file_header.data.size;
 
 	offset += WriteFeatures(offset, offset + get_features_section_size());
