@@ -1,5 +1,6 @@
 #include "wperf-lib.h"
 #include "config.h"
+#include "exception.h"
 #include "padding.h"
 #include "parsers.h"
 #include "pe_file.h"
@@ -259,10 +260,10 @@ extern "C" bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo)
                 metric = __list_metrics[metrics_index];
             }
 
-			// Yield the next event for the current metric.
-			minfo->metric_name = metric.c_str();
-			minfo->event_idx = __list_metrics_events[metric][event_index];
-			event_index++;
+            // Yield the next event for the current metric.
+            minfo->metric_name = metric.c_str();
+            minfo->event_idx = __list_metrics_events[metric][event_index];
+            event_index++;
         }
         else
         {
@@ -545,6 +546,9 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             __annotate_sample_event_index = 0;
             __annotate_sample_index = 0;
 
+            HardwareInformation hardwareInformation{ 0 };
+            GetHardwareInfo(hardwareInformation);
+
             if (wcslen(sample_conf->pe_file) == 0)
             {
                 // PE file not specified.
@@ -600,8 +604,37 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
 
             HMODULE hMods[1024];
             DWORD cbNeeded;
-            DWORD pid = FindProcess(sample_conf->image_name);
-            HANDLE process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+            DWORD pid;
+            HANDLE process_handle;
+            PROCESS_INFORMATION pi;
+            TCHAR imageFileName[MAX_PATH];
+            ZeroMemory(&pi, sizeof(pi));
+
+            if (sample_conf->record)
+            {
+                SpawnProcess(sample_conf->pe_file, sample_conf->record_commandline, &pi, sample_conf->record_spawn_delay);
+                pid = GetProcessId(pi.hProcess);
+                process_handle = pi.hProcess;
+                if (!SetAffinity(hardwareInformation, pid, sample_conf->core_idx))
+                {
+                    TerminateProcess(pi.hProcess, 0);
+                    CloseHandle(pi.hThread);
+                    CloseHandle(process_handle);
+                    throw fatal_exception("Error setting affinity");
+                }
+
+                DWORD len = GetModuleFileNameEx(pi.hProcess, NULL, imageFileName, MAX_PATH);
+                if (len == 0)
+                {
+                    // failed to read module name
+                    return false;
+                }
+            }
+            else
+            {
+                pid = FindProcess(sample_conf->image_name);
+            }
+            process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
 
             if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
             {
@@ -641,7 +674,16 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                 }
             }
 
-            HMODULE module_handle = GetModule(process_handle, sample_conf->image_name);
+            HMODULE module_handle;
+            if (sample_conf->record)
+            {
+                module_handle = GetModule(process_handle, imageFileName);
+            }
+            else
+            {
+                module_handle = GetModule(process_handle, sample_conf->image_name);
+            }
+
             MODULEINFO modinfo;
             bool ret = GetModuleInformation(process_handle, module_handle, &modinfo, sizeof(MODULEINFO));
             if (ret)
@@ -672,6 +714,11 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
 
             __pmu_device->stop_sample();
 
+            if (sample_conf->record)
+            {
+                TerminateProcess(pi.hProcess, 0);
+                CloseHandle(pi.hThread);
+            }
             CloseHandle(process_handle);
 
             std::vector<SampleDesc> resolved_samples;
@@ -816,7 +863,7 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             {
                 if (a.event_src != prev_evt_src)
                 {
-					__sample_events.push_back(a.event_src);
+                    __sample_events.push_back(a.event_src);
                     prev_evt_src = a.event_src;
                     group_idx++;
                 }

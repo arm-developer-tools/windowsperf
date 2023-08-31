@@ -1,5 +1,53 @@
 #include <stdio.h>
+#include <string>
+#include <sstream>
 #include "wperf-lib.h"
+
+void usage(wchar_t *name)
+{
+	printf("%S PE_FILE PDB_FILE IMAGE_NAME RECORD_CMD\n"
+		"PE_FILE\tPE file argument for stat example\n"
+		"PDB_FILE\tPDB file argument for stat example\n"
+		"IMAGE_NAME\tImage name argument for stat example\n"
+		"RECORD_CMD\tRecord command argument for record example\n"
+		"Example: %S C:\\python_d.exe C:\\python_d.pdb python_d.exe \"C:\\python_d.exe -c 10**10**1000\"\n", name, name);
+}
+
+struct Args
+{
+	// stat example
+	wchar_t *pe_file;
+	wchar_t *pdb_file;
+	wchar_t *image_name;
+	// record example
+	std::wstring record_cmd;
+};
+
+struct Args parse_args(int argc, wchar_t *argv[])
+{
+	struct Args args = {NULL, NULL, NULL, L""};
+
+	if (argc > 3)
+	{
+		// stat example uses the first 3 arguments
+		args.pe_file = argv[1];
+		args.pdb_file = argv[2];
+		args.image_name = argv[3];
+	}
+
+	if (argc > 4)
+	{
+		// record example uses all the args after the 3rd arg
+		std::wstringstream ss;
+		for (int i = 4; i < argc; i++)
+		{
+			ss << argv[i] << " ";
+		}
+		args.record_cmd = ss.str();
+	}
+
+	return args;
+}
 
 int __cdecl
 wmain(
@@ -7,6 +55,8 @@ wmain(
     wchar_t* argv[]
 )
 {
+	struct Args args = parse_args(argc, argv);
+
     if (!wperf_init())
         return 1;
 
@@ -131,9 +181,9 @@ wmain(
 	uint32_t intervals[2] = { 100000, 200000 };
 	SAMPLE_CONF sample_conf =
 	{
-		L"c:\\cpython\\PCbuild\\arm64\\python_d.exe", // pe_file
-		L"c:\\cpython\\PCbuild\\arm64\\python_d.pdb", // pdb_file
-		L"python_d.exe", // image_name
+		NULL, // pe_file
+		NULL, // pdb_file
+		NULL, // image_name
 		1, // core_idx
 		2, // num_events
 		sample_events, // events
@@ -142,25 +192,60 @@ wmain(
 		10, // duration
 		false, // kernel_mode
 		true, // annotate
+		false, // record
 	};
-	if (wperf_sample(&sample_conf, NULL))
+	if (args.pe_file != NULL && args.pdb_file != NULL && args.image_name != NULL)
 	{
-		SAMPLE_INFO sample_info;
-		while (wperf_sample(&sample_conf, &sample_info))
+		sample_conf.pe_file = args.pe_file;
+		sample_conf.pdb_file = args.pdb_file;
+		sample_conf.image_name = args.image_name;
+		if (wperf_sample(&sample_conf, NULL))
 		{
-			printf("wperf_sample: event=%u, name=%ls, count=%u, overhead=%f\n", sample_info.event, sample_info.symbol, sample_info.count, sample_info.overhead);
-		}
+			SAMPLE_INFO sample_info;
+			while (wperf_sample(&sample_conf, &sample_info))
+			{
+				printf("wperf_sample: event=%u, name=%ls, count=%u, overhead=%f\n", sample_info.event, sample_info.symbol, sample_info.count, sample_info.overhead);
+			}
 
-		SAMPLE_STATS sample_stats;
-		if (wperf_sample_stats(&sample_conf, &sample_stats))
-		{
-			printf("wperf_sample_stats: sample_generated=%llu, sample_dropped=%llu\n", sample_stats.sample_generated, sample_stats.sample_dropped);
-		}
+			SAMPLE_STATS sample_stats;
+			if (wperf_sample_stats(&sample_conf, &sample_stats))
+			{
+				printf("wperf_sample_stats: sample_generated=%llu, sample_dropped=%llu\n", sample_stats.sample_generated, sample_stats.sample_dropped);
+			}
 
-		ANNOTATE_INFO annotate_info;
-		while (wperf_sample_annotate(&sample_conf, &annotate_info))
+			ANNOTATE_INFO annotate_info;
+			while (wperf_sample_annotate(&sample_conf, &annotate_info))
+			{
+				printf("wperf_sample_annotate: event=%u, name=%ls, source=%ls, line=%u, hits=%llu\n", annotate_info.event, annotate_info.symbol, annotate_info.source_file, annotate_info.line_number, annotate_info.hits);
+			}
+		}
+	}
+
+	if (!args.record_cmd.empty())
+	{
+		sample_conf.record = true;
+		sample_conf.record_commandline = args.record_cmd.c_str();
+		sample_conf.record_spawn_delay = 1000;
+		printf("checking record...\n");
+		if (wperf_sample(&sample_conf, NULL))
 		{
-			printf("wperf_sample_annotate: event=%u, name=%ls, source=%ls, line=%u, hits=%llu\n", annotate_info.event, annotate_info.symbol, annotate_info.source_file, annotate_info.line_number, annotate_info.hits);
+			SAMPLE_INFO sample_info;
+			while (wperf_sample(&sample_conf, &sample_info))
+			{
+				printf("wperf_sample: event=%u, name=%ls, count=%u, overhead=%f\n", sample_info.event, sample_info.symbol, sample_info.count, sample_info.overhead);
+			}
+
+			SAMPLE_STATS sample_stats;
+			if (wperf_sample_stats(&sample_conf, &sample_stats))
+			{
+				printf("wperf_sample_stats: sample_generated=%llu, sample_dropped=%llu\n", sample_stats.sample_generated, sample_stats.sample_dropped);
+			}
+
+			ANNOTATE_INFO annotate_info;
+			while (wperf_sample_annotate(&sample_conf, &annotate_info))
+			{
+				printf("wperf_sample_annotate: event=%u, name=%ls, source=%ls, line=%u, hits=%llu\n", annotate_info.event, annotate_info.symbol, annotate_info.source_file, annotate_info.line_number, annotate_info.hits);
+			}
 		}
 	}
 

@@ -472,6 +472,12 @@ typedef struct _SAMPLE_CONF
     bool kernel_mode;
     /// Set this to true if funtions should be annotated, false if not.
     bool annotate;
+    /// Set this to true if recording, false if not.
+    bool record;
+    /// The record command to execute if recording
+    const wchar_t *record_commandline;
+    /// The time duration to wait for the process to properly start (in milliseconds)
+    uint32_t record_spawn_delay;
 } SAMPLE_CONF, *PSAMPLE_CONF;
 
 typedef struct _SAMPLE_INFO
@@ -518,7 +524,45 @@ typedef struct _SAMPLE_STATS
 ///   intervals, // intervals
 ///   true, // display_short
 ///   10, // duration
-///   false // kernel_mode
+///   false, // kernel_mode
+///   false, // annotate
+///   false, // record
+/// }
+///
+/// if (wperf_sample(&sample_conf, NULL))
+/// {
+///   SAMPLE_INFO sample_info;
+///   while (wperf_sample(&sample_conf, &sample_info))
+///   {
+///     printf("sample event=%u, name=%ls, count=%u, overhead=%f\n", sample_info.event, sample_info.symbol, sample_info.count, sample_info.overhead);
+///   }
+/// }
+///
+/// wperf_close();
+/// </code>
+/// </example>
+/// <example> This example shows how to call the wperf_sample routine with recording.
+/// <code>
+/// wperf_init();
+///
+/// uint16_t sample_events[2] = { 0x70, 0x71 };
+/// uint32_t intervals[2] = { 100000, 200000 };
+/// SAMPLE_CONF sample_conf =
+/// {
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.exe", // pe_file
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.pdb", // pdb_file
+///   L"python_d.exe", // image_name
+///   1, // core_idx
+///   2, // num_events
+///   sample_events, // events
+///   intervals, // intervals
+///   true, // display_short
+///   10, // duration
+///   false, // kernel_mode
+///   false, // annotate
+///   true, // record
+///   L"c:\\cpython\\PCbuild\\arm64\\python_d.exe -c 10**10**1000", // record commandline
+///   1000, // record spawn delay
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))
@@ -571,6 +615,7 @@ WPERF_LIB_API bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_in
 ///   10, // duration
 ///   false, // kernel_mode
 ///   true, // annotate
+///   false, // record
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))
@@ -614,7 +659,9 @@ WPERF_LIB_API bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INF
 ///   intervals, // intervals
 ///   true, // display_short
 ///   10, // duration
-///   false // kernel_mode
+///   false, // kernel_mode
+///   false, // annotate
+///   false, // record
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))
