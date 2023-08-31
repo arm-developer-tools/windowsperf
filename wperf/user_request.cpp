@@ -32,6 +32,7 @@
 #include <numeric>
 #include <sstream>
 #include <cwctype>
+#include <array>
 #include <assert.h>
 #include "user_request.h"
 #include "exception.h"
@@ -39,6 +40,7 @@
 #include "wperf-common/public.h"
 #include "wperf/config.h"
 
+static std::array<std::wstring, 9> arguments = { L"-image_name", L"-pe_file", L"-pdb_file", L"-sample-display_row", L"-sample-display-long", L"-dmc", L"-verbose", L"-version", L"-json" };
 
 void user_request::print_help_usage()
 {
@@ -483,7 +485,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--image_name" || a == L"-image_name")
+        if (a == L"--image_name")
         {
             waiting_image_name = true;
             continue;
@@ -501,13 +503,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--pe_file" || a == L"-pe_file")
+        if (a == L"--pe_file")
         {
             waiting_pe_file = true;
             continue;
         }
 
-        if (a == L"--pdb_file" || a == L"-pdb_file")
+        if (a == L"--pdb_file")
         {
             waiting_pdb_file = true;
             continue;
@@ -554,13 +556,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--sample-display-row" || a == L"-sample-display-row")
+        if (a == L"--sample-display-row")
         {
             waiting_sample_display_row = true;
             continue;
         }
 
-        if (a == L"--sample-display-long" || a == L"-sample-display-long")
+        if (a == L"--sample-display-long")
         {
             sample_display_short = false;
             continue;
@@ -578,13 +580,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--dmc" || a == L"-dmc")
+        if (a == L"--dmc")
         {
             waiting_dmc_idx = true;
             continue;
         }
 
-        if (a == L"-v" || a == L"--verbose" || a == L"-verbose")
+        if (a == L"-v" || a == L"--verbose")
         {
             do_verbose = true;
             continue;
@@ -596,7 +598,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--version" || a == L"-version")
+        if (a == L"--version")
         {
             do_version = true;
             continue;
@@ -614,7 +616,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--json" || a == L"-json")
+        if (a == L"--json")
         {
             if (m_outputType != TableType::ALL)
             {
@@ -629,6 +631,21 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             do_test = true;
             continue;
         }
+        
+        if ([&a](auto&& vec) constexpr {
+            for (const auto& elem : vec)
+            {
+                if (a == elem)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }(arguments))
+        {
+            m_out.GetErrorOutputStream() << L"Single dash '-' options no longer supported please use '-" << a << "'" << std::endl;
+            throw fatal_exception("ERROR_OPTION_DASH");
+        }      
 
         if (do_record || do_count)
         {
