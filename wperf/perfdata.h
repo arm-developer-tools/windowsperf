@@ -764,21 +764,26 @@ public:
 
 	void WriteCommandLine(const int argc, const wchar_t* argv[]);
 
-	void RegisterSampleEvent(UINT64 windows_perf_sampling_event)
+	void RegisterSampleEvent(UINT64 perf_sampling_event)
 	{
 		perfdata::perf_file_attr fattr{ 0 };
 		fattr.attr.size = sizeof(perfdata::perf_event_attr);
 		fattr.attr.sample_type = perfdata::PERF_SAMPLE_IP | perfdata::PERF_SAMPLE_TID | perfdata::PERF_SAMPLE_CPU | perfdata::PERF_SAMPLE_ID;
-		fattr.attr.mmap = 1;
-		fattr.attr.type = perfdata::PERF_TYPE_HARDWARE;
-
-		// [TODO] Understand how to actually map WindowsPerf events here
-		fattr.attr.config = 0;
+		// We just need to disable flags as all are enabled by default on perf_event_attr
+		fattr.attr.disabled = 0;
+		fattr.attr.inherit = 0;
+		fattr.attr.pinned = 0;
+		fattr.attr.exclude_user = 0;
+		fattr.attr.exclude_kernel = 0;
+		fattr.attr.precise_ip = 0;
+		fattr.attr.exclude_host = 0;
+		fattr.attr.type = perfdata::PERF_TYPE_RAW;
+		fattr.attr.config = perf_sampling_event;
 
 		fattr.ids.offset = 0;
 		fattr.ids.size = sizeof(UINT64);
 		m_attributes.push_back(fattr);
-		m_sampling_events.push_back(windows_perf_sampling_event);
+		m_sampling_events.push_back(perf_sampling_event);
 	}
 
 	template <typename... Ts>
