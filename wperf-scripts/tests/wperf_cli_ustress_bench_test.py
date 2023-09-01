@@ -45,6 +45,8 @@ This is ustress test bench build script. It contains all functions needed to:
 * MSVC cross/native arm64 build environment, see `vcvarsall.bat`.
 * GNU Make 3.x - ustress Makefile requires it. Download "complete package"
   here: https://gnuwin32.sourceforge.net/packages/make.htm
+* GNU tr - ustress Makefile internals requires it. Download "complete package"
+  here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
 * clang targeting `aarch64-pc-windows-msvc`.
   * Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
   * install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
@@ -67,6 +69,14 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.
 
 This program built for i386-pc-mingw32
+
+>tr (GNU coreutils) 8.32
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Jim Meyering.
 
 >clang --version
 clang version 16.0.5
@@ -130,17 +140,19 @@ def test_ustress_bench_compatibility_tests():
     product_name_cpus = get_make_CPU_name(product_name)
     assert product_name_cpus in cpus
 
-def test_ustress_bench_build_ustress__deps():
+@pytest.mark.parametrize("cmd,expected,msg",
+[
+    ('make',    b'GNU Make 3',              'GNU `make` not installed, or not in the PATH'),   # E.g. GNU Make 3.81
+    ('tr',      b'tr (GNU coreutils)',      'GNU `tr` not installed, or not in the PATH'),    # E.g. tr (GNU coreutils) 8.32
+    ('clang',   b'aarch64-pc-windows-msvc', '`clang` targeting `aarch64-pc-windows-msvc` not installed, or not in the PATH'),
+]
+)
+def test_ustress_bench_build_ustress__deps(cmd,expected,msg):
     """ Check ustress build dependencies. """
 
     ### Check if GNU Make is installed
-    stdout, _ = run_command("make --version")
-    assert b'GNU Make 3' in stdout  # E.g. GNU Make 3.81
-
-    ### Check if we have correct clang toolchain
-    stdout, _ = run_command("clang --version")
-    assert len(re.findall(rb'clang version ([\d.]+){3}', stdout)) > 0 # E.g. clang version 16.0.5
-    assert b'aarch64-pc-windows-msvc' in stdout     # E.g. Target: aarch64-pc-windows-msvc
+    stdout, _ = run_command(f"{cmd} --version")
+    assert expected in stdout, msg
 
 def test_ustress_bench_build_ustress__make_clean():
     """ ustress build cleanup. """

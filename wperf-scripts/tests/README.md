@@ -20,15 +20,27 @@ This set of Python scripts is using [pytest](https://docs.pytest.org/) library t
 
 ### ustress framework test bench
 
-We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests?ref_type=heads). It allow users to build, execute `ustress` micro-benchmarks and track with timeline specified metrics.
+We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests?ref_type=heads). It allows users to build, execute `ustress` micro-benchmarks and track with `wperf` timeline specified metrics.
 
-Tests in [wperf_cli_ustress_bench_test.py](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/wperf_cli_ustress_bench_test.py?ref_type=heads) require also:
+#### Build dependencies
 
-* `[vcvarsall.bat] Environment initialized for: 'arm64'.
-* GNU Make 3.81.
+* MSVC cross/native arm64 build environment, see `vcvarsall.bat`. See configuration needed to build `ustress` tests:
+```
+> %comspec% /k "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.7.1
+** Copyright (c) 2022 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'arm64
+```
+
+* GNU Make 3.x - ustress Makefile requires it. Download "complete package" here: https://gnuwin32.sourceforge.net/packages/make.htm
+* GNU tr - ustress Makefile internals requires it. Download "complete package" here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
 * clang targeting `aarch64-pc-windows-msvc`.
+  * Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
+  * install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
 
-See:
+#### See merge request documentation
 * [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
 * !327+, !330+ and !339+.
 
