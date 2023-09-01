@@ -61,24 +61,25 @@ In below test directory we've added locally `wperf.exe`.
 =============================== test session starts ===============================
 platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
 rootdir: C:\windowsperf\wperf-scripts\tests, configfile: pytest.ini
-collected 140 items
+collected 143 items
 
 wperf_cli_common_test.py ....                                                [  2%]
 wperf_cli_config_test.py .....                                               [  6%]
 wperf_cli_extra_events_test.py ....                                          [  9%]
-wperf_cli_info_str_test.py .                                                 [ 10%]
+wperf_cli_info_str_test.py .                                                 [  9%]
 wperf_cli_json_validator_test.py ....                                        [ 12%]
 wperf_cli_list_test.py .....                                                 [ 16%]
 wperf_cli_metrics_test.py ................                                   [ 27%]
-wperf_cli_padding_test.py ...........                                        [ 35%]
-wperf_cli_record_test.py ..............                                      [ 45%]
-wperf_cli_stat_test.py ...................................................   [ 82%]
-wperf_cli_test_test.py .....                                                 [ 85%]
-wperf_cli_timeline_test.py ..............                                    [ 95%]
-wperf_cli_ustress_bench_test.py .....                                        [ 99%]
+wperf_cli_padding_test.py ...........                                        [ 34%]
+wperf_cli_record_test.py ..............                                      [ 44%]
+wperf_cli_stat_test.py ...................................................   [ 80%]
+wperf_cli_test_test.py .....                                                 [ 83%]
+wperf_cli_timeline_test.py ..............                                    [ 93%]
+wperf_cli_ustress_bench_test.py .......                                      [ 98%]
+wperf_cli_ustress_dep_record_test.py .                                       [ 99%]
 wperf_lib_app_test.py s                                                      [100%]
 
 ============================= short test summary info =============================
 SKIPPED [1] wperf_lib_app_test.py:44: Can not run wperf-lib-app.exe
-================= 139 passed, 1 skipped in 236.35s (0:03:56) ======================
+===================== 142 passed, 1 skipped in 237.56s (0:03:57) ==================
 ```
