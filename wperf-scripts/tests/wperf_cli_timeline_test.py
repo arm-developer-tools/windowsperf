@@ -231,18 +231,18 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
     COLS += 1
 
     for event in EVENTS:
-        expected_events_header += event + ","
+        expected_events_header += f"{event},"
 
     for metric in METRICS.split(","):
-        expected_events_header += "M@" + metric + ","   # Metrics start with "M@<metric_name>"
+        expected_events_header += f"M@{metric},"   # Metrics start with "M@<metric_name>"
 
     expected_cores = (f"core {C},") * COLS
 
     with open(cvs_files[0], 'r') as file:
         cvs = file.read()
 
-        assert expected_cores in cvs            # E.g.  core 2,core 2,core 2,core 2,core 2,core 2,core 2,
-        assert expected_events_header in cvs    # E.g.  cycle,l1d_cache,l1d_cache_refill,inst_retired,l1d_tlb_refill,M@l1d_cache_miss_ratio,M@l1d_tlb_mpki,
+        assert expected_cores + '\n' in cvs            # E.g.  core 2,core 2,core 2,core 2,core 2,core 2,core 2,
+        assert expected_events_header + '\n' in cvs    # E.g.  cycle,l1d_cache,l1d_cache_refill,inst_retired,l1d_tlb_refill,M@l1d_cache_miss_ratio,M@l1d_tlb_mpki,
 
         # Find lines with counter values, e.g.. 38111732,89739,61892,20932002,0.003,4.222
         pattern = r'^((\d*\.*\d+),){%s}$' % (COLS)
