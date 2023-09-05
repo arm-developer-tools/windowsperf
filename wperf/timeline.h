@@ -57,9 +57,9 @@ struct timeline_header
 +------------------------------+
 |    timeline_header_cores     |
 +------------------------------+
-| timeline_header_event_names  | + timeline_header_metrics_names
+| timeline_header_event_names  | + timeline_header_metric_names
 +------------------------------+
-| timeline_header_event_values | + timeline_header_metrics_values
+| timeline_header_event_values | + timeline_header_metric_values
 +------------------------------+
 */
 

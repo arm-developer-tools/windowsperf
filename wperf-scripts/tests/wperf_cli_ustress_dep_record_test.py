@@ -50,6 +50,8 @@ Note: `wperf_cli_ustress_bench_test.py` should be executed first to build `ustre
 * MSVC cross/native arm64 build environment, see `vcvarsall.bat`.
 * GNU Make 3.x - ustress Makefile requires it. Download "complete package"
   here: https://gnuwin32.sourceforge.net/packages/make.htm
+* GNU tr - ustress Makefile internals requires it. Download "complete package"
+  here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
 * clang targeting `aarch64-pc-windows-msvc`.
   * Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
   * install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."

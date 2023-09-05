@@ -1251,10 +1251,16 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
         timeline::timeline_header_metric_values[e_class].push_back(col_metric_value);
         if (timeline::timeline_header_metric_names[e_class].empty())
         {
+            // Calulate how many metrics were speciffied per core
+            auto metrics_per_code = col_metric_name.size() / cores_idx.size();
+
             // For every core we must print each metric
-            for (uint32_t i : cores_idx)
-                for (auto m=0; m< col_metric_name.size(); m++)
+            for (auto c = 0; c < cores_idx.size(); c++)
+                for (auto m = 0; m < metrics_per_code; m++)
+                {
+                    auto i = cores_idx[c];
                     timeline::timeline_header_cores[e_class].push_back(L"core " + std::to_wstring(i));
+                }
 
             // Insert metrics names and values to a separate strcuture (we will concatenate it later in print)
             timeline::timeline_header_metric_names[e_class].insert(timeline::timeline_header_metric_names[e_class].end(),

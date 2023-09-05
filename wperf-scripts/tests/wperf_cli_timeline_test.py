@@ -247,3 +247,65 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
         # Find lines with counter values, e.g.. 38111732,89739,61892,20932002,0.003,4.222
         pattern = r'^((\d*\.*\d+),){%s}$' % (COLS)
         assert len(re.findall(pattern, cvs, re.MULTILINE)) == N
+
+@pytest.mark.parametrize("C,N,METRICS",
+[
+    ('1,2',     2, "l1d_cache_miss_ratio"),
+    ('1,2',     3, "l1d_cache_miss_ratio,load_percentage"),
+    ('1,2,3',   2, "l1d_tlb_mpki"),
+    ('1,2,3',   3, "l1d_tlb_mpki,load_percentage"),
+    ('1,3,5,7', 2, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+    ('1,3,5,7', 3, "l1d_cache_miss_ratio,l1d_tlb_mpki,load_percentage"),
+]
+)
+def test_wperf_timeline_ts_metrics_many_cores(C, N, METRICS):
+    """ Test timeline with TS metrics. Multiple cores variant. """
+    for metric in METRICS.split(","):
+        if not wperf_metric_is_available(metric):
+            pytest.skip("unsupported metric: " + metric)
+            return
+
+    cmd = f'wperf stat -m {METRICS} -t -i 1 -n {N} -c {C} --timeout 1 -v'
+    stdout, _ = run_command(cmd.split())
+
+    cores = C.split(',')
+
+    assert len(cores) > 1   # Sanity check as we test for list of cores > 1
+
+    assert b"timeline file: 'wperf_system_side_" in stdout    # e.g. timeline file: 'wperf_system_side_2023_09_04_04_00_42.core.csv'
+    cvs_files = re.findall(rb'wperf_system_side_[a-z0-9_.]+', stdout)   # e.g. ['wperf_system_side_2023_09_04_04_00_42.core.csv']
+    assert len(cvs_files) == 1
+
+    ### We will check here ONLY for columns at the end holding metric names and cores for them
+
+    """ Example:
+    >wperf stat .... -t .... -c 1,2 .... -m l1d_cache_miss_ratio,load_percentage ....
+
+    <CSV header>
+
+    .......  ,core 1                     ,core 1              ,core 2                  ,core 2,                  <expected_cores>
+    .......  ,M@l1d_cache_miss_ratio     ,M@load_percentage   ,M@l1d_cache_miss_ratio  ,M@load_percentage,       <expected_events_header>
+    .......  ,0.019                      ,21.609              ,0.013                   ,22.499,
+    .......  ,0.007                      ,22.262              ,0.042                   ,21.241,
+    .......  ,0.008                      ,21.708              ,0.012                   ,22.943,
+    """
+
+    # Sanity checks for metric names at the end of the rows
+    expected_cores = str()
+
+    for c in cores:
+        for _ in METRICS.split(","):
+            expected_cores += f"core {c},"          #   core 1,core 1,core 2,core 2,
+
+    expected_events_header = str()
+
+    for _ in cores:
+        for metric in METRICS.split(","):
+            expected_events_header += f"M@{metric},"   # M@l1d_cache_miss_ratio,M@load_percentage,M@l1d_cache_miss_ratio,M@load_percentage,
+
+    with open(cvs_files[0], 'r') as file:
+        csv = file.read()
+
+        # Check for line endings as well
+        assert expected_cores + '\n' in csv
+        assert expected_events_header + '\n' in csv
