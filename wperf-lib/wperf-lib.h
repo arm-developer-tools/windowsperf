@@ -333,6 +333,18 @@ typedef struct _STAT_CONF
     bool kernel_mode;
     /// The counting timer period (in milliseconds). The default period is 100ms. The period should be between 10ms to 100ms (i.e., [10ms, 100ms]).
     long period;
+    /// Set this to true if you want to turn on timeline mode, false if not.
+    bool timeline;
+    /// The number of times count in timeline mode.
+    int count_timeline;
+    /// The counting interval (in s). Used with timeline.
+    double counting_interval;
+    /// The PE file path.
+    const wchar_t *pe_file;
+    /// The record command to execute.
+    const wchar_t *record_commandline;
+    /// The time duration to wait for the process to start (in milliseconds)
+    uint32_t record_spawn_delay;
 } STAT_CONF, *PSTAT_CONF;
 
 typedef struct _STAT_INFO
@@ -419,6 +431,13 @@ typedef struct _TEST_INFO
 ///   metric_events, // metric_events
 ///   1, // duration
 ///   false // kernel_mode
+///   10, // period
+///   false, // timeline
+///   0, // count_timeline
+///   0, // counting_interval
+///   NULL, // pe_file
+///   NULL, // record_commandline
+///   0, // record_spawn_delay
 /// }
 ///
 /// if (wperf_stat(&stat_conf, NULL))

@@ -6,6 +6,7 @@
 #include "pe_file.h"
 #include "pmu_device.h"
 #include "process_api.h"
+#include "timeline.h"
 #include "wperf-common/gitver.h"
 #include "wperf-common/public.h"
 #include <regex>
@@ -346,7 +347,10 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
             // Only CORE events are supported at the moment.
             std::vector<enum evt_class> e_classes = { EVT_CORE };
             uint32_t enable_bits = __pmu_device->enable_bits(e_classes);
-            __pmu_device->post_init(cores_idx, 0, false, enable_bits);
+            __pmu_device->post_init(cores_idx, 0, stat_conf->timeline, enable_bits);
+
+            HardwareInformation hardwareInformation{ 0 };
+            GetHardwareInfo(hardwareInformation);
 
             uint32_t stop_bits = __pmu_device->stop_bits();
             __pmu_device->stop(stop_bits);
@@ -390,95 +394,169 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
             set_event_padding(__ioctl_events, *__pmu_cfg, events, groups);
 
             bool do_kernel = stat_conf->kernel_mode;
+            __pmu_device->timeline_params(__ioctl_events, stat_conf->counting_interval, do_kernel);
             for (uint32_t core_idx : cores_idx)
                 __pmu_device->events_assign(core_idx, __ioctl_events, do_kernel);
+            __pmu_device->timeline_header(__ioctl_events);
 
             double count_duration = stat_conf->duration;
             int64_t counting_duration_iter = count_duration > 0 ?
                 static_cast<int64_t>(count_duration * 10) : _I64_MAX;
 
+            double count_interval = stat_conf->counting_interval;
+            int64_t counting_interval_iter = count_interval > 0 ?
+                static_cast<int64_t>(count_interval * 2) : 0;
+
             drvconfig::set(L"count.period", std::to_wstring(stat_conf->period));
 
-            __pmu_device->reset(enable_bits);
+            int counting_timeline_times = stat_conf->count_timeline;
 
-            __pmu_device->start(enable_bits);
-
-            int64_t t_count = counting_duration_iter;
-
-            while (t_count > 0)
+            // === Spawn counting process ===
+            bool do_count_process_spawn = stat_conf->pe_file != NULL;
+            DWORD pid;
+            HANDLE process_handle = NULL;
+            PROCESS_INFORMATION pi;
+            ZeroMemory(&pi, sizeof(pi));
+            // === Spawn counting process ===
+            if (do_count_process_spawn)
             {
-                t_count--;
-                Sleep(100);
+                if (stat_conf->num_cores > 1)
+                    throw fatal_exception("you can specify only one core for process spawn");
+
+                SpawnProcess(stat_conf->pe_file, stat_conf->record_commandline, &pi, stat_conf->record_spawn_delay);
+                pid = GetProcessId(pi.hProcess);
+                process_handle = pi.hProcess;
+
+                if (!SetAffinity(hardwareInformation, pid, stat_conf->cores[0]))
+                {
+                    TerminateProcess(pi.hProcess, 0);
+                    CloseHandle(pi.hThread);
+                    CloseHandle(process_handle);
+                    throw fatal_exception("Error setting affinity");
+                }
+
+                process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
             }
 
-            __pmu_device->stop(enable_bits);
-
-            if (enable_bits & CTL_FLAG_CORE)
+            do
             {
-                __pmu_device->core_events_read();
-                const ReadOut* core_outs = __pmu_device->get_core_outs();
+                __pmu_device->reset(enable_bits);
 
-                std::vector<uint8_t> counting_cores = __pmu_device->get_cores_idx();
-                for (auto i : counting_cores)
+                __pmu_device->start(enable_bits);
+
+                int64_t t_count = counting_duration_iter;
+
+                DWORD image_exit_code = 0;
+                while (t_count > 0)
                 {
-                    UINT32 evt_num = core_outs[i].evt_num;
-                    const struct pmu_event_usr* evts = core_outs[i].evts;
-                    uint64_t round = core_outs[i].round;
-                    for (UINT32 j = 0; j < evt_num; j++)
-                    {
-                        // Ignore padding events.
-                        if (j >= 1 && (__ioctl_events[EVT_CORE][j - 1].type == EVT_PADDING))
-                            continue;
+                    t_count--;
+                    Sleep(100);
 
-                        const struct pmu_event_usr* evt = &evts[j];
-                        COUNTING_INFO counting_info;
-                        counting_info.counter_value = evt->value;
-                        counting_info.event_idx = evt->event_idx;
-                        if (evt->event_idx == CYCLE_EVT_IDX)
+                    if (do_count_process_spawn && GetExitCodeProcess(process_handle, &image_exit_code))
+                        if (image_exit_code != STILL_ACTIVE)
+                            break;
+                }
+
+                __pmu_device->stop(enable_bits);
+
+                if (enable_bits & CTL_FLAG_CORE)
+                {
+                    __pmu_device->core_events_read();
+                    const ReadOut* core_outs = __pmu_device->get_core_outs();
+
+                    std::vector<uint8_t> counting_cores = __pmu_device->get_cores_idx();
+                    std::vector<std::wstring> col_metric_value;
+                    for (auto i : counting_cores)
+                    {
+                        UINT32 evt_num = core_outs[i].evt_num;
+                        const struct pmu_event_usr* evts = core_outs[i].evts;
+                        uint64_t round = core_outs[i].round;
+                        for (UINT32 j = 0; j < evt_num; j++)
                         {
-                            counting_info.evt_note.type = NORMAL_EVT_NOTE;
-                        }
-                        else
-                        {
-                            std::wstring note = __ioctl_events[EVT_CORE][j - 1].note;
-                            std::wsmatch m;
-                            if (note == L"e")
+                            // Ignore padding events.
+                            if (j >= 1 && (__ioctl_events[EVT_CORE][j - 1].type == EVT_PADDING))
+                                continue;
+
+                            const struct pmu_event_usr* evt = &evts[j];
+                            COUNTING_INFO counting_info;
+                            counting_info.counter_value = evt->value;
+                            counting_info.event_idx = evt->event_idx;
+                            if (evt->event_idx == CYCLE_EVT_IDX)
                             {
-                                // This is a NORMAL_EVT_NOTE.
                                 counting_info.evt_note.type = NORMAL_EVT_NOTE;
-                            }
-                            else if (std::regex_match(note, m, std::wregex(L"g([0-9]+),([a-z]+)")))
-                            {
-                                // This is a METRIC_EVT_NOTE.
-                                auto it = metrics.find(m[2]);
-                                if (it == metrics.end())
-                                {
-                                    // Not a valide builtin metric.
-                                    return false;
-                                }
-                                counting_info.evt_note.type = METRIC_EVT_NOTE;
-                                counting_info.evt_note.note.metric_note.group_id = std::stoi(m[1]);
-                                counting_info.evt_note.note.metric_note.name = it->first.c_str();
-                            }
-                            else if (std::regex_match(note, m, std::wregex(L"g([0-9]+)")))
-                            {
-                                // This is a GROUP_EVT_NOTE.
-                                counting_info.evt_note.type = GROUP_EVT_NOTE;
-                                counting_info.evt_note.note.group_note.group_id = std::stoi(m[1]);
                             }
                             else
                             {
-                                // Not a valid event note type.
-                                return false;
+                                std::wstring note = __ioctl_events[EVT_CORE][j - 1].note;
+                                std::wsmatch m;
+                                if (note == L"e")
+                                {
+                                    // This is a NORMAL_EVT_NOTE.
+                                    counting_info.evt_note.type = NORMAL_EVT_NOTE;
+                                }
+                                else if (std::regex_match(note, m, std::wregex(L"g([0-9]+),([a-z]+)")))
+                                {
+                                    // This is a METRIC_EVT_NOTE.
+                                    auto it = metrics.find(m[2]);
+                                    if (it == metrics.end())
+                                    {
+                                        // Not a valide builtin metric.
+                                        return false;
+                                    }
+                                    counting_info.evt_note.type = METRIC_EVT_NOTE;
+                                    counting_info.evt_note.note.metric_note.group_id = std::stoi(m[1]);
+                                    counting_info.evt_note.note.metric_note.name = it->first.c_str();
+                                }
+                                else if (std::regex_match(note, m, std::wregex(L"g([0-9]+)")))
+                                {
+                                    // This is a GROUP_EVT_NOTE.
+                                    counting_info.evt_note.type = GROUP_EVT_NOTE;
+                                    counting_info.evt_note.note.group_note.group_id = std::stoi(m[1]);
+                                }
+                                else
+                                {
+                                    // Not a valid event note type.
+                                    return false;
+                                }
                             }
-                        }
 
-                        counting_info.multiplexed_scheduled = evt->scheduled;
-                        counting_info.multiplexed_round = round;
-                        counting_info.scaled_value = (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round));
-                        __countings[i].push_back(counting_info);
+                            counting_info.multiplexed_scheduled = evt->scheduled;
+                            counting_info.multiplexed_round = round;
+                            counting_info.scaled_value = (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round));
+                            __countings[i].push_back(counting_info);
+
+                            col_metric_value.push_back(std::to_wstring(counting_info.scaled_value));
+                        }
+                    }
+                    timeline::timeline_header_event_values[EVT_CORE].push_back(col_metric_value);
+                }
+
+                if (stat_conf->timeline)
+                {
+                    int64_t t_count2 = counting_interval_iter;
+                    for (; t_count2 > 0; t_count2--)
+                    {
+                        Sleep(500);
                     }
                 }
+
+                if (counting_timeline_times > 0)
+                {
+                    --counting_timeline_times;
+                    if (counting_timeline_times <= 0)
+                        break;
+                }
+
+                if (do_count_process_spawn && image_exit_code != STILL_ACTIVE)
+                    break;
+
+            } while (stat_conf->timeline);
+
+            if (do_count_process_spawn)
+            {
+                TerminateProcess(pi.hProcess, 0);
+                CloseHandle(pi.hThread);
+                CloseHandle(process_handle);
             }
         }
         else
