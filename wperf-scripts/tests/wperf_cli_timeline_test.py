@@ -283,29 +283,45 @@ def test_wperf_timeline_ts_metrics_many_cores(C, N, METRICS):
 
     <CSV header>
 
-    .......  ,core 1                     ,core 1              ,core 2                  ,core 2,                  <expected_cores>
-    .......  ,M@l1d_cache_miss_ratio     ,M@load_percentage   ,M@l1d_cache_miss_ratio  ,M@load_percentage,       <expected_events_header>
+    .......  ,core 1                     ,core 1              ,core 2                  ,core 2,                  <expected_metric_cores>
+    .......  ,M@l1d_cache_miss_ratio     ,M@load_percentage   ,M@l1d_cache_miss_ratio  ,M@load_percentage,       <expected_metric_header>
     .......  ,0.019                      ,21.609              ,0.013                   ,22.499,
     .......  ,0.007                      ,22.262              ,0.042                   ,21.241,
     .......  ,0.008                      ,21.708              ,0.012                   ,22.943,
     """
 
     # Sanity checks for metric names at the end of the rows
-    expected_cores = str()
+    expected_metric_cores = str()
 
     for c in cores:
         for _ in METRICS.split(","):
-            expected_cores += f"core {c},"          #   core 1,core 1,core 2,core 2,
+            expected_metric_cores += f"core {c},"          #   core 1,core 1,core 2,core 2,
 
-    expected_events_header = str()
+    expected_metric_header = str()
 
     for _ in cores:
         for metric in METRICS.split(","):
-            expected_events_header += f"M@{metric},"   # M@l1d_cache_miss_ratio,M@load_percentage,M@l1d_cache_miss_ratio,M@load_percentage,
+            expected_metric_header += f"M@{metric},"   # M@l1d_cache_miss_ratio,M@load_percentage,M@l1d_cache_miss_ratio,M@load_percentage,
+
+    ### Check for complete list of events including metrics
+    EVENTS = list()
+    for _ in cores:
+        EVENTS.append("cycle")  # Each core includes cycles (first fixed counter)
+        for metric in METRICS.split(","):
+            metric_events = wperf_metric_events(metric).strip("{}").split(",")
+            EVENTS += metric_events
+
+    expected_events_header = str()
+    for event in EVENTS:
+        expected_events_header += f"{event},"
+    expected_events_header += expected_metric_header
 
     with open(cvs_files[0], 'r') as file:
         csv = file.read()
 
-        # Check for line endings as well
-        assert expected_cores + '\n' in csv
+        # Check for line endings
+        assert expected_metric_cores + '\n' in csv
+        assert expected_metric_header + '\n' in csv
+
+        # Check for whole events header including metric events and metric names
         assert expected_events_header + '\n' in csv
