@@ -61,3 +61,27 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
     except:
         assert False
     assert True
+
+@pytest.mark.parametrize("scheme_name", [ "version", "list", "test", "stat" ])
+def test_wperf_json_stdout_schema(request, tmp_path, scheme_name):
+    """ Test `wperf` JSON output against scheme """
+    test_path = os.path.dirname(request.path)
+    file_path = tmp_path / 'test.json'
+    if "version" in scheme_name:
+        cmd_type = "--version"
+    elif "list" in scheme_name:
+        cmd_type = "list"
+    elif "test" in scheme_name:
+        cmd_type = "test"
+    elif "stat" in scheme_name:
+        cmd_type = "stat -e cpu_cycles sleep 1"
+    cmd = f'wperf {cmd_type} --json'
+    stdout, _ = run_command(cmd.split())
+
+    json_output = json.loads(stdout)
+
+    try:
+        validate(instance=json_output, schema=get_schema(scheme_name, test_path))
+    except:
+        assert False
+    assert True

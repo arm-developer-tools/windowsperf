@@ -841,6 +841,7 @@ wmain(
                         perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, sample.first, request.cores_idx[0], a.event_src);
                     }
                 }
+
                 if (request.do_annotate)
                 {
                     std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
@@ -904,6 +905,11 @@ wmain(
                             m_out.Print(annotateTable);
                             annotateTables.push_back(std::make_pair(a.desc.name, annotateTable));
                         }
+                    }
+
+                    if(!m_out.m_isQuiet && (m_outputType == TableType::PRETTY || m_outputType == TableType::ALL))
+                    {
+                        m_out.GetOutputStream() << std::endl;
                     }
                 }
 
