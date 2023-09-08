@@ -2,6 +2,8 @@
 
 #ifdef WPERF_LIB_EXPORTS
 #define WPERF_LIB_API __declspec(dllexport)
+#elif WPERF_LIB_NODLL
+#define WPERF_LIB_API
 #else
 #define WPERF_LIB_API __declspec(dllimport)
 #endif
