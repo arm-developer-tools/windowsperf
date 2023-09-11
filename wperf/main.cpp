@@ -901,7 +901,7 @@ wmain(
                         {
                             TableOutput<SamplingAnnotateOutputTraitsL, GlobalCharType> annotateTable;
                             annotateTable.PresetHeaders();
-                            annotateTable.Insert(col_source_file, col_line_number, col_hits);
+                            annotateTable.Insert(col_line_number, col_hits, col_source_file);
                             m_out.Print(annotateTable);
                             annotateTables.push_back(std::make_pair(a.desc.name, annotateTable));
                         }
