@@ -43,10 +43,113 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
 {
-	TEST_CLASS(wperftest_parsers_sampling)
+	TEST_CLASS(wperftest_parsers_events_sampling)
 	{
 	public:
-		TEST_METHOD(test_parse_events_str_for_sample_rf)
+		TEST_METHOD(test_parse_events_str_for_sample_1)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;	// Sorted by index !
+			std::map<uint32_t, uint32_t> sampling_inverval;		// [event_idx] => frequency
+
+			parse_events_str_for_sample(L"vfp_spec:10000", ioctl_events_sample, sampling_inverval);
+
+			Assert::IsTrue(sampling_inverval.size() == 1);
+			Assert::IsTrue(sampling_inverval.count(0x0075) == 1);
+
+			Assert::IsTrue(sampling_inverval[0x0075] == 10000);
+
+			Assert::IsTrue(ioctl_events_sample.size() == 1);	// Sorted by index !
+
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0075));			// vfp_spec
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(10000));
+		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_2)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;	// Sorted by index !
+			std::map<uint32_t, uint32_t> sampling_inverval;		// [event_idx] => frequency
+
+			parse_events_str_for_sample(L"vfp_spec:12345,ld_spec:67890", ioctl_events_sample, sampling_inverval);
+
+			Assert::IsTrue(sampling_inverval.size() == 2);
+			Assert::IsTrue(sampling_inverval.count(0x0075) == 1);
+			Assert::IsTrue(sampling_inverval.count(0x0070) == 1);
+
+			Assert::IsTrue(sampling_inverval[0x0070] == 67890);
+			Assert::IsTrue(sampling_inverval[0x0075] == 12345);
+
+			Assert::IsTrue(ioctl_events_sample.size() == 2);	// Sorted by index !
+
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0070));			// ld_spec
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(67890));
+
+			Assert::IsTrue(ioctl_events_sample[1].index == uint32_t(0x0075));			// vfp_spec
+			Assert::IsTrue(ioctl_events_sample[1].interval == uint32_t(12345));
+		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_3)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;	// Sorted by index !
+			std::map<uint32_t, uint32_t> sampling_inverval;		// [event_idx] => frequency
+
+			parse_events_str_for_sample(L"vfp_spec:12345,ld_spec:67890,cpu_cycles:1234321", ioctl_events_sample, sampling_inverval);
+
+			Assert::IsTrue(sampling_inverval.size() == 3);
+			Assert::IsTrue(sampling_inverval.count(0x0075) == 1);
+			Assert::IsTrue(sampling_inverval.count(0x0070) == 1);
+			Assert::IsTrue(sampling_inverval.count(0x0011) == 1);
+
+			Assert::IsTrue(sampling_inverval[0x0075] == 12345);
+			Assert::IsTrue(sampling_inverval[0x0070] == 67890);
+			Assert::IsTrue(sampling_inverval[0x0011] == 1234321);
+
+			Assert::IsTrue(ioctl_events_sample.size() == 3);	// Sorted by index !
+
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0070));			// ld_spec
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(67890));
+
+			Assert::IsTrue(ioctl_events_sample[1].index == uint32_t(0x0075));			// vfp_spec
+			Assert::IsTrue(ioctl_events_sample[1].interval == uint32_t(12345));
+
+			Assert::IsTrue(ioctl_events_sample[2].index == uint32_t(CYCLE_EVT_IDX));	// cpu_cycles
+			Assert::IsTrue(ioctl_events_sample[2].interval == uint32_t(1234321));
+		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_3_default_interval_ld_spec)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;	// Sorted by index !
+			std::map<uint32_t, uint32_t> sampling_inverval;		// [event_idx] => frequency
+
+			parse_events_str_for_sample(L"vfp_spec:12345,ld_spec,cpu_cycles:1234321", ioctl_events_sample, sampling_inverval);
+
+			Assert::IsTrue(sampling_inverval.size() == 3);
+			Assert::IsTrue(sampling_inverval.count(0x0075) == 1);
+			Assert::IsTrue(sampling_inverval.count(0x0070) == 1);
+			Assert::IsTrue(sampling_inverval.count(0x0011) == 1);
+
+			Assert::IsTrue(sampling_inverval[0x0075] == 12345);
+			Assert::IsTrue(sampling_inverval[0x0070] == PARSE_INTERVAL_DEFAULT);
+			Assert::IsTrue(sampling_inverval[0x0011] == 1234321);
+
+			Assert::IsTrue(ioctl_events_sample.size() == 3);	// Sorted by index !
+
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0070));			// ld_spec
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(PARSE_INTERVAL_DEFAULT));
+
+			Assert::IsTrue(ioctl_events_sample[1].index == uint32_t(0x0075));			// vfp_spec
+			Assert::IsTrue(ioctl_events_sample[1].interval == uint32_t(12345));
+
+			Assert::IsTrue(ioctl_events_sample[2].index == uint32_t(CYCLE_EVT_IDX));	// cpu_cycles
+			Assert::IsTrue(ioctl_events_sample[2].interval == uint32_t(1234321));
+		}
+	};
+
+	/****************************************************************************/
+
+	TEST_CLASS(wperftest_parsers_raw_events_sampling)
+	{
+	public:
+		TEST_METHOD(test_parse_raw_events_str_for_sample_rf)
 		{
 			std::vector<struct evt_sample_src> ioctl_events_sample;
 			std::map<uint32_t, uint32_t> sampling_inverval;
@@ -58,7 +161,19 @@ namespace wperftest
 			Assert::AreEqual(ioctl_events_sample[0].interval, PARSE_INTERVAL_DEFAULT);
 		}
 
-		TEST_METHOD(test_parse_events_str_for_sample_r1b)
+		TEST_METHOD(test_parse_raw_events_str_for_sample_rf_interval)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;
+			std::map<uint32_t, uint32_t> sampling_inverval;
+
+			parse_events_str_for_sample(L"rf:12345", ioctl_events_sample, sampling_inverval);
+
+			Assert::IsTrue(ioctl_events_sample.size() ==  size_t(1));
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0F));
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(12345));
+		}
+
+		TEST_METHOD(test_parse_raw_events_str_for_sample_r1b)
 		{
 			std::vector<struct evt_sample_src> ioctl_events_sample;
 			std::map<uint32_t, uint32_t> sampling_inverval;
@@ -70,7 +185,7 @@ namespace wperftest
 			Assert::AreEqual(ioctl_events_sample[0].interval, PARSE_INTERVAL_DEFAULT);
 		}
 
-		TEST_METHOD(test_parse_events_str_for_sample_r12_rab)
+		TEST_METHOD(test_parse_raw_events_str_for_sample_r12_rab)
 		{
 			std::vector<struct evt_sample_src> ioctl_events_sample;
 			std::map<uint32_t, uint32_t> sampling_inverval;
@@ -85,7 +200,22 @@ namespace wperftest
 			Assert::AreEqual(ioctl_events_sample[1].interval, PARSE_INTERVAL_DEFAULT);
 		}
 
-		TEST_METHOD(test_parse_events_str_for_sample_r_7_events)
+		TEST_METHOD(test_parse_raw_events_str_for_sample_r12_rab_interval)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;
+			std::map<uint32_t, uint32_t> sampling_inverval;
+
+			parse_events_str_for_sample(L"r12:12345,rab:67890", ioctl_events_sample, sampling_inverval);
+
+			Assert::AreEqual(ioctl_events_sample.size(), (size_t)2);
+			Assert::AreEqual(ioctl_events_sample[0].index, (uint32_t)0x12);
+			Assert::AreEqual(ioctl_events_sample[0].interval, uint32_t(12345));
+
+			Assert::AreEqual(ioctl_events_sample[1].index, (uint32_t)0xAB);
+			Assert::AreEqual(ioctl_events_sample[1].interval, uint32_t(67890));
+		}
+
+		TEST_METHOD(test_parse_raw_events_str_for_sample_r_7_events)
 		{
 			std::vector<struct evt_sample_src> ioctl_events_sample;
 			std::map<uint32_t, uint32_t> sampling_interval;
@@ -116,7 +246,38 @@ namespace wperftest
 			Assert::AreEqual(ioctl_events_sample[6].interval, PARSE_INTERVAL_DEFAULT);
 		}
 
-		TEST_METHOD(test_parse_events_str_for_sample_misc)
+		TEST_METHOD(test_parse_raw_events_str_for_sample_r_7_events_interval)
+		{
+			std::vector<struct evt_sample_src> ioctl_events_sample;
+			std::map<uint32_t, uint32_t> sampling_interval;
+
+			parse_events_str_for_sample(L"ra,r3c:10000,rdab,rdead:200000,r1a2b,rfedc:3000000,r1234", ioctl_events_sample, sampling_interval);
+
+			Assert::AreEqual(ioctl_events_sample.size(), (size_t)7);
+
+			Assert::AreEqual(ioctl_events_sample[0].index, (uint32_t)0xA);
+			Assert::AreEqual(ioctl_events_sample[0].interval, PARSE_INTERVAL_DEFAULT);
+
+			Assert::AreEqual(ioctl_events_sample[1].index, (uint32_t)0x3C);
+			Assert::AreEqual(ioctl_events_sample[1].interval, uint32_t(10000));
+
+			Assert::AreEqual(ioctl_events_sample[2].index, (uint32_t)0xDAB);
+			Assert::AreEqual(ioctl_events_sample[2].interval, PARSE_INTERVAL_DEFAULT);
+
+			Assert::AreEqual(ioctl_events_sample[3].index, (uint32_t)0x1234);
+			Assert::AreEqual(ioctl_events_sample[3].interval, PARSE_INTERVAL_DEFAULT);
+
+			Assert::AreEqual(ioctl_events_sample[4].index, (uint32_t)0x1A2B);
+			Assert::AreEqual(ioctl_events_sample[4].interval, PARSE_INTERVAL_DEFAULT);
+
+			Assert::AreEqual(ioctl_events_sample[5].index, (uint32_t)0xDEAD);
+			Assert::AreEqual(ioctl_events_sample[5].interval, uint32_t(200000));
+
+			Assert::AreEqual(ioctl_events_sample[6].index, (uint32_t)0xFEDC);
+			Assert::AreEqual(ioctl_events_sample[6].interval, uint32_t(3000000));
+		}
+
+		TEST_METHOD(test_parse_raw_events_str_for_sample_misc)
 		{
 			{
 				std::vector<struct evt_sample_src> ioctl_events_sample;
