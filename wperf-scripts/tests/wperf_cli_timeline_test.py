@@ -90,7 +90,7 @@ def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
     # Test for timeline file content
     assert b"timeline file: 'wperf_core_%s" % (str.encode(str(C))) in stdout    # e.g. timeline file: 'wperf_core_1_2023_06_29_09_09_05.core.csv'
 
-    cvs_files = re.findall(rb'wperf_core_%s[a-z0-9_.]+' % (str.encode(str(C))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
+    cvs_files = re.findall(rb'wperf_core_%s_[0-9_]+\.core\.csv' % (str.encode(str(C))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
     assert len(cvs_files) == 1
 
     with open(cvs_files[0], 'r') as file:
@@ -130,7 +130,7 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
     # Test for timeline file content
     assert b"timeline file: 'wperf_system_side_" in stdout    # e.g. timeline file: 'wperf_system_side_2023_06_29_10_05_27.core.csv'
 
-    cvs_files = re.findall(rb'wperf_system_side_[a-z0-9_.]+', stdout)   # e.g. ['wperf_system_side_2023_06_29_10_05_27.core.csv']
+    cvs_files = re.findall(rb'wperf_system_side_[0-9_]+\.core\.csv', stdout)   # e.g. ['wperf_system_side_2023_06_29_10_05_27.core.csv']
     assert len(cvs_files) == 1
 
     with open(cvs_files[0], 'r') as file:
@@ -173,7 +173,7 @@ def test_wperf_timeline_core_file_output_multiplexing(N, SLEEP,KERNEL_MODE,EVENT
     # Test for timeline file content
     assert b"timeline file: 'wperf_system_side_" in stdout    # e.g. timeline file: 'wperf_system_side_2023_06_29_10_05_27.core.csv'
 
-    cvs_files = re.findall(rb'wperf_system_side_[a-z0-9_.]+', stdout)   # e.g. ['wperf_system_side_2023_06_29_10_05_27.core.csv']
+    cvs_files = re.findall(rb'wperf_system_side_[0-9_]+\.core\.csv', stdout)   # e.g. ['wperf_system_side_2023_06_29_10_05_27.core.csv']
     assert len(cvs_files) == 1
 
     expected_events = 'cycle,sched_times,'  # Multiplexing start with this
@@ -224,7 +224,7 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
     COLS += len(METRICS.split(","))
 
     assert b"timeline file: 'wperf_core_%s" % (str.encode(str(C))) in stdout    # e.g. timeline file: 'wperf_core_1_2023_06_29_09_09_05.core.csv'
-    cvs_files = re.findall(rb'wperf_core_%s[a-z0-9_.]+' % (str.encode(str(C))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
+    cvs_files = re.findall(rb'wperf_core_%s_[0-9_]+\.core\.csv' % (str.encode(str(C))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
     assert len(cvs_files) == 1
 
     expected_events_header = "cycle,"
@@ -273,7 +273,7 @@ def test_wperf_timeline_ts_metrics_many_cores(C, N, METRICS):
     assert len(cores) > 1   # Sanity check as we test for list of cores > 1
 
     assert b"timeline file: 'wperf_system_side_" in stdout    # e.g. timeline file: 'wperf_system_side_2023_09_04_04_00_42.core.csv'
-    cvs_files = re.findall(rb'wperf_system_side_[a-z0-9_.]+', stdout)   # e.g. ['wperf_system_side_2023_09_04_04_00_42.core.csv']
+    cvs_files = re.findall(rb'wperf_system_side_[0-9_]+\.core\.csv', stdout)   # e.g. ['wperf_system_side_2023_09_04_04_00_42.core.csv']
     assert len(cvs_files) == 1
 
     ### We will check here ONLY for columns at the end holding metric names and cores for them

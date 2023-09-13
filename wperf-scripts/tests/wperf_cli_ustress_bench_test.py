@@ -236,7 +236,7 @@ def test_ustress_execute_micro_benchmark(core,N,I,metric,benchmark,param,thresho
     stdout, _ = run_command(f"wperf stat -v -c {core} -m {metric} -t -n {N} -i {I} --timeout 1 {benchmark_path} {param}")
 
     # Get timeline CVS filename from stdout (we get this with `-v`)
-    cvs_files = re.findall(rb'wperf_core_%s[a-z0-9_.]+' % (str.encode(str(core))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
+    cvs_files = re.findall(rb'wperf_core_%s_[0-9_]+\.core\.csv' % (str.encode(str(core))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
     assert len(cvs_files) == 1
 
     metric_values = get_metric_values(cvs_files[0], metric)
