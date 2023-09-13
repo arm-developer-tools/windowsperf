@@ -349,6 +349,107 @@ System-wide Overall:
                1.134 seconds time elapsed
 ```
 
+## Timeline (count multiple times between intervals)
+
+Timeline feature allow users to perform continuous counting (defined with `--timeout <SEC>` command line option) between intervals (defined with `-i <SEC>`) for `N` times (defined with `-n <N>`). For example command:
+
+```
+>>wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
+counting ... done
+sleeping ... done
+counting ... done
+sleeping ... done
+counting ... done
+sleeping ... done
+```
+
+will perform:
+1) Count of `imix` metric (`-m imix`) events for 5 seconds (`--timeout 5`) on CPU core #1 (`-c 1`).
+2) Sleep for 2 seconds (`-i 2`)
+3) Repeat above count and sleep 3 times (`-n 3`).
+
+Note: use `-v` (verbose) command line option together with timeline to get access to CSV output file name:
+
+```
+>wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5  -v
+timeline file: 'wperf_core_1_2023_09_13_13_31_59.core.csv'
+events to be counted:
+     5              core events: 0x001b 0x0073 0x0075 0x0074 0x0070
+...
+```
+
+Hint: use `-m <metric>` to capture metric events, and/or `-e <events>` to count additional events.
+
+Note: to check available events and metrics please use `wperf list` and `wperf list -v` commands. Latter one gives you a bit more information about events and metrics.
+
+### Timeline output file
+
+Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-separated_values). It's format uses comma separated values to distinguish between columns. CSV file name contains core number, current timestamp, name of event counted.
+
+Timeline stores results in a form of a CSV file. Below is an output from above timeline example. Please note that we
+
+```
+>type wperf_core_1_2023_09_13_13_24_59.core.csv
+Multiplexing,FALSE
+Kernel mode,FALSE
+Count interval,2.00
+Vendor,Arm Limited
+Event class,core
+
+core 1,core 1,core 1,core 1,core 1,core 1,
+cycle,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,
+40577993383,1188456413,266887221,2912446099,3216069692,65046013,
+339079492,373027981,168147826,3377237,311113,89129873,
+385564403,497359205,231406201,4309027,350189,117594750,
+```
+
+Timeline file contains header with few counting setting values (these will increase in the future), and rows with column oriented values. These specify cores, events and metrics counted and computed during timeline pass:
+
+#### Timeline file content schema
+
+```
++------------------------------+
+|                              |
+|       timeline_headers       |
+|                              |
++------------------------------+
+
++------------------------------+
+|    timeline_header_cores     |
++------------------------------+
+| timeline_header_event_names  | + timeline_header_metric_names
++------------------------------+
+| timeline_header_event_values | + timeline_header_metric_values
++------------------------------+
+```
+
+### Example counting with Telemetry Solution metric
+
+In case of targets supporting Telemetry Solution metrics users can specify those with `-m` command line option. Because TS metrics contain formulas `wperf` can calculate those based on event occurrences and present metric value in last columns. Metrics are available in CVS file and marked with leading `M@`, e.g. `M@l1d_cache_miss_ratio` or `M@l1d_tlb_mpki` in order to distinguish metric name from event name.
+
+For below command which is using TS metrics `l1d_cache_miss_ratio` and `l1d_tlb_mpki` available on neoverse CPUs:
+
+```
+>wperf stat  -m l1d_cache_miss_ratio,l1d_tlb_mpki -c 1 -t -i 1 -n 3
+```
+
+We can see two new columns in CSV file on right-hand side: `M@l1d_cache_miss_ratio` and `M@l1d_tlb_mpki`:
+
+```
+core 1,     core 1,     core 1,             core 1,         core 1,         core 1,                 core 1,
+cycle,      l1d_cache,  l1d_cache_refill,   inst_retired,   l1d_tlb_refill, M@l1d_cache_miss_ratio, M@l1d_tlb_mpki,
+2672756503, 3429392628, 18679267,           3949525622,     3947728808,     0.005,                  999.545,
+15319613,   6098497,    187612,             16320369,       108408,         0.031,                  6.642,
+64449120,   32578964,   451811,             99540434,       283776,         0.014,                  2.851,
+```
+
+Where metrics:
+
+* `l1d_cache_miss_ratio` = (`l1d_cache_refill` / `l1d_cache`) [per cache access] and
+* `l1d_tlb_mpki` = ((`l1d_tlb_refill` / `inst_retired`) * 1000) [MPKI].
+
+Note: use `wperf list -v` command line option to determine if your CPU supports TS metrics or metrics with defined formula.
+
 ## JSON output
 
 You can output JSON instead of human readable tables with `wperf`. We've introduced three new command line flags which should help you emit JSON.
