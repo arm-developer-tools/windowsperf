@@ -76,7 +76,7 @@ If you face issues installing the driver you might look at the last sections of 
 
 ## Extra step (installing non-signed driver)
 
-Use below steps at your own risk. 
+Use below steps at your own risk.
 
 Currently `wperf-driver` is an unsigned driver. To enable installing an unsigned driver on WOA ARM64 machines requires a few extra steps.
 
@@ -104,4 +104,40 @@ You can obtain it in advance with procedure described [here](https://support.mic
 ### Third, Disable Secure Boot on your machine
 
 [Disable secure boot](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/disabling-secure-boot?view=windows-11) from BIOS if it has been enabled. See also [Secure boot feature signing requirements for kernel-mode drivers](https://learn.microsoft.com/en-us/windows/win32/w8cookbook/secured-boot-signing-requirements-for-kernel-mode-drivers) article for more details.
+
+# Kernel Driver user space configuration
+
+Users can now specify counting timer period (see !300+ for more details). User can adjust count timer period from `10ms` to `100ms`. This value has to be set for each count separately. Driver will not "remember" adjusted counter timer period. Users must specify it with `--config count.period=VALUE` command line option (see !301+ for more details), where `VALUE` is between `10` and `100` ms. See example:
+
+## Example setting of counting timer value to 10ms
+
+```
+>wperf stat .... --config count.period=10 ...
+```
+
+## How to check current `config.count.period*` settings
+
+Users can check current minimal, maximal and default counting timer period with `wperf test` command. See example below:
+
+```
+> wperf test
+...
+        config.count.period                                 100
+        config.count.period_max                             100
+        config.count.period_min                             10
+...
+```
+
+Note: Please note that this period is set in `PMU_CTL_START` IOCTRL message.
+
+## Dry test --config command line setting
+
+You can dry test this setting and:
+
+```
+>wperf test --config count.period=13
+...
+        config.count.period                                 13
+...
+```
 
