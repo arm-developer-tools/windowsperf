@@ -141,7 +141,6 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -153,7 +152,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -162,7 +161,6 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -175,7 +173,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -184,7 +182,6 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -197,7 +194,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -208,7 +205,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -222,7 +218,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -233,7 +229,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;_WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -248,7 +243,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -259,7 +254,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -274,7 +268,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -283,7 +277,6 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -296,7 +289,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -307,7 +300,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WPERF_LIB_EXPORTS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
@@ -322,7 +314,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

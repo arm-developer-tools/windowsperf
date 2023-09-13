@@ -499,6 +499,8 @@ typedef struct _SAMPLE_CONF
     const wchar_t *record_commandline;
     /// The time duration to wait for the process to properly start (in milliseconds)
     uint32_t record_spawn_delay;
+    /// Set this to true if exporting perf.data, false if not.
+    bool export_perf_data;
 } SAMPLE_CONF, *PSAMPLE_CONF;
 
 typedef struct _SAMPLE_INFO
@@ -548,6 +550,9 @@ typedef struct _SAMPLE_STATS
 ///   false, // kernel_mode
 ///   false, // annotate
 ///   false, // record
+///   NULL, // record_commandline
+///   0, // record_spawn_delay
+///   false, // export_perf_data
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))
@@ -584,6 +589,7 @@ typedef struct _SAMPLE_STATS
 ///   true, // record
 ///   L"c:\\cpython\\PCbuild\\arm64\\python_d.exe -c 10**10**1000", // record commandline
 ///   1000, // record spawn delay
+///   false, // export_perf_data
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))
@@ -637,6 +643,9 @@ WPERF_LIB_API bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_in
 ///   false, // kernel_mode
 ///   true, // annotate
 ///   false, // record
+///   NULL, // record_commandline
+///   0, // record_spawn_delay
+///   false, // export_perf_data
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))
@@ -683,6 +692,9 @@ WPERF_LIB_API bool wperf_sample_annotate(PSAMPLE_CONF sample_conf, PANNOTATE_INF
 ///   false, // kernel_mode
 ///   false, // annotate
 ///   false, // record
+///   NULL, // record_commandline
+///   0, // record_spawn_delay
+///   false, // export_perf_data
 /// }
 ///
 /// if (wperf_sample(&sample_conf, NULL))

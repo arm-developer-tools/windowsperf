@@ -280,6 +280,7 @@ wmain(
 		sample_conf.record = true;
 		sample_conf.record_commandline = args.record_cmd.c_str();
 		sample_conf.record_spawn_delay = 1000;
+		sample_conf.export_perf_data = true;
 		printf("checking record...\n");
 		if (wperf_sample(&sample_conf, NULL))
 		{

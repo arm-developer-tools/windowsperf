@@ -9,6 +9,7 @@
 #include "timeline.h"
 #include "wperf-common/gitver.h"
 #include "wperf-common/public.h"
+#include "perfdata.h"
 #include <regex>
 
 typedef struct _COUNTING_INFO
@@ -627,6 +628,8 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             HardwareInformation hardwareInformation{ 0 };
             GetHardwareInfo(hardwareInformation);
 
+            PerfDataWriter perfDataWriter;
+
             if (wcslen(sample_conf->pe_file) == 0)
             {
                 // PE file not specified.
@@ -675,6 +678,14 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             }
             __pmu_device->set_sample_src(ioctl_events_sample, sample_conf->kernel_mode);
 
+            if (sample_conf->export_perf_data)
+            {
+                for (auto& events_sample : ioctl_events_sample)
+                {
+                    perfDataWriter.RegisterSampleEvent(events_sample.index);
+                }
+            }
+
             UINT64 runtime_vaddr_delta = 0;
 
             std::map<std::wstring, PeFileMetaData> dll_metadata;        // [pe_name] -> PeFileMetaData
@@ -714,6 +725,11 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             }
             process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
 
+            if (sample_conf->export_perf_data)
+            {
+                perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, std::wstring(sample_conf->image_name));
+            }
+
             if (EnumProcessModules(process_handle, hMods, sizeof(hMods), &cbNeeded))
             {
                 for (auto i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
@@ -734,6 +750,15 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                         std::wstring mod_path = szModName;
                         modules_metadata[name].mod_path = mod_path;
                         modules_metadata[name].handle = hMods[i];
+
+                        MODULEINFO modinfo;
+                        if (GetModuleInformation(process_handle, hMods[i], &modinfo, sizeof(MODULEINFO)))
+                        {
+                            if (sample_conf->export_perf_data)
+                            {
+                                perfDataWriter.RegisterEvent(PerfDataWriter::MMAP, pid, reinterpret_cast<UINT64>(modinfo.lpBaseOfDll), modinfo.SizeOfImage, mod_path, 0);
+                            }
+                        }
                     }
                 }
             }
@@ -767,6 +792,9 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             if (ret)
             {
                 runtime_vaddr_delta = (UINT64)modinfo.EntryPoint - (image_base + static_entry_point);
+
+                if (sample_conf->export_perf_data)
+                    perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, std::wstring(sample_conf->image_name));
             }
 
             std::vector<FrameChain> raw_samples;
@@ -948,6 +976,22 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
 
                 __samples[a.event_src].push_back({ a.desc.name, a.freq, (double)a.freq * 100 / (double)total_samples[group_idx] });
 
+                if (sample_conf->export_perf_data)
+                {
+                    for (const auto& sample : a.pc)
+                    {
+                        ULONGLONG addr;
+                        if (a.module == NULL)
+                            addr = (sample.first - runtime_vaddr_delta) & 0xFFFFFF;
+                        else
+                        {
+                            UINT64 mod_vaddr_delta = (UINT64)a.module->handle;
+                            addr = (sample.first - mod_vaddr_delta) & 0xFFFFFF;
+                        }
+                        perfDataWriter.RegisterEvent(PerfDataWriter::SAMPLE, pid, sample.first, sample_conf->core_idx, a.event_src);
+                    }
+                }
+
                 if (sample_conf->annotate)
                 {
                     std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
@@ -996,6 +1040,9 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                     }
                 }
             }
+
+            if (sample_conf->export_perf_data)
+                perfDataWriter.Write();
         }
         else
         {
