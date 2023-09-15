@@ -387,7 +387,7 @@
     <ClCompile Include="output.cpp" />
     <ClCompile Include="padding.cpp" />
     <ClCompile Include="parsers.cpp" />
-    <ClCompile Include="perdata.cpp" />
+    <ClCompile Include="perfdata.cpp" />
     <ClCompile Include="pe_file.cpp" />
     <ClCompile Include="pmu_device.cpp" />
     <ClCompile Include="process_api.cpp" />
