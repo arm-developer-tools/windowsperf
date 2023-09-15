@@ -85,10 +85,13 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 """
 
 import os
-import json
-from common import run_command, is_json
+import pathlib as pl
+import re
+from statistics import median
+from common import run_command
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
+from common_ustress import get_metric_values
 
 import pytest
 
@@ -102,82 +105,47 @@ _product_name_cpus = get_make_CPU_name(_product_name)
 if _product_name_cpus not in _cpus:
     pytest.skip(f'skipping as ustress do not support CPU={_product_name_cpus}' % (), allow_module_level=True)
 
+if not pl.Path("wperf.exe").is_file():
+    pytest.skip("Can not find wperf.exe", allow_module_level=True)
 
-@pytest.mark.parametrize("core,event,event_freq,benchmark,param,hottest,hottest_overhead",
+
+################################################################################################
+#      Below are micro-benchmarks which we will execute and check timeline (metric output)
+################################################################################################
+
+
+@pytest.mark.parametrize("core,N,I,metric,benchmark,param,threshold ",
 [
-    (7, "l1d_cache_refill", 10000, "l1d_cache_workload.exe", 5, "stress", 99),
+    (7, 5, 1, "l1d_cache_miss_ratio", "l1d_cache_workload.exe", 10, 0.91),
 ]
 )
-def test_ustress_bench_record_microbenchmark(core,event,event_freq,benchmark,param,hottest,hottest_overhead):
-    r""" Execute 'telemetry-solution\tools\ustress\<NAME> <PARAM>' and run sampling.
-         Process JSON output to determine sampling accuracy.
+def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,threshold):
+    r""" Execute 'telemetry-solution\tools\ustress\<NAME> <PARAM>' and measure timeline's <METRIC>.
+        Note: This function only works for CSV timeline files with ONE metric calculated (on one core)
 
-        <CORE>              - CPU number to count on (and spawn micro-benchmark process)
-        <EVENT>             - name of event to sample
-        <EVENT_FREQ>        - event sample frequency (in Hz)
-        <BENCHMARK>         - micro-benchmark to execute
-        <PARAM>             - micro-benchmark command line parameter, in ustress case a benchmark execution in seconds (approx.)
-        <HOTTEST>           - we expect sampling to determine that this was "hottest" function
-        <HOTTEST_OVERHEAD>  - we expect sampling overhead for <HOTTEST> to be at least this big
+        <CORE>      - CPU number to count on (and spawn micro-benchmark process)
+        <N>         - how many times count in timeline
+        <I>         - interval between counts (in seconds)
+        <METRIC>    - name of metric to check (and read from CSV file)
+        <BENCHMARK> - micro-benchmark to execute
+        <PARAM>     - micro-benchmark command line parameter, in ustress case a benchmark execution in seconds (approx.)
+        <THRESHOLD> - median of all metric measurements must be above this value or test fails
     """
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    stdout, _ = run_command(f"wperf record -e {event}:{event_freq} -c {core} --timeout 4 --json {benchmark_path} {param}")
+    stdout, _ = run_command(f"wperf stat -v -c {core} -m {metric} -t -n {N} -i {I} --timeout 1 {benchmark_path} {param}")
 
-    assert is_json(stdout)
-    json_output = json.loads(stdout)
+    # Get timeline CVS filename from stdout (we get this with `-v`)
+    cvs_files = re.findall(rb'wperf_core_%s_[0-9_]+\.core\.csv' % (str.encode(str(core))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
+    assert len(cvs_files) == 1
 
-    r"""
-    {
-        "sampling": {
-            "pe_file": "telemetry-solution/tools/ustress/l1d_cache_workload.exe",
-            "pdb_file": "telemetry-solution/tools/ustress/l1d_cache_workload.pdb",
-            "sample_display_row": 50,
-            "samples_generated": 129,
-            "samples_dropped": 1,
-            "base_address": 140700047330040,
-            "runtime_delta": 140694678601728,
-            "events": [
-                {
-                    "type": "l1d_cache_refill",
-                    "samples": [
-                        {
-                            "overhead": 100,
-                            "count": 128,
-                            "symbol": "stress"
-                        }
-                    ],
-                    "interval": 10000,
-                    "printed_sample_num": 1,
-                    "annotate": []
-                }
-            ]
-        }
-    }
-    """
+    metric_values = get_metric_values(cvs_files[0], metric)
+    med = median(metric_values)
 
-    assert json_output["sampling"]["pe_file"].endswith(benchmark)
-    assert json_output["sampling"]["pdb_file"].endswith(benchmark.replace(".exe", ".pdb"))
+    assert len(metric_values) == N      # We should get <N> rows in CSV file with metric values
 
-    assert "events" in json_output["sampling"]
-    assert len(json_output["sampling"]["events"]) > 0
+    if not med >= threshold:
+        pytest.skip(f"{benchmark} metric '{metric}' median {med} < {threshold} -- threshold not reached")
 
-    # Check if event we sample for is in "events"
-    hotest_symbol = json_output["sampling"]["events"][0]
-    assert hotest_symbol["type"] == event
-    assert len(hotest_symbol["samples"]) > 0
-    assert hotest_symbol["interval"] == event_freq
-
-    # We expect in events.samples[0] hottest sample (which we want to check for)
-    hotest_symbol = json_output["sampling"]["events"][0]["samples"][0]
-    symbol_overhead = hotest_symbol["overhead"]
-    symbol_count = hotest_symbol["count"]
-    symbol_name = hotest_symbol["symbol"]
-
-    if not symbol_name == hottest:
-        pytest.skip(f"{benchmark} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{hottest}' -- sampling mismatch")
-
-    assert symbol_name == hottest
-    assert symbol_count > 0
-    assert symbol_overhead >= hottest_overhead
+    assert med >= threshold             # Check if median is above threshold
