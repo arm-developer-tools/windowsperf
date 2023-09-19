@@ -29,6 +29,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-lib-app", "wperf-lib-
 		{C63AE778-8F7E-4E1E-9D79-484A12F44625} = {C63AE778-8F7E-4E1E-9D79-484A12F44625}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-lib-timeline", "wperf-lib-app\wperf-lib-timeline\wperf-lib-timeline.vcxproj", "{9AF7F642-FC0D-4076-9745-3097E7312300}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4500713F-105B-4F35-9FC9-85D30E7C3F2D} = {4500713F-105B-4F35-9FC9-85D30E7C3F2D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -131,6 +136,22 @@ Global
 		{B7A4F18E-A5FA-4C1B-A2A8-E9FCEB06E67F}.Release|Win32.Build.0 = Release|Win32
 		{B7A4F18E-A5FA-4C1B-A2A8-E9FCEB06E67F}.Release|x64.ActiveCfg = Release|x64
 		{B7A4F18E-A5FA-4C1B-A2A8-E9FCEB06E67F}.Release|x64.Build.0 = Release|x64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|ARM64.Build.0 = Debug|ARM64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|ARM64EC.ActiveCfg = Debug|ARM64EC
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|ARM64EC.Build.0 = Debug|ARM64EC
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|Win32.Build.0 = Debug|Win32
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|x64.ActiveCfg = Debug|x64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Debug|x64.Build.0 = Debug|x64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|ARM64.ActiveCfg = Release|ARM64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|ARM64.Build.0 = Release|ARM64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|ARM64EC.ActiveCfg = Release|ARM64EC
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|ARM64EC.Build.0 = Release|ARM64EC
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|Win32.ActiveCfg = Release|Win32
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|Win32.Build.0 = Release|Win32
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|x64.ActiveCfg = Release|x64
+		{9AF7F642-FC0D-4076-9745-3097E7312300}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

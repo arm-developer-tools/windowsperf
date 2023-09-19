@@ -154,54 +154,6 @@ wmain(
 		}
 	}
 
-	if (args.pe_file != NULL && !args.record_cmd.empty())
-	{
-		uint8_t cores[1] = { 0 };
-		uint16_t events[2] = { 0x70, 0x71 };
-		STAT_CONF stat_conf =
-		{
-			1, // num_cores
-			cores, // cores
-			2, // num_events
-			events, // events
-			{0/*num_groups*/, NULL/*num_group_events*/, NULL/*events*/}, // group_events
-			0, // num_metrics
-			NULL, // metric_events
-			1, // duration
-			false, // kernel_mode
-			10, // period
-			true, // timeline
-			2, // count_timeline
-			60, // counting_interval
-			args.pe_file, // pe_file
-			args.record_cmd.c_str(), // record_commandline
-			1000, // record_spawn_delay
-		};
-		printf("checking wperf_stat with timeline...\n");
-		if (wperf_stat(&stat_conf, NULL))
-		{
-			STAT_INFO stat_info;
-			while (wperf_stat(&stat_conf, &stat_info))
-			{
-				printf("wperf_stat: core_idx=%u, event_idx=%u, counter_value=%llu, evt_note=", stat_info.core_idx, stat_info.event_idx, stat_info.counter_value);
-				switch (stat_info.evt_note.type)
-				{
-				case NORMAL_EVT_NOTE:
-					printf("NORMAL_EVT_NOTE\n");
-					break;
-				case GROUP_EVT_NOTE:
-					printf("GROUP_EVT_NOTE, group_id=%u\n", stat_info.evt_note.note.group_note.group_id);
-					break;
-				case METRIC_EVT_NOTE:
-					printf("METRIC_EVT_NOTE, group_id=%u, metric_name=%ls\n", stat_info.evt_note.note.metric_note.group_id, stat_info.evt_note.note.metric_note.name);
-					break;
-				default:
-					printf("Unrecognized event note type\n");
-				}
-			}
-		}
-	}
-
 	int num_cores;
 	if (wperf_num_cores(&num_cores))
 	{
