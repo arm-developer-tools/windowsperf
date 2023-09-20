@@ -51,7 +51,7 @@ static std::map<uint16_t, std::vector<SAMPLE_ANNOTATE_INFO>> __annotate_samples;
 static size_t __annotate_sample_event_index = 0;
 static size_t __annotate_sample_index = 0;
 
-extern "C" bool wperf_init()
+extern "C" bool wperf_init(bool do_verbose)
 {
     try
     {
@@ -59,6 +59,7 @@ extern "C" bool wperf_init()
         __pmu_device->init();
         __pmu_cfg = new pmu_device_cfg();
         __pmu_device->get_pmu_device_cfg(*__pmu_cfg);
+        __pmu_device->do_verbose = do_verbose;
     }
     catch (...)
     {
@@ -466,7 +467,6 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                     const ReadOut* core_outs = __pmu_device->get_core_outs();
 
                     std::vector<uint8_t> counting_cores = __pmu_device->get_cores_idx();
-                    std::vector<std::wstring> col_metric_value;
                     for (auto i : counting_cores)
                     {
                         UINT32 evt_num = core_outs[i].evt_num;
@@ -495,7 +495,7 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                                     // This is a NORMAL_EVT_NOTE.
                                     counting_info.evt_note.type = NORMAL_EVT_NOTE;
                                 }
-                                else if (std::regex_match(note, m, std::wregex(L"g([0-9]+),([a-z]+)")))
+                                else if (std::regex_match(note, m, std::wregex(L"g([0-9]+),([a-z0-9_]+)")))
                                 {
                                     // This is a METRIC_EVT_NOTE.
                                     auto it = metrics.find(m[2]);
@@ -525,11 +525,10 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                             counting_info.multiplexed_round = round;
                             counting_info.scaled_value = (uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round));
                             __countings[i].push_back(counting_info);
-
-                            col_metric_value.push_back(std::to_wstring(counting_info.scaled_value));
                         }
                     }
-                    timeline::timeline_header_event_values[EVT_CORE].push_back(col_metric_value);
+                    __pmu_device->print_core_stat(__ioctl_events[EVT_CORE]);
+                    __pmu_device->print_core_metrics(__ioctl_events[EVT_CORE]);
                 }
 
                 if (stat_conf->timeline)

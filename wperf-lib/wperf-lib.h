@@ -65,7 +65,7 @@ typedef struct _METRIC_INFO
 /// Initialize wperf-lib.
 /// </summary>
 /// <returns>true if the call succeeds, false if not.</returns>
-WPERF_LIB_API bool wperf_init();
+WPERF_LIB_API bool wperf_init(bool do_verbose = false);
 
 /// <summary>
 /// Close wperf-lib.

@@ -21,22 +21,24 @@ struct Args
     uint8_t core;
     int N;
     double I;
+    std::wstring metric;
     std::wstring pe_file;
     std::wstring record_commandline;
 };
 
 int parse_args(struct Args *args, int argc, const wchar_t *argv[])
 {
-    if (argc < 5)
+    if (argc < 6)
         return -1;
 
     args->core = (uint8_t)wcstol(argv[1], nullptr, 0);
     args->N = wcstol(argv[2], nullptr, 0);
     args->I = wcstol(argv[3], nullptr, 0);
-    args->pe_file = std::wstring(argv[4]);
+    args->metric = std::wstring(argv[4]);
+    args->pe_file = std::wstring(argv[5]);
 
     std::wstringstream wss;
-    for (int i = 4; i < argc; i++)
+    for (int i = 5; i < argc; i++)
     {
         wss << argv[i] << " ";
     }
@@ -45,6 +47,7 @@ int parse_args(struct Args *args, int argc, const wchar_t *argv[])
     printf("core:               %d\n", args->core);
     printf("N:                  %d\n", args->N);
     printf("I:                  %f\n", args->I);
+    printf("metric:             %S\n", args->metric.c_str());
     printf("PE file:            %S\n", args->pe_file.c_str());
     printf("record commandline: %S\n", args->record_commandline.c_str());
     return 0;
@@ -59,27 +62,26 @@ int wmain(int argc, const wchar_t *argv[])
         return 1;
     }
 
-    if (!wperf_init())
+    if (!wperf_init(true/*do_verbose*/))
     {
         printf("failed to init wperf\n");
         return 1;
     }
 
     uint8_t cores[] = {args.core};
-    // TODO: We need to retrieve metric from the args and construct a list of events to count
-    uint16_t events[] = {0x70, 0x71};
+    const wchar_t *metric_events[] = {args.metric.c_str()};
     STAT_CONF stat_conf =
     {
         sizeof(cores)/sizeof(cores[0]), // num_cores
         cores, // cores
-        sizeof(events)/sizeof(events[0]), // num_events
-        events, // events
+        0, // num_events
+        NULL, // events
         {0/*num_groups*/, NULL/*num_group_events*/, NULL/*events*/}, // group_events
-        0, // num_metrics
-        NULL, // metric_events
+        sizeof(metric_events)/sizeof(metric_events[0]), // num_metrics
+        metric_events, // metric_events
         1, // duration
         false, // kernel_mode
-        10, // period
+        100, // period
         true, // timeline
         args.N, // count_timeline
         args.I, // counting_interval

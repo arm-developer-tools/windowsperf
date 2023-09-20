@@ -105,8 +105,8 @@ _product_name_cpus = get_make_CPU_name(_product_name)
 if _product_name_cpus not in _cpus:
     pytest.skip(f'skipping as ustress do not support CPU={_product_name_cpus}' % (), allow_module_level=True)
 
-if not pl.Path("wperf-lib-app.exe").is_file():
-    pytest.skip("Can not find wperf-lib-app.exe", allow_module_level=True)
+if not pl.Path("wperf-lib-timeline.exe").is_file():
+    pytest.skip("Can not find wperf-lib-timeline.exe", allow_module_level=True)
 
 
 ################################################################################################
@@ -134,7 +134,7 @@ def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,t
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    stdout, _ = run_command(f"wperf-lib-app.exe")   # TODO: add plumbing to run timeline
+    stdout, _ = run_command(f"wperf-lib-timeline.exe {core} {N} {I} {metric} {benchmark_path} {param}")
 
     # Get timeline CVS filename from stdout (we get this with `-v`)
     cvs_files = re.findall(rb'wperf_core_%s_[0-9_]+\.core\.csv' % (str.encode(str(core))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
