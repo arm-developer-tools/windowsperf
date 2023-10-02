@@ -57,6 +57,9 @@ wperf-lib/x64/
 wperf-lib-app/ARM64/
 wperf-lib-app/ARM64EC/
 wperf-lib-app/x64/
+wperf-lib-app/wperf-lib-timeline/ARM64/
+wperf-lib-app/wperf-lib-timeline/ARM64EC/
+wperf-lib-app/wperf-lib-timeline/x64/
 
 # Temporary files that should be masked
 tmp/
