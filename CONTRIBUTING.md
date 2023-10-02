@@ -25,16 +25,19 @@ Good commit message examples can be found [here](https://wiki.openstack.org/wiki
 ## Description prefixed
 
 | Prefix | Code change |
-| -------------- | ----------- |
-| `wperf` 			| Changes to files in `WindowsPerf\wperf` directory. |
-| `wperf-common` 	| Changes to files in `WindowsPerf\wperf-common` directory. |
-| `wperf-devgen` 	| Changes to files in `WindowsPerf\wperf-devgen` directory. |
-| `wperf-driver` 	| Changes to files in `WindowsPerf\wperf-driver` directory. |
-| `wperf-scripts` 	| Changes to files in `WindowsPerf\wperf-scripts` directory. |
-| `wperf-test` 	    | Changes to files in `WindowsPerf\wperf-test` directory. |
-| `docs`  			| Changes to documentation (E.g.: `README.md`). |
-| `sln` 			| Changes to solution files `windowsperf.sln`. |
-| `other` 			| Changes to other files (E.g.: `.gitignore`, `Makefile`). |
+| --------------------- | ----------- |
+| `wperf`               | Changes to files in `WindowsPerf\wperf` directory. |
+| `wperf-common`        | Changes to files in `WindowsPerf\wperf-common` directory. |
+| `wperf-devgen`        | Changes to files in `WindowsPerf\wperf-devgen` directory. |
+| `wperf-driver`        | Changes to files in `WindowsPerf\wperf-driver` directory. |
+| `wperf-scripts`       | Changes to files in `WindowsPerf\wperf-scripts` directory. |
+| `wperf-lib`           | Changes to files in `WindowsPerf\wperf-lib` directory. |
+| `wperf-lib-app`       | Changes to files in `WindowsPerf\wperf-lib-app` directory. |
+| `wperf-lib-timeline`  | Changes to files in `WindowsPerf\wperf-lib-app\wperf-lib-timeline` directory. |
+| `wperf-test`          | Changes to files in `WindowsPerf\wperf-test` directory. |
+| `docs`                | Changes to documentation (E.g.: `README.md`). |
+| `sln`                 | Changes to solution files `windowsperf.sln`. |
+| `other`               | Changes to other files (E.g.: `.gitignore`, `Makefile`). |
 
 You can group prefixes in your commit message subject (E.g.: `"wperf-common,docs: Add new header"`).
 
