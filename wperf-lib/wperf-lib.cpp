@@ -527,8 +527,11 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                             __countings[i].push_back(counting_info);
                         }
                     }
-                    __pmu_device->print_core_stat(__ioctl_events[EVT_CORE]);
-                    __pmu_device->print_core_metrics(__ioctl_events[EVT_CORE]);
+                    if (stat_conf->timeline)
+                    {
+                        __pmu_device->print_core_stat(__ioctl_events[EVT_CORE]);
+                        __pmu_device->print_core_metrics(__ioctl_events[EVT_CORE]);
+                    }
                 }
 
                 if (stat_conf->timeline)
