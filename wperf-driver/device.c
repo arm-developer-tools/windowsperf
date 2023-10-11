@@ -1065,7 +1065,6 @@ NTSTATUS deviceControl(
 
                 KeInitializeTimer(&core->timer);
                 core->timer_running = 1;
-                PRKDPC dpc = &(core->dpc);
 
                 const LONG DefaultPeriod = 100;
                 const LONGLONG ns100 = -10000;  // negative, the expiration time is relative to the current system time
@@ -1078,17 +1077,12 @@ NTSTATUS deviceControl(
 
                 DueTime.QuadPart = do_multiplex ? (Period * ns100) : (2 * (LONGLONG)Period * ns100);
                 Period = do_multiplex ? Period : (2 * Period);
-                KDEFERRED_ROUTINE* dpc_routine = do_multiplex ? multiplex_dpc : overflow_dpc;
 
                 KdPrint(("%!FUNC! %!LINE! ctl_req->period = %d", ctl_req->period));
                 KdPrint(("%!FUNC! %!LINE! count.period = %d", Period));
                 KdPrint(("%!FUNC! %!LINE! DueTime.QuadPart = %lld", DueTime.QuadPart));
 
-                PROCESSOR_NUMBER ProcNumber;
-                KeGetProcessorNumberFromIndex(i, &ProcNumber);
-                KeInitializeDpc(dpc, dpc_routine, core);
-                KeSetTargetProcessorDpcEx(dpc, &ProcNumber);
-                KeSetImportanceDpc(dpc, HighImportance);
+                PRKDPC dpc = do_multiplex ? &core->dpc_multiplex : &core->dpc_overflow;
                 KeSetTimerEx(&core->timer, DueTime, Period, dpc);
             }
         }
@@ -1990,13 +1984,25 @@ WindowsPerfDeviceCreate(
         // Initialize fields for sampling;
         KeInitializeSpinLock(&core->SampleLock);
 
-        PRKDPC dpc = &core_info[i].dpc;
+        // Enable  events and counters
+        PRKDPC dpc = &core_info[i].dpc_queue;
         KeInitializeDpc(dpc, arm64pmc_enable_default, NULL);
         status = KeSetTargetProcessorDpcEx(dpc, &ProcNumber);
         if (status != STATUS_SUCCESS)
             return status;
         KeSetImportanceDpc(dpc, HighImportance);
         KeInsertQueueDpc(dpc, NULL, NULL);
+
+        //Initialize DPCs for counting
+        PRKDPC dpc_overflow = &core_info[i].dpc_overflow;
+        PRKDPC dpc_multiplex = &core_info[i].dpc_multiplex;
+
+        KeInitializeDpc(dpc_overflow, overflow_dpc, &core_info[i]);
+        KeInitializeDpc(dpc_multiplex, multiplex_dpc, &core_info[i]);
+        KeSetTargetProcessorDpcEx(dpc_overflow, &ProcNumber);
+        KeSetTargetProcessorDpcEx(dpc_multiplex, &ProcNumber);
+        KeSetImportanceDpc(dpc_overflow, HighImportance);
+        KeSetImportanceDpc(dpc_multiplex, HighImportance);
     }
 
     PMIHANDLER isr = arm64_pmi_handler;

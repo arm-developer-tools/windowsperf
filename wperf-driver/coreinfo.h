@@ -50,7 +50,7 @@ typedef struct core_info
     KTIMER timer;
     UINT8 timer_running;
     UINT8 dmc_ch;
-    KDPC dpc;
+    KDPC dpc_overflow, dpc_multiplex, dpc_queue;
     enum prof_action prof_core;
     enum prof_action prof_dsu;
     enum prof_action prof_dmc;
