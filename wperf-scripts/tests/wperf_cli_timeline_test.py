@@ -69,15 +69,18 @@ def test_wperf_timeline_system_n3():
     assert stdout.count(b"counting ...") == 3
     assert stdout.count(b"sleeping ...") == 3
 
-@pytest.mark.parametrize("C, N, SLEEP",
+@pytest.mark.parametrize("C,I,N,SLEEP",
 [
-    (0,3,1),
-    (1,5,2),
+    (0,0,3,1),
+    (0,1,5,2),
+
+    (1,0,3,1),
+    (1,1,5,2),
 ]
 )
-def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
+def test_wperf_timeline_core_n_file_output(C, I, N, SLEEP):
     """ Test timeline (core X) file format output.  """
-    cmd = f'wperf stat -m imix -c {C} -t -i 1 -n {N} -v sleep {SLEEP}'
+    cmd = f'wperf stat -m imix -c {C} -t -i {I} -n {N} -v sleep {SLEEP}'
     stdout, _ = run_command(cmd.split())
 
     json_output = wperf_test_no_params()      # get output from `wperf test`
@@ -98,7 +101,7 @@ def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
 
         assert cvs.count("Multiplexing,FALSE") == 1
         assert cvs.count("Kernel mode,FALSE") == 1
-        assert cvs.count("Count interval,1.00") == 1
+        assert cvs.count(f"Count interval,{I}.00") == 1
         assert cvs.count("Event class,core") == 1
         assert cvs.count("cycle,inst_spec,dp_spec,vfp_spec,") == 1  # This should be checked dynamically
         assert cvs.count(f"core {C},") == gpc_num + 1  # +1 for cycle fixed counter
@@ -107,15 +110,18 @@ def test_wperf_timeline_core_n_file_output(C, N, SLEEP):
         pattern = r'([0-9]+,){%s}\n' % (gpc_num + 1)
         assert len(re.findall(pattern, cvs, re.DOTALL)) == N
 
-@pytest.mark.parametrize("N, SLEEP",
+@pytest.mark.parametrize("I,N,SLEEP",
 [
-    (2,1),
-    (4,2),
+    (0,2,1),
+    (0,4,2),
+
+    (1,2,1),
+    (1,4,2),
 ]
 )
-def test_wperf_timeline_system_n_file_output(N, SLEEP):
+def test_wperf_timeline_system_n_file_output(I, N, SLEEP):
     """ Test timeline (system - all cores) file format output.  """
-    cmd = f'wperf stat -m imix -t -i 1 -n {N} -v sleep {SLEEP}'
+    cmd = f'wperf stat -m imix -t -i {I} -n {N} -v sleep {SLEEP}'
     stdout, _ = run_command(cmd.split())
 
     json_output = wperf_test_no_params()      # get output from `wperf test`
@@ -138,7 +144,7 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
 
         assert cvs.count("Multiplexing,FALSE") == 1
         assert cvs.count("Kernel mode,FALSE") == 1
-        assert cvs.count("Count interval,1.00") == 1
+        assert cvs.count(f"Count interval,{I}.00") == 1
         assert cvs.count("Event class,core") == 1
         assert cvs.count("cycle,inst_spec,dp_spec,vfp_spec,") == N_CORES  # This should be checked dynamically
 
@@ -153,18 +159,24 @@ def test_wperf_timeline_system_n_file_output(N, SLEEP):
         pattern = r'([0-9]+,){%s}\n' % (gpc_num + 1)
         assert len(re.findall(pattern, cvs, re.DOTALL)) == N
 
-@pytest.mark.parametrize("N,SLEEP,KERNEL_MODE,EVENTS",
+@pytest.mark.parametrize("I,N,SLEEP,KERNEL_MODE,EVENTS",
 [
-    (6, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec'),
-    (5, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec'),
-    (4, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb'),
-    (3, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill'),
-    (2, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill'),
+    (0, 6, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec'),
+    (0, 5, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec'),
+    (0, 4, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb'),
+    (0, 3, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill'),
+    (0, 2, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill'),
+
+    (1, 6, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec'),
+    (2, 5, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec'),
+    (3, 4, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb'),
+    (2, 3, 1, False, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill'),
+    (1, 2, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec,l1i_tlb,l1i_tlb_refill,l2i_tlb,l2i_tlb_refill,l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill'),
 ]
 )
-def test_wperf_timeline_core_file_output_multiplexing(N, SLEEP,KERNEL_MODE,EVENTS):
+def test_wperf_timeline_core_file_output_multiplexing(I, N, SLEEP, KERNEL_MODE, EVENTS):
     """ Test timeline (system - all cores) with multiplexing.  """
-    cmd = f'wperf stat -e {EVENTS} -t -i 1 -n {N} sleep {SLEEP} -v'
+    cmd = f'wperf stat -e {EVENTS} -t -i {I} -n {N} sleep {SLEEP} -v'
     if (KERNEL_MODE):
         cmd += ' -k'
 
@@ -196,21 +208,25 @@ def test_wperf_timeline_core_file_output_multiplexing(N, SLEEP,KERNEL_MODE,EVENT
         pattern = r'([0-9]+,){%s}\n' % (len(expected_events.split(',')))
         assert len(re.findall(pattern, cvs, re.DOTALL)) == N
 
-@pytest.mark.parametrize("C,N,METRICS",
+@pytest.mark.parametrize("I,C,N,METRICS",
 [
-    (0, 3, "l1d_cache_miss_ratio"),
-    (1, 2, "l1d_tlb_mpki"),
-    (2, 1, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+    (0, 0, 3, "l1d_cache_miss_ratio"),
+    (0, 1, 2, "l1d_tlb_mpki"),
+    (0, 2, 1, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+
+    (1, 1, 2, "l1d_tlb_mpki"),
+    (2, 2, 1, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+    (3, 0, 3, "l1d_cache_miss_ratio"),
 ]
 )
-def test_wperf_timeline_ts_metrics(C, N, METRICS):
+def test_wperf_timeline_ts_metrics(I, C, N, METRICS):
     """ Test timeline with TS metrics. """
     for metric in METRICS.split(","):
         if not wperf_metric_is_available(metric):
             pytest.skip("unsupported metric: " + metric)
             return
 
-    cmd = f'wperf stat -m {METRICS} -t -i 1 -n {N} -c {C} sleep 1 -v'
+    cmd = f'wperf stat -m {METRICS} -t -i {I} -n {N} -c {C} sleep 1 -v'
     stdout, _ = run_command(cmd.split())
 
     COLS = int()    # How many columns are in this timeline (events + metrics)
@@ -248,24 +264,31 @@ def test_wperf_timeline_ts_metrics(C, N, METRICS):
         pattern = r'^((\d*\.*\d+),){%s}$' % (COLS)
         assert len(re.findall(pattern, cvs, re.MULTILINE)) == N
 
-@pytest.mark.parametrize("C,N,METRICS",
+@pytest.mark.parametrize("I,C,N,METRICS",
 [
-    ('1,2',     2, "l1d_cache_miss_ratio"),
-    ('1,2',     3, "l1d_cache_miss_ratio,load_percentage"),
-    ('1,2,3',   2, "l1d_tlb_mpki"),
-    ('1,2,3',   3, "l1d_tlb_mpki,load_percentage"),
-    ('1,3,5,7', 2, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
-    ('1,3,5,7', 3, "l1d_cache_miss_ratio,l1d_tlb_mpki,load_percentage"),
+    (0, '1,2',     2, "l1d_cache_miss_ratio"),
+    (0, '1,2',     3, "l1d_cache_miss_ratio,load_percentage"),
+    (0, '1,2,3',   2, "l1d_tlb_mpki"),
+    (0, '1,2,3',   3, "l1d_tlb_mpki,load_percentage"),
+    (0, '1,3,5,7', 2, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+    (0, '1,3,5,7', 3, "l1d_cache_miss_ratio,l1d_tlb_mpki,load_percentage"),
+
+    (1, '1,2',     2, "l1d_cache_miss_ratio"),
+    (2, '1,2',     3, "l1d_cache_miss_ratio,load_percentage"),
+    (3, '1,2,3',   2, "l1d_tlb_mpki"),
+    (1, '1,2,3',   3, "l1d_tlb_mpki,load_percentage"),
+    (2, '1,3,5,7', 2, "l1d_cache_miss_ratio,l1d_tlb_mpki"),
+    (3, '1,3,5,7', 3, "l1d_cache_miss_ratio,l1d_tlb_mpki,load_percentage"),
 ]
 )
-def test_wperf_timeline_ts_metrics_many_cores(C, N, METRICS):
+def test_wperf_timeline_ts_metrics_many_cores(I, C, N, METRICS):
     """ Test timeline with TS metrics. Multiple cores variant. """
     for metric in METRICS.split(","):
         if not wperf_metric_is_available(metric):
             pytest.skip("unsupported metric: " + metric)
             return
 
-    cmd = f'wperf stat -m {METRICS} -t -i 1 -n {N} -c {C} --timeout 1 -v'
+    cmd = f'wperf stat -m {METRICS} -t -i {I} -n {N} -c {C} --timeout 1 -v'
     stdout, _ = run_command(cmd.split())
 
     cores = C.split(',')
