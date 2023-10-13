@@ -84,6 +84,7 @@ static CoreInfo* core_info;
 // Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
 // See comment on CoreCounterReset() for an explanation.
 static UINT64* last_fpc_read = NULL;
+static KEVENT sync_reset_dpc;
 
 enum
 {
@@ -441,6 +442,26 @@ static VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys
         UpdateDmcCounting(core->dmc_ch, &dmc_array);
 
     core->timer_round++;
+}
+
+static VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
+{
+    UNREFERENCED_PARAMETER(dpc);
+    UNREFERENCED_PARAMETER(sys_arg2);
+
+    if (ctx == NULL)
+        return;
+
+    CoreInfo* core = (CoreInfo*)ctx;
+    CoreCounterStop();
+    update_last_fixed_counter(core->idx);
+    CoreCounterReset();
+
+    ULONG_PTR cores_count = (ULONG_PTR)sys_arg1;
+
+    InterlockedIncrement(&cpunos);
+    if ((ULONG)cpunos >= cores_count)
+        KeSetEvent(&sync_reset_dpc, 0, FALSE);
 }
 
 // Default events that will be assigned to counters when driver loaded.
@@ -1121,7 +1142,12 @@ NTSTATUS deviceControl(
                     dsu_events[j].value = 0;
                     dsu_events[j].scheduled = 0;
                 }
+
+                KeInsertQueueDpc(&core->dpc_reset, (VOID*)cores_count, NULL);
             }
+            KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, 0, NULL);
+            KeClearEvent(&sync_reset_dpc);
+            cpunos = 0;
 
             if (ctl_flags & CTL_FLAG_DMC)
             {
@@ -1996,14 +2022,20 @@ WindowsPerfDeviceCreate(
         //Initialize DPCs for counting
         PRKDPC dpc_overflow = &core_info[i].dpc_overflow;
         PRKDPC dpc_multiplex = &core_info[i].dpc_multiplex;
+        PRKDPC dpc_reset = &core_info[i].dpc_reset;
 
         KeInitializeDpc(dpc_overflow, overflow_dpc, &core_info[i]);
         KeInitializeDpc(dpc_multiplex, multiplex_dpc, &core_info[i]);
+        KeInitializeDpc(dpc_reset, reset_dpc, &core_info[i]);
         KeSetTargetProcessorDpcEx(dpc_overflow, &ProcNumber);
         KeSetTargetProcessorDpcEx(dpc_multiplex, &ProcNumber);
+        KeSetTargetProcessorDpcEx(dpc_reset, &ProcNumber);
         KeSetImportanceDpc(dpc_overflow, HighImportance);
         KeSetImportanceDpc(dpc_multiplex, HighImportance);
+        KeSetImportanceDpc(dpc_reset, HighImportance);
     }
+
+    KeInitializeEvent(&sync_reset_dpc, NotificationEvent, FALSE);
 
     PMIHANDLER isr = arm64_pmi_handler;
     status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);
