@@ -48,5 +48,5 @@ DEFINE_GUID (GUID_DEVINTERFACE_WINDOWSPERF,
 // 
 
 #define MAJOR 3
-#define MINOR 1
+#define MINOR 2
 #define PATCH 0
