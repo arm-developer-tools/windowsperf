@@ -88,6 +88,7 @@ import os
 import pathlib as pl
 import re
 from statistics import median
+from time import sleep
 from common import run_command
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
@@ -131,6 +132,9 @@ def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,t
         <PARAM>     - micro-benchmark command line parameter, in ustress case a benchmark execution in seconds (approx.)
         <THRESHOLD> - median of all metric measurements must be above this value or test fails
     """
+
+    ## Do not rely on other tests, sleep before we run record to make sure core(s) counters are not saturated
+    sleep(2)
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)

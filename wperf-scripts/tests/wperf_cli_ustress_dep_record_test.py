@@ -86,6 +86,7 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 
 import os
 import json
+from time import sleep
 from common import run_command, is_json
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
@@ -120,6 +121,9 @@ def test_ustress_bench_record_microbenchmark(core,event,event_freq,benchmark,par
         <HOTTEST>           - we expect sampling to determine that this was "hottest" function
         <HOTTEST_OVERHEAD>  - we expect sampling overhead for <HOTTEST> to be at least this big
     """
+
+    ## Do not rely on other tests, sleep before we run record to make sure core(s) counters are not saturated
+    sleep(2)
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
