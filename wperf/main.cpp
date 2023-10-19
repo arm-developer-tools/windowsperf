@@ -717,6 +717,7 @@ wmain(
                     {
                         sd.freq = 1;
                         sd.event_src = event_src;
+                        sd.pc.clear();
                         sd.pc.push_back(std::make_pair(a.pc, 1));
                         resolved_samples.push_back(sd);
                     }
