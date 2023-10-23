@@ -62,7 +62,7 @@ int wmain(int argc, const wchar_t *argv[])
         return 1;
     }
 
-    if (!wperf_init(true/*do_verbose*/))
+    if (!wperf_init() && !wperf_set_verbose(true))
     {
         printf("failed to init wperf\n");
         return 1;

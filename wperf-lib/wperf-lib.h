@@ -8,6 +8,7 @@
 #define WPERF_LIB_API __declspec(dllimport)
 #endif
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -62,16 +63,23 @@ typedef struct _METRIC_INFO
 } METRIC_INFO, *PMETRIC_INFO;
 
 /// <summary>
-/// Initialize wperf-lib.
+/// Initialize wperf-lib. Verbosity is set to false by default. Use wperf_set_verbose() to
+/// set the verbosity.
 /// </summary>
 /// <returns>true if the call succeeds, false if not.</returns>
-WPERF_LIB_API bool wperf_init(bool do_verbose = false);
+WPERF_LIB_API bool wperf_init();
 
 /// <summary>
 /// Close wperf-lib.
 /// </summary>
 /// <returns>true if the call succeeds, false if not.</returns>
 WPERF_LIB_API bool wperf_close();
+
+/// <summary>
+/// Sets the verbosity of wperf-lib.
+/// </summary>
+/// <returns>true if the call succeeds, false if not.</returns>
+WPERF_LIB_API bool wperf_set_verbose(bool do_verbose);
 
 /// <summary>
 /// Get wperf-driver's version.

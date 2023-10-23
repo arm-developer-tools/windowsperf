@@ -51,7 +51,7 @@ static std::map<uint16_t, std::vector<SAMPLE_ANNOTATE_INFO>> __annotate_samples;
 static size_t __annotate_sample_event_index = 0;
 static size_t __annotate_sample_index = 0;
 
-extern "C" bool wperf_init(bool do_verbose)
+extern "C" bool wperf_init()
 {
     try
     {
@@ -59,7 +59,7 @@ extern "C" bool wperf_init(bool do_verbose)
         __pmu_device->init();
         __pmu_cfg = new pmu_device_cfg();
         __pmu_device->get_pmu_device_cfg(*__pmu_cfg);
-        __pmu_device->do_verbose = do_verbose;
+        __pmu_device->do_verbose = false;
     }
     catch (...)
     {
@@ -88,6 +88,20 @@ extern "C" bool wperf_close()
         __sample_events.clear();
         __samples.clear();
         __annotate_samples.clear();
+    }
+    catch(...)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+extern "C" bool wperf_set_verbose(bool do_verbose)
+{
+    try
+    {
+        __pmu_device->do_verbose = do_verbose;
     }
     catch(...)
     {
