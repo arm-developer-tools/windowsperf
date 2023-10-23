@@ -44,7 +44,7 @@ std::wstring WStringToLower(const std::wstring& str);
 bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringComparision(const std::wstring& str1, const std::wstring& str2);
-
+bool ReplaceTokenInString(std::string& input, const std::string old_token, const std::string new_token);
 
 /// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"

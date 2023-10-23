@@ -134,6 +134,7 @@ public:
     void timeline_close();
     void timeline_params(const std::map<enum evt_class, std::vector<struct evt_noted>>& events, double count_interval, bool include_kernel);
     void timeline_header(const std::map<enum evt_class, std::vector<struct evt_noted>>& events);
+    std::wstring timeline_output_file;
     // Timeline
 
     // Events

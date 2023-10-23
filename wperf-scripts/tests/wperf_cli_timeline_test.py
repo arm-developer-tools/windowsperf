@@ -159,6 +159,24 @@ def test_wperf_timeline_system_n_file_output(I, N, SLEEP):
         pattern = r'([0-9]+,){%s}\n' % (gpc_num + 1)
         assert len(re.findall(pattern, cvs, re.DOTALL)) == N
 
+@pytest.mark.parametrize("C, CSV_FILENAME, EXPECTED",
+[
+    ("0",       "timeline_{core}_{class}.csv", b"timeline_0_core.csv"),
+    ("1",       "{core}-{class}.csv", b"1-core.csv"),
+    ("2",       "{class}-{core}.csv", b"core-2.csv"),
+    ("3",       "{class}{core}.csv", b"core3.csv"),
+    ("4,5,6",   "timeline_{core}_{class}.csv", b"timeline_4_core.csv"),
+]
+)
+def test_wperf_timeline_core_n_cli_file_output_command(C, CSV_FILENAME, EXPECTED):
+    """ Test timeline --output <FILENAME> custom format.  """
+    cmd = f'wperf stat -m imix -c {C} -t -i 1 -n 2 -v --timeout 1 --output {CSV_FILENAME}'
+    stdout, _ = run_command(cmd.split())
+
+    # Test for timeline file content
+    assert b"timeline file: '" in stdout    # Smoke test
+    assert b"timeline file: '" + EXPECTED in stdout
+
 @pytest.mark.parametrize("I,N,SLEEP,KERNEL_MODE,EVENTS",
 [
     (0, 6, 1, True, 'l1i_cache,l1i_cache_refill,l2i_cache,l2i_cache_refill,inst_retired,inst_spec,dp_spec,vfp_spec'),

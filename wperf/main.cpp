@@ -93,6 +93,7 @@ wmain(
         pmu_device.get_pmu_device_cfg(pmu_cfg);
         request.init(raw_args, pmu_cfg, pmu_device.builtin_metrics, pmu_events::extra_events);
         pmu_device.do_verbose = request.do_verbose;
+        pmu_device.timeline_output_file = request.timeline_output_file;
     }
     catch (std::exception&)
     {

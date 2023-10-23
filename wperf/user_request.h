@@ -88,6 +88,7 @@ public:
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
     std::wstring record_commandline;
+    std::wstring timeline_output_file;
     uint32_t sample_display_row;
     bool sample_display_short;
     std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;

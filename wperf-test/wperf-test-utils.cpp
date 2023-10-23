@@ -40,7 +40,7 @@ namespace wperftest
 	TEST_CLASS(wperftest_utils)
 	{
 	public:
-		
+
 		TEST_METHOD(test_MultiByteFromWideString)
 		{
 			Assert::AreEqual(MultiByteFromWideString(L"core"), std::string("core"));
@@ -151,7 +151,7 @@ namespace wperftest
 
 		TEST_METHOD(test_TokenizeWideStringOfInts_clear_output)
 		{
-			std::vector<uint32_t> Output = {0, 1, 2, 4, 5, 6};
+			std::vector<uint32_t> Output = { 0, 1, 2, 4, 5, 6 };
 			Assert::IsTrue(TokenizeWideStringOfInts(L"", L',', Output));
 			Assert::AreEqual(Output.size(), (size_t)0);
 		}
@@ -293,6 +293,49 @@ namespace wperftest
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DSU/l3d_cache"), std::wstring(L"")));
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DSU/l3d_cache"), std::wstring(L"/dsu/")));
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DMC_CLKDIV2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
+		}
+
+		TEST_METHOD(test_ReplaceTokenInWstring_ok)
+		{
+			std::string filename = "{aaa} {bbb} {ccc} {ddd} {eee}";
+
+			Assert::IsTrue(ReplaceTokenInString(filename, "{aaa}", "111"));
+			Assert::IsTrue(ReplaceTokenInString(filename, "{bbb}", "222"));
+			Assert::IsTrue(ReplaceTokenInString(filename, "{ccc}", "333"));
+			Assert::IsTrue(ReplaceTokenInString(filename, "{ddd}", "444"));
+			Assert::IsTrue(ReplaceTokenInString(filename, "{eee}", "555"));
+			Assert::AreEqual(filename, std::string("111 222 333 444 555"));
+		}
+
+		TEST_METHOD(test_ReplaceTokenInWstring_nok)
+		{
+			std::string filename = "{aaa} {bbb} {ccc} {ddd} {eee}";
+
+			Assert::IsFalse(ReplaceTokenInString(filename, "{aaa ", "111"));
+			Assert::IsFalse(ReplaceTokenInString(filename, "{bb}", "222"));
+			Assert::IsFalse(ReplaceTokenInString(filename, " ccc}", "333"));
+			Assert::IsFalse(ReplaceTokenInString(filename, " ddd ", "444"));
+			Assert::IsFalse(ReplaceTokenInString(filename, "}eee{", "555"));
+		}
+
+		TEST_METHOD(test_ReplaceTokenInWstring_ttimestamp_class_ok)
+		{
+			std::string filename = "wperf_system_side_{timestamp}.{class}.csv";
+
+			Assert::IsTrue(ReplaceTokenInString(filename, "{timestamp}", "2023_09_21_09_42_59"));
+			Assert::IsTrue(ReplaceTokenInString(filename, "{class}", "core"));
+			Assert::AreEqual(filename, std::string("wperf_system_side_2023_09_21_09_42_59.core.csv"));
+		}
+
+		TEST_METHOD(test_ReplaceTokenInWstring_ttimestamp_class_nok)
+		{
+			std::string filename = "wperf_system_side_{timestamp}.{class}.csv";
+
+			Assert::IsFalse(ReplaceTokenInString(filename, "{foo}", "2023_09_21_09_42_59"));
+			Assert::IsFalse(ReplaceTokenInString(filename, "{bar}", "core"));
+			Assert::IsFalse(ReplaceTokenInString(filename, "{baz}", "text is here"));
+			Assert::IsFalse(ReplaceTokenInString(filename, "{TIMESTAMP}", "text is here"));
+			Assert::IsFalse(ReplaceTokenInString(filename, "{CLASS}", "text is here"));
 		}
 	};
 }

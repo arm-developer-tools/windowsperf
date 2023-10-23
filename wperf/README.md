@@ -405,6 +405,34 @@ cycle,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,
 
 Timeline file contains header with few counting setting values (these will increase in the future), and rows with column oriented values. These specify cores, events and metrics counted and computed during timeline pass:
 
+#### Specify timeline output file with --output command line option
+
+Support for `--output` command line in timeline (`-t`) is as follows:
+
+Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from console name of timeline CSV file. Now users can also specify timeline output file name with `--output <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
+
+User can specify in `<FILENAME>` few placeholders which can improve timeline file name:
+* `{timestamp}` to add current timestamp to output file name. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
+* `{class}` to add event class name (e.g. `core`, `dsu`, `dmc_clk`, `dmc_clkdiv2`). Multiple timeline files will be created if user specifies with `-e` events with different classes.
+* `{core}` to add `<N>` from `-c <N>` command line option. Note: when more than one core is specified `{core}` will be replaced with 1st core specified.
+
+Examples:
+
+```
+>wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 1,2,3 -v --output timeline_{core}_{timestamp}_{class}.csv
+timeline file: 'timeline_1_2023_09_21_12_21_46_core.csv'
+```
+
+```
+>wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output timeline--{core}--{class}.csv
+timeline file: 'timeline--7--core.csv'
+```
+
+```
+>wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output {timestamp}.{core}.{class}.csv
+timeline file: '2023_09_21_12_23_58.7.core.csv'
+```
+
 #### Timeline file content schema
 
 ```

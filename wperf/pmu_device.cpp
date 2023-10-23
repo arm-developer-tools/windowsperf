@@ -390,21 +390,34 @@ void pmu_device::timeline_init()
         if ((e == EVT_DMC_CLK || e == EVT_DMC_CLKDIV2) && !(enc_bits & CTL_FLAG_DMC))
             continue;
 
-        if (strftime(buf, sizeof(buf), "%Y_%m_%d_%H_%M_%S.", &timeinfo) == 0)
+        if (strftime(buf, sizeof(buf), "%Y_%m_%d_%H_%M_%S", &timeinfo) == 0)
             throw fatal_exception("timestamp conversion failed in timeline mode");
 
         std::string timestamp(buf);
+        std::string event_class = MultiByteFromWideString(pmu_events_get_evt_class_name(static_cast<enum evt_class>(e)));
         std::string prefix("wperf_system_side_");
         if (all_cores_p() == false)
             prefix = "wperf_core_" + std::to_string(cores_idx[0]) + "_";
 
-        std::string filename = prefix + timestamp +
-            MultiByteFromWideString(pmu_events_get_evt_class_name(static_cast<enum evt_class>(e))) + ".csv";
+        // Construct default timeline CSV filename ...
+        std::string filename = prefix + timestamp + "." + event_class + ".csv";
+        std::string timeline_filename = filename;
+
+        // ... and replace it with new templated one if --output <FILENAME> was speciffied for timeline (-t)
+        if (timeline_output_file.size())
+        {
+            timeline_filename = MultiByteFromWideString(timeline_output_file.c_str());
+            ReplaceTokenInString(timeline_filename, "{timestamp}", timestamp);      // Optional timestamp
+            ReplaceTokenInString(timeline_filename, "{class}", event_class);        // Event class name
+            ReplaceTokenInString(timeline_filename, "{core}", std::to_string(cores_idx[0]));           // 1st core designation
+        }
 
         if (do_verbose)
-            m_out.GetOutputStream() << L"timeline file: " << L"'" << std::wstring(filename.begin(), filename.end()) << L"'" << std::endl;
+            m_out.GetOutputStream() << L"timeline file: " << L"'"
+                                    << std::wstring(timeline_filename.begin(), timeline_filename.end())
+                                    << L"'" << std::endl;
 
-        timeline::timeline_headers[static_cast<enum evt_class>(e)].filename = filename;
+        timeline::timeline_headers[static_cast<enum evt_class>(e)].filename = timeline_filename;
     }
 }
 

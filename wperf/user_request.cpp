@@ -205,7 +205,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_interval = false;
     bool waiting_metric_config = false;
     bool waiting_events_config = false;
-    bool waiting_filename = false;
+    bool waiting_output_filename = false;
     bool waiting_image_name = false;
     bool waiting_pe_file = false;
     bool waiting_pdb_file = false;
@@ -216,6 +216,8 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_record_spawn_delay = false;
 
     bool sample_pe_file_given = false;
+
+    std::wstring output_filename;
 
     if (raw_args.empty())
     {
@@ -291,11 +293,10 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (waiting_filename)
+        if (waiting_output_filename)
         {
-            waiting_filename = false;
-            m_out.m_filename = a;
-            m_out.m_shouldWriteToFile = true;
+            waiting_output_filename = false;
+            output_filename = a;
             continue;
         }
 
@@ -523,8 +524,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (a == L"--output")
         {
-            waiting_filename = true;
-            m_outputType = TableType::ALL;
+            waiting_output_filename = true;
             continue;
         }
 
@@ -660,6 +660,21 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             record_commandline += a + L" ";
         } else {
             m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
+        }
+    }
+
+    // Support custom outpus for --output
+    if (output_filename.size())
+    {
+        if (do_timeline)    //  -t ... --output filename.csv
+        {
+            timeline_output_file = output_filename;
+        }
+        else     // Output to JSON
+        {
+            m_outputType = TableType::ALL;
+            m_out.m_filename = output_filename;
+            m_out.m_shouldWriteToFile = true;
         }
     }
 

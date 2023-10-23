@@ -122,3 +122,23 @@ bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstrin
 {
     return WStringStartsWith(WStringToLower(str), WStringToLower(prefix));
 }
+
+/// <summary>
+/// Replaces OLD_TOKEN with NEW_TOKEN
+/// </summary>
+/// <param name="input">Input string with OLD_TOKEN to replace</param>
+/// <param name="old_token">Token to replace</param>
+/// <param name="new_token">Replaces OLD_TOKEN in INPUT</param>
+/// <returns>TRUE if OLD_TOKEN was replaced with NEW_TOKEN returns TRUE</returns>
+bool ReplaceTokenInString(std::string& input, const std::string old_token, const std::string new_token)
+{
+    bool result = true;
+    auto pos = input.find(old_token);
+
+    if (pos != std::string::npos)
+        input.replace(pos, old_token.size(), new_token);
+    else
+        result = false;
+
+    return result;
+}
