@@ -129,6 +129,7 @@ Please note that for documentation generation you would need `Doxygen` installed
 
 # Reference
 
+* [WindowsPerf Release 3.0.0](https://www.linaro.org/blog/windowsperf-release-3-0-0/) blog post.
 * [WindowsPerf Release 2.5.1](https://www.linaro.org/blog/windowsperf-release-2-5-1/) blog post.
 * [WindowsPerf release 2.4.0 introduces the first stable version of sampling model support](https://www.linaro.org/blog/windowsperf-release-2-4-0-introduces-the-first-stable-version-of-sampling-model-support/) blog post.
 * [Announcing WindowsPerf: Open-source performance analysis tool for Windows on Arm](https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/announcing-windowsperf) blog post.
