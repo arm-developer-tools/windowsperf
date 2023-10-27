@@ -69,10 +69,15 @@ ROOT\SYSTEM\0001
 
 For more information about `devcon` command please visit [Device Console Commands](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/devcon-general-commands).
 
-Please note that `devcon.exe` should be located in `c:\Program Files (x86)\Windows Kits\10\Tools\ARM64\` on your ARM64 machine.
-See some details [here](https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/writing-a-kmdf-driverbased-on-a-template#install-the-driver).
+Please note that `devcon.exe` should be located in `%WindowsSdkDir%\tools\arm64\devcon.exe` location. For example in  `c:\Program Files (x86)\Windows Kits\10\Tools\ARM64\` on your ARM64 machine. Please note that the Visual Studio environment variable, `%WindowsSdkDir%`, represents the path to the Windows Kits directory where the kits are installed.
 
 If you face issues installing the driver you might look at the last sections of `c:\windows\inf\setupapi.app.log` and `c:\windows\inf\setupapi.dev.log`. They might provide some hints.
+
+## Where can I download DevCon?
+
+DevCon (`Devcon.exe`) is included when you install the [WDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk), Visual Studio, and the Windows SDK for desktop apps. For information about downloading the kits, see [Windows Hardware Downloads](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk).
+
+You can also refer to [Where can I download DevCon?](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/devcon#where-can-i-download-devcon) article for more details.
 
 ## Extra step (installing non-signed driver)
 
