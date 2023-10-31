@@ -275,7 +275,6 @@ extern "C" bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo)
             std::map<std::wstring, metric_desc>& builtin_metrics = __pmu_device->builtin_metrics;
             for (auto [metric, desc] : builtin_metrics)
             {
-                __list_metrics.push_back(metric);
                 for (const auto& event : desc.groups[EVT_CORE])
                 {
                     if (event.type != EVT_HDR)
@@ -283,6 +282,9 @@ extern "C" bool wperf_list_metrics(PLIST_CONF list_conf, PMETRIC_INFO minfo)
                         __list_metrics_events[metric].push_back(event.index);
                     }
                 }
+
+                if (__list_metrics_events.count(metric))
+                    __list_metrics.push_back(metric);
             }
         }
         else if (list_conf->list_event_types & CORE_EVT)
