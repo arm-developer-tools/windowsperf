@@ -4,35 +4,39 @@
     "properties": {
         "core": {
             "type": "object",
-            "required": [ "Multiplexing", "Kernel_mode", "overall" ],
+            "required": [ "Multiplexing", "Kernel_mode", "cores", "overall" ],
             "minProperties": 4,
             "additionalProperties": false,
-            "patternProperties": {
-                "^[0-9]+$": {
-                    "type": "object",
-                    "properties": {
-                        "Performance_counter": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "required": ["counter_value", "event_idx", "event_name", "event_note"],
-                                "additionalProperties": false,
-                                "properties": {
-                                    "counter_value": { "type": "integer"},
-                                    "event_idx": { "type": "string" },
-                                    "event_name": { "type": "string" },
-                                    "event_note": { "type": "string" },
-                                    "multiplexed": { "type": "string" },
-                                    "scaled_value": { "type": "integer" }
+            "properties": {
+                "Multiplexing": { "type": "boolean" },
+                "Kernel_mode": { "type": "boolean" },
+                "cores": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["core_number", "Performance_counter"],
+                        "additionalProperties": false,
+                        "properties": {
+                            "core_number": { "type": "integer" },
+                            "Performance_counter": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": ["counter_value", "event_idx", "event_name", "event_note"],
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "counter_value": { "type": "integer"},
+                                        "event_idx": { "type": "string" },
+                                        "event_name": { "type": "string" },
+                                        "event_note": { "type": "string" },
+                                        "multiplexed": { "type": "string" },
+                                        "scaled_value": { "type": "integer" }
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            },
-            "properties": {
-                "Multiplexing": { "type": "boolean" },
-                "Kernel_mode": { "type": "boolean" },
+                },
                 "overall": {
                     "type": "object",
                     "properties": {

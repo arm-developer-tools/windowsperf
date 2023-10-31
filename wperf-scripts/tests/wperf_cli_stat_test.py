@@ -276,7 +276,7 @@ def test_wperf_stat_K_flag_json(flag,core):
     assert "core" in json_output
     assert "Kernel_mode" in json_output["core"]     # Check if kernel mode flag is present
     assert "Multiplexing" in json_output["core"]    # sanity check (no multiplexing this time
-    assert f"{core}" in json_output["core"]       # sanity check
+    assert json_output["core"]["cores"][0]["core_number"] == core            # sanity check
 
     assert json_output["core"]["Kernel_mode"] == bool(flag) #   bool("") ==> False, bool("-k") ==> True
     assert json_output["core"]["Multiplexing"] == False

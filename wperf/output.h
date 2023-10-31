@@ -411,6 +411,8 @@ struct WPerfStatJSON
                 os << LITERALCONSTANTS_GET("false");
             os << LiteralConstants<CharType>::m_comma << std::endl;
             bool isFirst = true;
+            os << LiteralConstants<CharType>::m_quotes << LITERALCONSTANTS_GET("cores") << LiteralConstants<CharType>::m_quotes;
+            os << LiteralConstants<CharType>::m_colon << LiteralConstants<CharType>::m_bracket_open;
             for (auto& table : m_corePerformanceTables)
             {
                 if (!isFirst)
@@ -421,10 +423,14 @@ struct WPerfStatJSON
                     isFirst = false;
                 }
                 std::visit([&os, &jsonType](auto&& arg) {
-                    os << LiteralConstants<CharType>::m_quotes << arg.m_core << LiteralConstants<CharType>::m_quotes;
-                    os << LiteralConstants<CharType>::m_colon << arg.Print(jsonType).str() << std::endl;
-                }, table);
+                    arg.m_tableJSON.m_isEmbedded = true;
+                    os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
+                    os << LiteralConstants<CharType>::m_quotes << LITERALCONSTANTS_GET("core_number") <<  LiteralConstants<CharType>::m_quotes << LiteralConstants<CharType>::m_colon << arg.m_core;
+                    os << LiteralConstants<CharType>::m_comma << arg.Print(jsonType).str() << std::endl;
+                    os << LiteralConstants<CharType>::m_cbracket_close << std::endl;
+                }, table);                
             }
+            os << LiteralConstants<CharType>::m_bracket_close << std::endl;
             if (!m_corePerformanceTables.empty())
                 os << LiteralConstants<CharType>::m_comma << std::endl;
 
