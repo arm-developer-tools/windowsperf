@@ -81,9 +81,11 @@ You can also refer to [Where can I download DevCon?](https://learn.microsoft.com
 
 ## Extra step (installing non-signed driver)
 
-Use below steps at your own risk.
+Users who develop their own `wperf-driver` (e.g., build from sources), and do not sign it themselves, will be forced to do a few extra steps to enable non-signed driver installation. Please note that early WindowsPerf binary releases (before release [2.4.0](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases/2.4.0)) we distributed WITHOUT signed driver.
 
-Currently `wperf-driver` is an unsigned driver. To enable installing an unsigned driver on WOA ARM64 machines requires a few extra steps.
+Enabling installation of an unsigned driver on WOA ARM64 machines requires a few extra steps:
+
+**Note**: Use below steps at your own risk!
 
 ### You must first enable test-signed code
 
