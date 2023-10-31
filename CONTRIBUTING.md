@@ -71,7 +71,9 @@ You should test your code locally before you submit a patch.
 
 * If you are modifying `wperf` project please (if possible) add new unit tests that will cover new functions you've added. Unit test project for `wperf` is [wperf-test](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-test). See `wperf-test` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-test/README.md) for more details on how to write and run the tests. Unit tests isolate and exercise specific units of your code (functions). You should split your code in such way that core functionality shouldn't be depending on e.g. user interface. Those functions can be unit tested. See examples of unit tests for [utils](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-test/wperf-test-utils.cpp) functions for inspiration.
 
-* You can also run regression tests using PyTest library and corresponding Python test scripts we've provided with [wperf-scripts/tests](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests). See `wperf-scripts/tests` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md) for more details.
+* You should also run regression tests using PyTest library and corresponding Python test scripts we've provided with [wperf-scripts/tests](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests). See `wperf-scripts/tests` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md) for more details.
+
+* Make sure to run our stress test for at least 5 interactions. Detailed instructions can be found here [wperf-scripts/tests](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests).
 
 # Reporting Bugs
 

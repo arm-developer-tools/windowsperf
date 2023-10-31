@@ -4,7 +4,7 @@
 
 # Introduction
 
-This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md).
+This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md). Here you can also find `stress.ps1` a PowerShell script to stress test the driver.
 
 ## Testing prerequisites
 
@@ -83,3 +83,19 @@ wperf_lib_app_test.py s                                                      [10
 SKIPPED [1] wperf_lib_app_test.py:44: Can not run wperf-lib-app.exe
 ===================== 142 passed, 1 skipped in 237.56s (0:03:57) ==================
 ```
+
+## Stress testing
+
+Having properly setup the Python unit tests using the instructions above all you need to do is to run 
+
+```
+>stress.ps1 
+```
+
+The default number of cycles is 1. You can change that using the first command line argument, so if you want to run it 5 times just type
+
+```
+>stress.ps1 5
+```
+
+A bunch of commands will be executed in sucession trying to stress the driver, at the end of each cycle the Python tests are also executed so make sure they are properly configured.
