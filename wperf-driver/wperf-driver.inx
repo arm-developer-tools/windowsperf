@@ -77,7 +77,7 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-wperf-driver.sys
+wperf-driver.sys,,,2
 
 
 ;-------------- Service installation
