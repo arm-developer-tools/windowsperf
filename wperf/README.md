@@ -497,21 +497,84 @@ Will print on standard output:
 
 ```json
 {
-"core": {
-"0":{"Performance_counter":[{"counter_value":"6062425","event_idx":"fixed","event_name":"cycle","event_note":"e"},{"counter_value":"6864612","event_idx":"0x1b","event_name":"inst_spec","event_note":"e"},{"counter_value":"10884","event_idx":"0x75","event_name":"vfp_spec","event_note":"e"},{"counter_value":"986671","event_idx":"0x74","event_name":"ase_spec","event_note":"e"},{"counter_value":"3081820","event_idx":"0x73","event_name":"dp_spec","event_note":"e"},{"counter_value":"1099973","event_idx":"0x70","event_name":"ld_spec","event_note":"e"},{"counter_value":"603607","event_idx":"0x71","event_name":"st_spec","event_note":"e"}]}
-,
-"overall": {}
-}
-,
-"dsu": {
-"l3metric": {},
-"overall": {}
-}
-,
-"dmc": {
-"pmu": {},
-"ddr": {}
-}
+    "core": {
+        "Multiplexing": true,
+        "Kernel_mode": false,
+        "cores": [
+            {
+                "core_number": 0,
+                "Performance_counter": [
+                    {
+                        "counter_value": 24369582,
+                        "event_name": "cycle",
+                        "event_idx": "fixed",
+                        "event_note": "e",
+                        "multiplexed": "10/10",
+                        "scaled_value": 24369582
+                    },
+                    {
+                        "counter_value": 23814308,
+                        "event_name": "inst_spec",
+                        "event_idx": "0x1b",
+                        "event_note": "e",
+                        "multiplexed": "9/10",
+                        "scaled_value": 26460342
+                    },
+                    {
+                        "counter_value": 29646,
+                        "event_name": "vfp_spec",
+                        "event_idx": "0x75",
+                        "event_note": "e",
+                        "multiplexed": "9/10",
+                        "scaled_value": 32940
+                    },
+                    {
+                        "counter_value": 3088,
+                        "event_name": "ase_spec",
+                        "event_idx": "0x74",
+                        "event_note": "e",
+                        "multiplexed": "8/10",
+                        "scaled_value": 3860
+                    },
+                    {
+                        "counter_value": 18298763,
+                        "event_name": "dp_spec",
+                        "event_idx": "0x73",
+                        "event_note": "e",
+                        "multiplexed": "8/10",
+                        "scaled_value": 22873453
+                    },
+                    {
+                        "counter_value": 2457102,
+                        "event_name": "ld_spec",
+                        "event_idx": "0x70",
+                        "event_note": "e",
+                        "multiplexed": "8/10",
+                        "scaled_value": 3071377
+                    },
+                    {
+                        "counter_value": 1293874,
+                        "event_name": "st_spec",
+                        "event_idx": "0x71",
+                        "event_note": "e",
+                        "multiplexed": "8/10",
+                        "scaled_value": 1617342
+                    }
+                ]
+            }
+        ],
+        "overall": {},
+        "ts_metric": {}
+    },
+    "dsu": {
+        "l3metric": {},
+        "overall": {}
+    },
+    "dmc": {
+        "pmu": {},
+        "ddr": {}
+    },
+    "Time_elapsed": 1.01
 }
 ```
 
