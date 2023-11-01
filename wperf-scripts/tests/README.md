@@ -9,7 +9,7 @@ This set of Python scripts is using [pytest](https://docs.pytest.org/) library t
 ## Testing prerequisites
 
 * You must have Python 3.11.1 (or newer) installed on your system and available on system environment PATH.
-  * `pytest` module is also required, if missing please install it via `pip install pytest` command, see [pytest](https://pypi.org/project/pytest/).
+  * `pytest` module is also required, if missing please install it via `pip install pytest` command, see [pytest](https://pypi.org/project/pytest/). We've added `pytest.ini` file to ignore `telemetry-solution` directory (with `--ignore=telemetry-solution`) and setup common `pytest` command line options for consistency.
   * All required Python modules by WindowsPerf functional testing are specified in [requirements.txt](../requirements.txt). Use the `pip install -r requirements.txt` command to install all of the Python modules and packages listed in `requirements.txt` file.
 * Tests must be executed on ARM64 Windows On Arm machine.
 * [wperf-driver](../../wperf-driver/README.md) must be installed on the system.
@@ -17,6 +17,7 @@ This set of Python scripts is using [pytest](https://docs.pytest.org/) library t
 * To test if `wperf` JSON output is valid test directory must contain `schemes/` sub-directory.
   * Note: if `schemas` directory is missing JSON output tests will fail (and not skipped).
 * Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` sub-module is pulled with git.
+  * How to pull sub-module: On init run the following command: `git submodule update --init --recursive` from within the git repo directory, this will pull all latest including submodules. Or you can close this repository manually.
 
 ### ustress framework test bench
 
@@ -39,6 +40,46 @@ We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-soluti
 * clang targeting `aarch64-pc-windows-msvc`.
   * Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
   * install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
+
+You should be able to verify if your dependencies are correct by few simple checks:
+
+```
+> %comspec% /k "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.7.1
+** Copyright (c) 2022 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'arm64'
+```
+
+```
+>make --version
+GNU Make 3.81
+Copyright (C) 2006  Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.
+There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+
+This program built for i386-pc-mingw32
+```
+
+```
+>clang --version
+clang version 16.0.5
+Target: aarch64-pc-windows-msvc
+Thread model: posix
+InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\ARM64\bin
+```
+
+#### Example: How to build ustress from command line for neoverse-n1 CPU
+
+**Note**: Below steps require clang targeting `aarch64-pc-windows-msvc`. See `Build dependencies` chapter for more details.
+
+```
+> cd telemetry-solution/tools/ustress
+> make clean
+> make CPU=NEOVERSE-N1
+```
 
 #### See merge request documentation
 * [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
@@ -98,4 +139,4 @@ The default number of cycles is 1. You can change that using the first command l
 >stress.ps1 5
 ```
 
-A bunch of commands will be executed in sucession trying to stress the driver, at the end of each cycle the Python tests are also executed so make sure they are properly configured.
+A bunch of commands will be executed in succession trying to stress the driver, at the end of each cycle the Python tests are also executed so make sure they are properly configured.

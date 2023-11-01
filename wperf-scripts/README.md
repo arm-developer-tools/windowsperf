@@ -14,7 +14,7 @@ Use the command below to install the packages according to the configuration fil
 
 ## Tests
 
-`wperf` regression tests written with Python (and `pytest). See [README.md](tests/README.md) for more details.
+`wperf` regression tests written with Python (and `pytest`). See [README.md](tests/README.md) for more details.
 
 ## wperf-devcon PS1 script
 
