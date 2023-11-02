@@ -34,6 +34,15 @@
 #include <swdevice.h>
 #include <newdev.h>
 #include <sstream>
+#include <strsafe.h>
+#include <SetupAPI.h>
+#include <initguid.h>
+#include <devpropdef.h>
+#include <devpkey.h>
+#include <newdev.h>
+
+#define MAX_STRING_LENGTH 1024
+#define MAX_HARDWARELIST_SIZE 2048
 
 // Taken from wperf-driver INF file.
 PCWSTR instanceId = L"WPERFDRIVER";
@@ -48,7 +57,6 @@ void GetFullInfPath()
 {
     if(FullInfPath == nullptr)
     {
-
         /* Get full inf file path. */
         DWORD size = GetCurrentDirectory(0, NULL);
         wchar_t* buff = (wchar_t*)malloc(sizeof(wchar_t) * size);
@@ -67,18 +75,202 @@ void GetFullInfPath()
     }
 }
 
-VOID WINAPI CreateDeviceCallback(
-    _In_ HSWDEVICE hSwDevice,
-    _In_ HRESULT hrCreateResult,
-    _In_opt_ PVOID pContext,
-    _In_opt_ PCWSTR pszDeviceInstanceId)
+BOOL do_update_driver()
 {
-    if (pContext != nullptr)
-    {
-        HANDLE hEvent = *(HANDLE*)pContext;
+    BOOL exit = true, reboot = false;
 
-        SetEvent(hEvent);
+    if (!UpdateDriverForPlugAndPlayDevices(NULL, hardwareId, FullInfPath->c_str(), INSTALLFLAG_FORCE, &reboot)) {
+        exit = false;
+
+        std::cerr << "Error updating driver";
+        if (reboot)
+        {
+            std::cerr << " - Reboot please.";
+        }
+        std::cerr << std::endl;
+
+        goto clean;
     }
+
+clean:
+    return exit;
+}
+
+BOOL do_search(HDEVINFO& deviceInfoSet, SP_DEVINFO_DATA& devInfoData)
+{
+    DWORD index = 0;
+    SP_DEVINFO_DATA searchDevInfoData;
+
+    searchDevInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+    while (SetupDiEnumDeviceInfo(deviceInfoSet, index, &searchDevInfoData))
+    {
+        index++;
+        DEVPROPTYPE propType;
+        WCHAR returnedHardwareID[MAX_HARDWARELIST_SIZE];
+        DWORD returnedSize = 0;
+
+        ZeroMemory(returnedHardwareID, sizeof(returnedHardwareID));
+
+        if (!SetupDiGetDeviceProperty(deviceInfoSet, &searchDevInfoData, &DEVPKEY_Device_HardwareIds, &propType, (PBYTE)returnedHardwareID, sizeof(returnedHardwareID), &returnedSize, 0))
+        {
+            /* We might not be able to get information for all devices. */
+        }
+
+        WCHAR* ptr = returnedHardwareID;
+        while (ptr[0] != L'\0')
+        {
+            std::wstring currHardwareId(ptr);
+            if (std::wstring(hardwareId) == currHardwareId)
+            {
+                std::wcout << std::wstring(ptr) << std::endl;
+                devInfoData = searchDevInfoData;
+                return true;
+            }
+            ptr += currHardwareId.size() + 1; // Jump to next string
+        }
+    }
+    return false;
+}
+
+BOOL do_remove_device()
+{
+    BOOL exit = true;
+    BOOL found = false;
+    GUID classGUID;
+    WCHAR className[MAX_STRING_LENGTH];
+    WCHAR hwIdList[MAX_STRING_LENGTH];
+    HDEVINFO deviceInfoSet = INVALID_HANDLE_VALUE;
+    SP_DEVINFO_DATA deviceInfoData{ 0 };
+
+    ZeroMemory(hwIdList, sizeof(hwIdList));
+    if (FAILED(StringCchCopy(hwIdList, LINE_LEN, hardwareId))) {
+        exit = false;
+        goto clean;
+    }
+
+    if (!SetupDiGetINFClass(FullInfPath->c_str(), &classGUID, className, sizeof(className) / sizeof(WCHAR), 0))
+    {
+        std::cerr << "Error getting INF Class information" << std::endl;
+        exit = false;
+        goto clean;
+    }
+
+    deviceInfoSet = SetupDiGetClassDevs(NULL, NULL, NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+    if (deviceInfoSet == INVALID_HANDLE_VALUE)
+    {
+        std::cerr << "Error retrieving class deviceInfoSet " <<  std::endl;
+        exit = false;
+        goto clean;
+    }
+
+    found = do_search(deviceInfoSet, deviceInfoData);
+
+    if(found)
+    {
+        std::cout << "Device found" << std::endl;
+        if (!SetupDiCallClassInstaller(DIF_REMOVE, deviceInfoSet, &deviceInfoData))
+        {
+            std::cerr << "Error uninstalling device " << std::endl;
+            exit = false;
+            goto clean;
+        }
+    }
+    else {
+        std::cerr << "Error - WindowsPerf Device not found" << std::endl;
+        exit = false;
+        goto clean;
+    }
+
+clean:
+    if (deviceInfoSet != INVALID_HANDLE_VALUE) {
+        SetupDiDestroyDeviceInfoList(deviceInfoSet);
+    }
+
+    return exit;
+}
+
+BOOL do_create_device()
+{
+    BOOL exit = true;
+    GUID classGUID;
+    WCHAR className[MAX_STRING_LENGTH];
+    WCHAR hwIdList[MAX_STRING_LENGTH];
+    HDEVINFO deviceInfoSet = INVALID_HANDLE_VALUE;
+    SP_DEVINFO_DATA deviceInfoData{ 0 };
+
+    ZeroMemory(hwIdList, sizeof(hwIdList));
+    if (FAILED(StringCchCopy(hwIdList, LINE_LEN, hardwareId))) {
+        exit = false;
+        goto clean;
+    }
+
+     if (!SetupDiGetINFClass(FullInfPath->c_str(), &classGUID, className, sizeof(className) / sizeof(WCHAR), 0))
+    {
+        std::cerr << "Error getting INF Class information" << std::endl;
+        exit = false;
+        goto clean;
+    }
+
+    // Search for the device first
+    {
+        HDEVINFO deviceInfoSet = SetupDiGetClassDevs(NULL, NULL, NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+        if (deviceInfoSet == INVALID_HANDLE_VALUE)
+        {
+            std::cerr << "Error retrieving class deviceInfoSet " << std::endl;
+            exit = false;
+            goto clean;
+        }
+
+        if (do_search(deviceInfoSet, deviceInfoData))
+        {
+            std::cerr << "Device already installed" << std::endl;
+            exit = false;
+            goto clean;
+        }
+    }
+
+    deviceInfoSet = SetupDiCreateDeviceInfoList(&classGUID, 0);
+    if (deviceInfoSet == INVALID_HANDLE_VALUE)
+    {
+        std::cerr << "Error creating device info list" << std::endl;
+        exit = false;
+        goto clean;
+    }
+
+    deviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+    if (!SetupDiCreateDeviceInfo(deviceInfoSet,
+        className,
+        &classGUID,
+        NULL,
+        0,
+        DICD_GENERATE_ID,
+        &deviceInfoData))
+    {
+        std::cerr << "Error creating device info" << std::endl;
+        exit = false;
+        goto clean;
+    }
+
+    if (!SetupDiSetDeviceRegistryProperty(deviceInfoSet, &deviceInfoData, SPDRP_HARDWAREID, (LPBYTE)hwIdList, ((DWORD)wcslen(hwIdList) + 1 + 1) * sizeof(WCHAR)))
+    {
+        std::cerr << "Error setting device registry property" << std::endl;
+        exit = false;
+        goto clean;
+    }
+
+    if (!SetupDiCallClassInstaller(DIF_REGISTERDEVICE,
+        deviceInfoSet,
+        &deviceInfoData))
+    {
+        std::cerr << "Error calling class installer" << std::endl;
+        exit = false;
+    }
+clean:
+    if (deviceInfoSet != INVALID_HANDLE_VALUE) {
+        SetupDiDestroyDeviceInfoList(deviceInfoSet);
+    }
+
+    return exit;
 }
 
 int main(int argc, char* argv[])
@@ -93,13 +285,6 @@ int main(int argc, char* argv[])
     GetFullInfPath();
 
     bool is_install;
-    SW_DEVICE_CREATE_INFO swDevInfo = { 0 };
-    HSWDEVICE device;
-
-    HANDLE hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
-    HRESULT status;
-    DWORD waitResult;
 
     std::string user_command(argv[1]);
     std::cout << "Executing command: " << user_command << "." << std::endl;
@@ -119,170 +304,33 @@ int main(int argc, char* argv[])
         errorCode = -1;
         goto clean_exit;
     }
-
-
-    swDevInfo.cbSize = sizeof(SW_DEVICE_CREATE_INFO);
-    swDevInfo.pszInstanceId = instanceId;
-    swDevInfo.pszzHardwareIds = hardwareId;
-    swDevInfo.pszzCompatibleIds = compatibleIds;
-    swDevInfo.pszDeviceDescription = devDescription;
-    swDevInfo.CapabilityFlags = SWDeviceCapabilitiesRemovable |
-        SWDeviceCapabilitiesSilentInstall |
-        SWDeviceCapabilitiesDriverRequired;
-
-    status = SwDeviceCreate(
-        L"WPERFDRIVER", //PCWSTR pszEnumeratorName
-        L"HTREE\\ROOT\\0", //PCWST pszParentDeviceInstance
-        &swDevInfo, //SW_DEVICE_CREATE_INFO *pCreateInfo
-        0, //ULONG cPropertyCount
-        nullptr, //DEVPROPERTY *pProperties
-        CreateDeviceCallback, //SW_DEVICE_CREATE_CALLBACK pCallback
-        &hEvent, //PVOID pContext
-        &device //PHSWDEVICE
-    );
-
-    if (FAILED(status))
-    {
-        std::cerr << "Error creating device with code - " << std::hex << status << "." << std::endl;
-        errorCode = -1;
-        goto clean_exit;
-    }
-
-    if (hEvent == nullptr)
-    {
-        std::cerr << "Null context." << std::endl;
-        errorCode = -1;
-        goto clean_exit;
-    }
-
-    std::cout << "Waiting for device creation..." << std::endl;
-    waitResult = WaitForSingleObject(hEvent, 10 * 1000);
-    if (waitResult != WAIT_OBJECT_0)
-    {
-        std::cout << "Failed waiting for device creation." << std::endl;
-        errorCode = -1;
-        goto clean_exit;
-    }
-
     if (is_install)
     {
-        // Without setting the device lifetime to SWDeviceLifetimeParentPresent once 
-        // SwDeviceClose is called the device is destroyed.
-        status = SwDeviceSetLifetime(device, SWDeviceLifetimeParentPresent);
-
-        if (FAILED(status))
+        if (!do_create_device())
         {
-            std::cerr << "Error setting device lifetime." << std::endl;
-            SwDeviceClose(device);
-            errorCode = -1;
+            errorCode = GetLastError();
             goto clean_exit;
         }
 
-        SwDeviceClose(device);
-        std::cout << "Device installed successfully." << std::endl;
-
-        std::cout << "Trying to install driver..." << std::endl;
-        BOOL result;
-
-#if 0
-        /** [TODO] For some reason this is not working. Maybe a bug or a problem with the INF file? **/
-        
-        /* Check if the INF file is signed and valid. */
-        SP_INF_SIGNER_INFO_W infInfo = { 0 };
-        result = SetupVerifyInfFile(
-            FullInfPath->c_str(), //PCWSTR InfName
-            NULL, //PSP_ALTPLATFORM_INFO AltPlatformInfo
-            &infInfo //PSP_INF_SIGNER_INFO_W InfSignedInfo
-        );
-        if (!result)
+        if (!do_update_driver())
         {
-            DWORD error = GetLastError();
-
-            std::wcerr << L"Error: INF file " << *FullInfPath << L" is not valid or improperly signed." << std::endl;
-            std::cerr << "Error code 0x" << std::hex << error << std::endl;
-
-            errorCode = -1;
+            errorCode = GetLastError();
             goto clean_exit;
         }
 
-        std::wcout << "INF file signature information" << std::endl
-            << "Catalog file: " << std::wstring(infInfo.CatalogFile) << std::endl
-            << "Digital signer: " << std::wstring(infInfo.DigitalSigner) << std::endl
-            << "Digital signer version: " << std::wstring(infInfo.DigitalSignerVersion) << std::endl
-            << "Signer score: " << infInfo.SignerScore << std::endl;
-#endif 
-
-        result = UpdateDriverForPlugAndPlayDevices(
-            0, //HWND hwndParent
-            hardwareId, //LPCWSTR HardwareId
-            FullInfPath->c_str(), //LPCWSTR FullInfPath
-            INSTALLFLAG_NONINTERACTIVE, //DWORD InstallFlags
-            nullptr //PBOOL bRebootRequired
-        );
-        if (!result)
-        {
-            std::cout << "Error installing driver:";
-            DWORD error = GetLastError();
-            switch (error)
-            {
-            case ERROR_FILE_NOT_FOUND:
-                std::wcerr << L"Error: " << *FullInfPath << L" not found." << std::endl;
-                break;
-            case ERROR_INVALID_FLAGS:
-                std::cerr << "Error: Invalid flags" << std::endl;
-                break;
-            case ERROR_NO_SUCH_DEVINST:
-                std::cerr << "Error: HardwareId not found or invalid." << std::endl;
-                break;
-            case ERROR_NO_MORE_ITEMS:
-                std::cerr << "Info: Driver is not a better match to the current one already installed." << std::endl;
-                break;
-            }
-        }
-        else {
-            std::cout << "Success installing driver." << std::endl;
-        }
+        std::cout << "Device installed successfully" << std::endl;
     }
     else {
-        SW_DEVICE_LIFETIME lifetime;
-        status = SwDeviceGetLifetime(device, &lifetime);
-
-        if (FAILED(status))
+        if (!do_remove_device())
         {
-            std::cerr << "Error getting device lifetime." << std::endl;
-            SwDeviceClose(device);
-            errorCode = -1;
+            errorCode = GetLastError();
             goto clean_exit;
         }
-
-        // If the lifetime is not SWDeviceLifetimeParentPresent there is no point in changing it back to SWDeviceLifetimeHandle, maybe there was no device installed?
-        if (lifetime == SWDeviceLifetimeParentPresent)
-        {
-            // Forcing it back to SWDeviceLifetimeHandle makes sure it gets destroyed when SwDeviceClose is called.
-            status = SwDeviceSetLifetime(device, SWDeviceLifetimeHandle);
-
-            if (FAILED(status))
-            {
-                std::cerr << "Error setting device lifetime." << std::endl;
-                SwDeviceClose(device);
-                errorCode = -1;
-                goto clean_exit;
-            }
-            SwDeviceClose(device);
-        }
-        std::cout << "Device uninstalled successfully." << std::endl;
-
-        std::wcout << L"Trying to remove driver " << *FullInfPath << "." << std::endl;
-        BOOL result = DiUninstallDriver(NULL, FullInfPath->c_str(), 0, NULL);
-        if (!result)
-        {
-            std::wcerr << L"Error: Removing driver failed with " << std::hex << GetLastError() << L" trying to uninstall from " << *FullInfPath << std::endl;
-            errorCode = -1;
-            goto clean_exit;
-        }
-        std::cout << "Driver removed successfully." << std::endl;
+        std::cout << "Device uninstalled sucessfully" << std::endl;
     }
+
 clean_exit:
+    if(errorCode) std::cout << "GetLastError " << errorCode << std::endl;
     delete FullInfPath;
     return errorCode;
 }
