@@ -117,7 +117,12 @@ if not pl.Path("wperf.exe").is_file():
 
 @pytest.mark.parametrize("core,N,I,metric,benchmark,param,threshold ",
 [
-    (7, 5, 1, "l1d_cache_miss_ratio", "l1d_cache_workload.exe", 10, 0.91),
+    (4, 5, 1, "scalar_fp_percentage", "fpdiv_workload.exe",     10, 0.91),
+    (5, 5, 1, "scalar_fp_percentage", "fpmac_workload.exe",     10, 0.91),
+    (6, 5, 1, "scalar_fp_percentage", "fpmul_workload.exe",     10, 0.91),
+    (5, 5, 1, "scalar_fp_percentage", "fpsqrt_workload.exe",    10, 0.91),
+
+    (4, 5, 1, "l1d_cache_miss_ratio", "l1d_cache_workload.exe", 10, 0.91),
 ]
 )
 def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,threshold):
