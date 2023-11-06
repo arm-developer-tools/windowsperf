@@ -30,7 +30,9 @@
 
 #include "driver.h"
 #include "wperf-common/iorequest.h"
+#if !defined DBG
 #include "queue.tmh"
+#endif
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
@@ -122,7 +124,7 @@ Return Value:
                  );
 
     if( !NT_SUCCESS(status) ) {
-        KdPrint(("WdfIoQueueCreate failed 0x%x\n",status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WdfIoQueueCreate failed 0x%x\n",status));
         return status;
     }
 
@@ -145,7 +147,7 @@ Return Value:
     NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->WorkItem);
     if (!NT_SUCCESS(wiStatus))
     {
-        KdPrint(("WdfWorkItemCreate failed 0x%x", wiStatus));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
     }
 
     PWORK_ITEM_CTXT workItemCtxt;
@@ -153,7 +155,7 @@ Return Value:
     wiStatus = WdfObjectAllocateContext(queueContext->WorkItem, &workItemAttributes, &workItemCtxt);
     if (!NT_SUCCESS(wiStatus))
     {
-        KdPrint(("WdfObjectAllocateContext failed 0x%x", wiStatus));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
     }
 
     return status;
@@ -172,11 +174,11 @@ WindowsPerfEvtDeviceControl(
     WDFMEMORY memory;
     PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
 
-    KdPrint(("%!FUNC! %!LINE! Queue 0x%p Request 0x%p OutputBufferLength %llu InputBufferLength %llu IoControlCode %lu",
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Queue 0x%p Request 0x%p OutputBufferLength %llu InputBufferLength %llu IoControlCode %lu\n",
         Queue, Request, OutputBufferLength, InputBufferLength, IoControlCode));
 
     if (OutputBufferLength > MAX_WRITE_LENGTH) {
-        KdPrint(("%!FUNC! %!LINE!  Buffer Length too big %Iu, Max is %d\n",
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE!  Buffer Length too big %Iu, Max is %d\n",
             OutputBufferLength, MAX_WRITE_LENGTH));
         WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
         return;
@@ -185,7 +187,7 @@ WindowsPerfEvtDeviceControl(
     // Get the memory buffer
     Status = WdfRequestRetrieveInputMemory(Request, &memory);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n",
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n",
             Status));
         WdfVerifierDbgBreakPoint();
         WdfRequestComplete(Request, Status);
@@ -202,7 +204,7 @@ WindowsPerfEvtDeviceControl(
     queueContext->Buffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, max(OutputBufferLength, InputBufferLength), 'sam1');
     // Set completion status information 
     if (queueContext->Buffer == NULL) {
-        KdPrint(("%!FUNC! %!LINE!: Could not allocate %Iu byte buffer\n", max(OutputBufferLength, InputBufferLength)));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE!: Could not allocate %Iu byte buffer\n", max(OutputBufferLength, InputBufferLength)));
         WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
         return;
     }
@@ -213,7 +215,7 @@ WindowsPerfEvtDeviceControl(
         queueContext->Buffer,
         InputBufferLength);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("%!FUNC! %!LINE! WdfMemoryCopyToBuffer failed 0x%x\n", Status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! WdfMemoryCopyToBuffer failed 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
 
         ExFreePool(queueContext->Buffer);
@@ -230,7 +232,7 @@ WindowsPerfEvtDeviceControl(
     ULONG outputSize;
     Status = deviceControl(queueContext->Buffer, (ULONG)InputBufferLength, &outputSize, queueContext);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
 
         ExFreePool(queueContext->Buffer);
@@ -240,7 +242,7 @@ WindowsPerfEvtDeviceControl(
         WdfRequestComplete(Request, Status);
         return;
     }
-    KdPrint(("%!FUNC! %!LINE! deviceControl outputSize=%lu", outputSize));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! deviceControl outputSize=%lu\n", outputSize));
     //
     // Port End
     //
@@ -248,7 +250,7 @@ WindowsPerfEvtDeviceControl(
     queueContext->Length = (ULONG)outputSize;
     if (queueContext->Length > OutputBufferLength)
     {
-        KdPrint(("%!FUNC! %!LINE! outputSize bigger than OutputBufferLenght"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! outputSize bigger than OutputBufferLenght\n"));
         WdfVerifierDbgBreakPoint();
         ExFreePool(queueContext->Buffer);
         queueContext->Buffer = NULL;
@@ -279,7 +281,7 @@ WindowsPerfEvtDeviceControl(
     //
     Status = WdfRequestRetrieveOutputMemory(Request, &memory);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n", Status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
         WdfRequestCompleteWithInformation(Request, Status, 0L);
         return;
@@ -291,7 +293,7 @@ WindowsPerfEvtDeviceControl(
         queueContext->Buffer,
         OutputBufferLength);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("%!FUNC! %!LINE!: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%llu \n",
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE!: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%llu \n",
             Status, queueContext->Buffer, OutputBufferLength));
         WdfRequestComplete(Request, Status);
         return;
@@ -308,7 +310,7 @@ WindowsPerfEvtDeviceControl(
     queueContext->CurrentStatus = Status;
 #endif
     queueContext->CurrentRequest = NULL;
-    KdPrint(("%!FUNC! %!LINE! Completing request 0x%p, Status 0x%x \n", Request, Status));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Completing request 0x%p, Status 0x%x \n", Request, Status));
     WdfRequestComplete(Request, Status);
 }
 
@@ -379,7 +381,7 @@ Return Value:
 {
     PQUEUE_CONTEXT queueContext = QueueGetContext(WdfRequestGetIoQueue(Request));
 
-    KdPrint(("WindowsPerfEvtRequestCancel called on Request 0x%p\n",  Request));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WindowsPerfEvtRequestCancel called on Request 0x%p\n",  Request));
 
     //
     // The following is race free by the callside or DPC side

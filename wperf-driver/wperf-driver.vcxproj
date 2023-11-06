@@ -71,6 +71,7 @@
       </WppGenerateUsingTemplateFile>
       <WppScanConfigurationData>trace.h</WppScanConfigurationData>
       <WppRecorderEnabled>false</WppRecorderEnabled>
+      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
@@ -113,10 +114,14 @@
   <ItemGroup>
     <ClCompile Include="core.c" />
     <ClCompile Include="device.c" />
+    <ClCompile Include="devioctl.c" />
     <ClCompile Include="dmc.c" />
+    <ClCompile Include="dpc.c" />
     <ClCompile Include="driver.c" />
     <ClCompile Include="dsu.c" />
     <ClCompile Include="queue.c" />
+    <ClCompile Include="utilities.c" />
+    <ClCompile Include="workitem.c" />
   </ItemGroup>
   <ItemGroup>
     <Inf Exclude="@(Inf)" Include="*.inx" />
@@ -128,8 +133,18 @@
     <None Exclude="@(None)" Include="*.def;*.bat;*.hpj;*.asmx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Exclude="@(ClInclude)" Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd" />
+    <ClInclude Include="core.h" />
+    <ClInclude Include="coreinfo.h" />
+    <ClInclude Include="device.h" />
+    <ClInclude Include="dmc.h" />
+    <ClInclude Include="driver.h" />
+    <ClInclude Include="dsu.h" />
+    <ClInclude Include="pmu.h" />
+    <ClInclude Include="queue.h" />
+    <ClInclude Include="sysregs.h" />
+    <ClInclude Include="trace.h" />
     <ClInclude Include="..\wperf\utils.h" />
+    <ClInclude Include="utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

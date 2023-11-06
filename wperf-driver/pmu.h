@@ -58,3 +58,4 @@ struct pmu_event_kernel
     UINT32 enable_irq;
 };
 
+VOID event_enable(struct pmu_event_kernel* event);

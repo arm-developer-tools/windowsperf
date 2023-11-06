@@ -28,38 +28,65 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define INITGUID
 
-#include <ntddk.h>
-#include <wdf.h>
-#include <limits.h>
-#include "queue.h"
+#include "driver.h"
+#include "device.h"
 #if !defined DBG
-#include "trace.h"
+#include "utilities.tmh"
 #endif
+#include "sysregs.h"
 
-//
-// Device
-//
-#define NT_DEVICE_NAME		L"\\Device\\WPERFDRIVER"
-#define DOS_DEVICE_NAME		L"\\DosDevices\\WPERFDRIVER"
 
-//
-// Driver unload function
-//
-extern VOID WindowsPerfDeviceUnload();
 
-//
-// WDFDRIVER Events
-//
-DRIVER_INITIALIZE DriverEntry;
-EVT_WDF_DRIVER_DEVICE_ADD WindowsPerfEvtDeviceAdd;
-EVT_WDF_DRIVER_UNLOAD WindowsPerfEvtWdfDriverUnload;
+extern UINT64* last_fpc_read;
+extern UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
+// Just update last_fpc_read, this is the fixed counter equivalent to CoreCounterReset
+void update_last_fixed_counter(UINT64 core_idx)
+{
+    last_fpc_read[core_idx] = _ReadStatusReg(PMCCNTR_EL0);
+}
 
-//
-// Retrieve framework version string
-//
-NTSTATUS
-WindowsPerfPrintDriverVersion(
-);
 
+#define WRITE_COUNTER(N) case N: _WriteStatusReg(PMEVCNTR##N##_EL0, (__int64)val); break;
+VOID core_write_counter(UINT32 counter_idx, __int64 val)
+{
+    counter_idx = counter_idx_map[counter_idx];
+    switch (counter_idx)
+    {
+        WRITE_COUNTER(0);
+        WRITE_COUNTER(1);
+        WRITE_COUNTER(2);
+        WRITE_COUNTER(3);
+        WRITE_COUNTER(4);
+        WRITE_COUNTER(5);
+        WRITE_COUNTER(6);
+        WRITE_COUNTER(7);
+        WRITE_COUNTER(8);
+        WRITE_COUNTER(9);
+        WRITE_COUNTER(10);
+        WRITE_COUNTER(11);
+        WRITE_COUNTER(12);
+        WRITE_COUNTER(13);
+        WRITE_COUNTER(14);
+        WRITE_COUNTER(15);
+        WRITE_COUNTER(16);
+        WRITE_COUNTER(17);
+        WRITE_COUNTER(18);
+        WRITE_COUNTER(19);
+        WRITE_COUNTER(20);
+        WRITE_COUNTER(21);
+        WRITE_COUNTER(22);
+        WRITE_COUNTER(23);
+        WRITE_COUNTER(24);
+        WRITE_COUNTER(25);
+        WRITE_COUNTER(26);
+        WRITE_COUNTER(27);
+        WRITE_COUNTER(28);
+        WRITE_COUNTER(29);
+        WRITE_COUNTER(30);
+    default:
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
+            "WindowsPerf: Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
+        break;
+    }
+}

@@ -38,6 +38,7 @@
         WPP_DEFINE_BIT(TRACE_DRIVER)                                      \
         WPP_DEFINE_BIT(TRACE_DEVICE)                                      \
         WPP_DEFINE_BIT(TRACE_QUEUE)                                       \
+        WPP_DEFINE_BIT(DPFLTR_IHVDRIVER_ID)                         \
         )                             
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                                  \
@@ -52,6 +53,14 @@
 
 #define WPP_LEVEL_FLAGS_ENABLED(lvl, flags) \
            (WPP_LEVEL_ENABLED(flags) && WPP_CONTROL(WPP_BIT_ ## flags).Level >= lvl)
+
+#define WPP_Flags_LEVEL_LOGGER(Flags, level)                                  \
+    WPP_LEVEL_LOGGER(Flags)
+
+#define WPP_Flags_LEVEL_ENABLED(Flags, level)                                 \
+    (WPP_LEVEL_ENABLED(Flags) && \
+    WPP_CONTROL(WPP_BIT_ ## Flags).Level >= level)
+
 
 //           
 // WPP orders static parameters before dynamic parameters. To support the Trace function
@@ -68,5 +77,5 @@
 // begin_wpp config
 // FUNC Trace{FLAG=MYDRIVER_ALL_INFO}(LEVEL, MSG, ...);
 // FUNC TraceEvents(LEVEL, FLAGS, MSG, ...);
-// FUNC KdPrint{LEVEL=TRACE_LEVEL_INFORMATION, FLAGS=TRACE_DRIVER}((MSG, ...));
+// FUNC KdPrintEx((Flags, LEVEL, MSG, ...));  
 // end_wpp

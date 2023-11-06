@@ -31,7 +31,9 @@
 #include <ntddk.h>
 #include "trace.h"
 #include "core.h"
+#if !defined DBG
 #include "core.tmh"
+#endif
 #include "sysregs.h"
 
 static UINT8 has_long_event_support = 0;
@@ -137,7 +139,7 @@ VOID CoreCouterSetType(UINT32 counter_idx, __int64 evtype_val)
         SET_COUNTER_TYPE(29);
         SET_COUNTER_TYPE(30);
     default:
-        KdPrint(("Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
         break;
     }
 }
@@ -179,7 +181,7 @@ UINT64 CoreReadCounter(UINT32 counter_idx)
         READ_COUNTER(29);
         READ_COUNTER(30);
     default:
-        KdPrint(("Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
         break;
     }
 

@@ -30,7 +30,9 @@
 
 #include "driver.h"
 #include "device.h"
+#if !defined DBG
 #include "driver.tmh"
+#endif
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -47,7 +49,9 @@ WindowsPerfEvtWdfDriverUnload(
     PAGED_CODE();
     UNREFERENCED_PARAMETER(Driver);
 
+#if !defined DBG
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
+#endif
 
     WindowsPerfDeviceUnload();
 
@@ -56,7 +60,9 @@ WindowsPerfEvtWdfDriverUnload(
     //
     // Stop WPP Tracing
     //
+#if !defined DBG
     WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
+#endif
 }
 
 /// <summary>
@@ -84,9 +90,12 @@ DriverEntry(
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
 
+#if !defined DBG
     WPP_INIT_TRACING(DriverObject, RegistryPath);
-    
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+#endif
+    
+
 
     // Initialize the driver config structure
     WDF_DRIVER_CONFIG_INIT(&config, WindowsPerfEvtDeviceAdd);
@@ -101,7 +110,7 @@ DriverEntry(
                             &config,
                             WDF_NO_HANDLE);
     if (!NT_SUCCESS(status)) {
-        KdPrint(("Error: WdfDriverCreate failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Error: WdfDriverCreate failed 0x%x\n", status));
         return status;
     }
 
@@ -109,7 +118,9 @@ DriverEntry(
     WindowsPerfPrintDriverVersion();
 #endif
     
+#if !defined DBG
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+#endif
 
     return status;
 }
@@ -134,7 +145,7 @@ WindowsPerfEvtDeviceAdd(
 
     PAGED_CODE();
 
-    KdPrint(("Enter EvtDeviceAdd\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Enter EvtDeviceAdd\n"));
 
     status = WindowsPerfDeviceCreate(DeviceInit);
 
@@ -162,7 +173,7 @@ WindowsPerfPrintDriverVersion(
     //
     status = WdfStringCreate(NULL, WDF_NO_OBJECT_ATTRIBUTES, &string);
     if (!NT_SUCCESS(status)) {
-        KdPrint(("Error: WdfStringCreate failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Error: WdfStringCreate failed 0x%x\n", status));
         return status;
     }
 
@@ -174,12 +185,12 @@ WindowsPerfPrintDriverVersion(
         // deleted when the driverobject is deleted when the DriverEntry
         // returns a failure status.
         //
-        KdPrint(("Error: WdfDriverRetrieveVersionString failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Error: WdfDriverRetrieveVersionString failed 0x%x\n", status));
         return status;
     }
 
     WdfStringGetUnicodeString(string, &us);
-    KdPrint(("WindowsPerf %wZ\n", &us));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WindowsPerf %wZ\n", &us));
 
     WdfObjectDelete(string);
     string = NULL; // To avoid referencing a deleted object.
@@ -189,9 +200,9 @@ WindowsPerfPrintDriverVersion(
     //
     WDF_DRIVER_VERSION_AVAILABLE_PARAMS_INIT(&ver, 1, 0);
     if (WdfDriverIsVersionAvailable(WdfGetDriver(), &ver) == TRUE) {
-        KdPrint(("Yes, framework version is 1.0\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Yes, framework version is 1.0\n"));
     }else {
-        KdPrint(("No, framework verison is not 1.0\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "No, framework verison is not 1.0\n"));
     }
 
     return STATUS_SUCCESS;
