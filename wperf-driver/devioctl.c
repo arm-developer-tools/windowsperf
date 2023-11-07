@@ -520,7 +520,9 @@ NTSTATUS deviceControl(
 
                 KeInsertQueueDpc(&core->dpc_reset, (VOID*)cores_count, NULL);  // cores_count has been validated so the DPC will always be called prior to the code below waiting on its completion
             }
-            KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, 0, NULL); // wait for all dpcs to complete
+            LARGE_INTEGER li;
+            li.QuadPart = 0;
+            KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, 0, &li); // wait for all dpcs to complete
             KeClearEvent(&sync_reset_dpc);
             cpunos = 0;
 
