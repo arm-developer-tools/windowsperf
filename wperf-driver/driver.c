@@ -110,7 +110,7 @@ DriverEntry(
                             &config,
                             WDF_NO_HANDLE);
     if (!NT_SUCCESS(status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Error: WdfDriverCreate failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Error: WdfDriverCreate failed 0x%x\n", status));
         return status;
     }
 
@@ -145,7 +145,7 @@ WindowsPerfEvtDeviceAdd(
 
     PAGED_CODE();
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Enter EvtDeviceAdd\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "Enter EvtDeviceAdd\n"));
 
     status = WindowsPerfDeviceCreate(DeviceInit);
 
@@ -173,7 +173,7 @@ WindowsPerfPrintDriverVersion(
     //
     status = WdfStringCreate(NULL, WDF_NO_OBJECT_ATTRIBUTES, &string);
     if (!NT_SUCCESS(status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Error: WdfStringCreate failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Error: WdfStringCreate failed 0x%x\n", status));
         return status;
     }
 
@@ -185,12 +185,12 @@ WindowsPerfPrintDriverVersion(
         // deleted when the driverobject is deleted when the DriverEntry
         // returns a failure status.
         //
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Error: WdfDriverRetrieveVersionString failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Error: WdfDriverRetrieveVersionString failed 0x%x\n", status));
         return status;
     }
 
     WdfStringGetUnicodeString(string, &us);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WindowsPerf %wZ\n", &us));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WindowsPerf %wZ\n", &us));
 
     WdfObjectDelete(string);
     string = NULL; // To avoid referencing a deleted object.
@@ -200,9 +200,9 @@ WindowsPerfPrintDriverVersion(
     //
     WDF_DRIVER_VERSION_AVAILABLE_PARAMS_INIT(&ver, 1, 0);
     if (WdfDriverIsVersionAvailable(WdfGetDriver(), &ver) == TRUE) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "Yes, framework version is 1.0\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "Yes, framework version is 1.0\n"));
     }else {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "No, framework verison is not 1.0\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "No, framework verison is not 1.0\n"));
     }
 
     return STATUS_SUCCESS;

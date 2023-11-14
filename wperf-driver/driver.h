@@ -63,3 +63,11 @@ NTSTATUS
 WindowsPerfPrintDriverVersion(
 );
 
+NTSTATUS deviceControl(
+    _In_    ULONG   IoControlCode, 
+    _In_    PVOID   pInBuffer,
+    _In_    ULONG   InBufSize,
+    _In_    PVOID   pOutBuffer,
+    _In_    ULONG   OutBufSize,
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext);

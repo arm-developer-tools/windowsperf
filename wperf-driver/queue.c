@@ -39,13 +39,6 @@
 #pragma alloc_text (PAGE, WindowsPerfTimerCreate)
 #endif
 
-NTSTATUS deviceControl(
-    _In_    PVOID   pBuffer,
-    _In_    ULONG   inputSize,
-    _Out_   PULONG  outputSize,
-    _Inout_ PQUEUE_CONTEXT queueContext
-);
-
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
 
 NTSTATUS
@@ -124,15 +117,15 @@ Return Value:
                  );
 
     if( !NT_SUCCESS(status) ) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WdfIoQueueCreate failed 0x%x\n",status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfIoQueueCreate failed 0x%x\n",status));
         return status;
     }
 
     // Get our Driver Context memory from the returned Queue handle
     queueContext = QueueGetContext(queue);
 
-    queueContext->Buffer = NULL;
-
+    queueContext->inBuffer = NULL;
+    queueContext->outBuffer = NULL;
     queueContext->CurrentRequest = NULL;
     queueContext->CurrentStatus = STATUS_INVALID_DEVICE_REQUEST;
 
@@ -147,7 +140,7 @@ Return Value:
     NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->WorkItem);
     if (!NT_SUCCESS(wiStatus))
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
     }
 
     PWORK_ITEM_CTXT workItemCtxt;
@@ -155,7 +148,7 @@ Return Value:
     wiStatus = WdfObjectAllocateContext(queueContext->WorkItem, &workItemAttributes, &workItemCtxt);
     if (!NT_SUCCESS(wiStatus))
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
     }
 
     return status;
@@ -172,136 +165,148 @@ WindowsPerfEvtDeviceControl(
 {
     NTSTATUS Status;
     WDFMEMORY memory;
+    size_t bufsize = 0;
     PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Queue 0x%p Request 0x%p OutputBufferLength %llu InputBufferLength %llu IoControlCode %lu\n",
+    queueContext->CurrentRequest = NULL;
+    queueContext->inBuffer = NULL;
+    queueContext->outBuffer = NULL;
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! Queue 0x%p Request 0x%p OutputBufferLength %llu InputBufferLength %llu IoControlCode %lu\n",
         Queue, Request, OutputBufferLength, InputBufferLength, IoControlCode));
 
+
+    //
+    // Get the memory buffers
+    //
+    if (InputBufferLength)
+    {
+        Status = WdfRequestRetrieveInputMemory(Request, &memory);
+        if (!NT_SUCCESS(Status)) {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! Could not get request in memory buffer 0x%x\n",
+                Status));
+            WdfVerifierDbgBreakPoint();
+            queueContext->CurrentRequest = NULL;
+            queueContext->inBuffer = NULL;
+            queueContext->outBuffer = NULL;
+            WdfRequestComplete(Request, Status);
+            return;
+        }
+        queueContext->inBuffer = WdfMemoryGetBuffer(memory, &bufsize);  // this also returns the buffer size, so check it against the given size
+        if (bufsize != InputBufferLength)
+        {
+            Status = STATUS_INVALID_BLOCK_LENGTH;
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  bufsize != InputBufferLength 0x%x\n",
+                Status));
+            WdfVerifierDbgBreakPoint();
+            queueContext->CurrentRequest = NULL;
+            queueContext->inBuffer = NULL;
+            queueContext->outBuffer = NULL;
+            WdfRequestComplete(Request, Status);
+            return;
+        }
+    }
+
+    if (OutputBufferLength > 0) // we might not always have an out buffer
+    {
+        Status = WdfRequestRetrieveOutputMemory(Request, &memory);
+        if (!NT_SUCCESS(Status)) {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! Could not get request out memory buffer 0x%x\n",
+                Status));
+            WdfVerifierDbgBreakPoint();
+            queueContext->CurrentRequest = NULL;
+            queueContext->inBuffer = NULL;
+            queueContext->outBuffer = NULL;
+            WdfRequestComplete(Request, Status);
+            return;
+        }
+        queueContext->outBuffer = WdfMemoryGetBuffer(memory, &bufsize);// this also returns the buffer size, so check it against the given size
+        if (bufsize != OutputBufferLength)
+        {
+            Status = STATUS_INVALID_BLOCK_LENGTH;
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  bufsize != OutputBufferLength 0x%x\n",
+                Status));
+            WdfVerifierDbgBreakPoint();
+            queueContext->CurrentRequest = NULL;
+            queueContext->inBuffer = NULL;
+            queueContext->outBuffer = NULL;
+            WdfRequestComplete(Request, Status);
+            return;
+        }
+    }
+
+    //
+    //  Sanity check values
+    //
+    if (InputBufferLength && (queueContext->inBuffer == NULL)) {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  No input buffer\n"));
+        WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, (ULONG_PTR)0L);
+        queueContext->CurrentRequest = NULL;
+        queueContext->inBuffer = NULL;
+        queueContext->outBuffer = NULL;
+        return;
+    }
+    if (OutputBufferLength && (queueContext->outBuffer == NULL)) {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  No output  buffer\n"));
+        WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, (ULONG_PTR)0L);
+        queueContext->CurrentRequest = NULL;
+        queueContext->inBuffer = NULL;
+        queueContext->outBuffer = NULL;
+        return;
+    }
+
     if (OutputBufferLength > MAX_WRITE_LENGTH) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE!  Buffer Length too big %Iu, Max is %d\n",
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  Buffer Length too big %Iu, Max is %d\n",
             OutputBufferLength, MAX_WRITE_LENGTH));
         WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
         return;
     }
 
-    // Get the memory buffer
-    Status = WdfRequestRetrieveInputMemory(Request, &memory);
-    if (!NT_SUCCESS(Status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n",
-            Status));
-        WdfVerifierDbgBreakPoint();
-        WdfRequestComplete(Request, Status);
-        return;
-    }
-
-    // Release previous buffer if set
-    if (queueContext->Buffer != NULL) {
-        ExFreePool(queueContext->Buffer);
-        queueContext->Buffer = NULL;
-        queueContext->Length = 0L;
-    }
-
-    queueContext->Buffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, max(OutputBufferLength, InputBufferLength), 'sam1');
-    // Set completion status information 
-    if (queueContext->Buffer == NULL) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE!: Could not allocate %Iu byte buffer\n", max(OutputBufferLength, InputBufferLength)));
-        WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
-        return;
-    }
-
-    // Copy the memory in
-    Status = WdfMemoryCopyToBuffer(memory,
-        0,  // offset into the source memory
-        queueContext->Buffer,
-        InputBufferLength);
-    if (!NT_SUCCESS(Status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! WdfMemoryCopyToBuffer failed 0x%x\n", Status));
-        WdfVerifierDbgBreakPoint();
-
-        ExFreePool(queueContext->Buffer);
-        queueContext->Buffer = NULL;
-        queueContext->Length = 0L;
-
-        WdfRequestComplete(Request, Status);
-        return;
-    }
+    queueContext->CurrentRequest = Request;
 
     //
     // Port Begin
     //
-    ULONG outputSize;
-    Status = deviceControl(queueContext->Buffer, (ULONG)InputBufferLength, &outputSize, queueContext);
+    ULONG outputDataSize;
+    Status = deviceControl(IoControlCode, queueContext->inBuffer, (ULONG)InputBufferLength, queueContext->outBuffer, (ULONG)OutputBufferLength, &outputDataSize, queueContext);
     if (!NT_SUCCESS(Status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
         WdfVerifierDbgBreakPoint();
-
-        ExFreePool(queueContext->Buffer);
-        queueContext->Buffer = NULL;
-        queueContext->Length = 0L;
-
+        queueContext->CurrentRequest = NULL;
+        queueContext->inBuffer = NULL;
+        queueContext->outBuffer = NULL;
         WdfRequestComplete(Request, Status);
         return;
     }
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! deviceControl outputSize=%lu\n", outputSize));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! deviceControl outputDataSize=%lu\n", outputDataSize));
     //
     // Port End
     //
 
-    queueContext->Length = (ULONG)outputSize;
-    if (queueContext->Length > OutputBufferLength)
+   
+    if (outputDataSize > OutputBufferLength)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! outputSize bigger than OutputBufferLenght\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! outputDataSize bigger than OutputBufferLenght\n"));
         WdfVerifierDbgBreakPoint();
-        ExFreePool(queueContext->Buffer);
-        queueContext->Buffer = NULL;
-        queueContext->Length = 0L;
+        queueContext->CurrentRequest = NULL;
+        queueContext->inBuffer = NULL;
+        queueContext->outBuffer = NULL;
         WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
         return;
     }
-    queueContext->CurrentRequest = Request;
+
     queueContext->CurrentStatus = Status;
 
-    //
-    // No data to read
-    //
-    if ((queueContext->Buffer == NULL) || OutputBufferLength == 0 || queueContext->Length == 0) {
-        WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, (ULONG_PTR)0L);
-        return;
-    }
 
     //
-    // Read what we have
-    //
-    if (queueContext->Length < OutputBufferLength) {
-        OutputBufferLength = queueContext->Length;
-    }
-
-    //
-    // Get the request memory
-    //
-    Status = WdfRequestRetrieveOutputMemory(Request, &memory);
-    if (!NT_SUCCESS(Status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Could not get request memory buffer 0x%x\n", Status));
-        WdfVerifierDbgBreakPoint();
-        WdfRequestCompleteWithInformation(Request, Status, 0L);
-        return;
-    }
-
-    // Copy the memory out
-    Status = WdfMemoryCopyFromBuffer(memory, // destination
-        0,      // offset into the destination memory
-        queueContext->Buffer,
-        OutputBufferLength);
-    if (!NT_SUCCESS(Status)) {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE!: WdfMemoryCopyFromBuffer failed 0x%x, Buffer=0x%p, Length=%llu \n",
-            Status, queueContext->Buffer, OutputBufferLength));
-        WdfRequestComplete(Request, Status);
-        return;
-    }
-
     // Set transfer information
+    //
+    if (outputDataSize < OutputBufferLength)
+        OutputBufferLength = outputDataSize;
+
     WdfRequestSetInformation(Request, (ULONG_PTR)OutputBufferLength);
-#if 0
+
+ #if 0
     // Mark the request is cancelable
     WdfRequestMarkCancelable(Request, WindowsPerfEvtRequestCancel);
 
@@ -309,8 +314,11 @@ WindowsPerfEvtDeviceControl(
     queueContext->CurrentRequest = Request;
     queueContext->CurrentStatus = Status;
 #endif
+
     queueContext->CurrentRequest = NULL;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%!FUNC! %!LINE! Completing request 0x%p, Status 0x%x \n", Request, Status));
+    queueContext->inBuffer = NULL;
+    queueContext->outBuffer = NULL;
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! Completing request 0x%p, Status 0x%x \n", Request, Status));
     WdfRequestComplete(Request, Status);
 }
 
@@ -336,20 +344,11 @@ Return Value:
 --*/
 {
     PQUEUE_CONTEXT queueContext = QueueGetContext(Object);
+    queueContext->inBuffer = NULL;
+    queueContext->outBuffer = NULL;
 
-    //
-    // Release any resources pointed to in the queue context.
-    //
     // The body of the queue context will be released after
     // this callback handler returns
-    //
-
-    //
-    // If Queue context has an I/O buffer, release it
-    //
-    if( queueContext->Buffer != NULL ) {
-        ExFreePool(queueContext->Buffer);
-    }
 
     return;
 }
@@ -381,7 +380,7 @@ Return Value:
 {
     PQUEUE_CONTEXT queueContext = QueueGetContext(WdfRequestGetIoQueue(Request));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "WindowsPerfEvtRequestCancel called on Request 0x%p\n",  Request));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WindowsPerfEvtRequestCancel called on Request 0x%p\n",  Request));
 
     //
     // The following is race free by the callside or DPC side

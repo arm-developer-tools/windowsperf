@@ -48,8 +48,8 @@
 typedef struct _QUEUE_CONTEXT {
 
     // Here we allocate a buffer from a test write so it can be read back
-    PVOID       Buffer;
-    ULONG       Length;
+    PVOID       inBuffer;
+    PVOID       outBuffer;
 
     WDFWORKITEM WorkItem;
 

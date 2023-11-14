@@ -222,11 +222,11 @@ VOID free_pmu_resource(VOID)
 
     if (status != STATUS_SUCCESS)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "HalFreeHardwareCounters: failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HalFreeHardwareCounters: failed 0x%x\n", status));
     }
     else
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "HalFreeHardwareCounters: success\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "HalFreeHardwareCounters: success\n"));
     }
 }
 
@@ -263,7 +263,7 @@ VOID WindowsPerfDeviceUnload()
     // Uninstall PMI isr
     PMIHANDLER isr = NULL;
     if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "uninstalling sampling isr failed \n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
 }
 
 
@@ -363,11 +363,11 @@ WindowsPerfDeviceCreate(
 
     if (pmu_ver == 0x0)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "PMUv3 not supported by hardware\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "PMUv3 not supported by hardware\n"));
         return STATUS_FAIL_CHECK;
     }
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "PMU version %d\n", pmu_ver));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "PMU version %d\n", pmu_ver));
 
     midr_value = _ReadStatusReg(MIDR_EL1);
     UINT8 implementer = (midr_value >> 24) & 0xff;
@@ -375,7 +375,7 @@ WindowsPerfDeviceCreate(
     UINT8 arch_num = (midr_value >> 16) & 0xf;
     UINT16 part_num = (midr_value >> 4) & 0xfff;
     UINT8 revision = midr_value & 0xf;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
         arch_num, implementer, variant, part_num, revision));
 
     if (pmu_ver == 0x6 || pmu_ver == 0x7)
@@ -383,10 +383,10 @@ WindowsPerfDeviceCreate(
 
     UINT32 pmcr = CorePmcrGet();
     numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%d general purpose hardware counters detected\n", numGPC));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%d general purpose hardware counters detected\n", numGPC));
 
     numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%d cores detected\n", numCores));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
 
     // Finally, alloc PMU counters
     // 1) Query for free PMU counters
@@ -410,10 +410,10 @@ WindowsPerfDeviceCreate(
     }
     if (numFreeCounters == 0)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "HAL: counters allocated by other kernel modules\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "HAL: counters allocated by other kernel modules\n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%d free general purpose hardware counters detected\n", numFreeCounters));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%d free general purpose hardware counters detected\n", numFreeCounters));
 
     counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
 
@@ -421,7 +421,7 @@ WindowsPerfDeviceCreate(
     for (UINT8 i = 0; i < numGPC; i++)
     {
         i %= AARCH64_MAX_HWC_SUPP;
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
     }
 #endif
 
@@ -430,7 +430,7 @@ WindowsPerfDeviceCreate(
     PPHYSICAL_COUNTER_RESOURCE_LIST CounterResourceList = (PPHYSICAL_COUNTER_RESOURCE_LIST)ExAllocatePool2(POOL_FLAG_NON_PAGED, AllocationSize, 'CRCL');
     if (CounterResourceList == NULL)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "ExAllocatePoolWithTag: failed \n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     RtlSecureZeroMemory(CounterResourceList, AllocationSize);
@@ -445,13 +445,13 @@ WindowsPerfDeviceCreate(
     ExFreePoolWithTag(CounterResourceList, 'CRCL');
     if (status == STATUS_INSUFFICIENT_RESOURCES)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "HAL: counters allocated by other kernel modules\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: counters allocated by other kernel modules\n"));
         return status;
     }
 
     if (status != STATUS_SUCCESS)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "HAL: allocate failed 0x%x\n", status));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: allocate failed 0x%x\n", status));
         return status;
     }
     numFreeGPC = numFreeCounters;
@@ -467,11 +467,11 @@ WindowsPerfDeviceCreate(
         status = KeSetHardwareCounterConfiguration(&counter_descs[i], 1);
         if (status == STATUS_WMI_ALREADY_ENABLED)
         {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", i));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", i));
         }
         else if (status != STATUS_SUCCESS)
         {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", i, status));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", i, status));
             return status;
         }
     }
@@ -479,7 +479,7 @@ WindowsPerfDeviceCreate(
     core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * numCores, 'CORE');
     if (core_info == NULL)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "ExAllocatePoolWithTag: failed \n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
@@ -487,7 +487,7 @@ WindowsPerfDeviceCreate(
     last_fpc_read = (UINT64*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT64) * numCores, 'LAST');
     if (!last_fpc_read)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "%s:%d - ExAllocatePool2: failed\n", __FUNCTION__, __LINE__));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d - ExAllocatePool2: failed\n", __FUNCTION__, __LINE__));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     RtlSecureZeroMemory(last_fpc_read, sizeof(UINT64)* numCores);
@@ -540,11 +540,11 @@ WindowsPerfDeviceCreate(
     status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);
     if (status != STATUS_SUCCESS)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "register sampling isr failed \n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "register sampling isr failed \n"));
         return status;
     }
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "loaded\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "loaded\n"));
     //
     // Port End
     //
@@ -569,7 +569,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     IN  WDFDEVICE Device
     )
 {
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     //
     // Restart the queue and the periodic timer. We stopped them before going
@@ -577,7 +577,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     //
     WdfIoQueueStart(WdfDeviceGetDefaultQueue(Device));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL,  "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL,  "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     return STATUS_SUCCESS;
 }
@@ -597,7 +597,7 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
 {
     PAGED_CODE();
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     //
     // Before we stop the timer we should make sure there are no outstanding
@@ -612,7 +612,7 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     //
     WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(Device));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_TRACE_LEVEL,  "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL,  "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     return STATUS_SUCCESS;
 }

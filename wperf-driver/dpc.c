@@ -280,5 +280,5 @@ VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID
 
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
     update_last_fixed_counter(core_idx);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "core %d PMC enabled\n", core_idx));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "core %d PMC enabled\n", core_idx));
 }
