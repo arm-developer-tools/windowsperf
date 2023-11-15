@@ -549,6 +549,18 @@ WindowsPerfDeviceCreate(
     // Port End
     //
 
+    //  and finally do a reset on the hardware to make sure it is in a known state.  The reset dpc sets the event, so we have 
+    // to call this after the event is initialised of couse
+    for (ULONG i = 0; i < numCores; i++)
+    {
+        CoreInfo* core = &core_info[i];
+        core->timer_round = 0;
+
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Calling calling reset dpc in loop, i is %d core index is %lld\n", i, core->idx));
+        KeInsertQueueDpc(&core->dpc_reset, (VOID*)numCores, NULL);
+    }
+
     return status;
 }
 
