@@ -99,11 +99,19 @@ def wperf_metric_is_available(metric):
 
 
 def wperf_metric_events(metric):
-    """ Return list of events for given `metric` """
+    """ Return string with list of events for given `metric` """
     json_output = wperf_list()
     for metrics in json_output["Predefined_Metrics"]:
         if metric == metrics["Metric"]:
-            return metrics["Events"]
+            return metrics["Events"]    #   "{inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,st_spec}"
+    return None
+
+def wperf_metric_events_list(metric):
+    """ Return string with list of events for given `metric` """
+    json_output = wperf_list()
+    for metrics in json_output["Predefined_Metrics"]:
+        if metric == metrics["Metric"]:
+            return metrics["Events"].strip("{}").split(",") # Make result a list
     return None
 
 def get_result_from_test_results(j, Test_Name):

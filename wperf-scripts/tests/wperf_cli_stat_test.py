@@ -138,21 +138,27 @@ def test_wperf_stat(events,cores,metric,sleep):
     stdout, _ = run_command(cmd)
 
     # Common CLI outputs
-    assert b'seconds time elapsed' in stdout
+    assert re.search(b'\\d+\\.\\d+ seconds time elapsed', stdout)
 
     # Core number message
     if cores:
         for core in cores.split(','):
             assert b'Performance counter stats for core %d' % int(core) in stdout
 
-    # Pretty table basic columns (no multiplexing)
-    for col in [b'counter value' , b'event name', b'event idx', b'event note']:
-        assert re.search(b'[\\s]+%s[\\s]+' % col, stdout)
+    # Columns we see when we print `wperf stat`
+    COLS = [b'counter value' , b'event name', b'event idx', b'event note']
+    MCOLS = [b'multiplexed' , b'scaled value']  # These columns are added when multiplexing
 
-    # Pretty table basic columns (multiplexing)
-    if b', multiplexed' in stdout:
-        for col in [b'multiplexed' , b'scaled value']:
-            assert re.search(b'[\\s]+%s[\\s]+' % col, stdout)
+    # Find all column names in one row
+    rstr = b'[\\s]+'    # Regext for all column names on one row
+    for col in COLS:
+        rstr += col + b'[\\s]+'
+
+    if b', multiplexed' in stdout:  # Pretty table basic columns (multiplexing)
+        for col in MCOLS:
+            rstr += col + b'[\\s]+'
+
+    assert re.search(rstr, stdout)  # Check for all columns in one line
 
     # Event names in pretty table
     if events:
@@ -161,7 +167,7 @@ def test_wperf_stat(events,cores,metric,sleep):
         assert re.search(b'[\\s]+cycle[\\s]+fixed', stdout)
 
     # Overall summary header when more than one CPU count
-    # Note: if -c is not speciffied we count on all cores
+    # Note: if -c is not specified we count on all cores
     if not cores or len(cores.split(',')) > 1:
         assert b'System-wide Overall:' in stdout
     elif len(cores.split(',')) == 1:
