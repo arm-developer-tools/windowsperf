@@ -36,7 +36,11 @@
 #include <string>
 #include <vector>
 #include <iomanip>
+#include <variant>
 #include "outpututil.h"
+
+// minwindef.h define a macro called max making it impossible to use std::max without undefining the macro first
+#undef max
 
 /// <summary>
 /// Simple implementation of table with columns and rows.
@@ -122,6 +126,15 @@ public:
 		: m_header_underline(true) {
 	};
 
+	PrettyTable(const PrettyTable<CharType>& root) : m_header_underline(root.m_header_underline)
+	{
+		m_columns_align = root.m_columns_align;
+		m_columns_length = root.m_columns_length;
+		m_columns_max_width = root.m_columns_max_width;
+		m_header = root.m_header;
+		m_table = root.m_table;
+	};
+
 	/// operator<< overload to handle printing to stream output.
 	friend OutputStream& operator<<(OutputStream &os, PrettyTable& pt)
 	{
@@ -146,26 +159,34 @@ public:
 	{
 		if constexpr (std::is_same_v<T, std::vector<StringType>>)
 		{
-			m_table[m_header[I]] = val;
+			for (auto& item : val)
+			{
+				m_table[m_header[I]].push_back(item);
+			}
 		} else {
-			std::vector<StringType> t_val;
-			for(auto& elem: val)
+			for (auto& elem : val)
 			{
 				if constexpr (std::is_same_v<T, std::vector<uint64_t>>)
 				{
-					t_val.push_back(IntToDecWithCommas(elem));
+					m_table[m_header[I]].push_back(IntToDecWithCommas(elem));
 				}
 				else if constexpr (std::is_same_v<T, std::vector<double>>) {
-					t_val.push_back(DoubleToWideString(elem));
+					m_table[m_header[I]].push_back(DoubleToWideString(elem));
 				}
-				else if constexpr(std::is_same_v<T, std::vector<uint32_t>>) {
-					t_val.push_back(std::to_wstring(elem));
+				else if constexpr (std::is_same_v<T, std::vector<uint32_t>>) {
+					m_table[m_header[I]].push_back(std::to_wstring(elem));
+				}
+				else if constexpr (std::is_same_v<T, std::vector<float>>) {
+					m_table[m_header[I]].push_back(std::to_wstring(elem));
+				}
+				else if constexpr (std::is_same_v<T, std::vector<PrettyTable<CharType>>>)
+				{
+					m_table[m_header[I]].push_back(elem);
 				}
 				else {
-					t_val.push_back(StringType(elem));
+					m_table[m_header[I]].push_back(StringType(elem));
 				}
 			}
-			m_table[m_header[I]] = t_val;
 		}
 
 	}
@@ -213,92 +234,251 @@ public:
 	}
 
 	/// <summary>
-	/// Print pretty table on screen with std::wcout
+	/// Calculate the number of rows that this item is going to require
+	/// </summary>
+	/// <param name="item_number">Element index in column vector.</param>
+	size_t GetRowCount(size_t item_number)
+	{
+		size_t row_count = 0;
+		// For all headers (columns) count the number of rows
+		for (auto& header : m_header)
+		{
+			//For all items on that column: single elements count as 1, PrettyTables add their rows
+			size_t rows = 0;
+			if (item_number >= m_table[header].size())
+			{
+				// We are past the end of this vector so we will just print spaces
+				rows = 1;
+			}
+			else
+			{
+				rows = std::visit([](auto&& arg)->size_t
+				{
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, StringType>)
+					{
+						return 1ll;
+					}
+					else if constexpr (std::is_same_v<T, PrettyTable<CharType>>)
+					{
+						return arg.GetRowCount();
+					}
+					else {
+						static_assert(std::_Always_false<T>, "Invalid type");
+					}
+				}, m_table[header][item_number]);
+			}
+
+			if (row_count < rows)
+			{
+				row_count = rows;
+			}
+		}
+		return row_count;
+	}
+
+	/// <summary>
+	/// Calculate the number of rows that the whole table is going to take
+	/// </summary>
+	size_t GetRowCount()
+	{
+		size_t row_count = 1ll + (m_header_underline ? 1ll : 0ll); // Header + underline
+		size_t num_items = m_table[m_header[0]].size(); // It should be the same for all columns [TODO] Assert this somewhere?
+		for (auto i = 0; i < num_items; i++)
+		{
+			row_count += GetRowCount(i);
+		}
+		return row_count;
+	}
+
+	/// <summary>
+	/// Prints a particular row given the number of rows so far and the item it should belong to.
+	/// </summary>
+	/// <param name="row_number">Row number that is going to be printed.</param>
+	/// <param name="item_number">Element index in column vector.</param>
+	/// <param name="acc_row_number">The accumulated number of rows so far</param>
+	/// <param name="out_stream">Reference to the stream that is going to be used to print this row</param>
+	/// <param name="isEmbedded">Tell if the current row belongs to an embedded PrettyTable</param>
+	void PrintRow(size_t row_number, size_t item_number, size_t acc_row_number, std::wstringstream& out_stream, bool isEmbedded = false)
+	{
+		size_t j = 0;	// Rows in column index
+		size_t item_relative_row_number = row_number - acc_row_number;
+
+		if (!isEmbedded) PrintLeftMargin(out_stream);
+
+		// Print header requested
+		if (row_number == 0)
+		{
+			// Print colum names (headers)
+			for (const auto& header : m_header) {
+				// Calculate maximum width of each column
+				size_t max = GetColumnMaxWidth(m_table[header]);
+				m_columns_max_width.push_back(std::max(max, header.size()));
+
+				// Calculate length for each column
+				m_columns_length.push_back(m_table[header].size());
+
+				PrintColumnSeparator(out_stream);
+				out_stream << std::setw(m_columns_max_width[j]);
+				PrintColumnAlign(m_columns_align[j], out_stream);
+				out_stream << header;
+				j++;
+			}
+			return;
+		} // Print underline requested
+		else if (row_number == 1 && m_header_underline)
+		{
+			// Print (if enabled) column name underline
+			if (m_header_underline) {
+				j = 0;	// Rows in column index
+				for (const auto& header : m_header) {
+					PrintColumnSeparator(out_stream);
+					out_stream << std::setw(m_columns_max_width[j]);
+					PrintColumnAlign(m_columns_align[j], out_stream);
+					out_stream << StringType(header.length(), LiteralConstants<CharType>::m_equal[0]);
+					j++;
+				}
+			}
+			return;
+		}
+
+		for (const auto& header : m_header)
+		{
+			PrintColumnSeparator(out_stream);
+
+			PrintColumnAlign(m_columns_align[j], out_stream);
+
+			std::visit([&](auto&& arg)
+			{
+				using T = std::decay_t<decltype(arg)>;
+				if constexpr (std::is_same_v<T, StringType>)
+				{
+					out_stream << std::setw(m_columns_max_width[j]);
+					if (item_relative_row_number > 0)
+					{
+						out_stream << StringType(m_columns_max_width[j], LiteralConstants<CharType>::m_space[0]);
+					}
+					else {
+						out_stream << arg;
+					}
+				}
+				else if constexpr (std::is_same_v<T, PrettyTable<CharType>>)
+				{
+					long long off = item_relative_row_number - 1 - (m_header_underline ? 1 : 0);
+					size_t curr_item_number = off < 0 ? 0 : off;
+					size_t row_size = arg.GetRowCount();
+					if (item_relative_row_number >= row_size)
+					{
+						out_stream << std::setw(m_columns_max_width[j]);
+						out_stream << StringType(m_columns_max_width[j], LiteralConstants<CharType>::m_space[0]);
+					}
+					else
+					{
+						// Properly map row_number/acc_row_number to this PrettyTable's row
+						size_t item_row_size = 0;
+						if (curr_item_number >= 0 && off == 0)
+						{
+							// Count headers and underline
+							item_row_size += 1ll + (m_header_underline ? 1ll : 0ll);
+							if (curr_item_number > 0)
+							{
+								item_row_size = m_rows_acc_count[curr_item_number];
+							}
+						}
+						else {
+							item_row_size = item_relative_row_number;
+						}
+
+						arg.PrintRow(item_relative_row_number, curr_item_number, item_row_size, out_stream, true);
+					}
+				}
+				else {
+					static_assert(std::_Always_false<T>, "Invalid type");
+				}
+			}, m_table[header][item_number]);
+
+			j++;
+		}
+	}
+
+	/// <summary>
+	/// Print pretty table to m_out_stream
 	/// </summary>
 	void Print()
 	{
-		PrintLeftMargin();
-
-		// Print colum names (headers)
-		size_t j = 0;	// Rows in column index
-		for (auto header : m_header) {
-			// minwindef.h define a macro called max making it impossible to use std::max without undefining the macro first
-			#undef max
-
-			// Calculate maximum width of each column
-			size_t max = GetColumnMaxWidth(m_table[header]);
-			m_columns_max_width.push_back(std::max(max, header.size()));
-
-			// Calculate length for each column
-			m_columns_length.push_back(m_table[header].size());
-
-			PrintColumnSeparator();
-			m_out_stream << std::setw(max);
-			PrintColumnAlign(m_columns_align[j]);
-			m_out_stream << header;
-			j++;
-		}
-		m_out_stream << std::endl;
-
-		// Print (if enabled) column name underline
-		if (m_header_underline) {
-			PrintLeftMargin();
-
-			j = 0;	// Rows in column index
-			for (auto header : m_header) {
-				PrintColumnSeparator();
-				m_out_stream << std::setw(m_columns_max_width[j]);
-				PrintColumnAlign(m_columns_align[j]);
-				m_out_stream << StringType(header.length(), LiteralConstants<CharType>::m_equal[0]);
-				j++;
-			}
-			m_out_stream << std::endl;
+		//Pre-calculate rows
+		size_t acc = 0;
+		for (size_t i = 0; i < m_table[m_header[0]].size(); i++)
+		{
+			size_t count = GetRowCount(i);
+			m_rows_count.push_back(count);
+			m_rows_acc_count.push_back(acc);
+			acc += count;
 		}
 
-		// Print columns
-		auto iterator = std::max_element(m_columns_length.begin(), m_columns_length.end());
-		size_t max = *iterator;		// How many rows in longest column
-		size_t i = 0;	// Rows in column
-
-		while (i < max) {
-			PrintLeftMargin();
-			j = 0;	// Index of column (from left)
-			for (auto header : m_header) {
-				auto column = m_table[header];
-				PrintColumnSeparator();
-				m_out_stream << std::setw(m_columns_max_width[j]);
-				PrintColumnAlign(m_columns_align[j]);
-				m_out_stream << column[i];
-				j++;
-			}
-			i++;
+		size_t row_num = 0;
+		PrintRow(row_num, 0, row_num, m_out_stream);
+		m_out_stream << std::flush << std::endl;
+		row_num++;
+		if (m_header_underline)
+		{
+			PrintRow(row_num, 0, row_num, m_out_stream);
 			m_out_stream << std::flush << std::endl;
+			row_num++;
+		}
+		size_t num_items = m_table[m_header[0]].size();
+		for (auto i = 0; i < num_items; i++)
+		{
+			size_t row_count = m_rows_count[i];
+			for (auto j = 0; j < row_count; j++)
+			{
+				PrintRow(j + row_num, i, row_num, m_out_stream);
+				m_out_stream << std::flush << std::endl;
+			}
+			row_num += row_count;
 		}
 	}
 
 private:
+	size_t length()
+	{
+		size_t max = 0;
+		size_t num_cols = 0;
+		for (auto& [key, val] : m_table)
+		{
+			auto colWidth = std::max(GetColumnMaxWidth(val), m_header[num_cols].size());
+			if (colWidth > max)
+				max = colWidth;
+			num_cols++;
+		}
+		return max * num_cols + m_COLUMN_SEPARATOR * (num_cols);
+	}
+
 	/// <summary>
 	/// Left margin for whole pretty table from beggining of the screen
 	/// </summary>
-	void PrintLeftMargin() {
-		m_out_stream << StringType(m_LEFT_MARGIN, LiteralConstants<CharType>::m_space[0]);
+	/// <param name="out_stream">Reference to the stream that is going to be used</param>
+	void PrintLeftMargin(std::wstringstream& out_stream) {
+		out_stream << StringType(m_LEFT_MARGIN, LiteralConstants<CharType>::m_space[0]);
 	}
 
 	/// <summary>
 	/// Print white space column separation.
 	/// </summary>
-	void PrintColumnSeparator() {
-		m_out_stream << StringType(m_COLUMN_SEPARATOR, LiteralConstants<CharType>::m_space[0]);
+	/// <param name="out_stream">Reference to the stream that is going to be used</param>
+	void PrintColumnSeparator(std::wstringstream& out_stream) {
+		out_stream << StringType(m_COLUMN_SEPARATOR, LiteralConstants<CharType>::m_space[0]);
 	}
 
 	/// <summary>
 	/// Control how std::wcout aligns text.
 	/// </summary>
 	/// <param name="Align">LEFT or RIGHT</param>
-	void PrintColumnAlign(ColumnAlign Align) {
+	/// <param name="out_stream">Reference to the stream that is going to be used</param>
+	void PrintColumnAlign(ColumnAlign Align, std::wstringstream& out_stream) {
 		switch (Align) {
-		case LEFT:  m_out_stream << std::left; break;
-		case RIGHT: m_out_stream << std::right; break;
+		case LEFT:  out_stream << std::left; break;
+		case RIGHT: out_stream << std::right; break;
 		}
 	}
 
@@ -308,13 +488,18 @@ private:
 	/// </summary>
 	/// <param name="Column">VECTOR of WSTRINGS with rows</param>
 	/// <returns>Length of longest column cell in Column</returns>
-	size_t GetColumnMaxWidth(std::vector<StringType> Column)
+	size_t GetColumnMaxWidth(std::vector<std::variant<StringType, PrettyTable<CharType>>>& Column)
 	{
 		if (Column.empty()) return 0;
-		auto max_len = std::max_element(Column.begin(), Column.end(), [](PrettyTable<CharType>::StringType a, PrettyTable<CharType>::StringType b) {
-			return a.length() < b.length();
-			});
-		return (*max_len).length();
+
+		using VectorElementT = decltype(Column[0]);
+		auto max_len = std::max_element(Column.begin(), Column.end(), [](VectorElementT a, VectorElementT b) {
+			return std::visit([=](auto&& arg1, auto&& arg2) -> bool {
+				return arg1.length() < arg2.length();
+			}, a, b);
+		});
+
+		return std::visit([=](auto&& arg) -> size_t { return arg.length(); }, *max_len);
 	}
 
 	// Consts
@@ -324,10 +509,12 @@ private:
 	// Class members
 	StringStream m_out_stream;
 	std::map<StringType,
-		     std::vector<StringType>> m_table;	// Table where key is column name and value is VECTOR of WSTRINGs
+		std::vector<std::variant<StringType, PrettyTable<CharType>>>> m_table;	// Table where key is column name and value is VECTOR of WSTRINGs
 	std::vector<StringType> m_header;				// VECTOR of column names (header) WSTRINGs
 	bool m_header_underline;						// Enable header underlining, default true
 	std::vector<size_t> m_columns_max_width;		// Max width of each column, index with int(rown number)
 	std::vector<size_t> m_columns_length;			// Length (how many rows) for each rows, index with int(rown number)
+	std::vector<size_t> m_rows_count;				// Number of rows for all items
+	std::vector<size_t> m_rows_acc_count;			// Number of accumulated rows for all items
 	std::vector<ColumnAlign> m_columns_align;		// Column align (left, right), index with int(rown number)
 };
