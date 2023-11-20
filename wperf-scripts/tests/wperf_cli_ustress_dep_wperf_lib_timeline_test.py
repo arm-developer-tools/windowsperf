@@ -138,18 +138,19 @@ def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,t
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    stdout, _ = run_command(f"wperf-lib-timeline.exe {core} {N} {I} {metric} {benchmark_path} {param}")
+    cmd = f"wperf-lib-timeline.exe {core} {N} {I} {metric} {benchmark_path} {param}"
+    stdout, _ = run_command(cmd)
 
     # Get timeline CVS filename from stdout (we get this with `-v`)
     cvs_files = re.findall(rb'wperf_core_%s_[0-9_]+\.core\.csv' % (str.encode(str(core))), stdout)   # e.g. ['wperf_core_1_2023_06_29_09_09_05.core.csv']
-    assert len(cvs_files) == 1
+    assert len(cvs_files) == 1, f"in {cmd}"
 
     metric_values = get_metric_values(cvs_files[0], metric)
     med = median(metric_values)
 
-    assert len(metric_values) == N      # We should get <N> rows in CSV file with metric values
+    assert len(metric_values) == N, f"in {cmd}"      # We should get <N> rows in CSV file with metric values
 
     if not med >= threshold:
         pytest.skip(f"{benchmark} metric '{metric}' median {med} < {threshold} -- threshold not reached")
 
-    assert med >= threshold             # Check if median is above threshold
+    assert med >= threshold, f"in {cmd}"             # Check if median is above threshold
