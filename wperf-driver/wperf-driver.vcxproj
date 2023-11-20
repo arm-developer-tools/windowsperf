@@ -92,13 +92,14 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
       <ExceptionHandling>
       </ExceptionHandling>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <WppEnabled>true</WppEnabled>
       <WppGenerateUsingTemplateFile>
       </WppGenerateUsingTemplateFile>
       <WppScanConfigurationData>trace.h</WppScanConfigurationData>
       <WppRecorderEnabled>false</WppRecorderEnabled>
       <PreprocessorDefinitions>_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>

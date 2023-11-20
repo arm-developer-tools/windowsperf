@@ -525,6 +525,8 @@ void pmu_device::start_sample()
     ctl.action = PMU_CTL_SAMPLE_START;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
+    ctl.flags = CTL_FLAG_CORE;
+
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SAMPLE_START, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_START failed");
@@ -545,6 +547,8 @@ void pmu_device::stop_sample()
     ctl.action = PMU_CTL_SAMPLE_STOP;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
+    ctl.flags = CTL_FLAG_CORE;
+
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SAMPLE_STOP, &ctl, sizeof(struct pmu_ctl_hdr), &summary, sizeof(struct pmu_sample_summary), &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_SAMPLE_STOP failed");
@@ -836,6 +840,7 @@ void pmu_device::core_events_read_nth(uint8_t core_no)
     ctl.action = PMU_CTL_READ_COUNTING;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = core_no;
+    ctl.flags = CTL_FLAG_CORE;
 
     LPVOID out_buf = core_outs.get() + core_no;
     size_t out_buf_len = sizeof(ReadOut);
@@ -860,6 +865,7 @@ void pmu_device::dsu_events_read_nth(uint8_t core_no)
     ctl.action = DSU_CTL_READ_COUNTING;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = core_no;
+    ctl.flags = CTL_FLAG_DSU;
 
     LPVOID out_buf = dsu_outs.get() + (core_no / dsu_cluster_size);
     size_t out_buf_len = sizeof(DSUReadOut);
@@ -883,6 +889,7 @@ void pmu_device::dmc_events_read(void)
 
     ctl.action = DMC_CTL_READ_COUNTING;
     ctl.dmc_idx = dmc_idx;
+    ctl.flags = CTL_FLAG_DMC;
 
     LPVOID out_buf = dmc_idx == ALL_DMC_CHANNEL ? dmc_outs.get() : dmc_outs.get() + dmc_idx;
     size_t out_buf_len = dmc_idx == ALL_DMC_CHANNEL ? (sizeof(DMCReadOut) * dmc_regions.size()) : sizeof(DMCReadOut);

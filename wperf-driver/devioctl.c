@@ -197,6 +197,26 @@ NTSTATUS deviceControl(
     ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Funciton'
     queueContext->action = action;  // Save for later processing  
 
+
+    //
+    //  Do some basic validation of the input puffer
+    //
+    if (!pInBuffer)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid header for %d\n",
+            action));
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    enum pmu_ctl_action* pBuf_action  = (enum pmu_ctl_action*)pInBuffer;
+
+    if (*pBuf_action != (LONG)action)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid header action for %d\n",
+            action));
+        return STATUS_INVALID_PARAMETER;
+    }
+
     switch (IoCtlCode)
     {
     case IOCTL_PMU_CTL_SAMPLE_START:
@@ -204,10 +224,25 @@ NTSTATUS deviceControl(
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
+        if (InBufSize != sizeof(struct pmu_ctl_hdr))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for action %d\n", InBufSize, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
         if (cores_count != 1)
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
                 cores_count, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if( !CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
+                ctl_req->flags, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -243,10 +278,25 @@ NTSTATUS deviceControl(
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
+        if (InBufSize != sizeof(struct pmu_ctl_hdr))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for action %d\n", InBufSize, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
         if (cores_count != 1)
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid cores_count=%llu (must be 1) for action %d\n",
                 cores_count, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags 0x%X for action %d\n",
+                ctl_req->flags, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -289,6 +339,13 @@ NTSTATUS deviceControl(
         CoreInfo* core = core_info + core_idx;
         KIRQL oldIrql;
 
+        if (InBufSize != sizeof(struct PMUCtlGetSampleHdr))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for action %d\n", InBufSize, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_SAMPLE_GET\n"));
 
         KeAcquireSpinLock(&core->SampleLock, &oldIrql);
@@ -324,6 +381,7 @@ NTSTATUS deviceControl(
         UINT32 core_idx = sample_req->core_idx;
 
         int sample_src_num = (InBufSize - sizeof(PMUSampleSetSrcHdr)) / sizeof(SampleSrcDesc);
+
         // rough check
         if (sample_src_num > (numFreeGPC + numFPC))
             sample_src_num = numFreeGPC + numFPC;
@@ -375,6 +433,14 @@ NTSTATUS deviceControl(
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid cores_count=%llu (must be 1-%d) for action %d\n",
                 cores_count, MAX_PMU_CTL_CORES_COUNT, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
+                ctl_req->flags, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -985,6 +1051,14 @@ NTSTATUS deviceControl(
             break;
         }
 
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags 0x%X for action %d\n",
+                ctl_req->flags, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid cores_no for action %d\n", action));
@@ -1119,6 +1193,14 @@ NTSTATUS deviceControl(
         if (InBufSize != sizeof(struct pmu_ctl_hdr))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid InBufSize %ld for DMC_CTL_READ_COUNTING\n", InBufSize));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
+                ctl_req->flags, action));
             status = STATUS_INVALID_PARAMETER;
             break;
         }

@@ -183,6 +183,8 @@ struct pmu_ctl_hdr
 #define CTL_FLAG_CORE (0x1 << 0)
 #define CTL_FLAG_DSU  (0x1 << 1)
 #define CTL_FLAG_DMC  (0x1 << 2)
+#define CTL_FLAG_MAX  (0x1 << 3)
+#define CTRL_FLAG_VALID(flag_s) (flag_s < CTL_FLAG_MAX)
 	UINT32 flags;
 };
 

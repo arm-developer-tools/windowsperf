@@ -179,13 +179,13 @@ WindowsPerfEvtDeviceControl(
     //
     // Get the memory buffers
     //
-    if (InputBufferLength)
+    if (InputBufferLength > 0)
     {
         Status = WdfRequestRetrieveInputMemory(Request, &memory);
         if (!NT_SUCCESS(Status)) {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! Could not get request in memory buffer 0x%x\n",
                 Status));
-            WdfVerifierDbgBreakPoint();
+            //WdfVerifierDbgBreakPoint();
             queueContext->CurrentRequest = NULL;
             queueContext->inBuffer = NULL;
             queueContext->outBuffer = NULL;
@@ -198,13 +198,26 @@ WindowsPerfEvtDeviceControl(
             Status = STATUS_INVALID_BLOCK_LENGTH;
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  bufsize != InputBufferLength 0x%x\n",
                 Status));
-            WdfVerifierDbgBreakPoint();
+            //WdfVerifierDbgBreakPoint();
             queueContext->CurrentRequest = NULL;
             queueContext->inBuffer = NULL;
             queueContext->outBuffer = NULL;
             WdfRequestComplete(Request, Status);
             return;
         }
+    }
+    else
+    {
+        Status = STATUS_INVALID_BLOCK_LENGTH;
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  InputBufferLength is zero 0x%x\n",
+            Status));
+        //WdfVerifierDbgBreakPoint();
+        queueContext->CurrentRequest = NULL;
+        queueContext->inBuffer = NULL;
+        queueContext->outBuffer = NULL;
+        WdfRequestComplete(Request, Status);
+        return;
+
     }
 
     if (OutputBufferLength > 0) // we might not always have an out buffer
@@ -213,7 +226,7 @@ WindowsPerfEvtDeviceControl(
         if (!NT_SUCCESS(Status)) {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! Could not get request out memory buffer 0x%x\n",
                 Status));
-            WdfVerifierDbgBreakPoint();
+            //WdfVerifierDbgBreakPoint();
             queueContext->CurrentRequest = NULL;
             queueContext->inBuffer = NULL;
             queueContext->outBuffer = NULL;
@@ -226,7 +239,7 @@ WindowsPerfEvtDeviceControl(
             Status = STATUS_INVALID_BLOCK_LENGTH;
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE!  bufsize != OutputBufferLength 0x%x\n",
                 Status));
-            WdfVerifierDbgBreakPoint();
+            //WdfVerifierDbgBreakPoint();
             queueContext->CurrentRequest = NULL;
             queueContext->inBuffer = NULL;
             queueContext->outBuffer = NULL;
@@ -271,7 +284,7 @@ WindowsPerfEvtDeviceControl(
     Status = deviceControl(IoControlCode, queueContext->inBuffer, (ULONG)InputBufferLength, queueContext->outBuffer, (ULONG)OutputBufferLength, &outputDataSize, queueContext);
     if (!NT_SUCCESS(Status)) {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
-        WdfVerifierDbgBreakPoint();
+        //WdfVerifierDbgBreakPoint();
         queueContext->CurrentRequest = NULL;
         queueContext->inBuffer = NULL;
         queueContext->outBuffer = NULL;
@@ -287,7 +300,7 @@ WindowsPerfEvtDeviceControl(
     if (outputDataSize > OutputBufferLength)
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! outputDataSize bigger than OutputBufferLenght\n"));
-        WdfVerifierDbgBreakPoint();
+        //WdfVerifierDbgBreakPoint();
         queueContext->CurrentRequest = NULL;
         queueContext->inBuffer = NULL;
         queueContext->outBuffer = NULL;
