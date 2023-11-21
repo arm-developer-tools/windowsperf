@@ -81,5 +81,16 @@ def test_wperf_test_MIDR_vendor_id():
     json_output = json.loads(stdout)
 
     vendor_id = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [vendor_id]")
-    
+
     assert int(vendor_id, 16) in arm64_vendor_names.keys()
+
+def test_wperf_test_ID_AA64DFR0_EL1_reg():
+    """ Test if ID_AA64DFR0_EL1 register is exposed with `wperf test`. """
+    cmd = 'wperf test --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    aa64dfr0_value = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]")
+    assert len(aa64dfr0_value) > 0, f"ID_AA64DFR0_EL1={aa64dfr0_value}"
+    assert aa64dfr0_value.startswith("0x"), f"ID_AA64DFR0_EL1={aa64dfr0_value}"
+    assert int(aa64dfr0_value, 16) != 0x00, f"ID_AA64DFR0_EL1={aa64dfr0_value}"
