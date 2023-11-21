@@ -356,3 +356,37 @@ def test_wperf_padding_m_imix_icache():
 
     assert imix_cnt > 0
     assert icache_cnt > 0
+
+
+TOPDOWN_L1_EVENTS = "{l1i_tlb_refill,l1i_tlb},{inst_spec,ld_spec},{st_spec,inst_spec},{inst_retired,br_mis_pred_retired},{l1d_tlb_refill,inst_retired},{itlb_walk,l1i_tlb},{inst_spec,dp_spec},{l2d_tlb_refill,inst_retired},{stall_backend,cpu_cycles},{crypto_spec,inst_spec},{l1i_tlb_refill,inst_retired},{ll_cache_rd,ll_cache_miss_rd},{inst_retired,cpu_cycles},{l2d_cache_refill,l2d_cache},{br_indirect_spec,inst_spec,br_immed_spec},{l2d_tlb_refill,l2d_tlb},{inst_retired,itlb_walk},{dtlb_walk,inst_retired},{l1i_cache,l1i_cache_refill},{l1d_cache_refill,l1d_cache},{br_mis_pred_retired,br_retired},{inst_retired,l2d_cache_refill},{vfp_spec,inst_spec},{stall_frontend,cpu_cycles},{inst_spec,ase_spec},{ll_cache_rd,ll_cache_miss_rd},{inst_retired,l1d_cache_refill},{l1d_tlb,dtlb_walk},{inst_retired,ll_cache_miss_rd},{l1i_cache_refill,inst_retired},{l1d_tlb_refill,l1d_tlb}"
+LARGE_SET_1 = "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"
+
+@pytest.mark.parametrize("events,expected_evt_core_index,expected_evt_core_note",
+[
+    (TOPDOWN_L1_EVENTS,
+        "2,38,27,112,113,27,8,34,5,8,53,38,27,115,45,8,36,17,119,27,2,8,54,55,8,17,23,22,27,27,122,27,120,45,47,27,8,53,52,8,20,1,3,4,34,33,8,23,117,27,35,17,27,116,54,55,8,3,37,52,8,55,1,8,5,37",
+        "(g0),(g0),(g1),(g1),(g2),(g2),(g3),(g3),(g4),(g4),(g5),(g5),(g6),(g6),(g7),(g7),(g8),(g8),(g9),(g9),(g10),(g10),(g11),(g11),(g12),(g12),(g13),(g13),(p),(p),(g14),(g14),(g14),(g15),(g15),(p),(g16),(g16),(g17),(g17),(g18),(g18),(g19),(g19),(g20),(g20),(g21),(g21),(g22),(g22),(g23),(g23),(g24),(g24),(g25),(g25),(g26),(g26),(g27),(g27),(g28),(g28),(g29),(g29),(g30),(g30)"),
+    (LARGE_SET_1,
+        "17,36,17,34,27,52,17,35,37,5,27,27,112,113,114,104,105,106",
+        "(g0),(g0),(e),(e),(e),(e),(g1),(g1),(g2),(g2),(p),(p),(g3),(g3),(g3),(g4),(g4),(g4)"),
+]
+)
+def test_wperf_padding_large_topdown_l1(events,expected_evt_core_index,expected_evt_core_note):
+    """ Test large set of event groups (example for top_down l1-level) """
+    cmd = f"wperf test -e {events} --json"
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    evt_core_index = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].index")
+    evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note")
+
+    # get gpc_num
+    json_output = wperf_test_no_params()      # get output from `wperf test`
+    gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
+    gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
+
+    assert ((len(evt_core_index.split(",")) % gpc_num) == 0)
+    assert ((len(evt_core_note.split("),(")) % gpc_num) == 0)
+
+    assert expected_evt_core_index == evt_core_index
+    assert expected_evt_core_note == evt_core_note
