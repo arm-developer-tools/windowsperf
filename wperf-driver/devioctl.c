@@ -58,6 +58,7 @@ extern UINT8 numGPC;
 extern UINT8 numFreeGPC;
 extern UINT64 dfr0_value;
 extern UINT64 midr_value;
+extern UINT64 id_aa64dfr0_el1_value;
 extern HANDLE pmc_resource_handle;
 extern CoreInfo* core_info;
 extern KEVENT sync_reset_dpc;
@@ -660,6 +661,7 @@ NTSTATUS deviceControl(
         out->rev_id = midr_value & 0xf;
         out->part_id = (midr_value >> 4) & 0xfff;
         out->midr_value = midr_value;
+        out->id_aa64dfr0_value = id_aa64dfr0_el1_value;
 
         *outputSize = sizeof(struct hw_cfg);
         if (*outputSize > OutBufSize)

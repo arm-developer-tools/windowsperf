@@ -65,6 +65,7 @@ struct hw_cfg
     UINT16  part_id;
     UINT16  core_num;
     UINT64  midr_value;
+    UINT64  id_aa64dfr0_value;
 };
 
 struct version_info
