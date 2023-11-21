@@ -36,6 +36,7 @@
 #include "utilities.h"
 #include "dmc.h"
 #include "core.h"
+#include "spe.h"
 #include "coreinfo.h"
 #include "sysregs.h"
 
@@ -72,6 +73,7 @@ UINT8 numGPC = 0;
 UINT8 numFreeGPC = 0;
 UINT64 dfr0_value = 0;
 UINT64 midr_value = 0;
+UINT64 id_aa64dfr0_el1_value = 0;
 HANDLE pmc_resource_handle = NULL;
 UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 CoreInfo* core_info = NULL;
@@ -282,7 +284,7 @@ VOID WindowsPerfDeviceUnload()
 NTSTATUS
 WindowsPerfDeviceCreate(
     PWDFDEVICE_INIT DeviceInit
-    )
+)
 {
     WDF_OBJECT_ATTRIBUTES   deviceAttributes;
     PDEVICE_CONTEXT deviceContext;
@@ -298,13 +300,13 @@ WindowsPerfDeviceCreate(
     // Register pnp/power callbacks so that we can start and stop the timer as the device
     // gets started and stopped.
     //
-    pnpPowerCallbacks.EvtDeviceSelfManagedIoInit    = WindowsPerfEvtDeviceSelfManagedIoStart;
+    pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = WindowsPerfEvtDeviceSelfManagedIoStart;
     pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = WindowsPerfEvtDeviceSelfManagedIoSuspend;
 
     //
     // Function used for both Init and Restart Callbacks
     //
-    #pragma warning(suppress: 28024)
+#pragma warning(suppress: 28024)
     pnpPowerCallbacks.EvtDeviceSelfManagedIoRestart = WindowsPerfEvtDeviceSelfManagedIoStart;
 
     //
@@ -344,7 +346,7 @@ WindowsPerfDeviceCreate(
             device,
             &GUID_DEVINTERFACE_WINDOWSPERF,
             NULL // ReferenceString
-            );
+        );
 
         if (NT_SUCCESS(status)) {
             //
@@ -363,11 +365,11 @@ WindowsPerfDeviceCreate(
 
     if (pmu_ver == 0x0)
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "PMUv3 not supported by hardware\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "PMUv3 not supported by hardware\n"));
         return STATUS_FAIL_CHECK;
     }
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "PMU version %d\n", pmu_ver));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "PMU version %d\n", pmu_ver));
 
     midr_value = _ReadStatusReg(MIDR_EL1);
     UINT8 implementer = (midr_value >> 24) & 0xff;
@@ -375,11 +377,46 @@ WindowsPerfDeviceCreate(
     UINT8 arch_num = (midr_value >> 16) & 0xf;
     UINT16 part_num = (midr_value >> 4) & 0xfff;
     UINT8 revision = midr_value & 0xf;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
         arch_num, implementer, variant, part_num, revision));
 
     if (pmu_ver == 0x6 || pmu_ver == 0x7)
         CpuHasLongEventSupportSet(1);
+
+    // Arm Statistical Profiling Extensions (SPE) detection
+    id_aa64dfr0_el1_value = _ReadStatusReg(ID_AA64DFR0_EL1);
+    UINT8 aa64_pms_ver = ID_AA64DFR0_EL1_PMSVer(id_aa64dfr0_el1_value);
+    UINT8 aa64_pmu_ver = ID_AA64DFR0_EL1_PMUVer(id_aa64dfr0_el1_value);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "AArch64 Debug Feature Register 0: 0x%llX\n", id_aa64dfr0_el1_value));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "pmu_ver: 0x%x, pms_ver: 0x%u\n", aa64_pmu_ver, aa64_pms_ver));
+
+    {   // Print SPE feature version
+        char* spe_str = "unknown SPE configuration!";
+        switch (aa64_pms_ver)
+        {
+        case 0b000: spe_str = "not implemented."; break;
+        case 0b001: spe_str = "FEAT_SPE"; break;
+        case 0b010: spe_str = "FEAT_SPEv1p1"; break;
+        case 0b011: spe_str = "FEAT_SPEv1p2"; break;
+        case 0b100: spe_str = "FEAT_SPEv1p3"; break;
+        }
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: %s\n", spe_str));
+    }
+
+    {   // Print PMU feature version
+        char* pmu_str = "unknown PMU configuration!";
+        switch (aa64_pms_ver)
+        {
+        case 0b0000: pmu_str = "not implemented."; break;
+        case 0b0001: pmu_str = "FEAT_PMUv3"; break;
+        case 0b0100: pmu_str = "FEAT_PMUv3p1"; break;
+        case 0b0101: pmu_str = "FEAT_PMUv3p4"; break;
+        case 0b0110: pmu_str = "FEAT_PMUv3p5"; break;
+        case 0b0111: pmu_str = "FEAT_PMUv3p7"; break;
+        case 0b1000: pmu_str = "FEAT_PMUv3p8"; break;
+        }
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Performance Monitors Extension: %s\n", pmu_str));
+    }
 
     UINT32 pmcr = CorePmcrGet();
     numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;

@@ -121,6 +121,7 @@
     <ClCompile Include="driver.c" />
     <ClCompile Include="dsu.c" />
     <ClCompile Include="queue.c" />
+    <ClCompile Include="spe.c" />
     <ClCompile Include="utilities.c" />
     <ClCompile Include="workitem.c" />
   </ItemGroup>
@@ -142,6 +143,7 @@
     <ClInclude Include="dsu.h" />
     <ClInclude Include="pmu.h" />
     <ClInclude Include="queue.h" />
+    <ClInclude Include="spe.h" />
     <ClInclude Include="sysregs.h" />
     <ClInclude Include="trace.h" />
     <ClInclude Include="..\wperf\utils.h" />

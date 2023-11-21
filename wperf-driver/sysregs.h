@@ -55,6 +55,7 @@
 #define PMCCNTR_EL0					ARM64_SYSREG(1, 3, 9, 13, 0)
 #define ID_DFR0_EL1					ARM64_SYSREG(1, 0, 0,  5, 0)
 #define MIDR_EL1					ARM64_SYSREG(1, 0, 0,  0, 0)
+#define ID_AA64DFR0_EL1				ARM64_SYSREG(3, 0, 0,  5, 0)
 
 #define PMEVTYPER0_EL0				ARM64_SYSREG(1, 3, 14, 12, 0)
 #define PMEVTYPER1_EL0				ARM64_SYSREG(1, 3, 14, 12, 1)
