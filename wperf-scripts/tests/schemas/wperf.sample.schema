@@ -41,12 +41,34 @@
                                             "type": "array",
                                             "items": {
                                                 "type": "object",
-                                                "required": ["filename", "line_number", "hits"],
+                                                "required": ["filename", "line_number", "hits", "instruction_address", "disassembled_line"],
                                                 "additionalProperties": false,
+                                                "minProperties": 3,
+                                                "maxProperties": 5,
                                                 "properties": {
                                                     "filename": { "type": "string" },
                                                     "line_number": { "type": "integer" },
-                                                    "hits": { "type": "integer" }
+                                                    "hits": { "type": "integer" },
+                                                    "instruction_address": { "type": "string" },
+                                                    "disassembled_line": {
+                                                      "type": "object",
+                                                      "required": [ "disassemble" ],
+                                                      "additionalProperties": false,
+                                                      "properties": {
+                                                        "disassemble": {
+                                                          "type": "array",
+                                                          "items": {
+                                                            "type": "object",
+                                                            "required": [ "address", "instruction" ],
+                                                            "additionalProperties": false,
+                                                            "properties": {
+                                                              "address": { "type": "string" },
+                                                              "instruction":  { "type": "string" }
+                                                            }
+                                                          }
+                                                        }
+                                                      } 
+                                                    }
                                                 }
                                             }
                                         }

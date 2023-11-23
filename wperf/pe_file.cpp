@@ -55,6 +55,38 @@ void parse_pe_file(std::wstring pe_file, PeFileMetaData& pefile_metadata)
         pefile_metadata.sec_import);
 }
 
+
+void parse_pe_file(const std::wstring& pe_file, uint64_t& image_base)
+{
+    std::ifstream pe_file_stream(pe_file, std::ios::binary);
+    // make sure we have enough space for maximum read
+    std::streamsize buf_size = sizeof(IMAGE_DOS_HEADER) > sizeof(IMAGE_NT_HEADERS)
+        ? sizeof(IMAGE_DOS_HEADER) : sizeof(IMAGE_NT_HEADERS);
+
+    std::unique_ptr<char[]> hdr_buf = std::make_unique<char[]>(buf_size);
+    pe_file_stream.read(hdr_buf.get(), sizeof(IMAGE_DOS_HEADER));
+
+    PIMAGE_DOS_HEADER dos_hdr = reinterpret_cast<PIMAGE_DOS_HEADER>(hdr_buf.get());
+    if (dos_hdr->e_magic != IMAGE_DOS_SIGNATURE)
+    {
+        m_out.GetOutputStream() << pe_file << std::endl;
+        throw fatal_exception("PE file specified is not in valid PE format");
+    }
+
+    std::streampos pos = dos_hdr->e_lfanew;
+    pe_file_stream.seekg(pos);
+    pe_file_stream.read(hdr_buf.get(), sizeof(IMAGE_NT_HEADERS));
+    PIMAGE_NT_HEADERS nt_hdr = reinterpret_cast<PIMAGE_NT_HEADERS>(hdr_buf.get());
+    if (nt_hdr->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+    {
+        throw fatal_exception("PE file specified is not 64bit format");
+    }
+
+    image_base = nt_hdr->OptionalHeader.ImageBase;
+    //std::cout << "static entry: 0x" << std::hex << static_entry_point << ", image_base: 0x" << image_base << std::endl;
+    pe_file_stream.close();
+}
+
 void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::wstring>& sec_import)
 {
     std::ifstream pe_file_stream(pe_file, std::ios::binary);

@@ -69,6 +69,7 @@ typedef struct
 {
     std::wstring mod_name;
     std::wstring mod_path;
+    uint64_t mod_baseOfDll;
     HMODULE handle;
     std::vector<FuncSymDesc> sym_info;
 } ModuleMetaData;
@@ -95,6 +96,7 @@ typedef struct
 
 std::wstring gen_pdb_name(std::wstring str);
 void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, bool sample_display_short);
+void parse_pe_file(const std::wstring& pe_file, uint64_t& image_base);
 void parse_pe_file(std::wstring pe_file, uint64_t& static_entry_point, uint64_t& image_base, std::vector<SectionDesc>& sec_info, std::vector<std::wstring>& sec_import);
 void parse_pe_file(std::wstring pe_file, PeFileMetaData& pefile_metadata);
 bool sort_samples(const SampleDesc& a, const SampleDesc& b);

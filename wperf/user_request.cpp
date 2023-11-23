@@ -133,7 +133,7 @@ void user_request::print_help()
 }
 
 
-user_request::user_request() : do_list{ false }, do_count(false), do_kernel(false), do_timeline(false),
+user_request::user_request() : do_list{ false }, do_disassembly(false), do_count(false), do_kernel(false), do_timeline(false),
     do_sample(false), do_record(false), do_annotate(false), do_version(false), do_verbose(false), do_test(false),
     do_help(false), do_export_perf_data(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
     sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
@@ -489,6 +489,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--image_name")
         {
             waiting_image_name = true;
+            continue;
+        }
+
+        if (a == L"--disassemble")
+        {
+            do_disassembly = true;
+            do_annotate = true;
             continue;
         }
 

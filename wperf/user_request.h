@@ -75,6 +75,7 @@ public:
     bool do_help;
     bool do_test;
     bool do_annotate;
+    bool do_disassembly;
     bool do_export_perf_data;
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;

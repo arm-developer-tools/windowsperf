@@ -33,6 +33,9 @@
 #include "prettytable.h"
 #include "json.h"
 
+template <typename PresetTable, typename CharType>
+class TableOutput;
+
 // Just a handy definition to get compile time Integer value.
 template <int I>
 struct Integer
@@ -206,15 +209,29 @@ struct SamplingOutputTraits : public TableOutputTraits<CharType>
 };
 
 template <typename CharType>
+struct DisassemblyOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("address"),
+            LITERALCONSTANTS_GET("instruction"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("disassemble");
+};
+
+template <typename CharType, bool isDisassembly=false>
 struct SamplingAnnotateOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
-    inline const static std::tuple<uint64_t, uint64_t, StringType> columns;
-    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+    inline const static std::tuple<uint64_t, uint64_t, StringType, StringType, TableOutput<DisassemblyOutputTraits<CharType>, CharType>> columns;
+    inline const static int size = std::conditional_t<isDisassembly, Integer<5>, Integer<3>>::value;
+    inline const static std::tuple<CharType*, CharType*, CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("line_number"),
             LITERALCONSTANTS_GET("hits"),
-            LITERALCONSTANTS_GET("filename"));
-    inline const static int size = std::tuple_size_v<decltype(headers)>;
+            LITERALCONSTANTS_GET("filename"),
+            LITERALCONSTANTS_GET("instruction_address"),
+            LITERALCONSTANTS_GET("disassembled_line"));    
     inline const static CharType* key = LITERALCONSTANTS_GET("source_code");
 };
 
@@ -279,14 +296,19 @@ private:
         m_type = rhs.m_type;
         m_core = rhs.m_core;
         m_event = rhs.m_event;
-        if (m_type == JSON || m_type == ALL)
-        {
-            TableJSON<PresetTable, CharType> obj = rhs.m_tableJSON;
-            m_tableJSON = obj;
-        }
+        TableJSON<PresetTable, CharType> obj = rhs.m_tableJSON;
+        m_tableJSON = obj;
+        PrettyTable<CharType> obj2 = rhs.m_tablePretty;
+        m_tablePretty = obj2;
     }
     bool m_key_set = false;
 public:
+    // Just to enable TableOutput inside map
+    friend bool operator<(const TableOutput<PresetTable, CharType>& l, const TableOutput<PresetTable, CharType>& r)
+    {
+        return std::tie(l.m_type, l.m_core, l.m_event) < std::tie(r.m_type, r.m_core, r.m_event); 
+    }
+
     TableJSON<PresetTable, CharType> m_tableJSON;
     PrettyTable<CharType> m_tablePretty;
 
@@ -329,11 +351,34 @@ public:
         m_tablePretty.AddColumn(header);
     }
 
+    template<int I = 0>
+    void InsertOnPretty() {}
+
+    template<int I = 0, typename T, typename... Ts>
+    void InsertOnPretty(T arg, Ts... args)
+    {
+        using ElemT = std::decay_t<decltype(arg[0])>;
+        if constexpr (std::is_convertible_v<ElemT, StringType> ||
+            std::is_arithmetic_v<ElemT>)
+        {
+            m_tablePretty.InsertSingle<I>(arg);
+        }
+        else { // Vector of TableOutputs
+            std::vector<PrettyTable<CharType>> conv;
+            for (auto& elem : arg)
+            {
+                conv.push_back(elem.m_tablePretty);
+            }
+            m_tablePretty.InsertSingle<I>(conv);
+        }
+        InsertOnPretty<I + 1>(args...);
+    }
+
     template <typename... Ts>
     void Insert(Ts... args)
     {
         m_tableJSON.Insert(args...);
-        m_tablePretty.Insert(args...);
+        InsertOnPretty(args...);
     }
 
     void SetAlignment(int ColumnIndex, enum PrettyTable<CharType>::ColumnAlign Align)
@@ -365,6 +410,12 @@ public:
         case PRETTY: strstream << m_tablePretty; break;
         }
         return strstream;
+    }
+
+    friend OutputStream& operator<<(OutputStream& os, const TableOutput& to)
+    {
+        os << to.m_tableJSON;
+        return os;
     }
 };
 
@@ -531,7 +582,9 @@ struct WPerfSamplingJSON
     using Samples = TableOutput<SamplingOutputTraits<CharType>, CharType>;
     using Modules = TableOutput<SamplingModulesOutputTraits<CharType>, CharType>;
     using PCs = TableOutput<SamplingPCOutputTraits<CharType>, CharType>;
-    using AnnotateVector = std::vector<std::pair<StringType,TableOutput<SamplingAnnotateOutputTraits<CharType>, CharType>>>;
+    using AnnotateVector = std::vector<std::pair<StringType,
+        std::variant<TableOutput<SamplingAnnotateOutputTraits<CharType>, CharType>,
+                     TableOutput<SamplingAnnotateOutputTraits<CharType, true>, CharType>>>>;
     using ModulesInfo = std::vector<TableOutput<SamplingModuleInfoOutputTraits<CharType>, CharType>>;
     std::map<StringType, std::tuple<Samples, AnnotateVector, PCs>> m_map;
     
@@ -625,7 +678,8 @@ struct WPerfSamplingJSON
                 bool isFirstInside = true;
                 for(auto &[function_name, table] : std::get<1>(value))
                 {
-                    table.m_tableJSON.m_isEmbedded = true;
+                    std::visit([&os, &jsonType](auto&& arg) { arg.m_tableJSON.m_isEmbedded = true; }, table);
+
                     if(!isFirstInside)
                     {
                         os << LiteralConstants<CharType>::m_comma << std::endl;
@@ -637,7 +691,7 @@ struct WPerfSamplingJSON
                     os << LITERALCONSTANTS_GET("\"function_name\": ");
                     os << LiteralConstants<CharType>::m_quotes << function_name << LiteralConstants<CharType>::m_quotes;
                     os << LiteralConstants<CharType>::m_comma << std::endl;
-                    os << table.Print(jsonType).str();
+                    std::visit([&os, &jsonType](auto&& arg) { os << arg.Print(jsonType).str(); }, table);
                     os << LiteralConstants<CharType>::m_cbracket_close;
                     
                 }
@@ -836,13 +890,16 @@ using TelemetrySolutionMetricOutputTraitsL = TelemetrySolutionMetricOutputTraits
 using PMUPerformanceCounterOutputTraitsL = PMUPerformanceCounterOutputTraits<GlobalCharType>;
 using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
 using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;
+using DisassemblyOutputTraitsL = DisassemblyOutputTraits<GlobalCharType>;
 
 template <bool isVerbose>
 using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType, isVerbose>;
 
 using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
 using SamplingOutputTraitsL = SamplingOutputTraits<GlobalCharType>;
-using SamplingAnnotateOutputTraitsL = SamplingAnnotateOutputTraits<GlobalCharType>;
+
+template <bool isDisassembly = false>
+using SamplingAnnotateOutputTraitsL = SamplingAnnotateOutputTraits<GlobalCharType, isDisassembly>;
 
 using OutputControlL = OutputControl<GlobalCharType>;
 

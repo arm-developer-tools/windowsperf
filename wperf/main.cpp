@@ -46,8 +46,15 @@
 #include "user_request.h"
 #include "config.h"
 #include "perfdata.h"
+#include "disassembler.h"
 
 static bool no_ctrl_c = true;
+
+using MapKey = std::tuple<std::wstring, DWORD, TableOutput<DisassemblyOutputTraitsL, GlobalCharType>, std::wstring>;
+auto MapComp = [](const MapKey& a, const MapKey& b)
+{
+    return std::tie(std::get<0>(a), std::get<1>(a)) < std::tie(std::get<0>(b), std::get<1>(b));
+};
 
 static BOOL WINAPI ctrl_handler(DWORD dwCtrlType)
 {
@@ -75,6 +82,8 @@ wmain(
     user_request request;
     pmu_device pmu_device;
     wstr_vec raw_args;
+
+    LLVMDisassembler disassembler;
 
     try {
         pmu_device.init();
@@ -336,6 +345,13 @@ wmain(
         }
         else if (request.do_sample || request.do_record)
         {
+            if (request.do_disassembly)
+            {
+                if (!disassembler.CheckCommand())
+                {
+                    throw fatal_exception("Failed to call disassembler - Is it on PATH?");
+                }
+            }
             HardwareInformation hardwareInformation{ 0 };
             GetHardwareInfo(hardwareInformation);
             
@@ -448,13 +464,17 @@ wmain(
                     // Get the full path to the module's file.
                     if (GetModuleFileNameEx(process_handle, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR)))
                     {
+                        uint64_t mod_base = 0;
                         std::wstring mod_path = szModName;
                         modules_metadata[name].mod_path = mod_path;
                         modules_metadata[name].handle = hMods[i];
+                        
+                        parse_pe_file(mod_path, mod_base);
+                        modules_metadata[name].mod_baseOfDll = mod_base;
 
                         MODULEINFO modinfo;
                         if (GetModuleInformation(process_handle, hMods[i], &modinfo, sizeof(MODULEINFO)))
-                        {
+                        {                            
                             if (request.do_export_perf_data)
                             {
                                 perfDataWriter.RegisterEvent(PerfDataWriter::MMAP, pid, reinterpret_cast<UINT64>(modinfo.lpBaseOfDll), modinfo.SizeOfImage, mod_path, 0);
@@ -753,7 +773,9 @@ wmain(
             std::vector<double> col_overhead;
             std::vector<uint32_t> col_count;
 
-            std::vector<std::pair<GlobalStringType, TableOutput<SamplingAnnotateOutputTraitsL, GlobalCharType>>> annotateTables;
+            std::vector<std::pair<GlobalStringType, 
+                std::variant<TableOutput<SamplingAnnotateOutputTraitsL<false>, GlobalCharType>,
+                             TableOutput<SamplingAnnotateOutputTraitsL<true>, GlobalCharType>>>> annotateTables;
             std::vector<uint64_t> col_pcs, col_pcs_count;
             for (auto &a : resolved_samples)
             {
@@ -846,8 +868,11 @@ wmain(
 
                 if (request.do_annotate)
                 {
-                    std::map<std::pair<std::wstring, DWORD>, uint64_t> hotspots;
-                    std::vector<std::wstring> col_source_file;
+
+                    std::map <MapKey, uint64_t, decltype(MapComp)> hotspots(MapComp);
+                    std::map <std::tuple<uint64_t, uint64_t>, std::tuple<std::vector<std::wstring>, std::vector<std::wstring>>> disassemble_map;
+                    std::vector<std::wstring> col_source_file, col_inst_addr;
+                    std::vector< TableOutput<DisassemblyOutputTraitsL, GlobalCharType>> col_dasm;
                     std::vector<uint64_t> col_line_number, col_hits;
                     if(a.desc.name != L"unknown")
                     {
@@ -867,7 +892,51 @@ wmain(
                             {
                                 if (line.virtualAddress <= addr && line.virtualAddress + line.length > addr)
                                 {
-                                    std::pair<std::wstring, DWORD> cur = std::make_pair(line.source_file, line.lineNum);
+                                    std::wstring dasm_str, hex_ip;
+                                    std::vector<std::wstring> col_dasm_instr;
+                                    std::vector<std::wstring> col_dasm_addr;
+                                    
+                                    TableOutput<DisassemblyOutputTraitsL, GlobalCharType> dasmTable;
+                                    dasmTable.PresetHeaders();
+
+                                    if(request.do_disassembly)
+                                    {
+                                        std::wstringstream addr_stream;
+                                        std::vector<DisassembledInstruction> lineAsm{ 0 };
+                                        uint64_t base = a.module == NULL ? image_base : a.module->mod_baseOfDll;
+                                        std::wstring& target = a.module == NULL ? request.sample_pe_file : a.module->mod_path;
+                                        addr_stream << std::hex << addr;
+
+                                        if (disassemble_map.find(std::make_tuple(line.virtualAddress, base)) == disassemble_map.end())
+                                        {
+                                            disassembler.Disassemble(line.virtualAddress + base, line.virtualAddress + line.length + base, target);
+                                            disassembler.ParseOutput(lineAsm);
+
+                                            for (const auto& inst : lineAsm)
+                                            {
+                                                std::wstringstream to_hex;
+                                                to_hex << std::hex << inst.m_address;
+
+                                                col_dasm_instr.push_back(inst.m_asm);
+                                                col_dasm_addr.push_back(to_hex.str());
+                                            }
+
+                                            disassemble_map[std::make_tuple(line.virtualAddress, base)] = std::make_tuple(col_dasm_addr, col_dasm_instr);//dasm_str;
+                                        } else {
+                                            auto& elem = disassemble_map[std::make_tuple(line.virtualAddress, base)];
+                                            col_dasm_addr = std::get<0>(elem);
+                                            col_dasm_instr = std::get<1>(elem);
+                                        }
+
+                                        hex_ip = addr_stream.str();
+                                    }
+                                    dasmTable.Insert(col_dasm_addr, col_dasm_instr);
+
+                                    std::wstringstream str_addr;
+                                    str_addr << std::hex << addr;
+
+                                    MapKey cur = std::make_tuple(line.source_file, line.lineNum, dasmTable, hex_ip);
+
                                     if (auto el = hotspots.find(cur); el == hotspots.end())
                                     {
                                         hotspots[cur] = sample.second;
@@ -884,28 +953,43 @@ wmain(
                             }
                         }
 
-                        std::vector<std::tuple<std::wstring, DWORD, uint64_t>>  sorting_annotate;
-                        for (auto& [key, val] : hotspots)
+                        using ExpandedMapKey = decltype(std::tuple_cat((*(hotspots.begin())).first, std::make_tuple((*(hotspots.begin())).second)));
+                        std::vector<ExpandedMapKey>  sorting_annotate;
+                        for (const auto& [key, val] : hotspots)
                         {
-                            sorting_annotate.push_back(std::make_tuple(key.first, key.second, val));
+                            sorting_annotate.push_back(std::tuple_cat(key, std::make_tuple(val)));
                         }
+
+                        std::sort(sorting_annotate.begin(), sorting_annotate.end(), [](const ExpandedMapKey a, const ExpandedMapKey b)->bool { 
+                                                                                        constexpr auto length = std::tuple_size_v<decltype(a)>;
+                                                                                        return std::get<length-1>(a) > std::get<length-1>(b); });
                         
-                        std::sort(sorting_annotate.begin(), sorting_annotate.end(), [](std::tuple<std::wstring, DWORD, uint64_t>& a, std::tuple<std::wstring, DWORD, uint64_t>& b)->bool { return std::get<2>(a) > std::get<2>(b); });
-                        
-                        for (auto& el : sorting_annotate)
+                        for (const auto& el : sorting_annotate)
                         {
                             col_source_file.push_back(std::get<0>(el));
                             col_line_number.push_back(std::get<1>(el));
-                            col_hits.push_back(std::get<2>(el));
+                            col_dasm.push_back(std::get<2>(el));
+                            col_inst_addr.push_back(std::get<3>(el));
+                            col_hits.push_back(std::get<4>(el));
                         }
 
                         if (col_source_file.size() > 0)
                         {
-                            TableOutput<SamplingAnnotateOutputTraitsL, GlobalCharType> annotateTable;
-                            annotateTable.PresetHeaders();
-                            annotateTable.Insert(col_line_number, col_hits, col_source_file);
-                            m_out.Print(annotateTable);
-                            annotateTables.push_back(std::make_pair(a.desc.name, annotateTable));
+                            if(request.do_disassembly)
+                            {
+                                TableOutput<SamplingAnnotateOutputTraitsL<true>, GlobalCharType> annotateTable;
+                                annotateTable.PresetHeaders();
+                                annotateTable.Insert(col_line_number, col_hits, col_source_file, col_inst_addr, col_dasm);
+                                m_out.Print(annotateTable);
+                                annotateTables.push_back(std::make_pair(a.desc.name, annotateTable));
+                            }
+                            else {
+                                TableOutput<SamplingAnnotateOutputTraitsL<false>, GlobalCharType> annotateTable;
+                                annotateTable.PresetHeaders();
+                                annotateTable.Insert(col_line_number, col_hits, col_source_file);
+                                m_out.Print(annotateTable);
+                                annotateTables.push_back(std::make_pair(a.desc.name, annotateTable));
+                            }
                         }
                     }
 
@@ -955,6 +1039,6 @@ wmain(
     }
 
 clean_exit:
-
+    disassembler.Close();
     return exit_code;
 }

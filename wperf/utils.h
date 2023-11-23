@@ -37,6 +37,8 @@
 #include <vector>
 
 std::string MultiByteFromWideString(const wchar_t* wstr);
+std::wstring TrimWideString(const std::wstring& wstr);
+std::wstring WideStringFromMultiByte(const char* str);
 std::wstring DoubleToWideString(double Value, int Precision = 2);
 std::wstring DoubleToWideStringExt(double Value, int Precision, int Width);
 std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext);
@@ -45,6 +47,7 @@ bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringComparision(const std::wstring& str1, const std::wstring& str2);
 bool ReplaceTokenInString(std::string& input, const std::string old_token, const std::string new_token);
+void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens);
 
 /// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"

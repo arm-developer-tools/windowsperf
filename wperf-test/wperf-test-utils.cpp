@@ -33,6 +33,8 @@
 
 #include "wperf/utils.h"
 
+#include <iostream>
+
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
@@ -40,6 +42,16 @@ namespace wperftest
 	TEST_CLASS(wperftest_utils)
 	{
 	public:
+
+		TEST_METHOD(test_TrimWideString)
+		{
+			Assert::AreEqual(std::wstring(L"abc"), TrimWideString(L"    abc"));
+			Assert::AreEqual(std::wstring(L"abc"), TrimWideString(L"    abc     "));
+			Assert::AreEqual(std::wstring(L"abc"), TrimWideString(L"abc      "));
+			Assert::AreEqual(std::wstring(L""), TrimWideString(L""));
+			Assert::AreEqual(std::wstring(L"abc def"), TrimWideString(L"    abc def    "));
+			Assert::AreEqual(std::wstring(L"abc def"), TrimWideString(L"    abc def"));
+		}
 
 		TEST_METHOD(test_MultiByteFromWideString)
 		{
@@ -49,6 +61,16 @@ namespace wperftest
 			Assert::AreEqual(MultiByteFromWideString(L"!@#$%^&*(){}:~\"<>?,./"), std::string("!@#$%^&*(){}:~\"<>?,./"));
 			Assert::AreEqual(MultiByteFromWideString(L""), std::string());
 			Assert::AreEqual(MultiByteFromWideString(0), std::string());
+		}
+
+		TEST_METHOD(test_WideStringFromMultiByte)
+		{
+			Assert::AreEqual(WideStringFromMultiByte("core"), std::wstring(L"core"));
+			Assert::AreEqual(WideStringFromMultiByte("dsu"), std::wstring(L"dsu"));
+			Assert::AreEqual(WideStringFromMultiByte("/dsu/"), std::wstring(L"/dsu/"));
+			Assert::AreEqual(WideStringFromMultiByte("!@#$%^&*(){}:~\"<>?,./"), std::wstring(L"!@#$%^&*(){}:~\"<>?,./"));
+			Assert::AreEqual(WideStringFromMultiByte(""), std::wstring());
+			Assert::AreEqual(WideStringFromMultiByte(0), std::wstring());
 		}
 
 		TEST_METHOD(test_IntToHexWideString)
@@ -127,6 +149,62 @@ namespace wperftest
 			Assert::AreEqual(DoubleToWideStringExt(0.0, 4, 8), std::wstring(L"  0.0000"));
 			Assert::AreEqual(DoubleToWideStringExt(1.1, 4, 8), std::wstring(L"  1.1000"));
 			Assert::AreEqual(DoubleToWideStringExt(99.99, 4, 8), std::wstring(L" 99.9900"));
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfStrings_empty)
+		{
+			{
+				std::vector<std::wstring> Output;
+				TokenizeWideStringOfStrings(L"", L',', Output);
+				Assert::AreEqual(static_cast<std::vector<std::wstring>::size_type>(0), Output.size());
+			}
+
+			{
+				std::vector<std::wstring> Output;
+				TokenizeWideStringOfStrings(L" ", L' ', Output);
+				Assert::AreEqual(static_cast<std::vector<std::wstring>::size_type>(0), Output.size());
+			}
+
+			{
+				std::vector<std::wstring> Output;
+				TokenizeWideStringOfStrings(L"                  ", L' ', Output);
+				Assert::AreEqual(static_cast<std::vector<std::wstring>::size_type>(0), Output.size());
+			}
+
+			{
+				std::vector<std::wstring> Output;
+				TokenizeWideStringOfStrings(L"////", L'/', Output);
+				Assert::AreEqual(static_cast<std::vector<std::wstring>::size_type>(0), Output.size());
+			}
+		}
+
+		void tokenizeWideStringOfStrings_test_helper(const std::wstring& str, const std::vector<std::wstring>& arr, const wchar_t delim)
+		{
+			std::vector<std::wstring> Output;
+			std::vector<std::wstring> Reference = arr;
+			TokenizeWideStringOfStrings(str, delim, Output);
+			Assert::AreEqual(Reference.size(), Output.size(), std::wstring(L"Output and Reference differ in size. (" + str + L")").c_str());
+			for (auto i = 0; i < Reference.size(); i++)
+			{
+				Assert::IsTrue(Output[i] == Reference[i],
+					std::wstring(L"Got (" + Output[i] + L") expected (" + Reference[i] + L")").c_str());
+			}
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfStrings)
+		{
+			tokenizeWideStringOfStrings_test_helper(L"a b c", { L"a", L"b", L"c" }, L' ');
+			tokenizeWideStringOfStrings_test_helper(L"            a b                c           ", { L"a", L"b", L"c" }, L' ');
+			tokenizeWideStringOfStrings_test_helper(L"a b c def         ", { L"a", L"b", L"c", L"def"}, L' ');
+			tokenizeWideStringOfStrings_test_helper(L"                            b                           ", { L"b" }, L' ');
+			tokenizeWideStringOfStrings_test_helper(L"a b/c d e", { L"a", L"b/c", L"d", L"e"}, L' ');
+			tokenizeWideStringOfStrings_test_helper(L"a b c", { L"a b c" }, L'*');
+			tokenizeWideStringOfStrings_test_helper(L"a*b*c", { L"a", L"b", L"c" }, L'*');
+			tokenizeWideStringOfStrings_test_helper(L"***************a b**********c***", { L"a b", L"c" }, L'*');
+			tokenizeWideStringOfStrings_test_helper(L"a*b*c*def***********", { L"a", L"b", L"c", L"def" }, L'*');
+			tokenizeWideStringOfStrings_test_helper(L"***************************b************************", { L"b" }, L'*');
+			tokenizeWideStringOfStrings_test_helper(L"a*b/c*d*e", { L"a", L"b/c", L"d", L"e" }, L'*');
+		
 		}
 
 		TEST_METHOD(test_TokenizeWideStringOfInts_error)

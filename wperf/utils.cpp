@@ -33,7 +33,34 @@
 #include <sstream>
 #include <stringapiset.h>
 #include <vector>
+#include <cwctype>
 #include "utils.h"
+
+/// <summary>
+/// Tokenizes wstring to a vector of wstring tokens delimeted by a specific character.
+/// </summary>
+/// <param name="str">Source string to get the tokens</param>
+/// <param name="delim">The delimiting character</param>
+/// <param name="tokens">The vector that is going to receive the tokens</param>
+void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens)
+{
+    using size_type = std::basic_string<wchar_t>::size_type;
+    size_type pos = 0, last_pos = 0;
+    pos = str.find(delim);
+    while (pos != std::basic_string<wchar_t>::npos)
+    {
+        if(pos != last_pos)
+        {
+            tokens.push_back(str.substr(last_pos, pos - last_pos));
+        }
+        last_pos = pos + 1;
+        pos = str.find(delim, last_pos);
+    }
+    if (last_pos < str.size())
+    {
+        tokens.push_back(str.substr(last_pos, str.size() - last_pos + 1));
+    }
+}
 
 std::string MultiByteFromWideString(const wchar_t* wstr)
 {
@@ -43,6 +70,33 @@ std::string MultiByteFromWideString(const wchar_t* wstr)
     std::shared_ptr<char[]> str_raw(new char[required_size]);
     WideCharToMultiByte(CP_ACP, 0, wstr, -1, str_raw.get(), required_size, NULL, NULL);
     return std::string(str_raw.get());
+}
+
+std::wstring TrimWideString(const std::wstring& wstr)
+{
+    if (wstr.size() == 0)
+        return wstr;
+
+    std::wstring::size_type i = 0, j = wstr.size()-1;
+    
+    while (i < wstr.size() && std::iswspace(wstr[i])) i++;
+    while (j > 0 && std::iswspace(wstr[j])) j--;
+
+    return wstr.substr(i, (j - i) + 1);
+}
+
+/// <summary>
+/// Converts an array of chars into a wstring.
+/// </summary>
+/// <param name="str">Source char array to be converted</param>
+std::wstring WideStringFromMultiByte(const char* str)
+{
+    if (!str)
+        return std::wstring();
+    int required_size = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+    std::shared_ptr<wchar_t[]> wstr_raw(new wchar_t[required_size]);
+    MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr_raw.get(), required_size);
+    return std::wstring(wstr_raw.get());
 }
 
 /// <summary>

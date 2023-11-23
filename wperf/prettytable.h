@@ -135,6 +135,16 @@ public:
 		m_table = root.m_table;
 	};
 
+	PrettyTable<CharType>& operator=(const PrettyTable<CharType>& rhs)
+	{
+		m_columns_align = rhs.m_columns_align;
+		m_columns_length = rhs.m_columns_length;
+		m_columns_max_width = rhs.m_columns_max_width;
+		m_header = rhs.m_header;
+		m_table = rhs.m_table;
+		return *this;
+	}
+
 	/// operator<< overload to handle printing to stream output.
 	friend OutputStream& operator<<(OutputStream &os, PrettyTable& pt)
 	{
