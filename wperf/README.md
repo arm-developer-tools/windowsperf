@@ -22,7 +22,7 @@ usage: wperf [options]
     Options:
     list                   List supported events and metrics.
     stat                   Count events.If - e is not specified, then count default events.
-    test                   Configuration information about driver and application confituration.
+    test                   Configuration information about driver and application configuration.
     sample                 Sample events. If -e is not specified, cycle counter will be the default sample source
     record                 Same as sample but also automatically spawns the process and pins it to the core specified by '-c'.
                            You can define the process to spawn via '--pe_file' or use the end of the command line to write the command.
