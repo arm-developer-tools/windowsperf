@@ -183,21 +183,20 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
 }
 
 NTSTATUS deviceControl(
-    _In_    ULONG   IoCtlCode,
-    _In_    PVOID   pInBuffer,
-    _In_    ULONG   InBufSize,
-    _In_    PVOID   pOutBuffer,
-    _In_    ULONG   OutBufSize,
-    _Out_   PULONG  outputSize,
-    _Inout_ PQUEUE_CONTEXT queueContext
+    _In_        ULONG   IoCtlCode,
+    _In_        PVOID   pInBuffer,
+    _In_        ULONG   InBufSize,
+    _In_opt_    PVOID   pOutBuffer,
+    _In_        ULONG   OutBufSize,
+    _Out_       PULONG  outputSize,
+    _Inout_     PQUEUE_CONTEXT queueContext
 )
 {
     NTSTATUS status = STATUS_SUCCESS;
     *outputSize = 0;
 
-    ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Funciton'
+    ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Function'
     queueContext->action = action;  // Save for later processing  
-
 
     //
     //  Do some basic validation of the input puffer
@@ -458,11 +457,20 @@ NTSTATUS deviceControl(
         VOID(*core_func)(VOID) = NULL;
         VOID(*dsu_func)(VOID) = NULL;
         VOID(*dmc_func)(UINT8, UINT8, struct dmcs_desc*) = NULL;
+        ULONG funcsIdx = (action - PMU_CTL_ACTION_OFFSET);
+        const ULONG funcsSize = (ULONG)(sizeof(core_ctl_funcs) / sizeof(core_ctl_funcs[0]));
+        
+        if(funcsIdx >= funcsSize)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_WARNING_LEVEL, "IOCTL: invalid action %d\n", action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
         if (ctl_flags & CTL_FLAG_CORE)
-            core_func = core_ctl_funcs[action - PMU_CTL_ACTION_OFFSET];
+            core_func = core_ctl_funcs[funcsIdx];
         if (ctl_flags & CTL_FLAG_DSU)
-            dsu_func = dsu_ctl_funcs[action - PMU_CTL_ACTION_OFFSET];
+            dsu_func = dsu_ctl_funcs[funcsIdx];
 
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
@@ -472,9 +480,9 @@ NTSTATUS deviceControl(
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! enqueuing for action %d\n", context->action));
         WdfWorkItemEnqueue(queueContext->WorkItem);
 
-        if ((ctl_flags & CTL_FLAG_DMC))
+        if (ctl_flags & CTL_FLAG_DMC)
         {
-            dmc_func = dmc_ctl_funcs[action - PMU_CTL_ACTION_OFFSET];
+            dmc_func = dmc_ctl_funcs[funcsIdx];
             dmc_idx = ctl_req->dmc_idx;
 
             if (dmc_idx == ALL_DMC_CHANNEL)
