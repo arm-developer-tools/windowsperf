@@ -133,10 +133,19 @@ void pmu_device::init_ts_events()
 
 void pmu_device::init_arm_events()
 {   // Initialize generic armv8-a and armv9-a
+    init_armv8_events();
+    init_armv9_events();
+}
+
+void pmu_device::init_armv8_events()
+{
 #       define WPERF_ARMV8_ARCH_EVENTS(A,B,C,D,E) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E) };
 #       include "wperf-common/armv8-arch-events.def"
 #       undef WPERF_ARMV8_ARCH_EVENTS
+}
 
+void pmu_device::init_armv9_events()
+{
 #       define WPERF_ARMV9_ARCH_EVENTS(A,B,C,D,E) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E) };
 #       include "wperf-common/armv9-arch-events.def"
 #       undef WPERF_ARMV9_ARCH_EVENTS

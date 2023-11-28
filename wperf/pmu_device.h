@@ -110,6 +110,8 @@ public:
     void init_ts_metrics();
     void init_ts_events();
     void init_arm_events();
+    void init_armv8_events();
+    void init_armv9_events();
 
     void hw_cfg_detected(struct hw_cfg& hw_cfg);
 
