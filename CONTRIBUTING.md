@@ -10,7 +10,27 @@ All changes you commit or submit by merge request should follow these simple gui
 * Please do not squash your Merge Request commits into one commit. Split PR into many meaningful commits, we can review separately.
 * Code should be free from profanities in any language.
 
-# Commits in your merge requests should
+# Merge requests
+
+* Your merge request title should contain WindowsPerf [JIRA](https://linaro.atlassian.net/jira/software/c/projects/WPERF/boards/169) ticket, which is prefixed `WPERF-`. Note: our GitLab JIRA integration requires developers to add it.
+  * You can post your MR without JIRA ticket but we will require ticket number to merge.
+  * WindowsPerf JIRA tickets are in format: `WPERF-[0-9]+`.
+* Make use of labels, milestones, assignees, and other relevant query parameters to create informative pull requests.
+
+## Advice on merge requests
+
+* Applying the single responsibility principle to merge requests is always a good idea. Try not to include some additional stuff into the merge request. For example, do not fix any typos other than your current context or do not add a tiny bug fix to a feature.
+* Title and description is the first place where you can inform other developers about the changes.
+* Description of a merge request should always be prepared with the same attention, whether the merge request has a small or huge change.
+* Always think that anybody could read your merge request anytime.
+* You should build your code and test (if possible) before creating the merge request.
+* Both reviewers and the author should be polite in the comments.
+
+Other:
+* The source branch must be rebased onto the target branch.
+* Members who can merge are allowed to add commits to merge requests.
+
+## Commits in your merge requests
 
 * One commit should represent one meaningful change. E.g. Please do not add a new header file and in the same commit update project solution.
 * Have short (72 chars or less) meaningful subjects.
@@ -22,37 +42,36 @@ All changes you commit or submit by merge request should follow these simple gui
 
 Good commit message examples can be found [here](https://wiki.openstack.org/wiki/GitCommitMessages#Information_in_commit_messages).
 
-## Description prefixed
+### Commit message prefixes
 
 | Prefix | Code change |
 | --------------------- | ----------- |
-| `wperf`               | Changes to files in `WindowsPerf\wperf` directory. |
-| `wperf-common`        | Changes to files in `WindowsPerf\wperf-common` directory. |
-| `wperf-devgen`        | Changes to files in `WindowsPerf\wperf-devgen` directory. |
-| `wperf-driver`        | Changes to files in `WindowsPerf\wperf-driver` directory. |
-| `wperf-scripts`       | Changes to files in `WindowsPerf\wperf-scripts` directory. |
-| `wperf-lib`           | Changes to files in `WindowsPerf\wperf-lib` directory. |
-| `wperf-lib-app`       | Changes to files in `WindowsPerf\wperf-lib-app` directory. |
-| `wperf-lib-timeline`  | Changes to files in `WindowsPerf\wperf-lib-app\wperf-lib-timeline` directory. |
-| `wperf-test`          | Changes to files in `WindowsPerf\wperf-test` directory. |
-| `docs`                | Changes to documentation (E.g.: `README.md`). |
+| `wperf`               | Changes to files in `windowsperf\wperf` directory. |
+| `wperf-common`        | Changes to files in `windowsperf\wperf-common` directory. |
+| `wperf-devgen`        | Changes to files in `windowsperf\wperf-devgen` directory. |
+| `wperf-driver`        | Changes to files in `windowsperf\wperf-driver` directory. |
+| `wperf-scripts`       | Changes to files in `windowsperf\wperf-scripts` directory. |
+| `wperf-lib`           | Changes to files in `windowsperf\wperf-lib` directory. |
+| `wperf-lib-app`       | Changes to files in `windowsperf\wperf-lib-app` directory. |
+| `wperf-lib-c-compat`  | Changes to files in `windowsperf\wperf-lib-app\wperf-lib-c-compat` directory. |
+| `wperf-lib-timeline`  | Changes to files in `windowsperf\wperf-lib-app\wperf-lib-timeline` directory. |
+| `wperf-test`          | Changes to files in `windowsperf\wperf-test` directory. |
+| `docs`                | Changes to documentation (E.g.: `README.md` or `CONTRIBUTING.md`). |
 | `sln`                 | Changes to solution files `windowsperf.sln`. |
 | `other`               | Changes to other files (E.g.: `.gitignore`, `Makefile`). |
 
 You can group prefixes in your commit message subject (E.g.: `"wperf-common,docs: Add new header"`).
 
-# Advice on merge requests
-
-* Applying the single responsibility principle to merge requests is always a good idea. Try not to include some additional stuff into the merge request. For example, do not fix any typos other than your current context or do not add a tiny bug fix to a feature.
-* Title and description is the first place where you can inform other developers about the changes
-* Description of a merge request should always be prepared with the same attention, whether the merge request has a small or huge change.
-* Always think that anybody could read your merge request anytime.
-* You should build your code and test (if possible) before creating the merge request.
-* Both reviewers and the author should be polite in the comments.
+Example of correctly prefixed commits:
+```
+* 8857b6c wperf-scripts: fix missing jsonschema from requirements
+* 1790de1 wperf: Remove backslashes from help message
+* 86443ad wperf-driver: Do not free core_info if it's a NULL pointer
+```
 
 # If you have commit access
 
-* Do NOT use `git push --force`.
+* Do NOT use `git push --force` on `main` branch.
 * Use Merge Requests to suggest changes to other maintainers.
 
 # Creating Reliable Kernel-Mode Drivers
