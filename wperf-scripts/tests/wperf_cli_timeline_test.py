@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#usr/bin/env python3
 
 # BSD 3-Clause License
 #
@@ -41,12 +41,14 @@ Usage:
 
 """
 
+import json
 import os
 import re
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
 from common import wperf_metric_events, wperf_metric_is_available
+from common import is_json
 
 
 import pytest
@@ -61,13 +63,17 @@ def test_wperf_timeline_core_n3():
     assert stdout.count(b"counting ...") == 3
     assert stdout.count(b"sleeping ...") == 3
 
-def test_wperf_timeline_system_n3():
+@pytest.mark.parametrize("N",
+[
+    (1), (2), (5)
+])
+def test_wperf_timeline_system_n(N):
     """ Test timeline (system == all cores) output.  """
-    cmd = 'wperf stat -m imix -t -i 1 -n 3 sleep 1'
+    cmd = f"wperf stat -m imix -t -i 1 -n {N} sleep 1"
     stdout, _ = run_command(cmd.split())
 
-    assert stdout.count(b"counting ...") == 3
-    assert stdout.count(b"sleeping ...") == 3
+    assert stdout.count(b"counting ...") == N
+    assert stdout.count(b"sleeping ...") == N
 
 @pytest.mark.parametrize("C,I,N,SLEEP",
 [
@@ -366,3 +372,48 @@ def test_wperf_timeline_ts_metrics_many_cores(I, C, N, METRICS):
 
         # Check for whole events header including metric events and metric names
         assert expected_events_header + '\n' in csv
+
+@pytest.mark.parametrize("C,I,N,SLEEP",
+[
+    (0,0,1,1),
+    (1,1,2,1),
+    (2,0,3,1),
+    (3,1,4,1),
+]
+)
+def test_wperf_timeline_json(C, I, N, SLEEP):
+    """ Test timeline (core X) file format output.  """
+    cmd = f'wperf stat -m imix -c {C} --json -t -i {I} -n {N} --timeout {SLEEP}'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout), f"in {cmd}"
+    assert "timeline" in json_output
+    assert type(json_output["timeline"]) is list
+    assert len(json_output["timeline"]) == N
+
+@pytest.mark.parametrize("C,I,N,SLEEP",
+[
+    (0,1,1,1),
+    (3,1,4,1),
+]
+)
+def test_wperf_timeline_json_output(C, I, N, SLEEP):
+    """ Test timeline (core X) file format output.  """
+    file_path = "timeline_json_%d.json" % os.getpid()
+    cmd = f'wperf stat -m imix -c {C} --json --output {file_path} -t -i {I} -n {N} --timeout {SLEEP}'
+    _, _ = run_command(cmd.split())
+
+    try:
+        with open(file_path) as f:
+            json_output_f = f.read()
+    except:
+        assert 0, f"in {cmd}"
+
+    assert is_json(json_output_f), f"in {cmd}"
+
+    # load to object JSON from file for more checks
+    json_output = json.loads(json_output_f)
+    assert "timeline" in json_output
+    assert type(json_output["timeline"]) is list
+    assert len(json_output["timeline"]) == N

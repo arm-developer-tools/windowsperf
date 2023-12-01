@@ -1046,29 +1046,24 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
 
             if (multiplexing)
             {
-                if (timeline_mode)
-                {
-                    timeline_event_values.push_back(std::to_wstring(evt->value));
-                    timeline_event_values.push_back(std::to_wstring(evt->scheduled));
+                timeline_event_values.push_back(std::to_wstring(evt->value));
+                timeline_event_values.push_back(std::to_wstring(evt->scheduled));
+
+                if (evt->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(evt->value);
+                    col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
+                    col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
+                    col_scaled_value.push_back((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round)));
                 }
-                else
-                {
-                    if (evt->event_idx == CYCLE_EVT_IDX) {
-                        col_counter_value.push_back(evt->value);
-                        col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
-                        col_event_idx.push_back(L"fixed");
-                        col_event_note.push_back(L"e");
-                        col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
-                        col_scaled_value.push_back((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round)));
-                    }
-                    else {
-                        col_counter_value.push_back(evt->value);
-                        col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
-                        col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
-                        col_event_note.push_back(events[j - 1].note);
-                        col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
-                        col_scaled_value.push_back((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round)));
-                    }
+                else {
+                    col_counter_value.push_back(evt->value);
+                    col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
+                    col_event_note.push_back(events[j - 1].note);
+                    col_multiplexed.push_back(std::to_wstring(evt->scheduled) + L"/" + std::to_wstring(round));
+                    col_scaled_value.push_back((uint64_t)((double)evt->value / ((double)evt->scheduled / (double)round)));
                 }
 
                 if (overall)
@@ -1079,24 +1074,18 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
             }
             else
             {
-                if (timeline_mode)
-                {
-                    timeline_event_values.push_back(std::to_wstring(evt->value));
+                timeline_event_values.push_back(std::to_wstring(evt->value));
+                if (evt->event_idx == CYCLE_EVT_IDX) {
+                    col_counter_value.push_back(evt->value);
+                    col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
+                    col_event_idx.push_back(L"fixed");
+                    col_event_note.push_back(L"e");
                 }
-                else
-                {
-                    if (evt->event_idx == CYCLE_EVT_IDX) {
-                        col_counter_value.push_back(evt->value);
-                        col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
-                        col_event_idx.push_back(L"fixed");
-                        col_event_note.push_back(L"e");
-                    }
-                    else {
-                        col_counter_value.push_back(evt->value);
-                        col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
-                        col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
-                        col_event_note.push_back(events[j - 1].note);
-                    }
+                else {
+                    col_counter_value.push_back(evt->value);
+                    col_event_name.push_back(pmu_events_get_event_name((uint16_t)evt->event_idx));
+                    col_event_idx.push_back(IntToHexWideString(evt->event_idx, 2));
+                    col_event_note.push_back(events[j - 1].note);
                 }
 
                 if (overall)
@@ -1104,34 +1093,33 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
             }
         }
 
-        if (!timeline_mode) {
-            if (multiplexing)
-            {
-                TableOutput<PerformanceCounterOutputTraitsL<true>, GlobalCharType> table(m_outputType);
-                table.PresetHeaders();
-                table.SetAlignment(0, ColumnAlignL::RIGHT);
-                table.SetAlignment(4, ColumnAlignL::RIGHT);
-                table.SetAlignment(5, ColumnAlignL::RIGHT);
-                table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note, col_multiplexed, col_scaled_value);
+        if (multiplexing)
+        {
+            TableOutput<PerformanceCounterOutputTraitsL<true>, GlobalCharType> table(m_outputType);
+            table.PresetHeaders();
+            table.SetAlignment(0, ColumnAlignL::RIGHT);
+            table.SetAlignment(4, ColumnAlignL::RIGHT);
+            table.SetAlignment(5, ColumnAlignL::RIGHT);
+            table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note, col_multiplexed, col_scaled_value);
+            if (!timeline_mode)
                 m_out.Print(table);
-                table.m_core = GlobalStringType(std::to_wstring(i)); 
-                m_globalJSON.m_corePerformanceTables.push_back(table);
-            }
-            else
-            {
-                TableOutput<PerformanceCounterOutputTraitsL<false>, GlobalCharType> table(m_outputType);
-                table.PresetHeaders();
-                table.SetAlignment(0, ColumnAlignL::RIGHT);
-                table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note);
-                m_out.Print(table);
-                table.m_core = GlobalStringType(std::to_wstring(i));
-                m_globalJSON.m_corePerformanceTables.push_back(table);
-            }
-
-            m_globalJSON.m_multiplexing = multiplexing;
-            m_globalJSON.m_kernel = count_kernel; 
-
+            table.m_core = GlobalStringType(std::to_wstring(i));
+            m_globalJSON.m_corePerformanceTables.push_back(table);
         }
+        else
+        {
+            TableOutput<PerformanceCounterOutputTraitsL<false>, GlobalCharType> table(m_outputType);
+            table.PresetHeaders();
+            table.SetAlignment(0, ColumnAlignL::RIGHT);
+            table.Insert(col_counter_value, col_event_name, col_event_idx, col_event_note);
+            if (!timeline_mode)
+                m_out.Print(table);
+            table.m_core = GlobalStringType(std::to_wstring(i));
+            m_globalJSON.m_corePerformanceTables.push_back(table);
+        }
+
+        m_globalJSON.m_multiplexing = multiplexing;
+        m_globalJSON.m_kernel = count_kernel;
     }
 
     if (timeline_mode)
@@ -1297,7 +1285,7 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
         }
     }
 
-    if (!timeline_mode && col_core.size())
+    if (col_core.size())
     {
         m_out.GetOutputStream() << std::endl;
         m_out.GetOutputStream() << L"Telemetry Solution Metrics:" << std::endl;
@@ -1311,7 +1299,9 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
         table.SetAlignment(4, ColumnAlignL::LEFT);
         table.Insert(col_core, col_product_name, col_metric_name, col_metric_value, metric_unit);
         m_globalJSON.m_TSmetric = table;
-        m_out.Print(table);
+
+        if (!timeline_mode) // Print when we are not in timeline
+            m_out.Print(table);
     }
 }
 

@@ -297,13 +297,14 @@ wmain(
                 li_b.u.LowPart = time_b.dwLowDateTime;
                 li_b.u.HighPart = time_b.dwHighDateTime;
 
+                const double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
+                m_globalJSON.m_duration = duration;
+
                 if (!request.do_timeline)
                 {
-                    double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
                     m_out.GetOutputStream() << std::endl;
                     m_out.GetOutputStream() << std::right << std::setw(20)
                         << duration << L" seconds time elapsed" << std::endl;
-                    m_globalJSON.m_duration = duration;
                 }
                 else
                 {
@@ -316,13 +317,15 @@ wmain(
                     }
 
                     m_out.GetOutputStream() << L'\b' << "done\n";
-
                 }
 
-                if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
-                {
-                    m_out.Print(m_globalJSON);
-                }
+                if (!request.do_timeline)
+                    if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
+                        m_out.Print(m_globalJSON);
+
+                m_globalTimelineJSON.m_timelineWperfStat.push_back(m_globalJSON);
+                if (request.do_timeline)
+                    m_globalJSON = WPerfStatJSON<GlobalCharType>();
 
                 if (counting_timeline_times > 0)
                 {
@@ -342,6 +345,9 @@ wmain(
                 CloseHandle(pi.hThread);
                 CloseHandle(process_handle);
             }
+
+            if (request.do_timeline)
+                m_out.Print(m_globalTimelineJSON);
         }
         else if (request.do_sample || request.do_record)
         {

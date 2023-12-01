@@ -85,3 +85,48 @@ def test_wperf_json_stdout_schema(request, tmp_path, scheme_name):
     except:
         assert False
     assert True
+
+def test_wperf_timeline_json_schema(request, tmp_path):
+    """ Test `wperf stat -t` aka timeline JSON output against scheme """
+    test_path = os.path.dirname(request.path)
+    file_path = tmp_path / 'test.json'
+
+    cmd = f'wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json --output {file_path}'
+    stdout, _ = run_command(cmd.split())
+
+    json_output = dict()
+
+    try:
+        with open(str(file_path)) as json_file:
+            json_output = json.loads(json_file.read())    
+        validate(instance=json_output, schema=get_schema("timeline", test_path))
+    except Exception as err:
+        assert False, f"Unexpected {err=}, {type(err)=}"
+
+    for stat in json_output["timeline"]:
+        try:
+            validate(instance=stat, schema=get_schema("stat", test_path))
+        except Exception as err:
+            assert False, f"Unexpected {err=}, {type(err)=}"
+        assert True
+
+def test_wperf_timeline_json_stdout_schema(request, tmp_path):
+    """ Test `wperf stat -t` aka timeline JSON output against scheme """
+    test_path = os.path.dirname(request.path)
+
+    cmd = f'wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json'
+    stdout, _ = run_command(cmd.split())
+
+    json_output = json.loads(stdout)
+
+    try:
+        validate(instance=json_output, schema=get_schema("timeline", test_path))
+    except Exception as err:
+        assert False, f"Unexpected {err=}, {type(err)=}"
+
+    for stat in json_output["timeline"]:
+        try:
+            validate(instance=stat, schema=get_schema("stat", test_path))
+        except Exception as err:
+            assert False, f"Unexpected {err=}, {type(err)=}"
+        assert True

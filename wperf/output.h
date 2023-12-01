@@ -706,6 +706,41 @@ struct WPerfSamplingJSON
     }
 };
 
+template <typename CharType>
+struct WPerfTimelineJSON
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::ostream, std::wostream> OutputStream;
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::stringstream, std::wstringstream> StringStream;
+
+    using WPerfStatJSONTrait = WPerfStatJSON<CharType>;
+    std::vector <WPerfStatJSONTrait> m_timelineWperfStat;
+
+    StringStream Print()
+    {
+        StringStream os;
+        os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
+        {
+            os << LITERALCONSTANTS_GET("\"timeline\": ");
+            os << LiteralConstants<CharType>::m_bracket_open << std::endl;
+
+            bool isFirst = true;
+            for (auto& table : m_timelineWperfStat)
+            {
+                if (!isFirst)
+                    os << LiteralConstants<CharType>::m_comma << std::endl;
+                else
+                    isFirst = false;
+
+                os << table.Print().str();
+            }
+            os << LiteralConstants<CharType>::m_bracket_close << std::endl;
+        }
+
+        os << LiteralConstants<CharType>::m_cbracket_close;
+        return os;
+    }
+};
+
 // Class to control the output, it handles if the program is in quiet mode or not, which output to use (either wcout or cout)
 // as well as outputing to a file in case the user requested it.
 template <typename CharType>
@@ -869,6 +904,18 @@ struct OutputControl
             }
         }
     }
+
+    void Print(WPerfTimelineJSON<CharType>& table)
+    {
+        if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
+        {
+            StringType s = table.Print().str();
+            if (!m_shouldWriteToFile)
+                Print_(s);
+            else
+                OutputToFile(s);
+        }
+    }
 };
 
 // Handy aliases, the L at the end of each stands for local.
@@ -908,5 +955,6 @@ extern OutputControlL m_out;
 extern WPerfStatJSON<GlobalCharType> m_globalJSON;
 extern WPerfListJSON<GlobalCharType> m_globalListJSON;
 extern WPerfSamplingJSON<GlobalCharType> m_globalSamplingJSON;
+extern WPerfTimelineJSON<GlobalCharType> m_globalTimelineJSON;
 
 extern TableType m_outputType;

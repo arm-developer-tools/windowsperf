@@ -673,11 +673,20 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     // Support custom outpus for --output
     if (output_filename.size())
     {
-        if (do_timeline)    //  -t ... --output filename.csv
+        if (do_timeline)
         {
-            timeline_output_file = output_filename;
+            if (m_outputType == TableType::JSON)    //  -t ... --json --output filename.json
+            {
+                m_outputType = TableType::ALL;
+                m_out.m_filename = output_filename;
+                m_out.m_shouldWriteToFile = true;
+            }
+            else //  -t ... --output filename.csv
+            {
+                timeline_output_file = output_filename;
+            }
         }
-        else     // Output to JSON
+        else // Output to JSON
         {
             m_outputType = TableType::ALL;
             m_out.m_filename = output_filename;
