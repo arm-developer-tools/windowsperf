@@ -94,3 +94,14 @@ def test_wperf_test_ID_AA64DFR0_EL1_reg():
     assert len(aa64dfr0_value) > 0, f"ID_AA64DFR0_EL1={aa64dfr0_value}"
     assert aa64dfr0_value.startswith("0x"), f"ID_AA64DFR0_EL1={aa64dfr0_value}"
     assert int(aa64dfr0_value, 16) != 0x00, f"ID_AA64DFR0_EL1={aa64dfr0_value}"
+
+def test_wperf_test_INTERVAL_DEFAULT():
+    """ Test if PARSE_INTERVAL_DEFAULT const is exposed with `wperf test`. """
+    cmd = 'wperf test --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    PARSE_INTERVAL_DEFAULT = get_result_from_test_results(json_output, "pmu_device.sampling.INTERVAL_DEFAULT")
+    assert len(PARSE_INTERVAL_DEFAULT) > 0, f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
+    assert PARSE_INTERVAL_DEFAULT.startswith("0x"), f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
+    assert int(PARSE_INTERVAL_DEFAULT, 16) != 0x00, f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"

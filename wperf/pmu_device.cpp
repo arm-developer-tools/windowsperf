@@ -2135,6 +2135,10 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     else
         col_test_result.push_back(L"0");
 
+    // Sampling relatet values
+    col_test_name.push_back(L"pmu_device.sampling.INTERVAL_DEFAULT");
+    col_test_result.push_back(IntToHexWideString(PARSE_INTERVAL_DEFAULT));
+
     // Tests for PMU_CTL_QUERY_HW_CFG
     struct hw_cfg hw_cfg;
     query_hw_cfg(hw_cfg);
