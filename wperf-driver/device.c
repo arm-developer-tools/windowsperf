@@ -405,7 +405,7 @@ WindowsPerfDeviceCreate(
 
     {   // Print PMU feature version
         char* pmu_str = "unknown PMU configuration!";
-        switch (aa64_pms_ver)
+        switch (aa64_pmu_ver)
         {
         case 0b0000: pmu_str = "not implemented."; break;
         case 0b0001: pmu_str = "FEAT_PMUv3"; break;
