@@ -925,13 +925,27 @@ The `record` command spawns the process and pins it to the core specified by the
 `--pe_file` to let WindowsPerf know which process to spawn or after all the options to WindowsPerf just type the command
 you would like to execute. For example:
 
-`> wperf record -e vfp_spec -c 1 --pe_file main.exe --timeout 1`
+```
+>wperf record -e vfp_spec -c 1 --pe_file main.exe --timeout 1
+```
 
-or
+or:
 
-`> wperf record -e vfp_spec -c 1 --timeout 1 main.exe`
+```
+>wperf record -e vfp_spec -c 1 --timeout 1 -- main.exe
+```
 
 If you want to pass command line arguments to your application you can just call it after all WindowsPerf options, all command line arguments are going to be passed
 verbatim to the program that is being spawned. If you want to execute the CPython example above using this approach you could just type:
 
-`> wperf record -e ld_spec:100000 -c 1 --timeout 30 python_d.exe -c 10**10**1000`
+```
+>wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**1000
+```
+
+### wperf "--" (double-dash) support
+
+A double-dash (`--`) is a syntax used in shell commands to signify end of command options and beginning of positional arguments. In other words, it separates `wperf` CLI options from arguments that command operates on. Use `--` to separate `wperf.exe` command line options from process you want to spawn followed by its verbatim arguments.
+
+```
+>wperf [OPTIONS] -- PROCESS_NAME [ARGS]
+```

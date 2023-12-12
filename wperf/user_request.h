@@ -88,7 +88,7 @@ public:
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
-    std::wstring record_commandline;
+    std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
     std::wstring timeline_output_file;
     uint32_t sample_display_row;
     bool sample_display_short;

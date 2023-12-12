@@ -48,7 +48,7 @@ import pytest
 )
 def test_record_many_cores_selected(cores):
     """ It is not allowed to specify more than one core for sampling. """
-    _, stderr = run_command(f"wperf record -c {cores} TEST")
+    _, stderr = run_command(f"wperf record -c {cores} -- TEST")
 
     assert b"you can specify only one core for sampling" in stderr
 
@@ -65,6 +65,6 @@ def test_record_many_cores_selected(cores):
 )
 def test_record_many_cores_selected_ext(cores):
     """ It is not allowed to specify more than one core for sampling. """
-    _, stderr = run_command(f"wperf record -v -e ld_spec:100000 -c {cores} --timeout 30 python_d.exe -c 10**10**100")
+    _, stderr = run_command(f"wperf record -v -e ld_spec:100000 -c {cores} --timeout 30 -- python_d.exe -c 10**10**100")
 
     assert b"you can specify only one core for sampling" in stderr

@@ -170,6 +170,14 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
             if (do_verbose)
                 m_out.GetOutputStream() << L"deduced image PDB file '" << sample_pdb_file << L"'" << std::endl;
         }
+
+        if (do_verbose)
+        {
+            m_out.GetOutputStream() << L"pe_file '" << sample_pe_file << L"'";
+            if (record_commandline.size())
+                m_out.GetOutputStream() << L", args '" << record_commandline << L"'" << std::endl;
+            m_out.GetOutputStream() << std::endl;
+        }
     }
     else if (do_sample || do_record)
     {
@@ -267,7 +275,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     {
         if (waiting_commandline)
         {
-            record_commandline += a + L" ";
+            if (sample_pe_file.empty())
+            {
+                sample_pe_file = a;
+                record_commandline = a;
+            }
+            else
+                record_commandline += L" " + a;
             continue;
         }
 
@@ -654,20 +668,27 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             throw fatal_exception("ERROR_OPTION_DASH");
         }      
 
-        if (do_record || do_count)
+        /* This will finish command line argument parsing. After "--" we will see process to spawn in form of:
+        *
+        *  wperf ... -- PROCESS_NAME ARG ARG ARG ARG ...
+        *
+        *  From now on we will parse process spawn name and verbatim arguments
+        */
+        if (a == L"--")
         {
-            /*If we can't recognize the token we assume the rest is just the command line for the program that the user wants to run*/
+            if (!(do_record || do_count))
+                m_out.GetOutputStream() << L"warning: only `stat` and `record` support process spawn!" << std::endl;
+
             waiting_commandline = true;
-            /* If we failed to find --pe_file than we just store it as the first token of the
-            record command line, otherwise the sample_pe_file given by the user takes precedence */
-            if (!sample_pe_file_given)
-            {
-                sample_pe_file = a;
-            }
-            record_commandline += a + L" ";
-        } else {
-            m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored\n";
+            /* We will reload here PE file name to spawn. `waiting_commandline` will expect this
+            *  to be empty to detect beggining of the scan.
+            */
+            sample_pe_file.clear();
+            record_commandline.clear();
+            continue;
         }
+
+        m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored" << std::endl;
     }
 
     // Support custom outpus for --output

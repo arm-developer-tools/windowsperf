@@ -143,7 +143,7 @@ def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,t
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    cmd = f"wperf stat -v -c {core} -m {metric} -t -n {N} -i {I} --timeout 1 {benchmark_path} {param}"
+    cmd = f"wperf stat -v -c {core} -m {metric} -t -n {N} -i {I} --timeout 1 -- {benchmark_path} {param}"
     stdout, _ = run_command(cmd)
 
     # Get timeline CVS filename from stdout (we get this with `-v`)
