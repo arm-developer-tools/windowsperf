@@ -33,6 +33,7 @@
 #include <assert.h>
 #include "wperf-common/gitver.h"
 #include "pmu_device.h"
+#include "spe_device.h"
 #include "exception.h"
 #include "events.h"
 #include "output.h"
@@ -2142,6 +2143,11 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     // Tests for PMU_CTL_QUERY_HW_CFG
     struct hw_cfg hw_cfg;
     query_hw_cfg(hw_cfg);
+
+    // SPE information
+    col_test_name.push_back(L"pmu_device.version_name");
+    col_test_result.push_back(pmu_device::get_pmu_version_name(hw_cfg.id_aa64dfr0_value));
+
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [arch_id]");
     col_test_result.push_back(IntToHexWideString(hw_cfg.arch_id));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [core_num]");
@@ -2230,6 +2236,10 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
         else
             col_test_result.push_back(s);
     }
+
+    // SPE information
+    col_test_name.push_back(L"spe_device.version_name");
+    col_test_result.push_back(spe_device::get_spe_version_name(hw_cfg.id_aa64dfr0_value));
 }
 
 void pmu_device::do_test(uint32_t enable_bits,
@@ -2466,6 +2476,24 @@ const wchar_t* pmu_device::get_vendor_name(uint8_t vendor_id)
     if (arm64_vendor_names.count(vendor_id))
         return arm64_vendor_names[vendor_id];
     return L"Unknown Vendor";
+}
+
+std::wstring pmu_device::get_pmu_version_name(UINT64 id_aa64dfr0_el1_value)
+{
+    UINT8 aa64_pmu_ver = ID_AA64DFR0_EL1_PMUVer(id_aa64dfr0_el1_value);
+    std::wstring pmu_str = L"unknown PMU configuration!";
+    switch (aa64_pmu_ver)
+    {
+    case 0b0000: pmu_str = L"not implemented."; break;
+    case 0b0001: pmu_str = L"FEAT_PMUv3"; break;
+    case 0b0100: pmu_str = L"FEAT_PMUv3p1"; break;
+    case 0b0101: pmu_str = L"FEAT_PMUv3p4"; break;
+    case 0b0110: pmu_str = L"FEAT_PMUv3p5"; break;
+    case 0b0111: pmu_str = L"FEAT_PMUv3p7"; break;
+    case 0b1000: pmu_str = L"FEAT_PMUv3p8"; break;
+    }
+
+    return pmu_str;
 }
 
 // Use this function to print to wcerr runtime warnings in verbose mode.

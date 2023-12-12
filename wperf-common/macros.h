@@ -83,3 +83,7 @@
 #define DEFINE_CUSTOM_IOCTL_RUNTIME(TO,FROM) {    \
     (TO) = ((WPERF_TYPE) << 16) | ((FILE_READ_DATA | FILE_WRITE_DATA) << 14) | ((FROM) << 2) | (METHOD_BUFFERED);    \
 }
+
+// ID_AA64DFR0_EL register field masks
+#define ID_AA64DFR0_EL1_PMSVer(REG)      ((REG >> 32) & 0b1111)       //  PMSVer, bits [35:32]
+#define ID_AA64DFR0_EL1_PMUVer(REG)      ((REG >> 8)  & 0b1111)       //  PMUVer, bits [11:8]

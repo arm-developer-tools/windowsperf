@@ -152,7 +152,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -173,7 +173,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -194,7 +194,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -218,7 +218,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -243,7 +243,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -268,7 +268,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -289,7 +289,7 @@
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -314,7 +314,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);events.obj;output.obj;padding.obj;parsers.obj;pe_file.obj;pmu_device.obj;spe_device.obj;process_api.obj;user_request.obj;utils.obj;wperf.obj;metric.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)wperf\$(IntDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

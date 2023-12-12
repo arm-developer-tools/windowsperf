@@ -105,3 +105,12 @@ def test_wperf_test_INTERVAL_DEFAULT():
     assert len(PARSE_INTERVAL_DEFAULT) > 0, f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
     assert PARSE_INTERVAL_DEFAULT.startswith("0x"), f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
     assert int(PARSE_INTERVAL_DEFAULT, 16) != 0x00, f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
+
+def test_wperf_test_pmu_version_name():
+    cmd = 'wperf test --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    pmu_version_name = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]")
+    if pmu_version_name.startswith("FEAT_"):
+        assert pmu_version_name.startswith("FEAT_PMUv")

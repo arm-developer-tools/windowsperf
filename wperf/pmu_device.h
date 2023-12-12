@@ -220,6 +220,7 @@ public:
     void query_hw_cfg(struct hw_cfg& out);
 
     const wchar_t* get_vendor_name(uint8_t vendor_id);
+    static std::wstring get_pmu_version_name(UINT64 id_aa64dfr0_el1_value);
 
     struct pmu_sample_summary sample_summary;
 

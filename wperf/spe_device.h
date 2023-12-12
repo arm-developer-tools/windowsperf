@@ -29,6 +29,19 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//
-// Arm Statistical Profiling Extensions (SPE)
-//
+#include <windows.h>
+#include <string>
+#include "wperf-common/macros.h"
+
+class spe_device
+{
+public:
+    spe_device();
+    ~spe_device();
+
+    void init();
+
+    // Helper functions
+
+    static std::wstring get_spe_version_name(UINT64 id_aa64dfr0_el1_value);
+};
