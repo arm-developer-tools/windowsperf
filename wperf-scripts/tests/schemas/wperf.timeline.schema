@@ -4,7 +4,10 @@
     "description": "WindowsPerf outputs JSON format for timeline feature (counting)",
     "type": "object",
     "required": [
-        "timeline"
+        "timeline",
+        "count_duration",
+        "count_interval",
+        "count_timeline"
     ],
     "additionalProperties": false,
     "properties": {
@@ -13,6 +16,15 @@
             "items": {
                 "$ref": "wperf.stat.schema"
             }
+        },
+        "count_duration": {
+            "type": "number"
+        },
+        "count_interval": {
+            "type": "number"
+        },
+        "count_timeline": {
+            "type": "integer"
         }
     }
 }

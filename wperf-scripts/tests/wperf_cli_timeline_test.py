@@ -396,6 +396,7 @@ def test_wperf_timeline_json(C, I, N, SLEEP):
 [
     (0,1,1,1),
     (3,1,4,1),
+    (2,1.3,7,2.2),
 ]
 )
 def test_wperf_timeline_json_output(C, I, N, SLEEP):
@@ -414,6 +415,15 @@ def test_wperf_timeline_json_output(C, I, N, SLEEP):
 
     # load to object JSON from file for more checks
     json_output = json.loads(json_output_f)
+
+    assert "count_duration" in json_output
+    assert "count_interval" in json_output
+    assert "count_timeline" in json_output
     assert "timeline" in json_output
+
     assert type(json_output["timeline"]) is list
     assert len(json_output["timeline"]) == N
+
+    assert json_output["count_duration"] == SLEEP
+    assert json_output["count_interval"] == I
+    assert json_output["count_timeline"] == N

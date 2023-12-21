@@ -324,6 +324,10 @@ wmain(
                         m_out.Print(m_globalJSON);
 
                 m_globalTimelineJSON.m_timelineWperfStat.push_back(m_globalJSON);
+                m_globalTimelineJSON.m_count_duration = request.count_duration;
+                m_globalTimelineJSON.m_count_interval = request.count_interval;
+                m_globalTimelineJSON.m_count_timeline = request.count_timeline;
+
                 if (request.do_timeline)
                     m_globalJSON = WPerfStatJSON<GlobalCharType>();
 

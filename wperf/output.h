@@ -715,11 +715,27 @@ struct WPerfTimelineJSON
     using WPerfStatJSONTrait = WPerfStatJSON<CharType>;
     std::vector <WPerfStatJSONTrait> m_timelineWperfStat;
 
+    double m_count_duration = 0.f;  //  --timeout <sec> | sleep <sec>
+    double m_count_interval = 0.f;  //  -i <sec>
+    int m_count_timeline = 0;       //  -n N
+
     StringStream Print()
     {
         StringStream os;
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
         {
+            os << LITERALCONSTANTS_GET("\"count_duration\": ")
+                << std::fixed << std::setprecision(2) << m_count_duration
+                << LiteralConstants<CharType>::m_comma << std::endl;;
+
+            os << LITERALCONSTANTS_GET("\"count_interval\": ")
+               << std::fixed << std::setprecision(2) << m_count_interval
+               << LiteralConstants<CharType>::m_comma << std::endl;;
+
+            os << LITERALCONSTANTS_GET("\"count_timeline\": ")
+                << std::fixed << std::setprecision(2) << m_count_timeline
+                << LiteralConstants<CharType>::m_comma << std::endl;;
+
             os << LITERALCONSTANTS_GET("\"timeline\": ");
             os << LiteralConstants<CharType>::m_bracket_open << std::endl;
 
