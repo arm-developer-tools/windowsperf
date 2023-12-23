@@ -378,11 +378,40 @@ events to be counted:
 ...
 ```
 
-Hint: use `-m <metric>` to capture metric events, and/or `-e <events>` to count additional events.
+Hint:
+- use `-m <metric>` to capture metric events, and/or `-e <events>` to count additional events.
+- use `--json` to additionally return timeline output data in JSON format, add `--output <FILENAME>` to capture output to given file.
 
 Note: to check available events and metrics please use `wperf list` and `wperf list -v` commands. Latter one gives you a bit more information about events and metrics.
 
-### Timeline output file
+### Timeline JSON output file
+
+See how timeline JSON file format looks like for below command:
+
+```
+>wperf stat -t -i 1.3 -n 7 --json -m imix --timeout 2.2
+```
+
+Please note that `"timeline"` list is an ordered list of all counting occurrences captured. You can see that we pass count interval, duration and timeline count from `wperf` CLI to timeline JSON.
+
+```json
+{
+    "count_duration": 2.2,
+    "count_interval": 1.3,
+    "count_timeline": 7,
+    "timeline": [
+        {
+            "core": {
+                "Multiplexing": false,
+                "Kernel_mode": false,
+                "cores": [
+                    {
+...
+```
+
+Hint: you can find timeline JSON schema in [wperf-scripts/tests/schemas/wperf.timeline.schema](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/schemas/wperf.timeline.schema?ref_type=heads) file.
+
+### Timeline CSV output file
 
 Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-separated_values). It's format uses comma separated values to distinguish between columns. CSV file name contains core number, current timestamp, name of event counted.
 
@@ -405,7 +434,7 @@ cycle,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,
 
 Timeline file contains header with few counting setting values (these will increase in the future), and rows with column oriented values. These specify cores, events and metrics counted and computed during timeline pass:
 
-#### Specify timeline output file with --output command line option
+#### Specify timeline CSV output file name with --output command line option
 
 Support for `--output` command line in timeline (`-t`) is as follows:
 
@@ -433,7 +462,7 @@ timeline file: 'timeline--7--core.csv'
 timeline file: '2023_09_21_12_23_58.7.core.csv'
 ```
 
-#### Timeline file content schema
+#### Timeline CSV file content schema
 
 ```
 +------------------------------+
