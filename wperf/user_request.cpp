@@ -45,53 +45,126 @@ static std::array<std::wstring, 9> arguments = { L"-image_name", L"-pe_file", L"
 void user_request::print_help_usage()
 {
     const wchar_t* wsHelp = LR"(
-usage: wperf [options]
+NAME:
+    wperf - Performance analysis tools for Windows on Arm
 
-    Options:
-    list                   List supported events and metrics.
-    stat                   Count events.If - e is not specified, then count default events.
-    test                   Configuration information about driver and application confituration.
-    sample                 Sample events. If -e is not specified, cycle counter will be the default sample source
-    record                 Same as sample but also automatically spawns the process and pins it to the core specified by '-c'. 
-                           You can define the process to spawn via '--pe_file' or use the end of the command line to write the command.
-                           All command line arguments afterwards are passed verbatim to the command.
-    -e e1, e2...           Specify events to count.Event eN could be a symbolic name or in raw number.
-                           Symbolic name should be what's listed by 'perf list', raw number should be rXXXX,
-                           XXXX is hex value of the number without '0x' prefix.
-                           when doing sampling, support -e e1:sample_freq1,e2:sample_freq2...
-    -m m1, m2...           Specify metrics to count. 'imix', 'icache', 'dcache', 'itlb', 'dtlb' supported.
-    --timeout SEC          Specify counting duration(in s). The accuracy is 0.1s.
-    sleep N                Like --timeout, for compatibility with Linux perf.
-    -i N                   Specify counting interval(in s). To be used with -t.
-    -t                     Enable timeline mode. It specifies -i 60 --timeout 1 implicitly.
-                           Means counting 1 second after every 60 second, and the result
-                           is in.csv file in the same folder where wperf is invoked.
-                           You can use -i and --timeout to change counting duration and interval.
-    -n N                   How many times count in timeline mode (disabled by default).
-    --image_name           Specify the image name you want to sample.
-    --pe_file              Specify the PE file.
-    --pdb_file             Specify the PDB file.
-    --sample-display-long  Display decorated symbol names.
-    --sample-display-row   Set how many samples you want to see in the summary (50 by default).
-    --record_spawn_delay   Set the waiting time, in milliseconds, before reading process data after spawning it with 'record'.
-                           Default value is 1000ms.
-    -C config_file         Provide customized config file which describes metrics etc.
-    -E config_file         Provide customized config file which describes custom events.
-    -E event_list          Provide custom events from command line, e.g. '-E name1:0x1234,name2:0xABCD'
-    -c core_idx            Profile on the specified core. Skip -c to count on all cores.
-                           In sampling user must specify exactly one core with -c.
-    -c cpu_list            Profile on the specified cores, 'cpu_list' is comma separated list e.g. '-c 0,1,2,3'.
-    --dmc dmc_idx          Profile on the specified DDR controller. Skip -dmc to count on all DMCs.
-    -k                     Count kernel mode as well (disabled by default).
-    -h / --help            Show tool help.
-    --output               Enable JSON output to file.
-    --config               Specify configuration parameters, format NAME=VALUE.
-    -q                     Quiet mode, no output is produced.
-    --json                 Define output type as JSON.
-    -l                     Alias of 'list'.
-    --verbose              Enable verbose output.
-    -v                     Alias of '-verbose'.
-    --version              Show tool version.
+SYNOPSIS:
+: wperf [--version] [--help] [OPTIONS]
+
+    wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
+               [--output] [--config]
+    wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
+               [--output] [--config] -- COMMAND [ARGS]
+        Counting mode, for obtaining aggregate counts of occurrences of special
+        events.
+
+    wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
+                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
+                 [--sample-display-row] [--record_spawn_delay]
+        Sampling mode, for determining the frequencies of event occurrences
+        produced by program locations at the function, basic block, and/or
+        instruction levels.
+
+    wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
+                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
+                 [--sample-display-row] [--record_spawn_delay] -- COMMAND [ARGS]
+        Same as sample but also automatically spawns the process and pins it to
+        the core specified by `-c`. Process name is defined by COMMAND. User can
+        pass verbatim arguments to the process with [ARGS].
+
+    wperf list [-v] [--json]
+        List supported events and metrics.
+
+    wperf test [--json [OPTIONS]
+        Configuration information about driver and application.
+
+OPTIONS:
+    -h, --help
+        Run wperf help command.
+
+    --version
+        Display version.
+
+    -v, --verbose
+        Enable verbose output also in JSON output.
+
+    -q
+        Quiet mode, no output is produced.
+
+    -e
+        Specify comma separated list of events to count or sample.
+
+    -m
+        Specify comma separated list of metrics to count.
+
+    --timeout
+        Specify counting or sampling duration in seconds, accuracy is 0.1 sec.
+
+    -t
+        Enable timeline mode (count multiple times with specified interval).
+        Use `-i` to specify timeline interval, and `-n` to specify number of
+        counts.
+
+    -i
+        Specify counting interval in seconds, `0` seconds is allowed.
+
+    -n
+        Number of consecutive counts in timeline mode (disabled by default).
+
+    --image_name
+        Specify the image name you want to sample.
+
+    --pe_file
+        Specify the PE file name (and path).
+
+    --pdb_file
+        Specify the PDB file name (and path), PDB file should directly
+        correspond to PE file set with `--pe_file`.
+
+    --sample-display-long
+        Display decorated symbol names.
+
+    --sample-display-row
+        Set how many samples you want to see in the summary (50 by default).
+
+    --record_spawn_delay
+        Set the waiting time, in milliseconds, before reading process data after
+        spawning it with `record`.
+
+    -c
+        Specify comma separated list of CPU cores to count on, or one CPU to
+        sample on.
+
+    -k
+        Count kernel mode as well (disabled by default).
+
+    --dmc
+        Profile on the specified DDR controller. Skip `--dmc` to count on all
+        DMCs.
+
+    -C
+        Provide customized config file which describes metrics.
+        
+    -E
+        Provide customized config file which describes custom events or
+        provide custom events from command line.
+
+    --json
+        Define output type as JSON.
+
+    --output
+        Specify JSON output file name.
+
+    --config
+        Specify configuration parameters.
+
+OPTIONS aliases:
+    -l
+        Alias of 'list'.
+
+    sleep
+        Alias of `--timeout`.
+
 )";
 
     m_out.GetOutputStream() << wsHelp << std::endl;
