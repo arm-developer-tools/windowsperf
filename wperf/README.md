@@ -1050,3 +1050,176 @@ A double-dash (`--`) is a syntax used in shell commands to signify end of comman
 ```
 >wperf [OPTIONS] -- PROCESS_NAME [ARGS]
 ```
+
+## Using the `annotate` option
+
+A normal output of the following command 
+
+```
+>wperf record -c 0 -e vfp_spec:1000 --timeout 5 -- .\WindowsPerfSample1.exe
+```
+
+could be
+
+```
+base address of '.\WindowsPerfSample1.exe': 0x7ff7526b15c4, runtime delta: 0x7ff6126a0000
+sampling ....eeee done!
+======================== sample source: vfp_spec, top 50 hot functions ========================
+        overhead  count  symbol
+        ========  =====  ======
+           91.41    117  simd_hot
+            7.81     10  df_hot
+            0.78      1  __CheckForDebuggerJustMyCode
+100.00%       128  top 3 in total
+```
+
+If you want to have more information about the exact place in the source code where those samples were acquired you can use the `--annotate` option, like so
+
+```
+>wperf record -c 0 -e vfp_spec:1000 --timeout 5 --annotate -- .\WindowsPerfSample1.exe
+```
+
+resulting in 
+
+```
+base address of '.\WindowsPerfSample1.exe': 0x7ff7526b15c4, runtime delta: 0x7ff6126a0000
+sampling ....eeee done!
+======================== sample source: vfp_spec, top 50 hot functions ========================
+
+simd_hot
+        line_number  hits  filename
+        ===========  ====  ========
+        53           49    C:\Users\evert\source\repos\WindowsPerfSample\lib.c
+        52           8     C:\Users\evert\source\repos\WindowsPerfSample\lib.c
+
+df_hot
+        line_number  hits  filename
+        ===========  ====  ========
+        33           1     C:\Users\evert\source\repos\WindowsPerfSample\lib.c
+        15,732,480   1     C:\Users\evert\source\repos\WindowsPerfSample\lib.c
+
+        overhead  count  symbol
+        ========  =====  ======
+           53.91     69  unknown
+           44.53     57  simd_hot
+            1.56      2  df_hot
+100.00%       128  top 3 in total
+```
+
+You will now see the list of top functions followed by a table with line numbers, hits and filename. 
+The filename and line number shows information extracted from the PDB files matching the sample address to a particular position on the source code. The hits column shows the number of samples for that file name/line number pair. Notice that due to address skid this can be a bit off.
+
+### Using the `disassemble` option
+
+In case you need even more information than the one given by `--annotate` you can use the `--disassemble` option to give the particular surroundings of the instruction that generated the sample. Notice that `--disassemble` implies `--annotate`. Use the following command 
+
+```
+>wperf record -c 0 -e vfp_spec:1000 --timeout 5 --disassemble -- .\WindowsPerfSample1.exe
+```
+
+to get
+
+```
+base address of '.\WindowsPerfSample1.exe': 0x7ff7526b15c4, runtime delta: 0x7ff6126a0000
+sampling ....eeee done!
+======================== sample source: vfp_spec, top 50 hot functions ========================
+simd_hot
+        line_number  hits  filename                                             instruction_address  disassembled_line
+
+        ===========  ====  ========                                             ===================  =================
+
+        53           96    C:\Users\evert\source\repos\WindowsPerfSample\lib.c  13a30                  address  instruction
+                                                                                                       =======  ===========
+                                                                                                       13a30    ldr     q18, [x19], #0x40
+                                                                                                       13a34    add     v16.4s, v16.4s, v18.4s
+                                                                                                       13a38    stur    q16, [x9, #-0x20]
+                                                                                                       13a3c    ldr     q16, [x13, x8]
+                                                                                                       13a40    add     v16.4s, v16.4s, v17.4s
+                                                                                                       13a44    ldr     q17, [x11, x9]
+                                                                                                       13a48    str     q16, [x12, x8]
+                                                                                                       13a4c    ldp     q16, q18, [x8, #0x10]
+                                                                                                       13a50    add     x8, x8, #0x40
+                                                                                                       13a54    add     v17.4s, v17.4s, v16.4s
+                                                                                                       13a58    ldur    q16, [x19, #-0x10]
+                                                                                                       13a5c    add     v16.4s, v18.4s, v16.4s
+                                                                                                       13a60    stp     q17, q16, [x9], #0x40
+                                                                                                       13a64    cbnz    w10, 0x140013a28 <.text+0x2a28>
+                                                                                                       13a68    ldp     x29, x30, [sp], #0x10
+                                                                                                       13a6c    ldr     x21, [sp, #0x10]
+                                                                                                       13a70    ldp     x19, x20, [sp], #0x20
+                                                                                                       13a74    ret
+        52           17    C:\Users\evert\source\repos\WindowsPerfSample\lib.c  13a2c                  address  instruction
+                                                                                                       =======  ===========
+                                                                                                       13a28    ldp     q16, q17, [x8, #-0x10]
+                                                                                                       13a2c    sub     w10, w10, #0x1
+
+
+df_hot
+        line_number  hits  filename                                             instruction_address  disassembled_line
+
+        ===========  ====  ========                                             ===================  =================
+
+        15,732,480   5     C:\Users\evert\source\repos\WindowsPerfSample\lib.c  137bc                  address  instruction
+                                                                                                       =======  ===========
+                                                                                                       137a8    adrp    x8, 0x140023000
+                                                                                                       137ac    add     x0, x8, #0x0
+                                                                                                       137b0    bl      0x1400117e0 <.text+0x7e0>
+                                                                                                       137b4    adrp    x9, 0x14001f000
+                                                                                                       137b8    ldr     d16, [x9]
+                                                                                                       137bc    ldr     d18, 0x140013828 <.text+0x2828>
+                                                                                                       137c0    ldr     d17, 0x140013830 <.text+0x2830>
+                                                                                                       137c4    fdiv    d16, d16, d18
+                                                                                                       137c8    fadd    d19, d16, d17
+                                                                                                       137cc    ldr     d16, 0x140013838 <.text+0x2838>
+                                                                                                       137d0    fmul    d0, d19, d16
+                                                                                                       137d4    str     d0, [x9]
+                                                                                                       137d8    cbnz    w19, 0x14001381c <.text+0x281c>
+        33           1     C:\Users\evert\source\repos\WindowsPerfSample\lib.c  1379c                  address  instruction
+                                                                                                       =======  ===========
+                                                                                                       13798    str     x19, [sp, #-0x10]!
+                                                                                                       1379c    stp     x29, x30, [sp, #-0x10]!
+                                                                                                       137a0    mov     x29, sp
+                                                                                                       137a4    mov     w19, w0
+
+__CheckForDebuggerJustMyCode
+        line_number  hits  filename                                                          instruction_address  disassembled_line
+
+        ===========  ====  ========                                                          ===================  =================
+
+        25           1     D:\a\_work\1\s\src\vctools\crt\vcstartup\src\misc\debugger_jmc.c  13fe0                  address  instruction
+                                                                                                                    =======  ===========
+                                                                                                                    13fd8    ldr        x8, [sp, #0x10]
+                                                                                                                    13fdc    ldrb       w8, [x8]
+                                                                                                                    13fe0    mov        w8, w8
+                                                                                                                    13fe4    cmp        w8, #0x0
+                                                                                                                    13fe8    b.eq       0x140014020 <.text+0x3020>
+                                                                                                                    13fec    adrp       x8, 0x14001f000
+                                                                                                                    13ff0    ldr        w8, [x8, #0x754]
+                                                                                                                    13ff4    cmp        w8, #0x0
+                                                                                                                    13ff8    b.eq       0x140014020 <.text+0x3020>
+                                                                                                                    13ffc    adrp       x8, 0x140022000
+                                                                                                                    14000    ldr        x8, [x8, #0x70]
+                                                                                                                    14004    blr        x8
+                                                                                                                    14008    mov        w9, w0
+                                                                                                                    1400c    adrp       x8, 0x14001f000
+                                                                                                                    14010    ldr        w8, [x8, #0x754]
+                                                                                                                    14014    cmp        w8, w9
+                                                                                                                    14018    b.ne       0x140014020 <.text+0x3020>
+
+        overhead  count  symbol
+        ========  =====  ======
+           88.28    113  simd_hot
+            6.25      8  unknown
+            4.69      6  df_hot
+            0.78      1  __CheckForDebuggerJustMyCode
+100.00%       128  top 4 in total
+```
+
+The columns are pretty simmilar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair file name/line number's disassembled code. Notice that 
+WindowsPerf uses LLVM's [objdump](https://llvm.org/docs/CommandGuide/llvm-objdump.html) and it needs to be available on PATH or else you will get the following message 
+
+```
+Failed to call disassembler - Is it on PATH?
+```
+
+You can either download LLVM from its [releases page](https://releases.llvm.org/) or followng the instructions [here](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md?ref_type=heads#build-dependencies) to get it installed within Visual Studio.
