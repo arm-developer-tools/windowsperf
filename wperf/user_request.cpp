@@ -49,7 +49,7 @@ NAME:
     wperf - Performance analysis tools for Windows on Arm
 
 SYNOPSIS:
-: wperf [--version] [--help] [OPTIONS]
+    wperf [--version] [--help] [OPTIONS]
 
     wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
                [--output] [--config]
