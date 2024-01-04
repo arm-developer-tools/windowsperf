@@ -50,11 +50,11 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 
 # Building WindowsPerf project
 
-* Currently WindowsPerf is targeted for Windows on Arm devices. Both, user space `wperf` application and Kernel-mode driver `wperf-driver` are `ARM64EC` and `ARM64` binaries respectively.
-* Both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation. You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
-* Please build `wperf` application with `ARM64EC` configuration as it's requiring [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022) support which is not available in `ARM64` mode.
-  * You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
-  * If the `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you’ve installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.
+- Currently WindowsPerf is targeted for Windows on Arm devices. Both, user space `wperf` application and Kernel-mode driver `wperf-driver` are `ARM64` binaries.
+- Both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation. You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
+- `wperf` application require [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022) support.
+  - You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
+  - If the `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you’ve installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.
 
 ```
 > cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin\arm64"
@@ -91,7 +91,7 @@ To create a reliable kernel-mode driver, follow these [guidelines](https://learn
 
 ```
 > cd WindowsPerf
-> devenv windowsperf.sln /Build "Debug|ARM64EC"
+> devenv windowsperf.sln /Build "Debug|ARM64"
 ```
 
 For more information regarding `devenv` and its command line options visit [Devenv command-line switches](https://learn.microsoft.com/en-us/visualstudio/ide/reference/devenv-command-line-switches?view=vs-2022).
@@ -101,7 +101,7 @@ For more information regarding `devenv` and its command line options visit [Deve
 
 ```
 > cd WindowsPerf
-> devenv windowsperf.sln /Rebuild "Debug|ARM64EC" /Project wperf\wperf.vcxproj
+> devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf\wperf.vcxproj
 ```
 
 ```
