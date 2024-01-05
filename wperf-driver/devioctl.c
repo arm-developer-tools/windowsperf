@@ -30,7 +30,7 @@
 
 #include "driver.h"
 #include "device.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "devioctl.tmh"
 #endif
 #include "utilities.h"

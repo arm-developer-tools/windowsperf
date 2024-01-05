@@ -32,7 +32,7 @@
 
 #include "driver.h"
 #include "device.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "workitem.tmh"
 #endif
 #include "utilities.h"

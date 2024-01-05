@@ -30,7 +30,7 @@
 
 #include "driver.h"
 #include "wperf-common/iorequest.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "queue.tmh"
 #endif
 

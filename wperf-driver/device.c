@@ -30,7 +30,7 @@
 
 #include "driver.h"
 #include "device.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "device.tmh"
 #endif
 #include "utilities.h"
@@ -372,6 +372,8 @@ WindowsPerfDeviceCreate(
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "PMU version %d\n", pmu_ver));
 
     midr_value = _ReadStatusReg(MIDR_EL1);
+
+#if defined(DBG) || defined(ENABLE_TRACING)
     UINT8 implementer = (midr_value >> 24) & 0xff;
     UINT8 variant = (midr_value >> 20) & 0xf;
     UINT8 arch_num = (midr_value >> 16) & 0xf;
@@ -379,6 +381,7 @@ WindowsPerfDeviceCreate(
     UINT8 revision = midr_value & 0xf;
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
         arch_num, implementer, variant, part_num, revision));
+#endif
 
     if (pmu_ver == 0x6 || pmu_ver == 0x7)
         CpuHasLongEventSupportSet(1);

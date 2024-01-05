@@ -31,7 +31,7 @@
 #include <ntddk.h>
 #include "trace.h"
 #include "core.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "core.tmh"
 #endif
 #include "sysregs.h"

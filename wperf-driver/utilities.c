@@ -31,7 +31,7 @@
 
 #include "driver.h"
 #include "device.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "utilities.tmh"
 #endif
 #include "sysregs.h"

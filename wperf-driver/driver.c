@@ -30,7 +30,7 @@
 
 #include "driver.h"
 #include "device.h"
-#if !defined DBG
+#if defined ENABLE_TRACING
 #include "driver.tmh"
 #endif
 
@@ -49,7 +49,7 @@ WindowsPerfEvtWdfDriverUnload(
     PAGED_CODE();
     UNREFERENCED_PARAMETER(Driver);
 
-#if !defined DBG
+#if defined ENABLE_TRACING
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
 #endif
 
@@ -60,7 +60,7 @@ WindowsPerfEvtWdfDriverUnload(
     //
     // Stop WPP Tracing
     //
-#if !defined DBG
+#if defined ENABLE_TRACING
     WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
 #endif
 }
@@ -90,7 +90,7 @@ DriverEntry(
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
 
-#if !defined DBG
+#if defined ENABLE_TRACING
     WPP_INIT_TRACING(DriverObject, RegistryPath);
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 #endif
@@ -114,11 +114,11 @@ DriverEntry(
         return status;
     }
 
-#if DBG
+#if DBG || ENABLE_TRACING
     WindowsPerfPrintDriverVersion();
 #endif
     
-#if !defined DBG
+#if defined ENABLE_TRACING
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 #endif
 
