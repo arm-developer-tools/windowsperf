@@ -60,14 +60,14 @@ SYNOPSIS:
 
     wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
-                 [--sample-display-row] [--record_spawn_delay]
+                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble]
         Sampling mode, for determining the frequencies of event occurrences
         produced by program locations at the function, basic block, and/or
         instruction levels.
 
     wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
-                 [--sample-display-row] [--record_spawn_delay] -- COMMAND [ARGS]
+                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
         Same as sample but also automatically spawns the process and pins it to
         the core specified by `-c`. Process name is defined by COMMAND. User can
         pass verbatim arguments to the process with [ARGS].
@@ -110,6 +110,12 @@ OPTIONS:
 
     -n
         Number of consecutive counts in timeline mode (disabled by default).
+
+    --annotate
+        Enable translating addresses taken from samples in sample/record mode into source code line numbers.
+
+    --disassemble
+        Enable disassemble output on sampling mode. Implies 'annotate'.
 
     --image_name
         Specify the image name you want to sample.
