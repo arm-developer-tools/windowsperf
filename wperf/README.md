@@ -32,20 +32,20 @@ SYNOPSIS:
 
     wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
-                 [--sample-display-row] [--record_spawn_delay]
+                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble]
         Sampling mode, for determining the frequencies of event occurrences
         produced by program locations at the function, basic block, and/or
         instruction levels.
 
     wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
-                 [--sample-display-row] [--record_spawn_delay] -- COMMAND [ARGS]
+                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
         Same as sample but also automatically spawns the process and pins it to
         the core specified by `-c`. Process name is defined by COMMAND. User can
         pass verbatim arguments to the process with [ARGS].
 
     wperf list [-v] [--json]
-        List supported events and metrics.
+        List supported events and metrics. Enable verbose mode for more details.
 
     wperf test [--json [OPTIONS]
         Configuration information about driver and application.
@@ -64,13 +64,25 @@ OPTIONS:
         Quiet mode, no output is produced.
 
     -e
-        Specify comma separated list of events to count or sample.
+        Specify comma separated list of event names (or raw events) to count, for
+        example `ld_spec,vfp_spec,r10`. Use curly braces to group events.
+        Specify comma separated list of event names with sampling frequency to
+        sample, for example `ld_spec:100000`.
+
+        Raw events: specify raw evens with `r<VALUE>` where `<VALUE>` is a 16-bit
+        hexadecimal event index value without leading `0x`. For example `r10` is
+        event with index `0x10`.
+
+        Note: see list of available event names using `list` command.
 
     -m
         Specify comma separated list of metrics to count.
 
+        Note: see list of available metric names using `list` command.
+
     --timeout
         Specify counting or sampling duration in seconds, accuracy is 0.1 sec.
+        If not specified, press Ctrl+C to interrupt counting or sampling.
 
     -t
         Enable timeline mode (count multiple times with specified interval).
@@ -82,6 +94,12 @@ OPTIONS:
 
     -n
         Number of consecutive counts in timeline mode (disabled by default).
+
+    --annotate
+        Enable translating addresses taken from samples in sample/record mode into source code line numbers.
+
+    --disassemble
+        Enable disassemble output on sampling mode. Implies 'annotate'.
 
     --image_name
         Specify the image name you want to sample.
@@ -136,6 +154,35 @@ OPTIONS aliases:
 
     sleep
         Alias of `--timeout`.
+
+EXAMPLES:
+
+    > wperf list -v
+    List all events and metrics available on your host with extended
+    information.
+
+    > wperf stat -e inst_spec,vfp_spec,ase_spec,ld_spec -c 0 --timeout 3
+    Count events `inst_spec`, `vfp_spec`, `ase_spec` and `ld_spec` on core #0
+    for 3 seconds.
+
+    > wperf stat -m imix -e l1i_cache -c 7 --timeout 10.5
+    Count metric `imix` (metric events will be grouped) and additional event
+    `l1i_cache` on core #7 for 10.5 seconds.
+
+    > wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
+    Count in timeline mode (output counting to CSV file) metric `imix` 3 times
+    on core #1 with 2 second intervals (delays between counts). Each count
+    will last 5 seconds.
+
+    > wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1
+    Sample event `ld_spec` with frequency `100000` already running process
+    `python_d.exe` on core #1. Press Ctrl+C to stop sampling and see the results.
+
+    > wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**100
+    Launch `python_d.exe -c 10**10**100` process and start sampling event `ld_spec`
+    with frequency `100000` on core #1 for 30 seconds.
+    Hint: add `--annotate` or `--disassemble` to `wperf record` command line
+    parameters to increase sampling "resolution".
 ```
 
 # WindowsPerf auxiliary command line options
@@ -426,7 +473,7 @@ System-wide Overall:
 Timeline feature allow users to perform continuous counting (defined with `--timeout <SEC>` command line option) between intervals (defined with `-i <SEC>`) for `N` times (defined with `-n <N>`). For example command:
 
 ```
->>wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
+>wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
 counting ... done
 sleeping ... done
 counting ... done
