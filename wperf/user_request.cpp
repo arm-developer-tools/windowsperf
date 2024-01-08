@@ -490,6 +490,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (waiting_pe_file)
         {
+            if (std::filesystem::exists(a) == false)
+            {
+                m_out.GetErrorOutputStream() << L"PE file '" << a << L"' doesn't exist"
+                    << std::endl;
+                throw fatal_exception("ERROR_PE_FILE_PATH");
+            }
+
             sample_pe_file = a;
             sample_pe_file_given = true;
             waiting_pe_file = false;
@@ -498,6 +505,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (waiting_pdb_file)
         {
+            if (std::filesystem::exists(a) == false)
+            {
+                m_out.GetErrorOutputStream() << L"PDB file '" << a << L"' doesn't exist"
+                    << std::endl;
+                throw fatal_exception("ERROR_PDB_FILE_PATH");
+            }
+
             sample_pdb_file = a;
             waiting_pdb_file = false;
             continue;
