@@ -38,7 +38,7 @@ import pytest
 ### Test cases
 
 
-def test_wperf_cli_no_commands():
+def test_wperf_cli_no_commands(record_property):
     """ Test no command line options output. """
     cmd = 'wperf'
     stdout, _ = run_command(cmd.split())
@@ -52,8 +52,9 @@ def test_wperf_cli_no_commands():
     """
 
     ver_str = re.findall(rb'WindowsPerf ver\. \d+\.\d+\.\d+ \(([0-9a-fA-F]+(-[a-zA-Z]+)?\/[ReleaseDebug]+)\)', stdout)
-    assert len(ver_str) == 1    # ['WindowsPerf ver. 2.5.1 (4153c04e/Release)']
+    record_property("wperf_version_str", ver_str)
 
+    assert len(ver_str) == 1    # ['WindowsPerf ver. 2.5.1 (4153c04e/Release)']
     assert b'WOA profiling with performance counters' in stdout
     assert b'Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues' in stdout
     assert b'Use --help for help.' in stdout

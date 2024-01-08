@@ -30,6 +30,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import json
 from common import run_command, is_json, check_if_file_exists
 
 ### Test cases
@@ -40,11 +41,24 @@ def test_wperf_wrong_argument():
     stdout, _ = run_command(cmd.split())
     assert b'unexpected arg' in stdout
 
-def test_wperf_version_json():
+def test_wperf_version_json(record_property):
     """ Test `wperf --version` JSON output  """
     cmd = 'wperf --version --json'
     stdout, _ = run_command(cmd.split())
     assert is_json(stdout)
+
+    json_output = json.loads(stdout)
+
+    for w in json_output["Version"]:
+        assert "Component" in w
+        assert "Version" in w
+        assert "GitVer" in w
+
+        component = w["Component"]
+        version = w["Version"]
+        gitver = w["GitVer"]
+        record_property(f"{component}_version", version)
+        record_property(f"{component}_gitver", gitver)
 
 def test_wperf_version_json_file_output_exists(tmp_path):
     """ Test `wperf --version` JSON output to file"""
