@@ -36,7 +36,6 @@
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
-#pragma alloc_text (PAGE, WindowsPerfTimerCreate)
 #endif
 
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
