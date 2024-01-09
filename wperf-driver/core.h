@@ -30,7 +30,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "wperf-common\macros.h"
-#include "pmu.h"
 
 #define ARMV8_PMCR_MASK         0x3f
 #define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
