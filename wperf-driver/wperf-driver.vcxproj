@@ -146,7 +146,6 @@
     <ClInclude Include="spe.h" />
     <ClInclude Include="sysregs.h" />
     <ClInclude Include="trace.h" />
-    <ClInclude Include="..\wperf\utils.h" />
     <ClInclude Include="utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
