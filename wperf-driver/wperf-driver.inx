@@ -68,9 +68,9 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 ;*****************************************
 
 [Manufacturer]
-%StdMfg%=Standard,NT$ARCH$
+%StdMfg%=Standard,ntarm64.10.0...22000
 
-[Standard.NT$ARCH$]
+[Standard.ntarm64.10.0...22000]
 %WPERFDRIVER.DeviceDesc%=WPERFDRIVER_Device, Root\WPERFDRIVER
 
 [WPERFDRIVER_Device.NT]
