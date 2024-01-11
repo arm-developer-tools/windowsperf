@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <atlbase.h>
 
 #include "exception.h"
 #include "wperf-common\macros.h"
@@ -276,6 +277,7 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
     // Free DIA COM
     DiaSymbol->Release();
     DiaSession->Release();
+    DiaDataSource->Release();
     CoUninitialize();
 }
 
@@ -290,53 +292,56 @@ void read_function_lines(FuncSymDesc& funcSymDesc, IDiaSymbol* pSymbol, IDiaSess
     pSymbol->get_length(&length);
     if (isect != 0 && length > 0)
     {
-        IDiaEnumLineNumbers* pLines;
+        CComPtr<IDiaEnumLineNumbers> pLines;
         if (SUCCEEDED(pSession->findLinesByAddr(
             isect,
             offset,
             static_cast<DWORD>(length),
             &pLines)))
         {
-            IDiaLineNumber* pLine;
-            DWORD celt = 0;
-
-            while (SUCCEEDED(pLines->Next(1, &pLine, &celt)) && celt == 1)
+            LONG enumCount = 0;
+            if (SUCCEEDED(pLines->get_Count(&enumCount)))
             {
-                DWORD offset_;
-                DWORD seg;
-                DWORD linenum;
-                DWORD colnum;
-                DWORD block_length;
-                DWORD rva;
-                BOOL isStatement = false;
-                IDiaSymbol* pComp;
-                IDiaSourceFile* pSrc;
-                BSTR fName;
-                ULONGLONG addr;
+                for (auto i = 0; i < enumCount; i++)
+                {
+                    CComPtr<IDiaLineNumber> pLine;
+                    if (SUCCEEDED(pLines->Item(i, &pLine)))
+                    {
+                        DWORD offset_ = 0;
+                        DWORD seg = 0;
+                        DWORD linenum = 0;
+                        DWORD colnum = 0;
+                        DWORD block_length = 0;
+                        DWORD rva = 0;
+                        BOOL isStatement = false;
+                        CComPtr<IDiaSourceFile> pSrc;
+                        BSTR fName;
+                        ULONGLONG addr = 0;
 
-                pLine->get_compiland(&pComp);
-                pLine->get_sourceFile(&pSrc);
-                pLine->get_addressSection(&seg);
-                pLine->get_addressOffset(&offset_);
-                pLine->get_lineNumber(&linenum);
-                pLine->get_columnNumber(&colnum);
-                pLine->get_virtualAddress(&addr);
-                pLine->get_length(&block_length);
-                pLine->get_relativeVirtualAddress(&rva);
-                pLine->get_statement(&isStatement);
+                        pLine->get_sourceFile(&pSrc);
+                        pLine->get_addressSection(&seg);
+                        pLine->get_addressOffset(&offset_);
+                        pLine->get_lineNumber(&linenum);
+                        pLine->get_columnNumber(&colnum);
+                        pLine->get_virtualAddress(&addr);
+                        pLine->get_length(&block_length);
+                        pLine->get_relativeVirtualAddress(&rva);
+                        pLine->get_statement(&isStatement);
 
-                pSrc->get_fileName(&fName);
+                        pSrc->get_fileName(&fName);
 
-                funcSymDesc.lines.push_back(LineNumberDesc{
-                    std::wstring(fName),
-                    linenum,
-                    colnum,
-                    isStatement,
-                    seg,
-                    offset_,
-                    block_length,
-                    rva,
-                    addr });
+                        funcSymDesc.lines.push_back(LineNumberDesc{
+                            std::wstring(fName),
+                            linenum,
+                            colnum,
+                            isStatement,
+                            seg,
+                            offset_,
+                            block_length,
+                            rva,
+                            addr });
+                    }
+                }
             }
         }
     }
