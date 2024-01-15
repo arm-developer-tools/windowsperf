@@ -44,12 +44,14 @@
 extern "C" {
 #endif
 
+#define MAX_GITVER_SIZE 32
+
 typedef struct _VERSION_INFO
 {
     unsigned int major;
     unsigned int minor;
     unsigned int patch;
-    const wchar_t* gitver;
+    wchar_t gitver[MAX_GITVER_SIZE];
 } VERSION_INFO, *PVERSION_INFO;
 
 #define CORE_EVT (1 << 0) // Core PMU event

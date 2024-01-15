@@ -28,6 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <wchar.h>
 #include "wperf-lib.h"
 #include "config.h"
 #include "exception.h"
@@ -157,7 +158,7 @@ extern "C" bool wperf_driver_version(PVERSION_INFO driver_ver)
         driver_ver->major = version.major;
         driver_ver->minor = version.minor;
         driver_ver->patch = version.patch;
-        driver_ver->gitver = std::wstring(version.gitver).c_str();
+        wcsncpy_s(driver_ver->gitver, version.gitver, MAX_GITVER_SIZE);
     }
     catch (...)
     {
@@ -178,7 +179,7 @@ extern "C" bool wperf_version(PVERSION_INFO wperf_ver)
     wperf_ver->major = MAJOR;
     wperf_ver->minor = MINOR;
     wperf_ver->patch = PATCH;
-    wperf_ver->gitver = WPERF_GIT_VER_STR;
+    wcsncpy_s(wperf_ver->gitver, WPERF_GIT_VER_STR, MAX_GITVER_SIZE);
 
     return true;
 }
