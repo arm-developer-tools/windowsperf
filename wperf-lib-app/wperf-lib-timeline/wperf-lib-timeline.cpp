@@ -92,11 +92,12 @@ int wmain(int argc, const wchar_t *argv[])
         return 1;
     }
 
-    if (!wperf_init() && !wperf_set_verbose(true))
+    if (!wperf_init())
     {
         printf("failed to init wperf\n");
         return 1;
     }
+    wperf_set_verbose(true);
 
     uint8_t cores[] = {args.core};
     const wchar_t *metric_events[] = {args.metric.c_str()};
