@@ -1,10 +1,25 @@
-# wperf functional testing
+# WindowsPerf regression testing
 
 [[_TOC_]]
 
 # Introduction
 
 This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md). Here you can also find `stress.ps1` a PowerShell script to stress test the driver.
+
+Use `pytest` command in `windowsperf\wperf-scripts\tests\` directory to run all regression tests, see example below:
+```
+>pytest
+================================ test session starts =====================================
+platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
+rootdir: C:\Users\$USER\Desktop\wperf\merge-request\3.2.2, configfile: pytest.ini
+collected 201 items
+
+wperf_cli_common_test.py ....                                                       [  1%]
+wperf_cli_config_test.py .....                                                      [  4%]
+...
+
+======================== 201 passed in 607.65s (0:10:07) =================================
+```
 
 ## Testing prerequisites
 
@@ -19,13 +34,30 @@ This set of Python scripts is using [pytest](https://docs.pytest.org/) library t
 * Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` submodule is pulled with git.
   * How to pull submodule: On init run the following command: `git submodule update --init --recursive` from within the git repo directory, this will pull all latest including submodules. Or you can clone submodules directly using `git clone --recurse-submodules`.
 
-### ustress framework test bench
+## ustress framework test bench
 
 We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests?ref_type=heads). It allows users to build, execute `ustress` micro-benchmarks and track with `wperf` timeline specified metrics.
 
-#### Build dependencies
+Note: `ustress` supports various `neoverse` CPU platforms only!
 
-* MSVC cross/native arm64 build environment, see `vcvarsall.bat`. See configuration needed to build `ustress` tests:
+### ustress build dependencies
+
+WindowsPerf `ustress` test bench will build `ustress` from sources. It will produce `ustress` micro-benchmarks executables using below dependencies.
+To build `ustress` from sources you will need `MSVC cross/native arm64 build environment` with clang toolchain, and  `make` plus `tr` to drive `ustress` Makefile.
+
+Note: when you run WindowsPerf test bench with `pytest` command, script [wperf_cli_ustress_bench_test.py](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/wperf_cli_ustress_bench_test.py?ref_type=heads) will be responsible for building `ustress`. Tests in this script will be skipped if your AMR64 host platform is not supported. Currently `ustress` supports various `neoverse` platforms.
+
+Note: If your ARM64 host platform is not supported you will see list of `ustress` skipped tests with assert warning.
+```
+=========================== short test summary info ===========================
+SKIPPED [1] wperf_cli_ustress_bench_test.py:109: skipping as ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_record_test.py:104: skipping as ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_wperf_lib_timeline_test.py:107: skipping as ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:107: skipping as ustress do not support CPU=ARMV8_A
+```
+
+### List of all build dependencies for `ustress` build:
+- MSVC cross/native arm64 build environment, see `vcvarsall.bat`. See configuration needed to build `ustress` tests:
 ```
 > %comspec% /k "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
 **********************************************************************
@@ -35,11 +67,13 @@ We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-soluti
 [vcvarsall.bat] Environment initialized for: 'arm64
 ```
 
-* GNU Make 3.x - ustress Makefile requires it. Download "complete package" here: https://gnuwin32.sourceforge.net/packages/make.htm
-* GNU tr - ustress Makefile internals requires it. Download "complete package" here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
-* clang targeting `aarch64-pc-windows-msvc`.
-  * Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
-  * install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
+- GNU Make 3.x - ustress Makefile requires it.
+  - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/make.htm
+- GNU tr - ustress Makefile internals requires it.
+  - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
+- clang targeting `aarch64-pc-windows-msvc`.
+  - Go to MSVC installer and install: Modify -> Individual Components -> search "clang".
+  - install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
 
 You should be able to verify if your dependencies are correct by few simple checks:
 
@@ -71,7 +105,7 @@ Thread model: posix
 InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\ARM64\bin
 ```
 
-#### Example: How to build ustress from command line for neoverse-n1 CPU
+### Example: How to build ustress from command line for neoverse-n1 CPU
 
 **Note**: Below steps require clang targeting `aarch64-pc-windows-msvc`. See `Build dependencies` chapter for more details.
 
@@ -81,7 +115,7 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 > make CPU=NEOVERSE-N1
 ```
 
-#### See merge request documentation
+### See merge request documentation
 * [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
 * !327+, !330+ and !339+.
 
@@ -96,6 +130,8 @@ In below test directory we've added locally `wperf.exe`.
 ```
 
 ### Test execution
+
+Below you can see example regression test pass report:
 
 ```
 >pytest
@@ -125,15 +161,15 @@ SKIPPED [1] wperf_lib_app_test.py:44: Can not run wperf-lib-app.exe
 ===================== 142 passed, 1 skipped in 237.56s (0:03:57) ==================
 ```
 
-## Stress testing
+## WindowsPerf stress testing script
 
-Having properly setup the Python unit tests using the instructions above all you need to do is to run 
+Having properly setup the Python unit tests using the instructions above all you need to do is to run:
 
 ```
 >stress.ps1 
 ```
 
-The default number of cycles is 1. You can change that using the first command line argument, so if you want to run it 5 times just type
+The default number of cycles is 1. You can change that using the first command line argument, so if you want to run it 5 times just type:
 
 ```
 >stress.ps1 5
