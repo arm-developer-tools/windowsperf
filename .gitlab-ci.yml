@@ -80,6 +80,10 @@ test_python:
   needs:
     - job: build
       artifacts: true
+  artifacts:
+    when: always
+    reports:
+      junit: test_result.xml
   script:
       - >
         $env:PATH += ";C:\wenv\arm64\python\tools";
@@ -89,7 +93,7 @@ test_python:
         cd c:\ci\$CI_JOB_ID;
         $env:PATH += ";C:\ci\$CI_JOB_ID";
         python -m pip install pytest;
-        cd tests;python -m pytest --maxfail=1;
+        cd tests;python -m pytest --maxfail=1 --junitxml=$MPATH\test_result.xml;
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_python)/i'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
