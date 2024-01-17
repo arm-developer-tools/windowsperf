@@ -54,6 +54,10 @@ build:
       - wperf-driver/ARM64/Release/wperf-driver
       - wperf-driver/ARM64/Release/wperf-driver.cer
       - wperf-test/ARM64/Release/wperf-test.dll
+      - wperf-driver/ARM64/Release/wperf-driver.pdb
+      - wperf-lib/wperf-lib.h
+      - wperf-lib/ARM64/Release/wperf-lib.dll
+      - wperf-lib/ARM64/Release/wperf-lib.lib
     expire_in: 60 min
   rules:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -109,10 +113,14 @@ archive:
     - >
       mkdir release;
       mkdir release/wperf-driver;
+      mkdir release/lib;
       cp wperf/ARM64/Release/wperf.exe release;
       cp wperf-driver/ARM64/Release/wperf-driver/* release/wperf-driver;
       cp wperf-driver/ARM64/Release/wperf-driver.pdb release/wperf-driver;
       cp wperf-devgen/ARM64/Release/wperf-devgen.exe release;
+      cp wperf-lib/wperf-lib.h release/lib;
+      cp wperf-lib/ARM64/Release/wperf-lib.dll release/lib;
+      cp wperf-lib/ARM64/Release/wperf-lib.lib release/lib;
     - >
       $env:PATH += ";C:\wenv\arm64\python\tools";
       cp ci/ddf.py release;
