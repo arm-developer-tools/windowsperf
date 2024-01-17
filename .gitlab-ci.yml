@@ -117,7 +117,7 @@ archive:
       cp wperf/ARM64/Release/wperf.exe release;
       cp wperf-driver/ARM64/Release/wperf-driver/* release/wperf-driver;
       cp wperf-driver/ARM64/Release/wperf-driver.pdb release/wperf-driver;
-      cp wperf-devgen/ARM64/Release/wperf-devgen.exe release;
+      cp wperf-devgen/ARM64/Release/wperf-devgen.exe release/wperf-driver;
       cp wperf-lib/wperf-lib.h release/lib;
       cp wperf-lib/ARM64/Release/wperf-lib.dll release/lib;
       cp wperf-lib/ARM64/Release/wperf-lib.lib release/lib;
