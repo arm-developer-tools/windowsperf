@@ -43,7 +43,7 @@ This is ustress test bench build script. It contains all functions needed to:
 # Build dependencies
 
 * MSVC cross/native arm64 build environment, see `vcvarsall.bat`.
-* GNU Make 3.x - ustress Makefile requires it. Download "complete package"
+* GNU Make 3.81 - ustress Makefile requires it. Download "complete package"
   here: https://gnuwin32.sourceforge.net/packages/make.htm
 * GNU tr - ustress Makefile internals requires it. Download "complete package"
   here: https://gnuwin32.sourceforge.net/packages/coreutils.htm

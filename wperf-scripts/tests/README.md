@@ -67,8 +67,9 @@ SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:107: skipping as ustress do not 
 [vcvarsall.bat] Environment initialized for: 'arm64
 ```
 
-- GNU Make 3.x - ustress Makefile requires it.
-  - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/make.htm
+- GNU Make 3.81 - ustress Makefile requires it.
+  - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/make.htm or
+  - install it from command line with `winget install GnuWin32.Make` command.
 - GNU tr - ustress Makefile internals requires it.
   - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
 - clang targeting `aarch64-pc-windows-msvc`.
