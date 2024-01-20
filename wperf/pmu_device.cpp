@@ -179,6 +179,8 @@ void pmu_device::init()
 {
     m_device_handle = init_device();
 
+    lock();
+
     struct hw_cfg hw_cfg;
     query_hw_cfg(hw_cfg);
 
@@ -464,6 +466,7 @@ void pmu_device::timeline_close()
 pmu_device::~pmu_device()
 {
     timeline_close();
+    unlock();
     CloseHandle(m_device_handle);
 }
 
@@ -547,6 +550,42 @@ struct pmu_sample_summary
     uint64_t sample_generated;
     uint64_t sample_dropped;
 };
+
+void  pmu_device::lock()
+{
+    struct lock_request req;
+
+    req.action = PMU_CTL_LOCK_ACQUIRE;
+    req.flag = LOCK_GET;
+    DWORD resplen = 0;
+    enum status_flag sts_flag = STS_UNKNOWN;
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_LOCK_ACQUIRE, &req, sizeof(lock_request), &sts_flag, sizeof(enum status_flag), &resplen);
+    if (!status)
+        throw fatal_exception("PMU_CTL_LOCK_ACQUIRE failed");
+
+    /* We are using `status_flag` to return to user-space lock attempt result when
+       user tries to lock the driver.
+       Please note that when user after failed attempt to lock send another IOCTL,
+       the driver will set status `STATUS_INVALID_DEVICE_STATE ` internally and
+       user-space will receive `ERROR_BAD_COMMAND` (22).
+    */
+    if (sts_flag != STS_LOCK_AQUIRED)
+        throw locked_exception("PMU_CTL_LOCK_ACQUIRE already locked");
+}
+
+void pmu_device::unlock()
+{
+    struct lock_request req;
+
+    req.action = PMU_CTL_LOCK_RELEASE;
+    req.flag = LOCK_RELEASE;
+    DWORD resplen = 0;
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_LOCK_RELEASE, &req, sizeof(lock_request), NULL, 0, &resplen);
+    if (!status)
+        throw fatal_exception("PMU_CTL_LOCK_RELEASE failed");
+}
 
 void pmu_device::stop_sample()
 {

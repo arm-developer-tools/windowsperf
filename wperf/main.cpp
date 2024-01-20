@@ -88,6 +88,13 @@ wmain(
     try {
         pmu_device.init();
     }
+    catch (const locked_exception&)
+    {
+        m_out.GetErrorOutputStream() << L"warning: other WindowsPerf process acquired the wperf-driver." << std::endl;
+        m_out.GetErrorOutputStream() << L"Operation canceled!" << std::endl;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
+    }
     catch (std::exception&) {
         exit_code = EXIT_FAILURE;
         goto clean_exit;

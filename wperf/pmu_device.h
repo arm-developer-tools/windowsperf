@@ -131,6 +131,10 @@ public:
     void stop_sample();
     // Sampling
 
+    void lock();
+    void unlock();
+
+
     // Timeline
     void timeline_init();
     void timeline_close();

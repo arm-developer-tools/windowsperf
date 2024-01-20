@@ -81,6 +81,7 @@ CoreInfo* core_info = NULL;
 // See comment on CoreCounterReset() for an explanation.
 UINT64* last_fpc_read = NULL;
 extern KEVENT sync_reset_dpc;
+LOCK_STATUS   current_status;
 
 enum
 {
@@ -268,6 +269,29 @@ VOID WindowsPerfDeviceUnload()
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
 }
 
+#ifdef DBG
+void FileCreate(
+    WDFDEVICE Device,
+    WDFREQUEST Request,
+    WDFFILEOBJECT FileObject
+)
+{
+    UNREFERENCED_PARAMETER(Device);
+    UNREFERENCED_PARAMETER(Request);
+    UNREFERENCED_PARAMETER(FileObject);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "=====================>FileCreate\n"));
+
+    WdfRequestComplete(Request, STATUS_SUCCESS);
+    return;
+}
+void FileClose(
+    WDFFILEOBJECT FileObject
+)
+{
+    UNREFERENCED_PARAMETER(FileObject);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<======================FileCose\n"));
+}
+#endif
 
 //
 // Port End
@@ -291,6 +315,8 @@ WindowsPerfDeviceCreate(
     WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
     WDFDEVICE device;
     NTSTATUS status;
+    WDF_FILEOBJECT_CONFIG FileObjectConfig;
+    
 
     PAGED_CODE();
 
@@ -309,12 +335,6 @@ WindowsPerfDeviceCreate(
 #pragma warning(suppress: 28024)
     pnpPowerCallbacks.EvtDeviceSelfManagedIoRestart = WindowsPerfEvtDeviceSelfManagedIoStart;
 
-    //
-    // Set exclusive to TRUE so that no more than one app can talk to the
-    // control device at any time.
-    //
-    WdfDeviceInitSetExclusive(DeviceInit, TRUE);
-
     WdfDeviceInitSetPowerPageable(DeviceInit);
 
     //
@@ -322,6 +342,22 @@ WindowsPerfDeviceCreate(
     // later in SotwareInit.
     //
     WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
+
+    
+    // Register for file object creation, we dont need callbacks to file open and close etc
+#ifdef DBG
+    WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, FileCreate, FileClose, WDF_NO_EVENT_CALLBACK);  
+#else
+    WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, WDF_NO_EVENT_CALLBACK, WDF_NO_EVENT_CALLBACK, WDF_NO_EVENT_CALLBACK);
+#endif
+
+   
+    // FileObjectConfig.FileObjectClass = WdfFileObjectWdfCanUseFsContext;  by default, which causes file object creation
+   // WDF_OBJECT_ATTRIBUTES oa;   we dont need any of these attributes setting, 
+   // WDF_OBJECT_ATTRIBUTES_INIT(&oa);
+
+    WdfDeviceInitSetFileObjectConfig(DeviceInit, &FileObjectConfig, WDF_NO_OBJECT_ATTRIBUTES);
+    
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
@@ -353,6 +389,7 @@ WindowsPerfDeviceCreate(
             // Initialize the I/O Package and any Queues
             //
             status = WindowsPerfQueueInitialize(device);
+
         }
     }
 
@@ -588,6 +625,12 @@ WindowsPerfDeviceCreate(
     //
     // Port End
     //
+
+
+    current_status.file_object = 0;
+    current_status.ioctl = 0;
+    current_status.status = STS_IDLE;
+    KeInitializeSpinLock(&current_status.sts_lock);
 
     //  and finally do a reset on the hardware to make sure it is in a known state.  The reset dpc sets the event, so we have 
     // to call this after the event is initialised of couse

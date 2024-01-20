@@ -69,6 +69,7 @@ static UINT16 armv8_arch_core_events[] =
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
+extern LOCK_STATUS   current_status;
 
 
 // must sync with enum pmu_ctl_action
@@ -183,6 +184,7 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
 }
 
 NTSTATUS deviceControl(
+    _In_        WDFFILEOBJECT  file_object,
     _In_        ULONG   IoCtlCode,
     _In_        PVOID   pInBuffer,
     _In_        ULONG   InBufSize,
@@ -219,10 +221,82 @@ NTSTATUS deviceControl(
 
     switch (IoCtlCode)
     {
+    case IOCTL_PMU_CTL_LOCK_ACQUIRE:
+    {
+        if (InBufSize != sizeof(struct lock_request))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_LOCK_ACQUIRE\n", InBufSize));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE for file object %p\n", file_object));
+
+        struct lock_request* in = (struct lock_request*)pInBuffer;
+
+        enum status_flag* out = (enum status_flag*)pOutBuffer;
+        *out = STS_UNKNOWN;
+        if (in->flag == LOCK_GET_FORCE)
+        {
+            *out = STS_LOCK_AQUIRED;
+            SetMeBusyForce(IoCtlCode, file_object);
+        }
+        else if (in->flag == LOCK_GET)
+        {
+            if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
+                *out = STS_LOCK_AQUIRED;
+            else
+                *out = STS_BUSY;
+        }
+        else
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flag %d for PMU_CTL_LOCK_ACQUIRE\n", in->flag));
+            status = STATUS_INVALID_PARAMETER;
+        }
+
+        *outputSize = sizeof(enum status_flag);
+        break;
+    }
+
+    case IOCTL_PMU_CTL_LOCK_RELEASE:
+    {
+        if (InBufSize != sizeof(struct lock_request))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_LOCK_RELEASE\n", InBufSize));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_RELEASE for file_object %p\n", file_object));
+
+        struct lock_request* in = (struct lock_request*)pInBuffer;
+
+        if (in->flag == LOCK_RELEASE)
+        {
+            if (!SetMeIdle(file_object)) // returns fialure if this process doesnt own the lock 
+            {
+                status = STATUS_INVALID_DEVICE_STATE;
+            }
+        }
+        else
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flag %d for PMU_CTL_LOCK_RELEASE\n", in->flag));
+            status = STATUS_INVALID_PARAMETER;
+        }
+        break;
+    }
+
     case IOCTL_PMU_CTL_SAMPLE_START:
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
+
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
 
         if (InBufSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -277,6 +351,14 @@ NTSTATUS deviceControl(
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
+
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
 
         if (InBufSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -339,6 +421,15 @@ NTSTATUS deviceControl(
         CoreInfo* core = core_info + core_idx;
         KIRQL oldIrql;
 
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+
+
         if (InBufSize != sizeof(struct PMUCtlGetSampleHdr))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for action %d\n", InBufSize, action));
@@ -368,13 +459,20 @@ NTSTATUS deviceControl(
             }
         }
         KeReleaseSpinLock(&core->SampleLock, oldIrql);
-
         break;
     }
 
 
     case IOCTL_PMU_CTL_SAMPLE_SET_SRC:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_SAMPLE_SET_SRC\n"));
 
         PMUSampleSetSrcHdr* sample_req = (PMUSampleSetSrcHdr*)pInBuffer;
@@ -421,6 +519,14 @@ NTSTATUS deviceControl(
         UINT32 ctl_flags = ctl_req->flags;
         size_t cores_count = ctl_req->cores_idx.cores_count;
         int dmc_core_idx = ALL_CORE;
+
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
 
         if (InBufSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -648,6 +754,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_PMU_CTL_QUERY_HW_CFG:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         if (InBufSize != sizeof(enum pmu_ctl_action))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_HW_CFG\n", InBufSize));
@@ -683,6 +796,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_PMU_CTL_QUERY_SUPP_EVENTS:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         if (InBufSize != sizeof(enum pmu_ctl_action))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_SUPP_EVENTS\n", InBufSize));
@@ -778,6 +898,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_PMU_CTL_QUERY_VERSION:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         if (InBufSize != sizeof(struct pmu_ctl_ver_hdr))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_VERSION\n",
@@ -788,7 +915,7 @@ NTSTATUS deviceControl(
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: QUERY_VERSION\n"));
 
-        struct pmu_ctl_ver_hdr* ctl_req = (struct pmu_ctl_ver_hdr*)pOutBuffer;
+        struct pmu_ctl_ver_hdr* ctl_req = (struct pmu_ctl_ver_hdr*)pInBuffer;
         if (ctl_req->version.major != MAJOR || ctl_req->version.minor != MINOR
             || ctl_req->version.patch != PATCH)
         {
@@ -801,7 +928,7 @@ NTSTATUS deviceControl(
                 ctl_req->version.patch));
         }
 
-        struct version_info* ver_info = (struct version_info*)pInBuffer;
+        struct version_info* ver_info = (struct version_info*)pOutBuffer;
         ver_info->major = MAJOR;
         ver_info->minor = MINOR;
         ver_info->patch = PATCH;
@@ -820,6 +947,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_PMU_CTL_ASSIGN_EVENTS:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_ASSIGN_EVENTS\n"));
 
         struct pmu_ctl_evt_assign_hdr* ctl_req = (struct pmu_ctl_evt_assign_hdr*)pInBuffer;
@@ -924,6 +1058,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_PMU_CTL_READ_COUNTING:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
         UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This query supports only 1 core
@@ -1007,6 +1148,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_DSU_CTL_INIT:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         struct dsu_ctl_hdr* ctl_req = (struct dsu_ctl_hdr*)pInBuffer;
 
         if (InBufSize != sizeof(struct dsu_ctl_hdr))
@@ -1026,6 +1174,7 @@ NTSTATUS deviceControl(
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "dsu pmu event mask 0x%x, 0x%x\n", dsu_evt_mask_lo, dsu_evt_mask_hi));
 
         struct dsu_cfg* out = (struct dsu_cfg*)pOutBuffer;
+
         out->fpc_num = dsu_numFPC;
         out->gpc_num = dsu_numGPC;
 
@@ -1041,6 +1190,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_DSU_CTL_READ_COUNTING:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
         UINT8 core_idx = ctl_req->cores_idx.cores_no[0];    // This query supports only 1 core
@@ -1096,6 +1252,7 @@ NTSTATUS deviceControl(
         }
 
         outputSizeReturned = 0;
+
         for (UINT32 i = core_base; i < core_end; i += dsu_sizeCluster)
         {
             CoreInfo* core = &core_info[i];
@@ -1131,6 +1288,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_DMC_CTL_INIT:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         struct dmc_ctl_hdr* ctl_req = (struct dmc_ctl_hdr*)pInBuffer;
         ULONG expected_size;
 
@@ -1153,7 +1317,6 @@ NTSTATUS deviceControl(
                 status = STATUS_INVALID_PARAMETER;
                 break;
             }
-
 
             for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
             {
@@ -1195,6 +1358,13 @@ NTSTATUS deviceControl(
 
     case IOCTL_DMC_CTL_READ_COUNTING:
     {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         UINT8 dmc_idx = ctl_req->dmc_idx;
 
@@ -1243,6 +1413,7 @@ NTSTATUS deviceControl(
         }
 
         outputSizeReturned = 0;
+
         for (UINT8 i = dmc_ch_base; i < dmc_ch_end; i++)
         {
             struct dmc_desc* dmc = dmc_array.dmcs + i;

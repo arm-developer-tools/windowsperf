@@ -46,6 +46,14 @@ enum evt_class
     EVT_CLASS_NUM,
 };
 
+enum status_flag            // Status of the driver lock
+{
+    STS_IDLE,               // When no process has the driver locked aka "the default state".
+    STS_BUSY,               // When another process already has the driver lock.
+    STS_LOCK_AQUIRED,       // When the calling process has successfully acquired the driver lock.
+    STS_UNKNOWN             // Unknow status of lock/unlock scenario.
+};
+
 struct evt_hdr
 {
     enum evt_class evt_class;
@@ -99,6 +107,8 @@ enum pmu_ctl_action
 	PMU_CTL_SAMPLE_START,
 	PMU_CTL_SAMPLE_STOP,
 	PMU_CTL_SAMPLE_GET,
+    PMU_CTL_LOCK_ACQUIRE,
+	PMU_CTL_LOCK_RELEASE,
 };
 
 
@@ -118,8 +128,23 @@ enum pmu_ctl_action
 #define IOCTL_PMU_CTL_SAMPLE_START 	           CTL_CODE(WPERF_TYPE,  PMU_CTL_SAMPLE_START , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
 #define IOCTL_PMU_CTL_SAMPLE_STOP 	           CTL_CODE(WPERF_TYPE,  PMU_CTL_SAMPLE_STOP , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
 #define IOCTL_PMU_CTL_SAMPLE_GET 	               CTL_CODE(WPERF_TYPE,  PMU_CTL_SAMPLE_GET , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
+#define IOCTL_PMU_CTL_LOCK_ACQUIRE	           CTL_CODE(WPERF_TYPE,  PMU_CTL_LOCK_ACQUIRE , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
+#define IOCTL_PMU_CTL_LOCK_RELEASE 	           CTL_CODE(WPERF_TYPE,  PMU_CTL_LOCK_RELEASE , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
 
 
+
+enum lock_flag
+{
+    LOCK_GET,
+    LOCK_GET_FORCE,
+    LOCK_RELEASE,
+};
+
+struct lock_request
+{
+    enum pmu_ctl_action action;
+    enum lock_flag flag;
+};
 
 typedef struct
 {

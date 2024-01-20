@@ -39,3 +39,13 @@ public:
 private:
     const char* exception_msg;
 };
+
+// We throw this exception when we fail to acquire driver resources
+class locked_exception : public std::exception
+{
+public:
+    locked_exception(const char* msg) : exception_msg(msg) {}
+    virtual const char* what() const throw() { return exception_msg; }
+private:
+    const char* exception_msg;
+};

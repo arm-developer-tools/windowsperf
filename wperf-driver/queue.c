@@ -166,6 +166,7 @@ WindowsPerfEvtDeviceControl(
     WDFMEMORY memory;
     size_t bufsize = 0;
     PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
+    WDFFILEOBJECT  file_object = WdfRequestGetFileObject(Request);
 
     queueContext->CurrentRequest = NULL;
     queueContext->inBuffer = NULL;
@@ -280,7 +281,7 @@ WindowsPerfEvtDeviceControl(
     // Port Begin
     //
     ULONG outputDataSize;
-    Status = deviceControl(IoControlCode, queueContext->inBuffer, (ULONG)InputBufferLength, queueContext->outBuffer, (ULONG)OutputBufferLength, &outputDataSize, queueContext);
+    Status = deviceControl(file_object, IoControlCode, queueContext->inBuffer, (ULONG)InputBufferLength, queueContext->outBuffer, (ULONG)OutputBufferLength, &outputDataSize, queueContext);
     if (!NT_SUCCESS(Status)) {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));
         //WdfVerifierDbgBreakPoint();
