@@ -466,7 +466,15 @@ void pmu_device::timeline_close()
 pmu_device::~pmu_device()
 {
     timeline_close();
-    unlock();
+    try
+    {
+        unlock();
+    }
+    catch (const std::exception& e)
+    {
+        std::wstring msg = std::wstring(e.what(), e.what() + strlen(e.what()));
+        m_out.GetErrorOutputStream() << L"error:" << msg << std::endl;
+    }
     CloseHandle(m_device_handle);
 }
 
@@ -572,19 +580,33 @@ void  pmu_device::lock()
     */
     if (sts_flag != STS_LOCK_AQUIRED)
         throw locked_exception("PMU_CTL_LOCK_ACQUIRE already locked");
+
+    lock_successful = true;
 }
 
 void pmu_device::unlock()
 {
+    if (!lock_successful)   // Attempt to unlock only if we've successfully locked the driver
+        return;
+
     struct lock_request req;
 
     req.action = PMU_CTL_LOCK_RELEASE;
     req.flag = LOCK_RELEASE;
     DWORD resplen = 0;
+    enum status_flag sts_flag = STS_UNKNOWN;
 
-    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_LOCK_RELEASE, &req, sizeof(lock_request), NULL, 0, &resplen);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_LOCK_RELEASE, &req, sizeof(lock_request), &sts_flag, sizeof(enum status_flag), &resplen);
     if (!status)
         throw fatal_exception("PMU_CTL_LOCK_RELEASE failed");
+
+    /* We are using `status_flag` to return to user-space lock release attempt result
+       when user tries to release from lock the driver.
+       This scenario most probably tells us that for some reason we've failed to release
+       after lock.
+    */
+    if (sts_flag != STS_IDLE)
+        throw locked_exception("PMU_CTL_LOCK_RELEASE can't release");
 }
 
 void pmu_device::stop_sample()

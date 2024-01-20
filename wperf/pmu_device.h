@@ -133,7 +133,7 @@ public:
 
     void lock();
     void unlock();
-
+    bool lock_successful = false;   // TRUE if lock() was able to acquire driver
 
     // Timeline
     void timeline_init();

@@ -271,18 +271,22 @@ NTSTATUS deviceControl(
 
         struct lock_request* in = (struct lock_request*)pInBuffer;
 
+        enum status_flag* out = (enum status_flag*)pOutBuffer;
+        *out = STS_UNKNOWN;
         if (in->flag == LOCK_RELEASE)
         {
-            if (!SetMeIdle(file_object)) // returns fialure if this process doesnt own the lock 
-            {
-                status = STATUS_INVALID_DEVICE_STATE;
-            }
+            if (SetMeIdle(file_object)) // returns fialure if this process doesnt own the lock 
+                *out = STS_IDLE;    // All went well and we went IDLE
+            else
+                *out = STS_BUSY;    // This is illegal, as we are not IDLE
         }
         else
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flag %d for PMU_CTL_LOCK_RELEASE\n", in->flag));
             status = STATUS_INVALID_PARAMETER;
         }
+
+        *outputSize = sizeof(enum status_flag);
         break;
     }
 
