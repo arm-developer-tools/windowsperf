@@ -179,7 +179,7 @@ void pmu_device::init()
 {
     m_device_handle = init_device();
 
-    lock();
+    lock(do_force_lock);
 
     struct hw_cfg hw_cfg;
     query_hw_cfg(hw_cfg);
@@ -473,7 +473,7 @@ pmu_device::~pmu_device()
     catch (const std::exception& e)
     {
         std::wstring msg = std::wstring(e.what(), e.what() + strlen(e.what()));
-        m_out.GetErrorOutputStream() << L"error:" << msg << std::endl;
+        m_out.GetErrorOutputStream() << L"error: " << msg << std::endl;
     }
     CloseHandle(m_device_handle);
 }
@@ -559,12 +559,12 @@ struct pmu_sample_summary
     uint64_t sample_dropped;
 };
 
-void  pmu_device::lock()
+void  pmu_device::lock(bool force_lock)
 {
     struct lock_request req;
 
     req.action = PMU_CTL_LOCK_ACQUIRE;
-    req.flag = LOCK_GET;
+    req.flag = force_lock ? LOCK_GET_FORCE : LOCK_GET;
     DWORD resplen = 0;
     enum status_flag sts_flag = STS_UNKNOWN;
 
@@ -2660,7 +2660,11 @@ BOOL pmu_device::DeviceAsyncIoControl(
     DEFINE_CUSTOM_IOCTL_RUNTIME(IoControlCode, IoControlCode);
     if (!DeviceIoControl(hDevice, IoControlCode, lpBuffer, nNumberOfBytesToWrite, lpOutBuffer, nOutBufferSize, lpBytesReturned, NULL))
     {
-        WindowsPerfDbgPrint("Error: DeviceIoControl failed: GetLastError=%d\n", GetLastError());
+        auto last_error = GetLastError();
+        if (last_error == ERROR_BAD_COMMAND)
+            throw lock_denied_exception("Received ERROR_BAD_COMMAND, driver status: STATUS_INVALID_DEVICE_STATE");
+
+        WindowsPerfDbgPrint("Error: DeviceIoControl failed: GetLastError=0x%x\n", last_error);
         return FALSE;
     }
     return TRUE;

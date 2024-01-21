@@ -131,9 +131,11 @@ public:
     void stop_sample();
     // Sampling
 
-    void lock();
+    // Locking
+    void lock(bool force_lock = false);
     void unlock();
     bool lock_successful = false;   // TRUE if lock() was able to acquire driver
+    // Locking
 
     // Timeline
     void timeline_init();
@@ -197,6 +199,7 @@ public:
     uint32_t dsu_cluster_num;
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;
+    bool do_force_lock = false;     // Force lock acquire of the driver
     bool do_verbose;
 
     uint8_t gpc_nums[EVT_CLASS_NUM];

@@ -63,6 +63,8 @@ public:
     static void print_help_header();
     static void print_help_prompt();
     static void print_help_usage();
+    static bool is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt);    // Return true if `opt` is in CLI options
+    static bool is_force_lock(const wstr_vec& raw_args);    // Return true if `--force-lock` is in CLI options
 
     bool do_list;
     bool do_count;
@@ -76,6 +78,7 @@ public:
     bool do_test;
     bool do_annotate;
     bool do_disassembly;
+    bool do_force_lock = false;     // Force lock acquire of the driver
     bool do_export_perf_data;
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;

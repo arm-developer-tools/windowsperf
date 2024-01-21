@@ -31,21 +31,33 @@
 
 #include <exception>
 
-class fatal_exception : public std::exception
+// Project's base exception class used to capture errors and business logic flow.
+class wperf_exception : public std::exception
 {
 public:
-    fatal_exception(const char* msg) : exception_msg(msg) {}
+    wperf_exception(const char* msg) : exception_msg(msg) {}
     virtual const char* what() const throw() { return exception_msg; }
 private:
     const char* exception_msg;
 };
 
-// We throw this exception when we fail to acquire driver resources
-class locked_exception : public std::exception
+// We throw this in general CLI / IOCTL error
+class fatal_exception : public wperf_exception
 {
 public:
-    locked_exception(const char* msg) : exception_msg(msg) {}
-    virtual const char* what() const throw() { return exception_msg; }
-private:
-    const char* exception_msg;
+    fatal_exception(const char* msg) : wperf_exception(msg) {}
+};
+
+// We throw this exception when we fail to acquire driver resources
+class locked_exception : public wperf_exception
+{
+public:
+    locked_exception(const char* msg) : wperf_exception(msg) {}
+};
+
+// We throw this exception when driver denies us IOCTL aka someone kicked us with --force-lock.
+class lock_denied_exception : public wperf_exception
+{
+public:
+    lock_denied_exception(const char* msg) : wperf_exception(msg) {}
 };

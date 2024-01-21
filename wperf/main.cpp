@@ -85,6 +85,11 @@ wmain(
 
     LLVMDisassembler disassembler;
 
+    for (int i = 1; i < argc; i++)
+        raw_args.push_back(argv[i]);
+
+    pmu_device.do_force_lock = user_request::is_force_lock(raw_args);
+
     try {
         pmu_device.init();
     }
@@ -95,13 +100,17 @@ wmain(
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
+    catch (const lock_denied_exception&)
+    {
+        m_out.GetErrorOutputStream() << L"warning: other WindowsPerf process hijacked the wperf-driver, see --force-lock." << std::endl;
+        m_out.GetErrorOutputStream() << L"Operation terminated, your data was lost!" << std::endl;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
+    }
     catch (std::exception&) {
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
-
-    for (int i = 1; i < argc; i++)
-        raw_args.push_back(argv[i]);
 
     try
     {
@@ -1048,8 +1057,23 @@ wmain(
                 << IntToDecWideString(printed_sample_freq, 10) << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
         }
     }
+    catch (const lock_denied_exception& e)
+    {
+        m_out.GetErrorOutputStream() << L"warning: other WindowsPerf process hijacked (forced lock) the wperf-driver, see --force-lock." << std::endl;
+        m_out.GetErrorOutputStream() << L"Operation terminated, your data was lost!" << std::endl;
+        if (request.do_verbose)
+            std::cerr << e.what() << std::endl;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
+    }
     catch (fatal_exception& e)
     {
+        std::cerr << e.what() << std::endl;
+        exit_code = EXIT_FAILURE;
+        goto clean_exit;
+    }
+    catch (std::exception& e) {
+        m_out.GetErrorOutputStream() << L"warning: unknown error, see:" << std::endl;
         std::cerr << e.what() << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;

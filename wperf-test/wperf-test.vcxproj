@@ -111,7 +111,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj;user_request.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -134,7 +134,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj;user_request.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -155,7 +155,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj;user_request.obj</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -178,7 +178,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories);;$(SolutionDir)\wperf\$(Platform)\$(Configuration)\;$(SolutionDir)\wperf-lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);utils.obj;pe_file.obj;output.obj;parsers.obj;events.obj;padding.obj;metric.obj;wperf.obj;pmu_device.obj;spe_device.obj;wperf-lib.obj;process_api.obj;config.obj;timeline.obj;perfdata.obj;user_request.obj</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -197,6 +197,7 @@
     <ClCompile Include="wperf-test-padding.cpp" />
     <ClCompile Include="wperf-test-parsers.cpp" />
     <ClCompile Include="wperf-test-pe_file.cpp" />
+    <ClCompile Include="wperf-test-user_request.cpp" />
     <ClCompile Include="wperf-test-utils.cpp" />
     <ClCompile Include="wperf-test-json.cpp" />
     <ClCompile Include="wperf-lib-test-lib.cpp" />

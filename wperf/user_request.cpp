@@ -52,30 +52,30 @@ SYNOPSIS:
     wperf [--version] [--help] [OPTIONS]
 
     wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
-               [--output] [--config]
+               [--output] [--config] [--force-lock]
     wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
                [--output] [--config] -- COMMAND [ARGS]
         Counting mode, for obtaining aggregate counts of occurrences of special
         events.
 
     wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
-                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
+                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
                  [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble]
         Sampling mode, for determining the frequencies of event occurrences
         produced by program locations at the function, basic block, and/or
         instruction levels.
 
     wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
-                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
+                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
                  [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
         Same as sample but also automatically spawns the process and pins it to
         the core specified by `-c`. Process name is defined by COMMAND. User can
         pass verbatim arguments to the process with [ARGS].
 
-    wperf list [-v] [--json]
+    wperf list [-v] [--json] [--force-lock]
         List supported events and metrics. Enable verbose mode for more details.
 
-    wperf test [--json [OPTIONS]
+    wperf test [--json] [OPTIONS]
         Configuration information about driver and application.
 
 OPTIONS:
@@ -148,6 +148,10 @@ OPTIONS:
     --record_spawn_delay
         Set the waiting time, in milliseconds, before reading process data after
         spawning it with `record`.
+
+    --force-lock
+        Force driver to give lock to current `wperf` process, use when you want
+        to interrupt currently executing `wperf` session or to recover from the lock.
 
     -c
         Specify comma separated list of CPU cores to count on, or one CPU to
@@ -258,6 +262,20 @@ user_request::user_request() : do_list{ false }, do_disassembly(false), do_count
     sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
     sample_display_row(50), sample_display_short(true), count_timeline(0),
     count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
+
+bool user_request::is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt)
+{
+    // We will search only before double-dash is present as after "--" WindowsPerf CLI options end!
+    auto last_iter = std::find_if(raw_args.begin(), raw_args.end(),
+        [](const auto& arg) { return arg == std::wstring(L"--"); });
+    return std::count_if(raw_args.begin(), last_iter,
+        [opt](const auto& arg) { return arg == opt; });
+}
+
+bool user_request::is_force_lock(const wstr_vec& raw_args)
+{
+    return is_cli_option_in_args(raw_args, std::wstring(L"--force-lock"));
+}
 
 void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<std::wstring, metric_desc>& builtin_metrics,
@@ -643,6 +661,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         {
             do_disassembly = true;
             do_annotate = true;
+            continue;
+        }
+
+        if (a == L"--force-lock")
+        {
+            do_force_lock = true;
             continue;
         }
 
