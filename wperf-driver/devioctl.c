@@ -317,13 +317,13 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if( !CTRL_FLAG_VALID(ctl_req->flags))
-        {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
-                ctl_req->flags, action));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
+		if (!CTRL_FLAG_VALID(ctl_req->flags))
+		{
+			KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
+				ctl_req->flags, action));
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
@@ -362,7 +362,6 @@ NTSTATUS deviceControl(
             status = STATUS_INVALID_DEVICE_STATE;
             break;
         }
-
 
         if (InBufSize != sizeof(struct pmu_ctl_hdr))
         {
@@ -432,8 +431,6 @@ NTSTATUS deviceControl(
             break;
         }
 
-
-
         if (InBufSize != sizeof(struct PMUCtlGetSampleHdr))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for action %d\n", InBufSize, action));
@@ -475,7 +472,6 @@ NTSTATUS deviceControl(
             status = STATUS_INVALID_DEVICE_STATE;
             break;
         }
-
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_SAMPLE_SET_SRC\n"));
 
@@ -531,7 +527,6 @@ NTSTATUS deviceControl(
             break;
         }
 
-
         if (InBufSize != sizeof(struct pmu_ctl_hdr))
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for action %d\n", InBufSize, action));
@@ -570,12 +565,12 @@ NTSTATUS deviceControl(
         ULONG funcsIdx = (action - PMU_CTL_ACTION_OFFSET);
         const ULONG funcsSize = (ULONG)(sizeof(core_ctl_funcs) / sizeof(core_ctl_funcs[0]));
         
-        if(funcsIdx >= funcsSize)
-        {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_WARNING_LEVEL, "IOCTL: invalid action %d\n", action));
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
+		if (funcsIdx >= funcsSize)
+		{
+			KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_WARNING_LEVEL, "IOCTL: invalid action %d\n", action));
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
 
         if (ctl_flags & CTL_FLAG_CORE)
             core_func = core_ctl_funcs[funcsIdx];

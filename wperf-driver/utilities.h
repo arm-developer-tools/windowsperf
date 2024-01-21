@@ -29,14 +29,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-VOID  update_last_fixed_counter(UINT64 core_idx);
-
+VOID update_last_fixed_counter(UINT64 core_idx);
 VOID core_write_counter(UINT32 counter_idx, __int64 val);
-
-PCHAR     DbgStatusStr(NTSTATUS status);
-PCHAR     GetIoctlStr(ULONG ioctl);
-
-VOID  SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT  file_object);
-BOOLEAN  SetMeBusy(ULONG  ioctl, WDFFILEOBJECT  file_object);
-BOOLEAN  AmILocking(ULONG ioctl, WDFFILEOBJECT  file_object);
-BOOLEAN  SetMeIdle(WDFFILEOBJECT  file_object);
+PCHAR DbgStatusStr(NTSTATUS status);
+PCHAR GetIoctlStr(ULONG ioctl);
+VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN AmILocking(ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeIdle(WDFFILEOBJECT file_object);

@@ -270,26 +270,27 @@ VOID WindowsPerfDeviceUnload()
 }
 
 #ifdef DBG
-void FileCreate(
-    WDFDEVICE Device,
-    WDFREQUEST Request,
-    WDFFILEOBJECT FileObject
+static void FileCreate(
+	WDFDEVICE Device,
+	WDFREQUEST Request,
+	WDFFILEOBJECT FileObject
 )
 {
-    UNREFERENCED_PARAMETER(Device);
-    UNREFERENCED_PARAMETER(Request);
-    UNREFERENCED_PARAMETER(FileObject);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "=====================>FileCreate\n"));
+	UNREFERENCED_PARAMETER(Device);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(FileObject);
+	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "=====================>FileCreate\n"));
 
-    WdfRequestComplete(Request, STATUS_SUCCESS);
-    return;
+	WdfRequestComplete(Request, STATUS_SUCCESS);
+	return;
 }
-void FileClose(
-    WDFFILEOBJECT FileObject
+
+static void FileClose(
+	WDFFILEOBJECT FileObject
 )
 {
-    UNREFERENCED_PARAMETER(FileObject);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<======================FileCose\n"));
+	UNREFERENCED_PARAMETER(FileObject);
+	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<======================FileCose\n"));
 }
 #endif
 
@@ -343,22 +344,15 @@ WindowsPerfDeviceCreate(
     //
     WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
 
-    
-    // Register for file object creation, we dont need callbacks to file open and close etc
 #ifdef DBG
-    WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, FileCreate, FileClose, WDF_NO_EVENT_CALLBACK);  
+    // Register for file object creation, we dont need callbacks to file open and close etc
+    WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, FileCreate, FileClose, WDF_NO_EVENT_CALLBACK);
 #else
     WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, WDF_NO_EVENT_CALLBACK, WDF_NO_EVENT_CALLBACK, WDF_NO_EVENT_CALLBACK);
 #endif
 
-   
-    // FileObjectConfig.FileObjectClass = WdfFileObjectWdfCanUseFsContext;  by default, which causes file object creation
-   // WDF_OBJECT_ATTRIBUTES oa;   we dont need any of these attributes setting, 
-   // WDF_OBJECT_ATTRIBUTES_INIT(&oa);
-
     WdfDeviceInitSetFileObjectConfig(DeviceInit, &FileObjectConfig, WDF_NO_OBJECT_ATTRIBUTES);
     
-
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
@@ -626,7 +620,6 @@ WindowsPerfDeviceCreate(
     // Port End
     //
 
-
     current_status.file_object = 0;
     current_status.ioctl = 0;
     current_status.status = STS_IDLE;
@@ -638,8 +631,6 @@ WindowsPerfDeviceCreate(
     {
         CoreInfo* core = &core_info[i];
         core->timer_round = 0;
-
-
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Calling calling reset dpc in loop, i is %d core index is %lld\n", i, core->idx));
         KeInsertQueueDpc(&core->dpc_reset, (VOID*)numCores, NULL);
     }

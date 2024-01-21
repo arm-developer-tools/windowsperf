@@ -56,15 +56,13 @@ DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_DEVICE_ADD WindowsPerfEvtDeviceAdd;
 EVT_WDF_DRIVER_UNLOAD WindowsPerfEvtWdfDriverUnload;
 
-
 typedef struct _LOCK_STATUS
 {
-    enum status_flag status;
-    ULONG ioctl;
-    KSPIN_LOCK sts_lock;
-    WDFFILEOBJECT  file_object;
-}LOCK_STATUS, * PLOCK_STATUS;
-
+	enum status_flag status;
+	ULONG ioctl;
+	KSPIN_LOCK sts_lock;
+	WDFFILEOBJECT  file_object;
+} LOCK_STATUS;
 
 //
 // Retrieve framework version string

@@ -132,12 +132,11 @@ enum pmu_ctl_action
 #define IOCTL_PMU_CTL_LOCK_RELEASE 	           CTL_CODE(WPERF_TYPE,  PMU_CTL_LOCK_RELEASE , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
 
 
-
 enum lock_flag
 {
-    LOCK_GET,
-    LOCK_GET_FORCE,
-    LOCK_RELEASE,
+    LOCK_GET,           // Ask to lock the driver and acquire "session"
+    LOCK_GET_FORCE,     // Force driver to release the driver and lock it with the current process
+    LOCK_RELEASE,       // Release the driver after acquired lock
 };
 
 struct lock_request
