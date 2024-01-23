@@ -1062,19 +1062,18 @@ wmain(
         m_out.GetErrorOutputStream() << L"warning: other WindowsPerf process hijacked (forced lock) the wperf-driver, see --force-lock." << std::endl;
         m_out.GetErrorOutputStream() << L"Operation terminated, your data was lost!" << std::endl;
         if (request.do_verbose)
-            std::cerr << e.what() << std::endl;
+            m_out.GetErrorOutputStream() << e.what() << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
     catch (fatal_exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        m_out.GetErrorOutputStream() << e.what() << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
     catch (std::exception& e) {
-        m_out.GetErrorOutputStream() << L"warning: unknown error, see:" << std::endl;
-        std::cerr << e.what() << std::endl;
+        m_out.GetErrorOutputStream() << L"warning: unknown error, see: " << e.what() << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }

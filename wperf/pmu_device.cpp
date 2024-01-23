@@ -472,8 +472,7 @@ pmu_device::~pmu_device()
     }
     catch (const std::exception& e)
     {
-        std::wstring msg = std::wstring(e.what(), e.what() + strlen(e.what()));
-        m_out.GetErrorOutputStream() << L"error: " << msg << std::endl;
+        m_out.GetErrorOutputStream() << L"error: " << WideStringFromMultiByte(e.what()) << std::endl;
     }
     CloseHandle(m_device_handle);
 }
