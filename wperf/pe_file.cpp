@@ -284,6 +284,7 @@ void read_function_lines(FuncSymDesc& funcSymDesc, IDiaSymbol* pSymbol, IDiaSess
                         BOOL isStatement = false;
                         CComPtr<IDiaSourceFile> pSrc;
                         BSTR fName;
+                        std::wstring file_name_wstr;
                         ULONGLONG addr = 0;
 
                         pLine->get_sourceFile(&pSrc);
@@ -296,7 +297,15 @@ void read_function_lines(FuncSymDesc& funcSymDesc, IDiaSymbol* pSymbol, IDiaSess
                         pLine->get_relativeVirtualAddress(&rva);
                         pLine->get_statement(&isStatement);
 
-                        pSrc->get_fileName(&fName);
+                        if (pSrc->get_fileName(&fName) == S_OK)
+                        {
+                            file_name_wstr = std::wstring(fName);
+                            SysFreeString(fName);
+                        }
+                        else
+                        {
+                            file_name_wstr = std::wstring(L"unknown");
+                        }
 
                         funcSymDesc.lines.push_back(LineNumberDesc{
                             std::wstring(fName),
