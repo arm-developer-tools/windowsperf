@@ -565,7 +565,7 @@ void  pmu_device::lock(bool force_lock)
     req.action = PMU_CTL_LOCK_ACQUIRE;
     req.flag = force_lock ? LOCK_GET_FORCE : LOCK_GET;
     DWORD resplen = 0;
-    enum status_flag sts_flag = STS_UNKNOWN;
+    enum status_flag sts_flag = STS_BUSY;
 
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_LOCK_ACQUIRE, &req, sizeof(lock_request), &sts_flag, sizeof(enum status_flag), &resplen);
     if (!status)
@@ -593,7 +593,7 @@ void pmu_device::unlock()
     req.action = PMU_CTL_LOCK_RELEASE;
     req.flag = LOCK_RELEASE;
     DWORD resplen = 0;
-    enum status_flag sts_flag = STS_UNKNOWN;
+    enum status_flag sts_flag = STS_BUSY;
 
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_LOCK_RELEASE, &req, sizeof(lock_request), &sts_flag, sizeof(enum status_flag), &resplen);
     if (!status)
@@ -606,6 +606,8 @@ void pmu_device::unlock()
     */
     if (sts_flag != STS_IDLE)
         throw locked_exception("PMU_CTL_LOCK_RELEASE can't release");
+
+    lock_successful = false;    // Clear this flag if we unlocked
 }
 
 void pmu_device::stop_sample()

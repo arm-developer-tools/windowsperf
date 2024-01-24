@@ -183,6 +183,13 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
     return STATUS_SUCCESS;
 }
 
+/// <summary>
+/// Handle `IoCtlCode` incomming IOCTL and form output buffer and return state for the response.
+///
+/// Note: With method buffered the input and output buffers (`pInBuffer` and `pOutBuffer` respectively)
+/// are actually the same, so the input buffer needs to be consumed before the output buffer is
+/// written to.
+/// </summary>
 NTSTATUS deviceControl(
     _In_        WDFFILEOBJECT  file_object,
     _In_        ULONG   IoCtlCode,
@@ -233,27 +240,27 @@ NTSTATUS deviceControl(
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE for file object %p\n", file_object));
 
         struct lock_request* in = (struct lock_request*)pInBuffer;
+        enum status_flag out = STS_BUSY;
 
-        enum status_flag* out = (enum status_flag*)pOutBuffer;
-        *out = STS_UNKNOWN;
         if (in->flag == LOCK_GET_FORCE)
         {
-            *out = STS_LOCK_AQUIRED;
+            out = STS_LOCK_AQUIRED;
             SetMeBusyForce(IoCtlCode, file_object);
         }
         else if (in->flag == LOCK_GET)
         {
             if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
-                *out = STS_LOCK_AQUIRED;
-            else
-                *out = STS_BUSY;
+                out = STS_LOCK_AQUIRED;
+            // Note: else STS_BUSY;
         }
         else
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flag %d for PMU_CTL_LOCK_ACQUIRE\n", in->flag));
             status = STATUS_INVALID_PARAMETER;
+            break;
         }
 
+        *((enum status_flag*)pOutBuffer) = out;
         *outputSize = sizeof(enum status_flag);
         break;
     }
@@ -270,22 +277,22 @@ NTSTATUS deviceControl(
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_RELEASE for file_object %p\n", file_object));
 
         struct lock_request* in = (struct lock_request*)pInBuffer;
+        enum status_flag out = STS_BUSY;
 
-        enum status_flag* out = (enum status_flag*)pOutBuffer;
-        *out = STS_UNKNOWN;
         if (in->flag == LOCK_RELEASE)
         {
             if (SetMeIdle(file_object)) // returns fialure if this process doesnt own the lock 
-                *out = STS_IDLE;    // All went well and we went IDLE
-            else
-                *out = STS_BUSY;    // This is illegal, as we are not IDLE
+                out = STS_IDLE;         // All went well and we went IDLE
+            // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
         }
         else
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flag %d for PMU_CTL_LOCK_RELEASE\n", in->flag));
             status = STATUS_INVALID_PARAMETER;
+            break;
         }
 
+        *((enum status_flag*)pOutBuffer) = out;
         *outputSize = sizeof(enum status_flag);
         break;
     }
