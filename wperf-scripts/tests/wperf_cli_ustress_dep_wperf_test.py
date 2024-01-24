@@ -89,12 +89,12 @@ import pathlib as pl
 import re
 from statistics import median
 from time import sleep
+import pytest
 from common import run_command
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
 from common_ustress import get_metric_values
 
-import pytest
 
 ### Test cases
 

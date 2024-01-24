@@ -44,10 +44,10 @@ Usage:
 import json
 import os
 import re
+import pytest
 from common import run_command, is_json, check_if_file_exists
 from common import wperf_metric_is_available
 
-import pytest
 
 N_CORES = os.cpu_count()
 
@@ -273,6 +273,7 @@ def test_wperf_stat_K_flag(flag,core):
 ]
 )
 def test_wperf_stat_K_flag_json(flag,core):
+    """Check output if user defines `-k` (kernel mode)."""
     cmd = f'wperf stat -m imix -c {core} {flag} --timeout 1 --json'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
@@ -285,7 +286,7 @@ def test_wperf_stat_K_flag_json(flag,core):
     assert json_output["core"]["cores"][0]["core_number"] == core            # sanity check
 
     assert json_output["core"]["Kernel_mode"] == bool(flag) #   bool("") ==> False, bool("-k") ==> True
-    assert json_output["core"]["Multiplexing"] == False
+    assert json_output["core"]["Multiplexing"] is False
 
 def test_wperf_stat_process_spawn_args():
     """ Test CLI option -- that separates wperf CLI options with process name and command line arguments.
@@ -294,32 +295,31 @@ def test_wperf_stat_process_spawn_args():
     if not check_if_file_exists("wperf.exe"):
         pytest.skip("place wperf.exe in the same directory as tests to run the test")
 
-    cmd = f'wperf stat -m imix -c 1 --timeout 1 -v -- wperf.exe --help'
+    cmd = 'wperf stat -m imix -c 1 --timeout 1 -v -- wperf.exe --help'
     stdout, _ = run_command(cmd.split())
 
-    """ Example output:
-    deduced image name 'wperf.exe'
-    deduced image PDB file 'wperf.pdb'
-    pe_file 'wperf.exe', args '--help'
-
-    events to be counted:
-         6              core events: 0x001b 0x0073 0x0075 0x0074 0x0070 0x0071
-    wperf.exe pid is 7124
-    counting ... done
-
-    Performance counter stats for core 1, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
-    note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
-
-            counter value  event name  event idx  event note
-            =============  ==========  =========  ==========
-                        0  cycle       fixed      e
-                        0  inst_spec   0x1b       g0,imix
-                        0  dp_spec     0x73       g0,imix
-                        0  vfp_spec    0x75       g0,imix
-                        0  ase_spec    0x74       g0,imix
-                        0  ld_spec     0x70       g0,imix
-                        0  st_spec     0x71       g0,imix
-    """
+    # Example output:
+    # deduced image name 'wperf.exe'
+    # deduced image PDB file 'wperf.pdb'
+    # pe_file 'wperf.exe', args '--help'
+    # 
+    # events to be counted:
+    #      6              core events: 0x001b 0x0073 0x0075 0x0074 0x0070 0x0071
+    # wperf.exe pid is 7124
+    # counting ... done
+    # 
+    # Performance counter stats for core 1, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+    # note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+    # 
+    #         counter value  event name  event idx  event note
+    #         =============  ==========  =========  ==========
+    #                     0  cycle       fixed      e
+    #                     0  inst_spec   0x1b       g0,imix
+    #                     0  dp_spec     0x73       g0,imix
+    #                     0  vfp_spec    0x75       g0,imix
+    #                     0  ase_spec    0x74       g0,imix
+    #                     0  ld_spec     0x70       g0,imix
+    #                     0  st_spec     0x71       g0,imix
 
     assert b"deduced image name 'wperf.exe'" in stdout
     assert b"deduced image PDB file 'wperf.pdb'" in stdout

@@ -30,10 +30,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-from common import run_command
-
+"""Module is testing `wperf record` workflow."""
 import pytest
+from common import run_command
 
 @pytest.mark.parametrize("cores",
 [

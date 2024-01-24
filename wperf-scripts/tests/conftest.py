@@ -30,17 +30,18 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Module is a handler to pytest hook `pytest_terminal_summary`. """
 import json
 import multiprocessing
 import platform
 import sys
 
-from common import is_json, run_command
 from datetime import datetime
 from os import linesep
+from common import is_json, run_command
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
-    """ Create sections for terminal summary. 
+    """ Create sections for terminal summary.
         See https://docs.pytest.org/en/6.2.x/reference.html#pytest.hookspec.pytest_terminal_summary
     """
     terminalreporter.section("WindowsPerf Test Configuration")

@@ -30,11 +30,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from jsonschema import validate
+"""Module is testing if all JSON schemas `wperf` emits match given schemas."""
 import json
 import os
-from common import run_command, get_schema
 import pytest
+from jsonschema import validate
+from common import run_command, get_schema
 
 ### Test cases
 
@@ -92,13 +93,13 @@ def test_wperf_timeline_json_schema(request, tmp_path):
     file_path = tmp_path / 'test.json'
 
     cmd = f'wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json --output {file_path}'
-    stdout, _ = run_command(cmd.split())
+    _, _ = run_command(cmd.split())
 
-    json_output = dict()
+    json_output = {}
 
     try:
         with open(str(file_path)) as json_file:
-            json_output = json.loads(json_file.read())    
+            json_output = json.loads(json_file.read())
         validate(instance=json_output, schema=get_schema("timeline", test_path))
     except Exception as err:
         assert False, f"Unexpected {err=}, {type(err)=}"
@@ -114,7 +115,7 @@ def test_wperf_timeline_json_stdout_schema(request, tmp_path):
     """ Test `wperf stat -t` aka timeline JSON output against scheme """
     test_path = os.path.dirname(request.path)
 
-    cmd = f'wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json'
+    cmd = 'wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json'
     stdout, _ = run_command(cmd.split())
 
     json_output = json.loads(stdout)

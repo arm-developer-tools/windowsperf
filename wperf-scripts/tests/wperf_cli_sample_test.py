@@ -31,10 +31,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+"""Module is testing parts of `wperf sample` workflow."""
 import os
-from common import run_command
-
 import pytest
+from common import run_command
 
 def test_sample_cli_pdb_file():
     """ Test if --pdb_file <filename> checks if <filename> exist. """
@@ -52,6 +52,6 @@ def test_sample_cli_pe_file():
     _, stderr = run_command(f"wperf sample -e ld_spec:100000 --pe_file {pe_file} -c 1")
 
     if os.path.isfile(pe_file):
-        pytest.skip(f"File {pdb_file} already exists")
+        pytest.skip(f"File {pe_file} already exists")
 
     assert b"PE file 'pythasdasdasdason.exe' doesn't exist" in stderr

@@ -87,11 +87,11 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 import os
 import json
 from time import sleep
+import pytest
 from common import run_command, is_json
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
 
-import pytest
 
 ### Test cases
 

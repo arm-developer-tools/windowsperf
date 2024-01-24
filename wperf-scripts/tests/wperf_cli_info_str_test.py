@@ -33,8 +33,6 @@
 import re
 from common import run_command
 
-import pytest
-
 ### Test cases
 
 

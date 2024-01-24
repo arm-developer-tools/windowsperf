@@ -30,11 +30,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Module is testing different ways users can specify the event names
+   e.g. by using raw events or -E command line option.
+"""
 import json
-import re
-from common import run_command, is_json, check_if_file_exists
+from common import run_command
 from common import get_result_from_test_results
-from common import wperf_list
 
 ### Test cases for -E
 
@@ -47,14 +48,14 @@ def test_wperf_padding_1_event():
     evt_core_index = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].index").split(',')
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
 
-    assert (len(evt_core_index) == 5)       #   128,129,130,130,131
-    assert (len(evt_core_note) == 5)        #   (e),(e),(e),(e),(e)
-    assert (all(elem == '(e)' for elem in evt_core_note))    #   only '(e)' in note
+    assert len(evt_core_index) == 5       #   128,129,130,130,131
+    assert len(evt_core_note) == 5        #   (e),(e),(e),(e),(e)
+    assert all(elem == '(e)' for elem in evt_core_note)    #   only '(e)' in note
 
-    assert ('128' in evt_core_index)
-    assert ('129' in evt_core_index)
-    assert ('130' in evt_core_index)
-    assert ('131' in evt_core_index)
+    assert '128' in evt_core_index
+    assert '129' in evt_core_index
+    assert '130' in evt_core_index
+    assert '131' in evt_core_index
 
 def test_wperf_E_list_add_event():
     """ Test if we can add new event 0xffaa names 'name1' """
@@ -65,9 +66,9 @@ def test_wperf_E_list_add_event():
     for e in j["Predefined_Events"]:
         if e["Alias_Name"] == "name1":
             # Check if we've replaced existing event
-            assert (e["Raw_Index"] == "0xffaa")
-            assert (e["Event_Type"] != "[core PMU event]")  # Not replacing existing event
-            assert (e["Event_Type"] == "[core PMU event*]") # Only new event with '*'
+            assert e["Raw_Index"] == "0xffaa"
+            assert e["Event_Type"] != "[core PMU event]"  # Not replacing existing event
+            assert e["Event_Type"] == "[core PMU event*]" # Only new event with '*'
 
 
 def test_wperf_E_list_add_event_verbose():
@@ -79,10 +80,10 @@ def test_wperf_E_list_add_event_verbose():
     for e in j["Predefined_Events"]:
         if e["Alias_Name"] == "name1":
             # Check if we've replaced existing event
-            assert (e["Raw_Index"] == "0xffaa")
-            assert (e["Event_Type"] != "[core PMU event]")  # Not replacing existing event
-            assert (e["Event_Type"] == "[core PMU event*]") # Only new event with '*'
-            assert (e["Description"] == "<extra event>")    # Extra in verbose mode
+            assert e["Raw_Index"] == "0xffaa"
+            assert e["Event_Type"] != "[core PMU event]"  # Not replacing existing event
+            assert e["Event_Type"] == "[core PMU event*]" # Only new event with '*'
+            assert e["Description"] == "<extra event>"    # Extra in verbose mode
 
 def test_wperf_E_list_add_2_event():
     """ Test if we can add new events:
@@ -96,13 +97,13 @@ def test_wperf_E_list_add_2_event():
     for e in j["Predefined_Events"]:
         if e["Alias_Name"] == "name1":
             # Check if we've replaced existing event
-            assert (e["Raw_Index"] == "0xffaa")
-            assert (e["Event_Type"] != "[core PMU event]")  # Not replacing existing event
-            assert (e["Event_Type"] == "[core PMU event*]") # Only new event with '*'
+            assert e["Raw_Index"] == "0xffaa"
+            assert e["Event_Type"] != "[core PMU event]"  # Not replacing existing event
+            assert e["Event_Type"] == "[core PMU event*]" # Only new event with '*'
 
     for e in j["Predefined_Events"]:
         if e["Alias_Name"] == "xyz":
             # Check if we've replaced existing event
-            assert (e["Raw_Index"] == "0xeeee")
-            assert (e["Event_Type"] != "[core PMU event]")  # Not replacing existing event
-            assert (e["Event_Type"] == "[core PMU event*]") # Only new event with '*'
+            assert e["Raw_Index"] == "0xeeee"
+            assert e["Event_Type"] != "[core PMU event]"  # Not replacing existing event
+            assert e["Event_Type"] == "[core PMU event*]" # Only new event with '*'

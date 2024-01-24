@@ -41,13 +41,11 @@ Usage:
 
 """
 
-import json
-import os
 import re
+import pytest
 from common import run_command
 from common import wperf_metric_is_available, wperf_metric_events_list
 
-import pytest
 
 @pytest.mark.parametrize("events,cores,metric,sleep",
 [
@@ -105,7 +103,7 @@ def test_wperf_prettytable_format(events,cores,metric,sleep):
     # Events in each line
     #
 
-    all_events = list()
+    all_events = []
     # If event list is not empty add events
     if events:
         all_events.extend(events.split(b","))

@@ -88,13 +88,10 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 """
 
 import os
-import re
+import pytest
 from common import run_command
-from common import wperf_test_no_params, get_result_from_test_results
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
-
-import pytest
 
 N_CORES = os.cpu_count()
 

@@ -30,11 +30,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Module is testing `--config` command line option."""
 import json
+import pytest
 from common import run_command
 from common import get_result_from_test_results
-
-import pytest
 
 ### Test cases
 
@@ -52,7 +52,6 @@ def test_wperf_config_set_count_period(period):
     cmd = f'wperf test --json --config count.period={period}'
     stdout, _ = run_command(cmd.split())
     json_output = json.loads(stdout)
-
     config_count = get_result_from_test_results(json_output, "config.count.period")
 
     assert int(config_count) == period

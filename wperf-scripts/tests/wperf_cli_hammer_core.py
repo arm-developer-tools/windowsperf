@@ -30,20 +30,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+""" This script runs simple wperf CLI tests. Tests are designed to stress test
+    (hammer) Kernel Driver and user-space CLI application.
 """
-This script runs simple wperf CLI tests.
-
-These tests are designed to stress test (hammer) Kernel Driver and user-space CLI application.
-
-"""
-
-import json
 import os
-import re
-from common import run_command, is_json, check_if_file_exists
-from common import wperf_metric_is_available
-
 import pytest
+from common import run_command, is_json
+from common import wperf_metric_is_available
 
 N_CORES = os.cpu_count()
 CORES_ODD = ",".join(str(c) for c in range(0, N_CORES) if c & 1)

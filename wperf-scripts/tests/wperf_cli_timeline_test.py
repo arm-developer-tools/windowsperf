@@ -44,14 +44,12 @@ Usage:
 import json
 import os
 import re
+import pytest
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
 from common import wperf_metric_events, wperf_metric_is_available
 from common import is_json
-
-
-import pytest
 
 ### Test cases
 
@@ -255,7 +253,7 @@ def test_wperf_timeline_ts_metrics(I, C, N, METRICS):
 
     COLS = int()    # How many columns are in this timeline (events + metrics)
 
-    EVENTS = list()
+    EVENTS = []
     for metric in METRICS.split(","):
         metric_events = wperf_metric_events(metric).strip("{}").split(",")
         EVENTS += metric_events
@@ -351,7 +349,7 @@ def test_wperf_timeline_ts_metrics_many_cores(I, C, N, METRICS):
             expected_metric_header += f"M@{metric},"   # M@l1d_cache_miss_ratio,M@load_percentage,M@l1d_cache_miss_ratio,M@load_percentage,
 
     ### Check for complete list of events including metrics
-    EVENTS = list()
+    EVENTS = []
     for _ in cores:
         EVENTS.append("cycle")  # Each core includes cycles (first fixed counter)
         for metric in METRICS.split(","):
