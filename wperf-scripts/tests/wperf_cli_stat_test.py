@@ -236,10 +236,9 @@ def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_pat
     cmd += ['--output', str(file_path)]
     _, _ = run_command(cmd)
     try:
-        f = open(file_path)
-        json = f.read()
-        f.close()
-        assert is_json(json)
+        with open(file_path) as f:
+            json_obj = f.read()
+            assert is_json(json_obj)
     except:
         assert 0
 
