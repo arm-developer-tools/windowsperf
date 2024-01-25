@@ -39,7 +39,7 @@ import os
 ## Module variables, import `common_ustress` to access these
 
 # Where we keep Telemetry Solution code
-TS_USTRESS_DIR = "telemetry-solution/tools/ustress"
+TS_USTRESS_DIR = r"telemetry-solution\tools\ustress"
 
 # Header with supported by `ustress` CPUs:
 TS_USTRESS_HEADER = os.path.join(TS_USTRESS_DIR, "cpuinfo.h")
