@@ -75,10 +75,9 @@ def test_wperf_version_json_file_output_valid(tmp_path):
     cmd = 'wperf --version --output ' + str(file_path)
     _, _ = run_command(cmd.split())
     try:
-        f = open(file_path)
-        json = f.read()
-        f.close()
-        assert is_json(json)
+        with open(file_path) as f:
+            json_obj = f.read()
+            assert is_json(json_obj)
     except:
         assert 0
 
