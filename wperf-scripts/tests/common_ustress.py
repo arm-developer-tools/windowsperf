@@ -31,8 +31,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-### Common Telemetry-Solutions / ustress code
-
+"""Module with commonly used functions and data structures.
+   Common Telemetry-Solutions / ustress code.
+"""
 import csv
 import os
 
