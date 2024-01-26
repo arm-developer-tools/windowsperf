@@ -6,8 +6,29 @@
 
 This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md). Here you can also find `stress.ps1` a PowerShell script to stress test the driver.
 
+## WindowsPerf testing prerequisites
+
+WindowsPerf must be tested natively on WOA hardware with installed `wperf-driver` and `wperf`. Both must be compatible (have the same version). See `wperf --version` to see if your system facilitates above.
+
+- You must have Python 3.11.1 (or newer) installed on your system and available on system environment PATH.
+  - `pytest` module is also required, if missing please install it via `pip install pytest` command, see [pytest](https://pypi.org/project/pytest/). We've added `pytest.ini` file to ignore `telemetry-solution` directory (with `--ignore=telemetry-solution`) and setup common `pytest` command line options for consistency.
+  - All required Python modules by WindowsPerf functional testing are specified in [requirements.txt](../requirements.txt). Use the `pip install -r requirements.txt` command to install all of the Python modules and packages listed in `requirements.txt` file.
+- Tests must be executed on ARM64 Windows On Arm machine.
+- [wperf-driver](../../wperf-driver/README.md) must be installed on the system.
+- [wperf](../../wperf/README.md) application must be present in the same directory as tests or be on system environment PATH.
+- To test if `wperf` JSON output is valid test directory must contain `schemes/` sub-directory.
+  - Note: if `schemas` directory is missing JSON output tests will fail (and not skipped).
+- Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` submodule is pulled with git.
+  - How to pull submodule: On init run the following command: `git submodule update --init --recursive` from within the git repo directory, this will pull all latest including submodules. Or you can clone submodules directly using `git clone --recurse-submodules`.
+
+### Test execution with Pytest
+
+> The pytest framework makes it easy to write small tests, yet scales to support complex functional testing for applications and libraries.
+
 Use `pytest` command in `windowsperf\wperf-scripts\tests\` directory to run all regression tests, see example below:
+
 ```
+>cd windowsperf\wperf-scripts\tests\
 >pytest
 ================================ test session starts =====================================
 platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
@@ -21,24 +42,29 @@ wperf_cli_config_test.py .....                                                  
 ======================== 201 passed in 607.65s (0:10:07) =================================
 ```
 
-## Testing prerequisites
+Other `pytest` command invocation include:
+- `pytest -x` - Stop after first failure.
+- `pytest -v` - Print each test name in the report.
+- `pytest wperf_cli_list_test.py` - Run tests in a module `wperf_cli_list_test.py`.
+- `pytest test_mod.py::test_func` - Run a specific test within a module.
 
-* You must have Python 3.11.1 (or newer) installed on your system and available on system environment PATH.
-  * `pytest` module is also required, if missing please install it via `pip install pytest` command, see [pytest](https://pypi.org/project/pytest/). We've added `pytest.ini` file to ignore `telemetry-solution` directory (with `--ignore=telemetry-solution`) and setup common `pytest` command line options for consistency.
-  * All required Python modules by WindowsPerf functional testing are specified in [requirements.txt](../requirements.txt). Use the `pip install -r requirements.txt` command to install all of the Python modules and packages listed in `requirements.txt` file.
-* Tests must be executed on ARM64 Windows On Arm machine.
-* [wperf-driver](../../wperf-driver/README.md) must be installed on the system.
-* [wperf](../../wperf/README.md) application must be present in the same directory as tests or be on system environment PATH.
-* To test if `wperf` JSON output is valid test directory must contain `schemes/` sub-directory.
-  * Note: if `schemas` directory is missing JSON output tests will fail (and not skipped).
-* Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` submodule is pulled with git.
-  * How to pull submodule: On init run the following command: `git submodule update --init --recursive` from within the git repo directory, this will pull all latest including submodules. Or you can clone submodules directly using `git clone --recurse-submodules`.
+See `pytest` official documentation [How to invoke pytest](https://docs.pytest.org/en/7.2.x/how-to/usage.html) for more details.
 
 ## ustress framework test bench
 
 We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests?ref_type=heads). It allows users to build, execute `ustress` micro-benchmarks and track with `wperf` timeline specified metrics.
 
-Note: `ustress` supports various `neoverse` CPU platforms only!
+This test bench is composed of:
+- `wperf-scripts/tests/telemetry-solution` - [telemetry-solution](https://gitlab.arm.com/telemetry-solution/telemetry-solution) git submodule pointing to specific SHA we use for testing. Use `git submodule update --init --recursive` command to "pull" this submodule.
+- `pytest` test cases prefixed with `wperf_cli_ustress_`. For example:
+    - `wperf_cli_ustress_bench_test.py` - Will attempt to build `ustress` from sources using available `clang` compiler environment.
+    - `wperf_cli_ustress_dep_record_test.py` - `wperf record` tests with `ustress` micro-benchmarks.
+    - `wperf_cli_ustress_dep_wperf_lib_timeline_test.py` - Test timeline (`wperf stat -t`) with `ustress` micro-benchmarks.
+    - `wperf_cli_ustress_dep_wperf_test.py` - Test `wperf stat` using `ustress` micro-benchmarks and telemetry-solution defined metrics.
+
+Note:
+- `pytest` calls tests in alphabetical order so first "build test" has _bench_ in name and dependent test files are prefixed with _dep_.
+- `ustress` supports various `neoverse` CPU platforms only!
 
 ### ustress build dependencies
 
@@ -120,6 +146,18 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 * [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
 * !327+, !330+ and !339+.
 
+## Testing sampling feature with native CPython
+
+We've added `cpython` test bench. It's located in `wperf-scripts/tests/`. It allows us to build CPython (in debug mode) from sources, run and test `wperf` sampling of CPython binary `python_d.exe`. This regression tests improve our overall testing strategy.
+
+This test bench is composed of:
+- `wperf-scripts/tests/cpython` - [CPython](https://github.com/python/cpython) git submodule pointing to specific SHA we use for testing. Use `git submodule update --init --recursive` command to "pull" this submodule.
+- `pytest` test cases prefixed with `wperf_cli_cpython_`. For example:
+    - `wperf_cli_cpython_bench_test.py` - will build CPython from sources (first build may take few minutes, second is under 30 sec).
+    - `wperf_cli_cpython_dep_record_test.py` - will run sampling with `wperf record` on CPython `python_d.exe` executable.
+
+Note: `pytest` calls tests in alphabetical order so first "build test" has _bench_ in name and dependent test files are prefixed with _dep_.
+
 ## Testing directory structure
 
 In below test directory we've added locally `wperf.exe`.
@@ -130,36 +168,48 @@ In below test directory we've added locally `wperf.exe`.
 > cd windowsperf\wperf-scripts\tests
 ```
 
-### Test execution
+### Example test execution
 
-Below you can see example regression test pass report:
+Below you can see example regression test pass report ran on `neoverse-n1` WOA
+hardware with WindowsPerf 3.4.0 installed:
 
 ```
 >pytest
-=============================== test session starts ===============================
+================================ test session starts ================================
 platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
-rootdir: C:\windowsperf\wperf-scripts\tests, configfile: pytest.ini
-collected 143 items
+rootdir: C:\Users\$USER\Desktop\testing\wperf\3.4.0, configfile: pytest.ini
+collected 225 items
 
-wperf_cli_common_test.py ....                                                [  2%]
-wperf_cli_config_test.py .....                                               [  6%]
-wperf_cli_extra_events_test.py ....                                          [  9%]
-wperf_cli_info_str_test.py .                                                 [  9%]
-wperf_cli_json_validator_test.py ....                                        [ 12%]
-wperf_cli_list_test.py .....                                                 [ 16%]
-wperf_cli_metrics_test.py ................                                   [ 27%]
-wperf_cli_padding_test.py ...........                                        [ 34%]
-wperf_cli_record_test.py ..............                                      [ 44%]
-wperf_cli_stat_test.py ...................................................   [ 80%]
-wperf_cli_test_test.py .....                                                 [ 83%]
-wperf_cli_timeline_test.py ..............                                    [ 93%]
-wperf_cli_ustress_bench_test.py .......                                      [ 98%]
-wperf_cli_ustress_dep_record_test.py .                                       [ 99%]
-wperf_lib_app_test.py s                                                      [100%]
+wperf_cli_common_test.py ....                                                  [  1%]
+wperf_cli_config_test.py .....                                                 [  4%]
+wperf_cli_extra_events_test.py ....                                            [  5%]
+wperf_cli_hammer_core_test.py .................                                [ 13%]
+wperf_cli_info_str_test.py .                                                   [ 13%]
+wperf_cli_json_validator_test.py ..........                                    [ 18%]
+wperf_cli_list_test.py .....                                                   [ 20%]
+wperf_cli_lock_test.py ..                                                      [ 21%]
+wperf_cli_metrics_test.py ................                                     [ 28%]
+wperf_cli_padding_test.py ..............                                       [ 34%]
+wperf_cli_prettytable_test.py .....                                            [ 36%]
+wperf_cli_record_test.py ..............                                        [ 43%]
+wperf_cli_sample_test.py ..                                                    [ 44%]
+wperf_cli_stat_test.py ....................................................    [ 67%]
+wperf_cli_test_test.py ........                                                [ 70%]
+wperf_cli_timeline_test.py ................................................... [ 93%]
+wperf_cli_ustress_bench_test.py ......                                         [ 96%]
+wperf_cli_ustress_dep_record_test.py .                                         [ 96%]
+wperf_cli_ustress_dep_wperf_lib_timeline_test.py .                             [ 97%]
+wperf_cli_ustress_dep_wperf_test.py .....                                      [ 99%]
+wperf_lib_app_test.py .                                                        [100%]
+========================== WindowsPerf Test Configuration ===========================
+OS: Windows-10-10.0.25217-SP0, ARM64
+CPU: 80 x ARMv8 (64-bit) Family 8 Model D0C Revision 301, Ampere(R)
+Python: 3.11.1 (tags/v3.11.1:a7a450f, Dec  6 2022, 19:44:02) [MSC v.1934 64 bit (ARM64)]
+Time: 26/01/2024, 08:07:54
+wperf: 3.4.0.2fb0f1b9
+wperf-driver: 3.4.0.2fb0f1b9
 
-============================= short test summary info =============================
-SKIPPED [1] wperf_lib_app_test.py:44: Can not run wperf-lib-app.exe
-===================== 142 passed, 1 skipped in 237.56s (0:03:57) ==================
+========================== 225 passed in 745.45s (0:12:25) ==========================
 ```
 
 ## WindowsPerf stress testing script
@@ -167,7 +217,7 @@ SKIPPED [1] wperf_lib_app_test.py:44: Can not run wperf-lib-app.exe
 Having properly setup the Python unit tests using the instructions above all you need to do is to run:
 
 ```
->stress.ps1 
+>stress.ps1
 ```
 
 The default number of cycles is 1. You can change that using the first command line argument, so if you want to run it 5 times just type:

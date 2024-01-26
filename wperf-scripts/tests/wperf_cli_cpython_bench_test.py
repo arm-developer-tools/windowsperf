@@ -32,6 +32,23 @@
 
 """Module is testing `wperf sample` and `wperf record` with native CPython,
    built from sourced debug executables.
+
+# Description
+This is `cpython` test bench build script. It contains all functions needed to:
+* Check for basic dependencies and build dependencies.
+* Build `cpython` for WOA target with project's `build.bat` build script.
+
+# Build dependencies
+* MSVC cross/native arm64 build environment, see `vcvarsall.bat`.
+
+See example configuration needed to build those tests:
+> %comspec% /k "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.7.1
+** Copyright (c) 2022 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'arm64'
+
 """
 import os
 import pytest
