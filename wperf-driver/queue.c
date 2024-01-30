@@ -280,7 +280,7 @@ WindowsPerfEvtDeviceControl(
     //
     // Port Begin
     //
-    ULONG outputDataSize;
+    ULONG outputDataSize = 0;
     Status = deviceControl(IoControlCode, queueContext->inBuffer, (ULONG)InputBufferLength, queueContext->outBuffer, (ULONG)OutputBufferLength, &outputDataSize, queueContext);
     if (!NT_SUCCESS(Status)) {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%!FUNC! %!LINE! deviceControl failed 0x%x\n", Status));

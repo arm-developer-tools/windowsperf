@@ -85,6 +85,8 @@ wmain(
 
     LLVMDisassembler disassembler;
 
+    bool b2b_timeline = FALSE;
+
     try {
         pmu_device.init();
     }
@@ -185,10 +187,6 @@ wmain(
             if (SetConsoleCtrlHandler(&ctrl_handler, TRUE) == FALSE)
                 throw fatal_exception("SetConsoleCtrlHandler failed");
 
-            uint32_t stop_bits = pmu_device.stop_bits();
-
-            pmu_device.stop(stop_bits);
-
             pmu_device.timeline_params(request.ioctl_events, request.count_interval, request.do_kernel);
 
             for (uint32_t core_idx : request.cores_idx)
@@ -202,7 +200,17 @@ wmain(
             int64_t counting_interval_iter = request.count_interval > 0 ?
                 static_cast<int64_t>(request.count_interval * 2) : 0;
 
+            if(request.do_timeline  && counting_interval_iter == 0)
+                b2b_timeline = TRUE;
+
             int counting_timeline_times = request.count_timeline;
+
+            uint32_t stop_bits = pmu_device.stop_bits();
+
+            if(b2b_timeline)
+                pmu_device.b2b_timeline_stop(stop_bits);
+            else
+                pmu_device.stop(stop_bits);
 
             // === Spawn counting process ===
             bool do_count_process_spawn = request.sample_pe_file.size();
@@ -234,14 +242,25 @@ wmain(
                 process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
             }
 
-            do
+
+            if (b2b_timeline)
             {
                 pmu_device.reset(enable_bits);
+                pmu_device.b2b_timeline_start(enable_bits, counting_duration_iter);
+            }
+
+
+            do
+            {
+                if(!b2b_timeline)
+                    pmu_device.reset(enable_bits);
 
                 SYSTEMTIME timestamp_a;
                 GetSystemTime(&timestamp_a);
 
-                pmu_device.start(enable_bits);
+
+                if (!b2b_timeline)
+                    pmu_device.start(enable_bits);
 
                 m_out.GetOutputStream() << L"counting ... -";
 
@@ -263,14 +282,15 @@ wmain(
                 }
                 m_out.GetOutputStream() << L'\b' << "done\n";
 
-                pmu_device.stop(enable_bits);
+                if(!b2b_timeline)
+                    pmu_device.stop(enable_bits);
 
                 SYSTEMTIME timestamp_b;
                 GetSystemTime(&timestamp_b);
 
                 if (enable_bits & CTL_FLAG_CORE)
                 {
-                    pmu_device.core_events_read();
+                    pmu_device.core_events_read(b2b_timeline);
                     pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
                     pmu_device.print_core_metrics(request.ioctl_events[EVT_CORE]);
                 }
@@ -338,6 +358,11 @@ wmain(
                     break;
 
             } while (request.do_timeline && no_ctrl_c);
+
+
+            if(b2b_timeline)
+                pmu_device.b2b_timeline_stop(enable_bits);
+
 
             if (do_count_process_spawn)
             {

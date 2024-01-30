@@ -100,6 +100,7 @@
       <WppRecorderEnabled>false</WppRecorderEnabled>
       <PreprocessorDefinitions>_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
@@ -111,6 +112,7 @@
       <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
       <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
     </PreBuildEvent>
+    <Link />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="core.c" />
@@ -120,6 +122,7 @@
     <ClCompile Include="dpc.c" />
     <ClCompile Include="driver.c" />
     <ClCompile Include="dsu.c" />
+    <ClCompile Include="IOCTL_B2BTimeline.c" />
     <ClCompile Include="queue.c" />
     <ClCompile Include="spe.c" />
     <ClCompile Include="utilities.c" />

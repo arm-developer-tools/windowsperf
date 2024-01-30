@@ -37,12 +37,21 @@
 #if !defined DBG
 #include "trace.h"
 #endif
+#include <Ntstrsafe.h>
 
 //
 // Device
 //
 #define NT_DEVICE_NAME		L"\\Device\\WPERFDRIVER"
 #define DOS_DEVICE_NAME		L"\\DosDevices\\WPERFDRIVER"
+
+
+//
+//  To get memory resource of 620 filter
+//
+#define IOCTL_GET_DEVICE_INFO 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0xA00 , METHOD_BUFFERED, FILE_READ_DATA|FILE_WRITE_DATA)
+
+
 
 //
 // Driver unload function
@@ -57,6 +66,18 @@ EVT_WDF_DRIVER_DEVICE_ADD WindowsPerfEvtDeviceAdd;
 EVT_WDF_DRIVER_UNLOAD WindowsPerfEvtWdfDriverUnload;
 
 //
+//  Memory Resource Data
+//
+
+typedef struct  _MEMORY {
+    ULONG Length;
+    ULONG Alignment;
+    PHYSICAL_ADDRESS MinimumAddress;
+    PHYSICAL_ADDRESS MaximumAddress;
+} MEMORY, * PMEMORY;
+
+
+//
 // Retrieve framework version string
 //
 NTSTATUS
@@ -64,10 +85,35 @@ WindowsPerfPrintDriverVersion(
 );
 
 NTSTATUS deviceControl(
-    _In_        ULONG   IoControlCode, 
-    _In_        PVOID   pInBuffer,
-    _In_        ULONG   InBufSize,
+    _In_    ULONG   IoControlCode, 
+    _In_    PVOID   pInBuffer,
+    _In_    ULONG   InBufSize,
     _In_opt_    PVOID   pOutBuffer,
-    _In_        ULONG   OutBufSize,
-    _Out_       PULONG  outputSize,
-    _Inout_     PQUEUE_CONTEXT queueContext);
+    _In_    ULONG   OutBufSize,
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext);
+
+NTSTATUS deviceControlB2BTimeline(
+    _In_    ULONG   IoControlCode,
+    _In_    PVOID   pInBuffer,
+    _In_    ULONG   InBufSize,
+    _In_opt_    PVOID   pOutBuffer,
+    _In_    ULONG   OutBufSize,
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext);
+
+typedef struct _B2BData
+{
+    LIST_ENTRY	List;
+    UINT32 evt_num;
+    UINT64 round;
+    struct pmu_event_usr evts[MAX_MANAGED_CORE_EVENTS];
+}B2BData, * PB2BData;
+
+
+typedef struct _B2BDataHead
+{
+    LIST_ENTRY	List;
+} B2BDataHead, * PB2BDataHead;
+
+

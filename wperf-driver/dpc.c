@@ -64,6 +64,13 @@ extern UINT64* last_fpc_read;
 extern UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 extern struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC];
 
+
+//    Data list
+extern KSPIN_LOCK B2BLock;
+extern B2BData         b2b_data[];
+
+
+
 static UINT64 core_read_counter_helper(UINT32 counter_idx)
 {
     return CoreReadCounter(counter_idx_map[counter_idx]);
@@ -242,6 +249,74 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     core->timer_round++;
 }
 
+
+// in back to back timeline mode 
+VOID b2b_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
+{
+    UNREFERENCED_PARAMETER(dpc);
+    UNREFERENCED_PARAMETER(sys_arg1);
+    UNREFERENCED_PARAMETER(sys_arg2);
+
+    if (ctx == NULL)
+        return;
+
+    //
+    //  Needs to sopt counting, get the data and store it in the list where the app can get it when it wants
+    //  Then reset the counters, and restart counting
+
+    CoreInfo* core = (CoreInfo*)ctx;
+
+    if (core->idx > MAX_PMU_CTL_CORES_COUNT)
+        return;
+
+    KIRQL oldirql;
+    KeAcquireSpinLock(&B2BLock, &oldirql);
+
+    b2b_data[core->idx].evt_num = core->events_num;
+    b2b_data[core->idx].round = core->timer_round;
+
+
+    struct pmu_event_usr* out_events = &b2b_data[core->idx].evts[0];
+    struct pmu_event_pseudo* events = &core->events[0];
+
+    for (UINT32 j = 0; j < core->events_num; j++)
+    {
+        struct pmu_event_pseudo* event = events + j;
+        struct pmu_event_usr* out_event = out_events + j;
+        out_event->event_idx = event->event_idx;
+        out_event->filter_bits = event->filter_bits;
+        out_event->scheduled = event->scheduled;
+        out_event->value = event->value;
+    }
+
+    KeReleaseSpinLock(&B2BLock, oldirql);
+
+    core->timer_round = 0;
+
+    events = &core->events[0];
+    UINT32 events_num = core->events_num;
+    for (UINT32 j = 0; j < events_num; j++)
+    {
+        events[j].value = 0;
+        events[j].scheduled = 0;
+    }
+
+    struct pmu_event_pseudo* dsu_events = &core->dsu_events[0];
+    UINT32 dsu_events_num = core->dsu_events_num;
+    for (UINT32 j = 0; j < dsu_events_num; j++)
+    {
+        dsu_events[j].value = 0;
+        dsu_events[j].scheduled = 0;
+    }
+    CoreCounterStop();
+    update_last_fixed_counter(core->idx);
+    CoreCounterReset();
+    CoreCounterStart();
+ }
+
+
+
+
 VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
     UNREFERENCED_PARAMETER(dpc);
@@ -251,6 +326,7 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
         return;
 
     CoreInfo* core = (CoreInfo*)ctx;
+
     CoreCounterStop();
     update_last_fixed_counter(core->idx);
     CoreCounterReset();

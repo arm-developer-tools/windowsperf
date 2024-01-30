@@ -63,4 +63,11 @@ typedef struct core_info
     UINT32 sample_interval[AARCH64_MAX_HWC_SUPP + numFPC];
     UINT64 ov_mask;
     UINT64 idx;
+    LONGLONG b2b_timeout;
+    KTIMER b2b_timer;
+    UINT8  b2b_timer_running;
+    KDPC  dpc_b2b;
 } CoreInfo;
+
+
+

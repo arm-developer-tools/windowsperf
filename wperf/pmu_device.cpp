@@ -612,6 +612,27 @@ void pmu_device::start(uint32_t flags = CTL_FLAG_CORE)
         throw fatal_exception("PMU_CTL_START failed");
 }
 
+
+void pmu_device::b2b_timeline_start(uint32_t flags = CTL_FLAG_CORE, int64_t counting_duration_iter = 0)
+{
+    struct pmu_b2b_timeline_hdr ctl;
+    DWORD res_len;
+
+    ctl.action = PMU_CTL_B2BTIMELINE_START;
+    ctl.cores_idx.cores_count = cores_idx.size();
+    std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
+
+    ctl.dmc_idx = dmc_idx;
+    ctl.flags = flags;
+    ctl.b2b_timeout = counting_duration_iter;
+    drvconfig::get(L"count.period", ctl.period);
+    
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_B2BTIMELINE_START, &ctl, sizeof(struct pmu_b2b_timeline_hdr), NULL, 0, &res_len);
+    if (!status)
+        throw fatal_exception("PMU_CTL_B2BTIMELINE_START failed");
+}
+
 void pmu_device::stop(uint32_t flags = CTL_FLAG_CORE)
 {
     struct pmu_ctl_hdr ctl;
@@ -626,6 +647,22 @@ void pmu_device::stop(uint32_t flags = CTL_FLAG_CORE)
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_STOP, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_STOP failed");
+}
+
+void pmu_device::b2b_timeline_stop(uint32_t flags = CTL_FLAG_CORE)
+{
+    struct pmu_ctl_hdr ctl;
+    DWORD res_len;
+
+    ctl.action = PMU_CTL_B2BTIMELINE_STOP;
+    ctl.cores_idx.cores_count = cores_idx.size();
+    std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
+    ctl.dmc_idx = dmc_idx;
+    ctl.flags = flags;
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_B2BTIMELINE_STOP, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    if (!status)
+        throw fatal_exception("PMU_CTL_B2BTIMELINE_STOP failed");
 }
 
 void pmu_device::reset(uint32_t flags = CTL_FLAG_CORE)
@@ -842,28 +879,36 @@ void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::
         throw fatal_exception("PMU_CTL_ASSIGN_EVENTS failed");
 }
 
-void pmu_device::core_events_read_nth(uint8_t core_no)
+void pmu_device::core_events_read_nth(uint8_t core_no, bool b2b_timeline)
 {
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_READ_COUNTING;
+    if(b2b_timeline)
+        ctl.action = PMU_CTL_B2BTIMELINE_GET;
+    else
+        ctl.action = PMU_CTL_READ_COUNTING;
+
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = core_no;
     ctl.flags = CTL_FLAG_CORE;
 
     LPVOID out_buf = core_outs.get() + core_no;
     size_t out_buf_len = sizeof(ReadOut);
-    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_READ_COUNTING, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
+    BOOL status = 0;
+    if(b2b_timeline)
+        status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_B2BTIMELINE_GET, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
+    else
+        status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_READ_COUNTING, &ctl, (DWORD)sizeof(struct pmu_ctl_hdr), out_buf, (DWORD)out_buf_len, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_READ_COUNTING failed");
 }
 
-void pmu_device::core_events_read()
+void pmu_device::core_events_read(bool b2b_timeline)
 {
     for (uint8_t core_no : cores_idx)
     {
-        core_events_read_nth(core_no);
+        core_events_read_nth(core_no, b2b_timeline);
     }
 }
 

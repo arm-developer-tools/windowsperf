@@ -32,3 +32,9 @@
 VOID  update_last_fixed_counter(UINT64 core_idx);
 
 VOID core_write_counter(UINT32 counter_idx, __int64 val);
+
+PMEMORY Get620MemoryResource(ULONG linkNum); //  call free on the returned buffer if valid
+
+PCHAR		DbgStatusStr(NTSTATUS status);
+
+BOOLEAN  check_cores_in_pmu_ctl_hdr_p( struct pmu_ctl_hdr* ctl_req);

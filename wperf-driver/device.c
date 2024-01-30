@@ -33,13 +33,13 @@
 #if !defined DBG
 #include "device.tmh"
 #endif
-#include "utilities.h"
+
 #include "dmc.h"
 #include "core.h"
 #include "spe.h"
 #include "coreinfo.h"
 #include "sysregs.h"
-
+#include "utilities.h"
 
 //
 // Device events
@@ -90,7 +90,11 @@ enum
 };
 
 
-
+//
+//    Data list
+//
+KSPIN_LOCK  B2BLock;
+B2BData         b2b_data[MAX_PMU_CTL_CORES_COUNT];
 
 //////////////////////////////////////////////////////////////////
 //
@@ -247,6 +251,18 @@ VOID free_pmu_resource(VOID)
 VOID WindowsPerfDeviceUnload()
 {
     free_pmu_resource();
+
+    for (ULONG i = 0; i < numCores; i++)
+    {
+        if (core_info[i].b2b_timer_running)
+            KeCancelTimer(&core_info[i].b2b_timer);
+        core_info[i].b2b_timer_running = FALSE;
+
+        if (core_info[i].timer_running)
+            KeCancelTimer(&core_info[i].timer);
+        core_info[i].timer_running = FALSE;
+    }
+
     if (core_info)
         ExFreePoolWithTag(core_info, 'CORE');
 
@@ -559,16 +575,22 @@ WindowsPerfDeviceCreate(
         PRKDPC dpc_overflow = &core_info[i].dpc_overflow;
         PRKDPC dpc_multiplex = &core_info[i].dpc_multiplex;
         PRKDPC dpc_reset = &core_info[i].dpc_reset;
+        PRKDPC dpc_b2b = &core_info[i].dpc_b2b;
 
         KeInitializeDpc(dpc_overflow, overflow_dpc, &core_info[i]);
         KeInitializeDpc(dpc_multiplex, multiplex_dpc, &core_info[i]);
         KeInitializeDpc(dpc_reset, reset_dpc, &core_info[i]);
+        KeInitializeDpc(dpc_b2b, b2b_dpc, &core_info[i]);
+
         KeSetTargetProcessorDpcEx(dpc_overflow, &ProcNumber);
         KeSetTargetProcessorDpcEx(dpc_multiplex, &ProcNumber);
         KeSetTargetProcessorDpcEx(dpc_reset, &ProcNumber);
+        KeSetTargetProcessorDpcEx(dpc_b2b, &ProcNumber);
+
         KeSetImportanceDpc(dpc_overflow, HighImportance);
         KeSetImportanceDpc(dpc_multiplex, HighImportance);
         KeSetImportanceDpc(dpc_reset, HighImportance);
+        KeSetImportanceDpc(dpc_b2b, HighImportance);
     }
 
     KeInitializeEvent(&sync_reset_dpc, NotificationEvent, FALSE);
@@ -585,6 +607,11 @@ WindowsPerfDeviceCreate(
     //
     // Port End
     //
+
+
+    // initialise locked data for storing b2b time line data.  It is read by the driver periodically, 
+    // and then the app reads it off the driver, so it needs buffering
+    KeInitializeSpinLock(&B2BLock);
 
     //  and finally do a reset on the hardware to make sure it is in a known state.  The reset dpc sets the event, so we have 
     // to call this after the event is initialised of couse

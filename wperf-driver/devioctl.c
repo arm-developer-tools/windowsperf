@@ -33,12 +33,12 @@
 #if !defined DBG
 #include "devioctl.tmh"
 #endif
-#include "utilities.h"
+#include "coreinfo.h"
 #include "dmc.h"
 #include "dsu.h"
 #include "core.h"
 #include "wperf-common\gitver.h"
-#include "wperf-common\inline.h"
+#include "utilities.h"
 
 
 static VOID(*dsu_ctl_funcs[3])(VOID) = { DSUCounterStart, DSUCounterStop, DSUCounterReset };
@@ -119,7 +119,7 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
     context->action = PMU_CTL_ASSIGN_EVENTS;
-    context->isDSU = false;
+    context->isDSU = FALSE;
     context->core_base = core_base;
     context->core_end = core_end;
     context->event_num = core_event_num;
@@ -172,7 +172,7 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
     context->action = PMU_CTL_ASSIGN_EVENTS;
-    context->isDSU = true;
+    context->isDSU = TRUE;
     context->core_base = core_base;
     context->core_end = core_end;
     context->event_num = dsu_event_num;
@@ -183,19 +183,27 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
 }
 
 NTSTATUS deviceControl(
-    _In_        ULONG   IoCtlCode,
-    _In_        PVOID   pInBuffer,
-    _In_        ULONG   InBufSize,
+    _In_    ULONG   IoCtlCode,
+    _In_    PVOID   pInBuffer,
+    _In_    ULONG   InBufSize,
     _In_opt_    PVOID   pOutBuffer,
-    _In_        ULONG   OutBufSize,
-    _Out_       PULONG  outputSize,
-    _Inout_     PQUEUE_CONTEXT queueContext
+    _In_    ULONG   OutBufSize,
+    _Out_   PULONG  outputSize,
+    _Inout_ PQUEUE_CONTEXT queueContext
 )
 {
     NTSTATUS status = STATUS_SUCCESS;
     *outputSize = 0;
 
-    ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Function'
+    ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Funciton'
+
+    if ((action < PMU_CTL_START) || (action >= PMU_CTL_MAX))
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid action %d\n",
+            action));
+        return STATUS_INVALID_PARAMETER;
+    }
+
     queueContext->action = action;  // Save for later processing  
 
     //
@@ -518,6 +526,7 @@ NTSTATUS deviceControl(
                 core->prof_core = PROF_DISABLED;
                 core->prof_dsu = PROF_DISABLED;
                 core->prof_dmc = PROF_DISABLED;
+                core->b2b_timeout = 0;
 
                 UINT8 do_multiplex = 0;
 
@@ -1285,6 +1294,12 @@ NTSTATUS deviceControl(
         }
         break;
     }
+
+    case IOCTL_PMU_CTL_B2BTIMELINE_START:
+    case IOCTL_PMU_CTL_B2BTIMELINE_STOP:
+    case IOCTL_PMU_CTL_B2BTIMELINE_GET:
+        return deviceControlB2BTimeline(IoCtlCode, pInBuffer, InBufSize, pOutBuffer, OutBufSize, outputSize, queueContext);
+
     default:
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "IOCTL: invalid action %d\n", action));
         status = STATUS_INVALID_PARAMETER;

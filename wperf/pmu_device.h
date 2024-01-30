@@ -148,10 +148,12 @@ public:
     void set_builtin_metrics(std::wstring metric_name, std::wstring raw_str);
     void start(uint32_t flags);
     void stop(uint32_t flags);
+    void b2b_timeline_start(uint32_t flags, int64_t counting_duration_iter);
+    void b2b_timeline_stop(uint32_t flags);
     void reset(uint32_t flags);
     void events_assign(uint32_t core_idx, std::map<enum evt_class, std::vector<struct evt_noted>> events, bool include_kernel);
-    void core_events_read_nth(uint8_t core_no);
-    void core_events_read();
+    void core_events_read_nth(uint8_t core_no, bool b2b_timeline);
+    void core_events_read(bool b2b_timeline = FALSE);
     void dsu_events_read_nth(uint8_t core_no);
     void dsu_events_read(void);
     void dmc_events_read(void);
