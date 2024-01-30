@@ -90,7 +90,7 @@ __ETWTrace(
     ...
 )
 {
-#define   OUT_SIZE   256
+#define   OUT_SIZE   512
     va_list               Arguments;
     CHAR               out[OUT_SIZE];
     NTSTATUS        status = STATUS_SUCCESS;

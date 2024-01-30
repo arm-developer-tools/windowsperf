@@ -1137,6 +1137,7 @@ NTSTATUS deviceControl(
                 out_event->filter_bits = event->filter_bits;
                 out_event->scheduled = event->scheduled;
                 out_event->value = event->value;
+                ETWTrace("PMU_CTL_READ_COUNTING Core %d  event idx %u,  filter bits %llu, scheduled %llu, value %llu", i, out_event->event_idx, out_event->filter_bits, out_event->scheduled, out_event->value);
             }
 
             outputSizeReturned += sizeof(ReadOut);
