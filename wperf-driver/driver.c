@@ -33,6 +33,7 @@
 #if defined ENABLE_TRACING
 #include "driver.tmh"
 #endif
+#include "Wperf_DriverETW_schema.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -53,9 +54,14 @@ WindowsPerfEvtWdfDriverUnload(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
 #endif
 
-    WindowsPerfDeviceUnload();
+
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "unloaded\n"));
+
+    ETWTrace("Wperf Driver Unload");
+    EventUnregisterWperf_Driver();
+
+    WindowsPerfDeviceUnload();
 
     //
     // Stop WPP Tracing
@@ -94,7 +100,9 @@ DriverEntry(
     WPP_INIT_TRACING(DriverObject, RegistryPath);
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 #endif
-    
+
+    EventRegisterWperf_Driver();
+    ETWTrace("Wperf Driver Load");
 
 
     // Initialize the driver config structure
@@ -111,6 +119,8 @@ DriverEntry(
                             WDF_NO_HANDLE);
     if (!NT_SUCCESS(status)) {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Error: WdfDriverCreate failed 0x%x\n", status));
+        ETWTrace("Wperf Driver Load fail %d", status);
+        EventUnregisterWperf_Driver();
         return status;
     }
 
@@ -146,6 +156,8 @@ WindowsPerfEvtDeviceAdd(
     PAGED_CODE();
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "Enter EvtDeviceAdd\n"));
+    ETWTrace("Wperf Driver Add Device");
+
 
     status = WindowsPerfDeviceCreate(DeviceInit);
 

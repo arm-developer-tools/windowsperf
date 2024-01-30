@@ -120,8 +120,14 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
 
+    ETWTrace("====>");
+
     if (ctx == NULL)
+    {
+        ETWTrace("<==== ctx is null");
         return;
+    }
+    
 
     CoreInfo* core = (CoreInfo*)ctx;
     UINT64 round = core->timer_round;
@@ -216,6 +222,8 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
         UpdateDmcCounting(core->dmc_ch, &dmc_array);
 
     core->timer_round = new_round;
+
+    ETWTrace("<====");
 }
 
 // When there is no event multiplexing, we still need to use multiplexing-like timer for
@@ -226,8 +234,13 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
 
+    ETWTrace("====>");
+
     if (ctx == NULL)
+    {
+        ETWTrace("<==== ctx is null");
         return;
+    }
 
     CoreInfo* core = (CoreInfo*)ctx;
     if (core->prof_core != PROF_DISABLED)
@@ -240,6 +253,8 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
         UpdateDmcCounting(core->dmc_ch, &dmc_array);
 
     core->timer_round++;
+
+    ETWTrace("<====");
 }
 
 VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
@@ -247,8 +262,13 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(sys_arg2);
 
+    ETWTrace("====>");
+
     if (ctx == NULL)
+    {
+        ETWTrace("<==== ctx is null");
         return;
+    }
 
     CoreInfo* core = (CoreInfo*)ctx;
     CoreCounterStop();
@@ -260,6 +280,8 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     InterlockedIncrement(&cpunos);
     if ((ULONG)cpunos >= cores_count)
         KeSetEvent(&sync_reset_dpc, 0, FALSE);
+
+    ETWTrace("<====");
 }
 
 VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
@@ -269,6 +291,8 @@ VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID
     UNREFERENCED_PARAMETER(ctx);
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
+
+    ETWTrace("====>");
 
     CoreCounterReset();
 
@@ -281,4 +305,5 @@ VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
     update_last_fixed_counter(core_idx);
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "core %d PMC enabled\n", core_idx));
+    ETWTrace("<====");
 }

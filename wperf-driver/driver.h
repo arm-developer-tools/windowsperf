@@ -37,7 +37,9 @@
 #if defined ENABLE_TRACING
 #include "trace.h"
 #endif
-
+#include <stdarg.h>
+#include <ntstrsafe.h>
+#include "Wperf_DriverETW_schema.h"
 //
 // Device
 //
@@ -80,3 +82,41 @@ NTSTATUS deviceControl(
     _In_        ULONG   OutBufSize,
     _Out_       PULONG  outputSize,
     _Inout_     PQUEUE_CONTEXT queueContext);
+
+static __inline VOID
+__ETWTrace(
+    IN  const CHAR* Prefix,
+    IN  const CHAR* Format,
+    ...
+)
+{
+#define   OUT_SIZE   256
+    va_list               Arguments;
+    CHAR               out[OUT_SIZE];
+    NTSTATUS        status = STATUS_SUCCESS;
+    size_t               len = 0;
+
+    RtlZeroMemory(out, OUT_SIZE);
+
+    status = RtlStringCbLengthA(Prefix, OUT_SIZE, &len);
+    if (NT_SUCCESS(status))
+    {
+        memcpy(out, Prefix, len);
+
+        // prefix already has a space on the end so we can copy the rest straight on to it
+
+        va_start(Arguments, Format);
+
+        status = RtlStringCbVPrintfA(out + len, OUT_SIZE - len, Format, Arguments);
+
+        va_end(Arguments);
+
+        if (NT_SUCCESS(status)) {
+            EventWriteCustomEventTraceInfo(NULL, out, 0);
+        }
+    }
+}
+
+#define ETWTrace(...)  \
+        __ETWTrace(__FUNCTION__ ": ", __VA_ARGS__)
+

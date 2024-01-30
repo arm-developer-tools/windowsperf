@@ -62,6 +62,7 @@ WPERFDRIVER_Device_CoInstaller_CopyFiles = 11
 [SourceDisksFiles]
 wperf-driver.sys  = 1,,
 WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+Wperf_DriverETW_schema.xml=1,,
 
 ;*****************************************
 ; WPERFDRIVER Install Section
@@ -78,7 +79,7 @@ CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
 wperf-driver.sys,,,2
-
+Wperf_DriverETW_schema.xml,,,2
 
 ;-------------- Service installation
 [WPERFDRIVER_Device.NT.Services]

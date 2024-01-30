@@ -75,6 +75,12 @@
       <WppRecorderEnabled>false</WppRecorderEnabled>
       <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
+    <MessageCompile>
+      <HeaderFilePath>.\</HeaderFilePath>
+      <RCFilePath>.\</RCFilePath>
+      <GenerateKernelModeLoggingMacros>true</GenerateKernelModeLoggingMacros>
+      <UseBaseNameOfInput>true</UseBaseNameOfInput>
+    </MessageCompile>	
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
     </Midl>
@@ -103,6 +109,12 @@
       <PreprocessorDefinitions>_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
+    <MessageCompile>
+      <HeaderFilePath>.\</HeaderFilePath>
+      <RCFilePath>.\</RCFilePath>
+      <GenerateKernelModeLoggingMacros>true</GenerateKernelModeLoggingMacros>
+      <UseBaseNameOfInput>true</UseBaseNameOfInput>
+    </MessageCompile>	
     <Midl>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
     </Midl>
@@ -133,6 +145,10 @@
   <ItemGroup>
     <Inf Exclude="@(Inf)" Include="*.inx" />
     <FilesToPackage Include="$(TargetPath)" Condition="'$(ConfigurationType)'=='Driver' or '$(ConfigurationType)'=='DynamicLibrary'" />
+    <FilesToPackage Include="Wperf_DriverETW_schema.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <MessageCompile Include="Wperf_DriverETW_schema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Exclude="@(None)" Include="*.txt;*.htm;*.html" />
@@ -148,6 +164,7 @@
     <ClInclude Include="dsu.h" />
     <ClInclude Include="pmu.h" />
     <ClInclude Include="queue.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="spe.h" />
     <ClInclude Include="sysregs.h" />
     <ClInclude Include="trace.h" />

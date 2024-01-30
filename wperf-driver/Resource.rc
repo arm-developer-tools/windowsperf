@@ -80,3 +80,6 @@
 #define VER_LANGNEUTRAL
 
 #include "common.ver"
+LANGUAGE 0x9, 0x1
+1 11 "Wperf_DriverETW_schema_MSG00001.bin"
+1 WEVT_TEMPLATE "Wperf_DriverETW_schemaTEMP.BIN"
