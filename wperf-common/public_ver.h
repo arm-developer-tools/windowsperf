@@ -28,5 +28,36 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "public_guid.h"    // GUID_DEVINTERFACE_WINDOWSPERF
-#include "public_ver.h"     // MAJOR, MINOR and PATCH package versions
+//
+// WindowsPerf package version string
+//
+// Given a version number MAJOR.MINOR.PATCH, increment the:
+//
+//     MAJOR version when you make incompatible API changes.
+//     MINOR version when you add functionality in a backwards compatible manner.
+//     PATCH version when you make backwards compatible bug fixes.
+//
+
+#define MAJOR 3
+#define MINOR 4
+#define PATCH 0
+
+//
+// WindowsPerf package version helper macros
+//
+
+// If you want to stringize the result of expansion of a macro argument, you have to use two levels of macros.
+// See: https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
+#define WPERF_XSTRING(s)  WPERF_STRING(s)
+#define WPERF_STRING(s)   #s
+
+//
+// Macros used to automatically update `wperf-driver/Resource.rc` macros such as:
+// VER_PRODUCTVERSION or VER_PRODUCTVERSION_STR.
+//
+
+// VER_PRODUCTVERSION proxy, e.g. 3,4,0,0
+#define WPERF_VER_PRODUCTVERSION(MA,MI,PA)          MA,MI,PA,0              // Comma separated version NUMBER LIST, with trailing "0"
+
+// VER_PRODUCTVERSION_STR proxy, e.g. 3.4.0.0
+#define WPERF_VER_PRODUCTVERSION_STR(MA,MI,PA)      MA "." MI "." PA ".0"   // Dot separated version STRING, with trailing "0"

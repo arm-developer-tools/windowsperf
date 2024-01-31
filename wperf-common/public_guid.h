@@ -28,5 +28,13 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "public_guid.h"    // GUID_DEVINTERFACE_WINDOWSPERF
-#include "public_ver.h"     // MAJOR, MINOR and PATCH package versions
+
+#include <Guiddef.h>
+//
+// Define an Interface Guid so that app can find the device and talk to it.
+//
+// Generated with guidgen.exe (Visual Studio Community 2022 17.3.5)
+//
+DEFINE_GUID (GUID_DEVINTERFACE_WINDOWSPERF,
+0xf8047fdd, 0x7083, 0x4c2e, 0x90, 0xef, 0xc0, 0xc7, 0x3f, 0x10, 0x45, 0xfd);
+// {F8047FDD-7083-4C2E-90EF-C0C73F1045FD}
