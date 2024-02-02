@@ -107,6 +107,7 @@ if _product_name_cpus not in _cpus:
 @pytest.mark.parametrize("core,event,event_freq,benchmark,param,hottest,hottest_overhead",
 [
     (7, "l1d_cache_refill", 10000, "l1d_cache_workload.exe", 5, "stress", 99),
+    (6, "vfp_spec", 10000, "fpmul_workload.exe", 5, "stress", 99),
 ]
 )
 def test_ustress_bench_record_microbenchmark(core,event,event_freq,benchmark,param,hottest,hottest_overhead):
@@ -127,7 +128,7 @@ def test_ustress_bench_record_microbenchmark(core,event,event_freq,benchmark,par
 
     ## Execute benchmark
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    cmd = f"wperf record -e {event}:{event_freq} -c {core} --timeout 4 --json -- {benchmark_path} {param}"
+    cmd = f"wperf record -e {event}:{event_freq} -c {core} --timeout {param} --json -- {benchmark_path} {param}"
     stdout, _ = run_command(cmd)
 
     assert is_json(stdout), f"in {cmd}"
