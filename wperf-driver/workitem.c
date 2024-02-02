@@ -241,7 +241,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             else
             {
                 core_counter_set_type_helper(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
-                ov_mask |= 1ULL << gpc_num;
+                ov_mask |= 1ULL << counter_idx_map[gpc_num];
                 core_counter_enable_irq_helper(gpc_num);
                 core_write_counter(gpc_num, (__int64)val);
                 gpc_num++;
