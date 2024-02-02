@@ -84,12 +84,15 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 
 """
 
+import json
 import os
 import pathlib as pl
 import re
 from statistics import median
 from time import sleep
+
 import pytest
+
 from common import run_command
 from common import get_product_name, get_make_CPU_name, get_CPUs_supported_by_ustress
 from common_ustress import TS_USTRESS_DIR, TS_USTRESS_HEADER
@@ -159,3 +162,97 @@ def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,t
         pytest.skip(f"{benchmark} metric '{metric}' median {med} < {threshold} -- threshold not reached")
 
     assert med >= threshold, f"in {cmd}"             # Check if median is above threshold
+
+def test_ustress_bench_2_orthogonal_metrics_l1d_cache_workload():
+    """ Run `l1d_cache_workload.exe` for two orthogonal metrics, expect:
+        - `l1d_cache_miss_ratio` to be ~1.0, and
+        - `scalar_fp_percentage` to be ~0.0.
+
+        We want to make sure that in scenario with one micro-benchmark we
+        can clearly see two unrelated metrics are consistently "different".
+    """
+
+    ## Do not rely on other tests, sleep before we run record to make sure core(s) counters are not saturated
+    sleep(2)
+
+    metrics = "scalar_fp_percentage,l1d_cache_miss_ratio"
+    benchmark = "l1d_cache_workload.exe"
+    benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
+    cmd = f"wperf stat -m {metrics}  -c 7 --timeout 5 --json -- {benchmark_path} 10"
+    stdout, _ = run_command(cmd)
+    json_output = json.loads(stdout)
+
+    """Expected:
+        ...
+        Telemetry Solution Metrics:
+        core  product_name  metric_name           value  unit
+        ====  ============  ===========           =====  ====
+           7  neoverse-n1   l1d_cache_miss_ratio  1.000  per cache access
+           7  neoverse-n1   scalar_fp_percentage  0.000  percent of operations
+    """
+
+    assert 'core' in json_output
+    assert 'ts_metric' in json_output['core']
+    assert 'Telemetry_Solution_Metrics' in json_output['core']['ts_metric']
+    assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == len(metrics.split(","))
+
+    l1d_cache_miss_ratio = None
+    scalar_fp_percentage = None
+
+    for metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics']:
+        if metric["metric_name"] == 'l1d_cache_miss_ratio':
+            l1d_cache_miss_ratio = float(metric["value"])
+        if metric["metric_name"] == 'scalar_fp_percentage':
+            scalar_fp_percentage = float(metric["value"])
+
+    assert l1d_cache_miss_ratio is not None
+    assert scalar_fp_percentage is not None
+    assert l1d_cache_miss_ratio >= 0.90, f"expected `l1d_cache_miss_ratio` == ~1.000, for workload {benchmark}"
+    assert scalar_fp_percentage <= 0.10, f"expected ` scalar_fp_percentage` ==  ~0.000, for workload {benchmark}"
+
+def test_ustress_bench_2_orthogonal_metrics_fpmul_workload():
+    """ Run `fpmul_workload.exe` for two orthogonal metrics, expect:
+        - `l1d_cache_miss_ratio` to be ~0.0, and
+        - `scalar_fp_percentage` to be > 50.0 %.
+
+        We want to make sure that in scenario with one micro-benchmark we
+        can clearly see two unrelated metrics are consistently "different".
+    """
+
+    ## Do not rely on other tests, sleep before we run record to make sure core(s) counters are not saturated
+    sleep(2)
+
+    metrics = "scalar_fp_percentage,l1d_cache_miss_ratio"
+    benchmark = "fpmul_workload.exe"
+    benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
+    cmd = f"wperf stat -m {metrics}  -c 7 --timeout 5 --json -- {benchmark_path} 10"
+    stdout, _ = run_command(cmd)
+    json_output = json.loads(stdout)
+
+    """Expected on `neoverse-n1`:
+        ...
+        Telemetry Solution Metrics:
+        core  product_name  metric_name           value  unit
+        ====  ============  ===========           =====  ====
+           7  neoverse-n1   l1d_cache_miss_ratio   0.000  per cache access
+           7  neoverse-n1   scalar_fp_percentage  57.143  percent of operations
+    """
+
+    assert 'core' in json_output
+    assert 'ts_metric' in json_output['core']
+    assert 'Telemetry_Solution_Metrics' in json_output['core']['ts_metric']
+    assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == len(metrics.split(","))
+
+    l1d_cache_miss_ratio = None
+    scalar_fp_percentage = None
+
+    for metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics']:
+        if metric["metric_name"] == 'l1d_cache_miss_ratio':
+            l1d_cache_miss_ratio = float(metric["value"])
+        if metric["metric_name"] == 'scalar_fp_percentage':
+            scalar_fp_percentage = float(metric["value"])
+
+    assert l1d_cache_miss_ratio is not None
+    assert scalar_fp_percentage is not None
+    assert l1d_cache_miss_ratio <= 0.10, f"expected `l1d_cache_miss_ratio` == ~0.000, for workload {benchmark}"
+    assert scalar_fp_percentage >= 50.0, f"expected ` scalar_fp_percentage`> ~50.000, for workload {benchmark}"
