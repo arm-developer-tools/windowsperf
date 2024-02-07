@@ -709,17 +709,30 @@ wmain(
                 if (!found)
                     sd.desc.name = L"unknown";
 
+                int32_t mapped_counter_idx = -1;
                 for (uint32_t counter_idx = 0; counter_idx < 32; counter_idx++)
                 {
-                    if (!(a.ov_flags & (1i64 << (UINT64)counter_idx)))
+                    /* ov_flags is a bitmask that for each n-th bit defines if the n-th GPC counter is being used. The expression
+                    * below is as follows `(a.ov_flags & (1i64 << (UINT64)counter_idx)` checks if the counter_idx-th bit is set,
+                    * revealing if it is in use or not. So in a mock example, if we have GPC 3 set ov_flags would be b1000,
+                    * if counter_idx was also 3 then (1 << 3) = b1000 resulting in than `(a.ov_flags & (1i64 << (UINT64)counter_idx)` = b1000.
+                    * The final shift `>> (UINT64)counter_idx` is just there to make the `acc` variable be 1 in case the bit is set, and 0 otherwise.
+                    * 
+                    * Now, not all GPCs can be available at a particular time so the first usable GPC can actually have another index. To unmap this
+                    * we take into account that the n-th event is always expected to be assigned to the n-th GPC. `mapped_counter_idx` has in itself the 
+                    * index of the current available GPC if they were all in order and hence can be used as the index of the `ioctl_events_sample`.
+                    */
+                    uint32_t acc = static_cast<uint32_t>((a.ov_flags & (1i64 << (UINT64)counter_idx)) >> (UINT64)counter_idx);
+                    mapped_counter_idx += acc;
+                    if (!acc)
                         continue;
 
                     bool inserted = false;
                     uint32_t event_src;
-                    if (counter_idx == 31)
+                    if (mapped_counter_idx == 31)
                         event_src = CYCLE_EVT_IDX;
                     else
-                        event_src = request.ioctl_events_sample[counter_idx].index;
+                        event_src = request.ioctl_events_sample[mapped_counter_idx].index;
                     for (auto& c : resolved_samples)
                     {
                         if (c.desc.name == sd.desc.name && c.event_src == event_src)

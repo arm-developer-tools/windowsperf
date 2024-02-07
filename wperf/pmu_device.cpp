@@ -188,6 +188,7 @@ void pmu_device::init()
     uint8_t gpc_num = hw_cfg.gpc_num;
     gpc_nums[EVT_CORE] = gpc_num;
     pmu_ver = hw_cfg.pmu_ver;
+    total_gpc_num = hw_cfg.total_gpc_num;
 
     vendor_name = get_vendor_name(hw_cfg.vendor_id);
     core_outs = std::make_unique<ReadOut[]>(core_num);
@@ -2515,6 +2516,7 @@ void pmu_device::get_pmu_device_cfg(struct pmu_device_cfg& cfg)
     cfg.dmc_num = dmc_num;
     cfg.has_dsu = has_dsu;
     cfg.has_dmc = has_dmc;
+    cfg.total_gpc_num = total_gpc_num;
 }
 
 uint32_t pmu_device::stop_bits()

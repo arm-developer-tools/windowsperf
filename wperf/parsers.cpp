@@ -396,9 +396,17 @@ void parse_events_str(std::wstring events_str,
             {
                 if (group_size > pmu_cfg.gpc_nums[e_class])
                 {
+                    if (group_size > pmu_cfg.total_gpc_num)
+                    {
+                        m_out.GetErrorOutputStream() << L"event group size(" << int(group_size)
+                            << ") exceeds number of hardware PMU counters("
+                            << pmu_cfg.total_gpc_num << ")" << std::endl;
+                        throw fatal_exception("ERROR_GROUP");
+                    }
+
                     m_out.GetErrorOutputStream() << L"event group size(" << int(group_size)
-                        << ") exceeds number of hardware PMU counter("
-                        << pmu_cfg.gpc_nums[e_class] << ")" << std::endl;
+                        << ") exceeds number of free hardware PMU counters("
+                        << pmu_cfg.gpc_nums[e_class] << ") out of a total of (" << pmu_cfg.total_gpc_num << ")" << std::endl;
                     throw fatal_exception("ERROR_GROUP");
                 }
 

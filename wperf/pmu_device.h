@@ -60,6 +60,7 @@ struct pmu_device_cfg
     uint32_t dmc_num;
     bool has_dsu;
     bool has_dmc;
+    uint8_t total_gpc_num;
 };
 
 struct product_alias
@@ -186,7 +187,7 @@ public:
     uint32_t stop_bits();
     uint32_t enable_bits(_In_ std::vector<enum evt_class>& e_classes);
 
-    uint8_t core_num;
+    uint8_t core_num, total_gpc_num;
     std::map<std::wstring, metric_desc> builtin_metrics;
     bool has_dsu;
     bool has_dmc;
