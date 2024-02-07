@@ -437,7 +437,23 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (waiting_events)
         {
             if (do_sample || do_record)
+            {
                 parse_events_str_for_sample(a, ioctl_events_sample, sampling_inverval);
+                // After events are parsed check if we can fulfil this request as sampling does not have multiplexing
+                if (ioctl_events_sample.size() > pmu_cfg.total_gpc_num)
+                {
+                    m_out.GetErrorOutputStream() << L"number of events requested exceeds the number of hardware PMU counters("
+                        << pmu_cfg.total_gpc_num << ")" << std::endl;
+                    throw fatal_exception("ERROR_EVENTS_SIZE");
+                }
+
+                if (ioctl_events_sample.size() > pmu_cfg.gpc_nums[EVT_CORE])
+                {
+                    m_out.GetErrorOutputStream() << L"number of events requested exceeds the number of free hardware PMU counters("
+                        << pmu_cfg.gpc_nums[EVT_CORE] << ") out of a total of (" << pmu_cfg.total_gpc_num << ")" << std::endl;
+                    throw fatal_exception("ERROR_EVENTS_SIZE");
+                }
+            }
             else
                 parse_events_str(a, events, groups, L"", pmu_cfg);
             waiting_events = false;
