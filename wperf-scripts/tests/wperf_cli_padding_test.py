@@ -38,6 +38,7 @@ import pytest
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
+from fixtures import fixture_is_enough_GPCs
 
 ### Test cases
 
@@ -143,6 +144,7 @@ def test_wperf_padding_gpc_num_max():
         assert str(event_idx) in evt_core_index
 
 
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_groups_1():
     """ Test groups {crypto_spec,vfp_spec} """
     cmd = 'wperf test -e {crypto_spec,vfp_spec} --json'
@@ -153,12 +155,6 @@ def test_wperf_padding_groups_1():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
-
-    if gpc_num < 5:
-        pytest.skip("test assumes gpc_num is at least 5")
-        return
-
-    assert gpc_num >= 5                        #   This test assumes number of General Purpose Counter is at least 5
 
     assert len(set(evt_core_index)) == 3       #   119,117,27,27,27...
     assert len(set(evt_core_note)) == 2        #   (g0),(g0),(p),(p),(p),...
@@ -171,6 +167,7 @@ def test_wperf_padding_groups_1():
     assert '(p)' in evt_core_note              # padding
 
 
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_groups_2():
     """ Test groups crypto_spec,{vfp_spec,ase_spec} """
     cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec} --json'
@@ -181,12 +178,6 @@ def test_wperf_padding_groups_2():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
-
-    if gpc_num < 5:
-        pytest.skip("test assumes gpc_num is at least 5")
-        return
-
-    assert gpc_num >= 5                 #   This test assumes number of General Purpose Counter is at least 5
 
     assert len(set(evt_core_index)) == 4      #   117,116,119,27,27,27,...
     assert len(set(evt_core_note)) == 3       #   (g0),(g0),(e),(p),(p),(p),....
@@ -218,6 +209,7 @@ def test_wperf_padding_groups_2():
         i += 1  # progress that index ;)
 
 
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_groups_3():
     """ Test groups crypto_spec,{vfp_spec,ase_spec},dp_spec """
     cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec},dp_spec --json'
@@ -228,12 +220,6 @@ def test_wperf_padding_groups_3():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
-
-    if gpc_num < 5:
-        pytest.skip("test assumes gpc_num is at least 5")
-        return
-
-    assert gpc_num >= 5                           #   This test assumes number of General Purpose Counter is at least 5
 
     assert len(set(evt_core_index)) == 5          #   117,116,119,115,27,27
     assert len(set(evt_core_note)) == 3           #   (g0),(g0),(e),(e),(p),(p)
@@ -266,6 +252,7 @@ def test_wperf_padding_groups_3():
         i += 1  # progress that index ;)
 
 
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_groups_4():
     """ Test groups crypto_spec,{vfp_spec,ase_spec,dp_spec} """
     cmd = 'wperf test -e crypto_spec,{vfp_spec,ase_spec,dp_spec} --json'
@@ -276,12 +263,6 @@ def test_wperf_padding_groups_4():
     evt_core_note = get_result_from_test_results(json_output, "ioctl_events[EVT_CORE].note").split(',')
     gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
     gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
-
-    if gpc_num < 5:
-        pytest.skip("test assumes gpc_num is at least 5")
-        return
-
-    assert gpc_num >= 5                           #   This test assumes number of General Purpose Counter is at least 5
 
     assert len(set(evt_core_index)) == 5          #   117,116,115,119,27,27
     assert len(set(evt_core_note)) == 3           #   (g0),(g0),(g0),(e),(p),(p)
@@ -313,6 +294,8 @@ def test_wperf_padding_groups_4():
             assert evt_core_index[i] == '117' or evt_core_index[i] == '116' or evt_core_index[i] == '115'
         i += 1  # progress that index ;)
 
+
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_m_imix():
     """ Test one metric (imix), this test is not checking if indexes are OK """
     cmd = 'wperf test -m imix --json'
@@ -331,6 +314,8 @@ def test_wperf_padding_m_imix():
     assert len(evt_core_note) == gpc_num        #   (g0,imix),(g0,imix),(g0,imix),(g0,imix),(g0,imix),(g0,imix)
     assert all('g0,imix' in elem for elem in evt_core_note)    #   only '(g0,imix)' in note
 
+
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_m_imix_icache():
     """ Test two metrics (imix + icache), this test is not checking if indexes are OK """
     cmd = 'wperf test -m imix,icache --json'
@@ -379,6 +364,7 @@ LARGE_SET_1 = "{CPU_CYCLES},{cpu_cycles,stall_backend},{br_mis_pred_retired,inst
         "(g0),(g0),(e),(p),(p),(g1),(g1),(g1),(g2),(g2),(g3),(g3),(g4),(g4),(g4),(g5),(g5),(g5),(p),(p)"),
 ]
 )
+@pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_padding_large_topdown_l1(events,expected_evt_core_index,expected_evt_core_note):
     """ Test large set of event groups (example for top_down l1-level) """
     cmd = f"wperf test -e {events} --json"
