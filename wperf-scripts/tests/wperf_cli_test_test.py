@@ -34,7 +34,7 @@
 """Module is testing `wperf test` features."""
 import json
 from common import run_command, is_json, check_if_file_exists
-from common import get_result_from_test_results
+from common import get_result_from_test_results, wperf_test_get_key_val
 from common import arm64_vendor_names
 
 ### Test cases
@@ -115,3 +115,13 @@ def test_wperf_test_pmu_version_name():
     pmu_version_name = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]")
     if pmu_version_name.startswith("FEAT_"):
         assert pmu_version_name.startswith("FEAT_PMUv")
+
+def test_wperf_test_gpc_values():
+    """ Test if total GPCs <= free GPCS. This is sanity check. """
+    gpc_num = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "gpc_num")
+    gpc_num = int(gpc_num, 16)  # it's a hex string e,g,. 0x0005
+
+    total_gpc_num = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "total_gpc_num")
+    total_gpc_num = int(total_gpc_num, 16)  # it's a hex string e,g,. 0x0005
+
+    assert gpc_num <= total_gpc_num
