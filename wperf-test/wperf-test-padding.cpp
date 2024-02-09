@@ -272,4 +272,252 @@ namespace wperftest_common
 			Assert::AreEqual(ioctl_events[EVT_CORE].size(), (size_t)66);
 		}
 	};
+
+	TEST_CLASS(wperftest_padding_low_gpc_num_count)
+	{
+	public:
+		//
+		// Test for only 1 GPC available, we will assume here all tests are aware of the limitation
+		// and will not try to e.g. create event group larger than number of free GPCs.
+		//
+
+		TEST_METHOD(test_padding_low_gpc_num_1_no_group)
+		{
+			std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+			pmu_cfg.gpc_nums[EVT_CORE] = 1;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"r40,r41,r42,r43,r44,r45,r46", events, groups, note, pmu_cfg);
+			Assert::IsTrue(events[EVT_CORE].size() == 7);
+
+			set_event_padding(ioctl_events, pmu_cfg, events, groups);
+			Assert::IsTrue(ioctl_events[EVT_CORE].size() == 7);
+		}
+
+		//
+		// Test for only 2 GPCs available.
+		// We can have groups of two events now.
+		//
+		TEST_METHOD(test_padding_low_gpc_num_2_with_1_group)
+		{
+			std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;		// events without groups
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;		// groups of events
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+			pmu_cfg.gpc_nums[EVT_CORE] = 2;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"r40,{r41,r42},r43,r44,r45,r46", events, groups, note, pmu_cfg);
+
+			// Check event (in grooups) types
+			Assert::IsTrue(groups[EVT_CORE].size() == 3);		//	{r41,r42}	-> placeholder,r41,r42
+			Assert::IsTrue(groups[EVT_CORE][0].index == 2);		// placeholder, 2 means two events in the group (two events after this placeholder)
+			Assert::IsTrue(groups[EVT_CORE][1].index == 0x41);	// {r41,___}
+			Assert::IsTrue(groups[EVT_CORE][2].index == 0x42);	// {___,r42}
+
+			// Check event (without grooups) types
+			Assert::IsTrue(events[EVT_CORE].size() == 5);		// 5 events (no group) + 2 events in one group
+			Assert::IsTrue(events[EVT_CORE][0].type == EVT_NORMAL);	// r41
+			Assert::IsTrue(events[EVT_CORE][1].type == EVT_NORMAL);	// r42
+			Assert::IsTrue(events[EVT_CORE][2].type == EVT_NORMAL);
+			Assert::IsTrue(events[EVT_CORE][3].type == EVT_NORMAL);
+			Assert::IsTrue(events[EVT_CORE][4].type == EVT_NORMAL);
+
+			// Check event indexes, all events from r40 to r46 should be there
+			std::vector<uint16_t> events_no_group = {0x40, 0x43, 0x44, 0x45, 0x46};
+			for (auto index : events_no_group)
+			{
+				auto is_index = [index](struct evt_noted& n) { return n.index == index; };
+
+				auto index_present = std::find_if(events[EVT_CORE].begin(), events[EVT_CORE].end(),
+					is_index);
+
+				Assert::IsTrue(index_present != events[EVT_CORE].end());
+			}
+
+			set_event_padding(ioctl_events, pmu_cfg, events, groups);
+
+			// `ioctl_events` stores events (evets + groupped events)
+			// in flat representation with padding provided already.
+			Assert::IsFalse(ioctl_events[EVT_CORE].size() % pmu_cfg.gpc_nums[EVT_CORE]);	// must be multiplication of GPC_num
+			Assert::IsTrue(ioctl_events[EVT_CORE].size() == 8);		// 8 elements because we have N * GPC_num slots to fill
+
+			Assert::IsTrue(ioctl_events[EVT_CORE][0].type == EVT_GROUPED);
+			Assert::IsTrue(ioctl_events[EVT_CORE][1].type == EVT_GROUPED);
+			Assert::IsTrue(ioctl_events[EVT_CORE][2].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][3].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][4].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][5].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][6].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][7].type == EVT_PADDING);
+
+			Assert::IsTrue(ioctl_events[EVT_CORE][0].index = 0x41);
+			Assert::IsTrue(ioctl_events[EVT_CORE][1].index = 0x42);
+			Assert::IsTrue(ioctl_events[EVT_CORE][2].index = 0x40);
+			Assert::IsTrue(ioctl_events[EVT_CORE][3].index = 0x43);
+			Assert::IsTrue(ioctl_events[EVT_CORE][4].index = 0x44);
+			Assert::IsTrue(ioctl_events[EVT_CORE][5].index = 0x45);
+			Assert::IsTrue(ioctl_events[EVT_CORE][6].index = 0x46);
+			Assert::IsTrue(ioctl_events[EVT_CORE][7].index = 0x47);
+		}
+
+		//
+		// Test for only 3 GPCs available.
+		// We can have groups of three events now.
+		//
+		TEST_METHOD(test_padding_low_gpc_num_3_with_1_group)
+		{
+			std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;		// events without groups
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;		// groups of events
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 3;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"r40,r41,r42,r43,{r44,r45,r46}", events, groups, note, pmu_cfg);
+
+			//
+			// Groups (only events grouped)
+			//
+			Assert::IsTrue(groups[EVT_CORE].size() == 4);		//	{r41,r42}	-> placeholder,r41,r42
+
+			Assert::IsTrue(groups[EVT_CORE][0].index == 3);		// placeholder, 3 means three events in the group (3 events after this placeholder)
+			Assert::IsTrue(groups[EVT_CORE][1].index == 0x44);	// {r44,___,___}
+			Assert::IsTrue(groups[EVT_CORE][2].index == 0x45);	// {___,r45,___}
+			Assert::IsTrue(groups[EVT_CORE][3].index == 0x46);	// {___,___,r46}
+
+			// We have group header and events in the group (3)
+			Assert::IsTrue(groups[EVT_CORE][0].type == EVT_HDR);
+			Assert::IsTrue(groups[EVT_CORE][1].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][2].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][3].type == EVT_GROUPED);
+
+			//
+			// Events without group
+			//
+			Assert::IsTrue(events[EVT_CORE].size() == 4);		// 4 events (no group)
+
+			// Check events indexes
+			Assert::IsTrue(events[EVT_CORE][0].index == 0x40);
+			Assert::IsTrue(events[EVT_CORE][1].index == 0x41);
+			Assert::IsTrue(events[EVT_CORE][2].index == 0x42);
+			Assert::IsTrue(events[EVT_CORE][3].index == 0x43);
+
+			// Check event (without grooups) types
+			Assert::IsTrue(events[EVT_CORE][0].type == EVT_NORMAL);		// r40
+			Assert::IsTrue(events[EVT_CORE][1].type == EVT_NORMAL);		// r41
+			Assert::IsTrue(events[EVT_CORE][2].type == EVT_NORMAL);		// r42
+			Assert::IsTrue(events[EVT_CORE][3].type == EVT_NORMAL);		// r43
+
+			set_event_padding(ioctl_events, pmu_cfg, events, groups);
+
+			// `ioctl_events` stores events (evets + groupped events)
+			// in flat representation with padding provided already.
+			Assert::IsFalse(ioctl_events[EVT_CORE].size() % pmu_cfg.gpc_nums[EVT_CORE]);	// must be multiplication of GPC_num
+			Assert::IsTrue(ioctl_events[EVT_CORE].size() == 9);		// 9 elements because we have N * GPC_num slots to fill
+
+			Assert::IsTrue(ioctl_events[EVT_CORE][0].type == EVT_GROUPED);
+			Assert::IsTrue(ioctl_events[EVT_CORE][1].type == EVT_GROUPED);
+			Assert::IsTrue(ioctl_events[EVT_CORE][2].type == EVT_GROUPED);
+			Assert::IsTrue(ioctl_events[EVT_CORE][3].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][4].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][5].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][6].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][7].type == EVT_PADDING);
+			Assert::IsTrue(ioctl_events[EVT_CORE][8].type == EVT_PADDING);
+
+			Assert::IsTrue(ioctl_events[EVT_CORE][0].index == 0x44);
+			Assert::IsTrue(ioctl_events[EVT_CORE][1].index == 0x45);
+			Assert::IsTrue(ioctl_events[EVT_CORE][2].index == 0x46);
+			Assert::IsTrue(ioctl_events[EVT_CORE][3].index == 0x40);
+			Assert::IsTrue(ioctl_events[EVT_CORE][4].index == 0x41);
+			Assert::IsTrue(ioctl_events[EVT_CORE][5].index == 0x42);
+			Assert::IsTrue(ioctl_events[EVT_CORE][6].index == 0x43);
+			Assert::IsTrue(ioctl_events[EVT_CORE][7].index == 0x1b);
+			Assert::IsTrue(ioctl_events[EVT_CORE][8].index == 0x1b);
+		}
+
+		//
+		// Test for only 3 GPCs available.
+		// We can have groups of three events now.
+		//
+		TEST_METHOD(test_padding_low_gpc_num_3_with_2_groups)
+		{
+			std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
+			std::map<enum evt_class, std::deque<struct evt_noted>> events;		// events without groups
+			std::map<enum evt_class, std::vector<struct evt_noted>> groups;		// groups of events
+			std::wstring note;
+			struct pmu_device_cfg pmu_cfg = { 0 };
+
+			pmu_cfg.gpc_nums[EVT_CORE] = 3;	// parse_events_str only uses gpc_nums[]
+
+			parse_events_str(L"r40,r41,{r42,r43},{r44,r45,r46}", events, groups, note, pmu_cfg);
+
+			//
+			// Groups (only events grouped)
+			//
+			Assert::IsTrue(groups[EVT_CORE].size() == 7);
+
+			Assert::IsTrue(groups[EVT_CORE][0].index == 2);
+			Assert::IsTrue(groups[EVT_CORE][1].index == 0x42);
+			Assert::IsTrue(groups[EVT_CORE][2].index == 0x43);
+			Assert::IsTrue(groups[EVT_CORE][3].index == 3);
+			Assert::IsTrue(groups[EVT_CORE][4].index == 0x44);
+			Assert::IsTrue(groups[EVT_CORE][5].index == 0x45);
+			Assert::IsTrue(groups[EVT_CORE][6].index == 0x46);
+
+			// We have group header and events in the group (3)
+			Assert::IsTrue(groups[EVT_CORE][0].type == EVT_HDR);		// {r42,r43}
+			Assert::IsTrue(groups[EVT_CORE][1].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][2].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][3].type == EVT_HDR);
+			Assert::IsTrue(groups[EVT_CORE][4].type == EVT_GROUPED);	// {r44,r45,r46}
+			Assert::IsTrue(groups[EVT_CORE][5].type == EVT_GROUPED);
+			Assert::IsTrue(groups[EVT_CORE][6].type == EVT_GROUPED);
+
+			//
+			// Events without group
+			//
+			Assert::IsTrue(events[EVT_CORE].size() == 2);		// 4 events (no group)
+
+			// Check events indexes
+			Assert::IsTrue(events[EVT_CORE][0].index == 0x40);
+			Assert::IsTrue(events[EVT_CORE][1].index == 0x41);
+
+			// Check event (without grooups) types
+			Assert::IsTrue(events[EVT_CORE][0].type == EVT_NORMAL);		// r40
+			Assert::IsTrue(events[EVT_CORE][1].type == EVT_NORMAL);		// r41
+
+			set_event_padding(ioctl_events, pmu_cfg, events, groups);
+
+			// `ioctl_events` stores events (evets + groupped events)
+			// in flat representation with padding provided already.
+			Assert::IsFalse(ioctl_events[EVT_CORE].size() % pmu_cfg.gpc_nums[EVT_CORE]);	// must be multiplication of GPC_num
+			Assert::IsTrue(ioctl_events[EVT_CORE].size() == 9);		// 9 elements because we have N * GPC_num slots to fill
+
+			Assert::IsTrue(ioctl_events[EVT_CORE][0].type == EVT_GROUPED);	// g0
+			Assert::IsTrue(ioctl_events[EVT_CORE][1].type == EVT_GROUPED);	// g0
+			Assert::IsTrue(ioctl_events[EVT_CORE][2].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][3].type == EVT_GROUPED);	// g1
+			Assert::IsTrue(ioctl_events[EVT_CORE][4].type == EVT_GROUPED);	// g1
+			Assert::IsTrue(ioctl_events[EVT_CORE][5].type == EVT_GROUPED);	// g1
+			Assert::IsTrue(ioctl_events[EVT_CORE][6].type == EVT_NORMAL);
+			Assert::IsTrue(ioctl_events[EVT_CORE][7].type == EVT_PADDING);
+			Assert::IsTrue(ioctl_events[EVT_CORE][8].type == EVT_PADDING);
+
+			Assert::IsTrue(ioctl_events[EVT_CORE][0].index == 0x42);	// g0
+			Assert::IsTrue(ioctl_events[EVT_CORE][1].index == 0x43);	// g0
+			Assert::IsTrue(ioctl_events[EVT_CORE][2].index == 0x40);
+			Assert::IsTrue(ioctl_events[EVT_CORE][3].index == 0x44);	// g1
+			Assert::IsTrue(ioctl_events[EVT_CORE][4].index == 0x45);	// g1
+			Assert::IsTrue(ioctl_events[EVT_CORE][5].index == 0x46);	// g1
+			Assert::IsTrue(ioctl_events[EVT_CORE][6].index == 0x41);
+			Assert::IsTrue(ioctl_events[EVT_CORE][7].index == 0x1b);
+			Assert::IsTrue(ioctl_events[EVT_CORE][8].index == 0x1b);
+		}
+	};
 }
