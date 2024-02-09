@@ -128,6 +128,14 @@ def wperf_test_no_params():
     json_output = json.loads(stdout)
     return json_output
 
+def wperf_test_get_key_val(k, v):
+    """ Get e.g. PMU_CTL_QUERY_HW_CFG [midr_value] where:
+        key: PMU_CTL_QUERY_HW_CFG
+        value: midr_value
+    """
+    json_output = wperf_test_no_params()
+    return get_result_from_test_results(json_output, f"{k} [{v}]")
+
 def get_product_name():
     """ Get `product_name` form `wperf test` command. """
     json_wperf_test = wperf_test_no_params()
