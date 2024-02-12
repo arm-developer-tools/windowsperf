@@ -1,0 +1,77 @@
+;
+; wperf-driver-template.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System ; TODO: specify appropriate Class
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=wperf-driver-template.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+wperf-driver-template_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+wperf-driver-template.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%wperf-driver-template.DeviceDesc%=wperf-driver-template_Device, Root\wperf-driver-template ; TODO: edit hw-id
+
+[wperf-driver-template_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+wperf-driver-template.sys
+
+;-------------- Service installation
+[wperf-driver-template_Device.NT.Services]
+AddService = wperf-driver-template,%SPSVCINST_ASSOCSERVICE%, wperf-driver-template_Service_Inst
+
+; -------------- wperf-driver-template driver install sections
+[wperf-driver-template_Service_Inst]
+DisplayName    = %wperf-driver-template.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\wperf-driver-template.sys
+
+;
+;--- wperf-driver-template_Device Coinstaller installation ------
+;
+
+[wperf-driver-template_Device.NT.CoInstallers]
+AddReg=wperf-driver-template_Device_CoInstaller_AddReg
+CopyFiles=wperf-driver-template_Device_CoInstaller_CopyFiles
+
+[wperf-driver-template_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[wperf-driver-template_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[wperf-driver-template_Device.NT.Wdf]
+KmdfService =  wperf-driver-template, wperf-driver-template_wdfsect
+[wperf-driver-template_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+DiskName = "wperf-driver-template Installation Disk"
+wperf-driver-template.DeviceDesc = "wperf-driver-template Device"
+wperf-driver-template.SVCDESC = "wperf-driver-template Service"
