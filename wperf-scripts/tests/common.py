@@ -142,7 +142,12 @@ def get_make_CPU_name(product_name):
 def get_CPUs_supported_by_ustress(ts_ustress_header):
     """ Get list of CPUs supported by ustress. """
     cpus = []
-    with open(ts_ustress_header) as couinfo_h:
-        cpuinfo_header = couinfo_h.read()
-        cpus = re.findall(r'defined\(CPU_([A-Z0-9_]+)\)', cpuinfo_header)    # E.g. ['NEOVERSE_V1', 'NEOVERSE_N1', 'NEOVERSE_N2', 'NONE']
+    try:
+        with open(ts_ustress_header) as cpuinfo_h:
+            cpuinfo_header = cpuinfo_h.read()
+            cpus = re.findall(r'defined\(CPU_([A-Z0-9_]+)\)', cpuinfo_header)    # E.g. ['NEOVERSE_V1', 'NEOVERSE_N1', 'NEOVERSE_N2', 'NONE']
+    except FileNotFoundError:
+        pass
+
     return cpus
+
