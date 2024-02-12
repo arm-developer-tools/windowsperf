@@ -107,7 +107,7 @@ _product_name = get_product_name()
 _product_name_cpus = get_make_CPU_name(_product_name)
 
 if _product_name_cpus not in _cpus:
-    pytest.skip(f'skipping as ustress do not support CPU={_product_name_cpus}' % (), allow_module_level=True)
+    pytest.skip(f'unsupported configuration: ustress do not support CPU={_product_name_cpus}' % (), allow_module_level=True)
 
 if not pl.Path("wperf.exe").is_file():
     pytest.skip("Can not find wperf.exe", allow_module_level=True)

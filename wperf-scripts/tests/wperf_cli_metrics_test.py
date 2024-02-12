@@ -68,7 +68,7 @@ def test_metrics_exist():
 def test_metric_(metric):
     """ Run known metrics and check if defined events are present """
     if not wperf_metric_is_available(metric):
-        pytest.skip("unsupported configuration")
+        pytest.skip(f"unsupported metric: {metric}" )
         return
 
     cmd = 'wperf stat -m ' + metric + ' -c 1 sleep 1'
@@ -96,7 +96,7 @@ def test_metric_(metric):
 def test_telemetry_solution_metrics(metric):
     """ Run known TS metrics and check if defined events are present """
     if not wperf_metric_is_available(metric):
-        pytest.skip("unsupported configuration")
+        pytest.skip(f"unsupported metric: {metric}")
         return
 
     cmd = 'wperf stat -m ' + metric + ' -c 1 sleep 1'
@@ -126,7 +126,7 @@ def test_telemetry_solution_metrics(metric):
 def test_telemetry_solution_metrics_json(metric):
     """ Test if output JSON has TS data  """
     if not wperf_metric_is_available(metric):
-        pytest.skip("unsupported configuration")
+        pytest.skip(f"unsupported metric: {metric}")
         return
 
     cmd = 'wperf stat -m ' + metric + ' --json -c 1 sleep 1'

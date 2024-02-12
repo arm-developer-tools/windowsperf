@@ -76,10 +76,10 @@ Note: when you run WindowsPerf test bench with `pytest` command, script [wperf_c
 Note: If your ARM64 host platform is not supported you will see list of `ustress` skipped tests with assert warning.
 ```
 =========================== short test summary info ===========================
-SKIPPED [1] wperf_cli_ustress_bench_test.py:109: skipping as ustress do not support CPU=ARMV8_A
-SKIPPED [1] wperf_cli_ustress_dep_record_test.py:104: skipping as ustress do not support CPU=ARMV8_A
-SKIPPED [1] wperf_cli_ustress_dep_wperf_lib_timeline_test.py:107: skipping as ustress do not support CPU=ARMV8_A
-SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:107: skipping as ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_bench_test.py:106: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_record_test.py:104: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_wperf_lib_timeline_test.py:107: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:110: unsupported configuration: ustress do not support CPU=ARMV8_A
 ```
 
 ### List of all build dependencies for `ustress` build:
@@ -168,7 +168,7 @@ In below test directory we've added locally `wperf.exe`.
 > cd windowsperf\wperf-scripts\tests
 ```
 
-### Example test execution
+### Example test execution (neoverse-n1)
 
 Below you can see example regression test pass report ran on `neoverse-n1` WOA
 hardware with WindowsPerf 3.4.0 installed:
@@ -211,6 +211,70 @@ wperf-driver: 3.4.0.2fb0f1b9
 
 ========================== 225 passed in 745.45s (0:12:25) ==========================
 ```
+
+### Example test execution (Lenovo x13s Snapdragon)
+
+Below you can see example regression test pass report ran on Snapdragon WOA
+hardware with WindowsPerf 3.4.0 installed:
+
+```
+pytest
+================================================= test session starts =================================================
+platform win32 -- Python 3.11.0rc2, pytest-7.2.0, pluggy-1.0.0
+rootdir: C:\Users\$USER\Workspace\driver-binary\3.4.0, configfile: pytest.ini
+collected 215 items / 4 skipped
+
+wperf_cli_common_test.py ....                                                                                    [  1%]
+wperf_cli_config_test.py .....                                                                                   [  4%]
+wperf_cli_cpython_bench_test.py ..                                                                               [  5%]
+wperf_cli_cpython_dep_record_test.py .                                                                           [  5%]
+wperf_cli_extra_events_test.py ....                                                                              [  7%]
+wperf_cli_hammer_core_test.py .................                                                                  [ 15%]
+wperf_cli_info_str_test.py .                                                                                     [ 15%]
+wperf_cli_json_validator_test.py ..........                                                                      [ 20%]
+wperf_cli_list_test.py .....                                                                                     [ 22%]
+wperf_cli_lock_test.py ..                                                                                        [ 23%]
+wperf_cli_metrics_test.py ..s....sssssssss                                                                       [ 31%]
+wperf_cli_padding_test.py ..............                                                                         [ 37%]
+wperf_cli_prettytable_test.py .....                                                                              [ 40%]
+wperf_cli_record_test.py ..............                                                                          [ 46%]
+wperf_cli_sample_test.py ..                                                                                      [ 47%]
+wperf_cli_stat_test.py ....................................................                                      [ 71%]
+wperf_cli_test_test.py ........                                                                                  [ 75%]
+wperf_cli_timeline_test.py ...........................ssssssssssssssssss.......                                  [ 99%]
+wperf_lib_app_test.py .                                                                                          [100%]
+=========================================== WindowsPerf Test Configuration ============================================
+OS: Windows-10-10.0.22621-SP0, ARM64
+CPU: 8 x ARMv8 (64-bit) Family 8 Model D4B Revision   0, Qualcomm Technologies Inc
+Python: 3.11.0rc2 (main, Sep 11 2022, 20:10:00) [MSC v.1933 64 bit (ARM64)]
+Time: 12/02/2024, 13:20:41
+wperf: 3.4.0.83e23b6e
+wperf-driver: 3.4.0.83e23b6e
+
+=============================================== short test summary info ===============================================
+SKIPPED [1] wperf_cli_ustress_bench_test.py:106: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_record_test.py:104: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_wperf_lib_timeline_test.py:107: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:110: unsupported configuration: ustress do not support CPU=ARMV8_A
+SKIPPED [1] wperf_cli_metrics_test.py:71: unsupported metric: ddr_bw
+SKIPPED [1] wperf_cli_metrics_test.py:71: unsupported metric: l3_cache
+SKIPPED [1] wperf_cli_metrics_test.py:99: unsupported metric: l1d_cache_miss_ratio
+SKIPPED [1] wperf_cli_metrics_test.py:99: unsupported metric: load_percentage
+SKIPPED [1] wperf_cli_metrics_test.py:99: unsupported metric: store_percentage
+SKIPPED [1] wperf_cli_metrics_test.py:99: unsupported metric: backend_stalled_cycles
+SKIPPED [1] wperf_cli_metrics_test.py:129: unsupported metric: l1d_cache_miss_ratio
+SKIPPED [1] wperf_cli_metrics_test.py:129: unsupported metric: load_percentage
+SKIPPED [1] wperf_cli_metrics_test.py:129: unsupported metric: store_percentage
+SKIPPED [1] wperf_cli_metrics_test.py:129: unsupported metric: backend_stalled_cycles
+SKIPPED [4] wperf_cli_timeline_test.py:248: unsupported metric: l1d_cache_miss_ratio
+SKIPPED [2] wperf_cli_timeline_test.py:248: unsupported metric: l1d_tlb_mpki
+SKIPPED [8] wperf_cli_timeline_test.py:310: unsupported metric: l1d_cache_miss_ratio
+SKIPPED [4] wperf_cli_timeline_test.py:310: unsupported metric: l1d_tlb_mpki
+===================================== 187 passed, 32 skipped in 449.23s (0:07:29) =====================================
+```
+
+Note: some tests are skipped due to different hardware configuration. For example some tests are using Telemetry-Solution
+ustress micro-benchmarks which are tuned for Neoverse platform(s) only.
 
 ## WindowsPerf stress testing script
 
