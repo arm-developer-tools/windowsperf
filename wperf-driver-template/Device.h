@@ -28,6 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 #include "..\wperf-common\public.h"
 
 //
@@ -40,12 +41,14 @@ typedef struct _DEVICE_EXTENSION
 
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
+
 //
 // This macro will generate an inline function called DeviceGetContext
 // which will be used to get a pointer to the device context memory
 // in a type safe manner.
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_EXTENSION, GetDeviceGetContext)
+
 
 //
 // Function to initialize the device and its callbacks

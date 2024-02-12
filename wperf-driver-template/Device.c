@@ -28,6 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 #include "driver.h"
 #if defined ENABLE_TRACING
 #include "device.tmh"
@@ -35,7 +36,6 @@
 
 EVT_WDF_DEVICE_SELF_MANAGED_IO_INIT WindowsPerfEvtDeviceSelfManagedIoStart;
 EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND WindowsPerfEvtDeviceSelfManagedIoSuspend;
-
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WperfDriver_TCreateDevice)
@@ -134,6 +134,7 @@ WperfDriver_TCreateDevice(
         pDevExt = GetDeviceGetContext(device);
         pDevExt->PrivateDeviceData = 0;
 
+
         //
         // Create a device interface so that applications can find and talk
         // to us.
@@ -154,6 +155,7 @@ WperfDriver_TCreateDevice(
 
     return status;
 }
+
 
 /// <summary>
 /// This event is called by the Framework when the device is started
