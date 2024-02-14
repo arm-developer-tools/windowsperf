@@ -375,7 +375,9 @@ wmain(
             {
                 if (!disassembler.CheckCommand())
                 {
-                    throw fatal_exception("Failed to call disassembler - Is it on PATH?");
+                    m_out.GetErrorOutputStream() << L"Error executing disassembler `" << disassembler.GetCommand() << L"`. Is it on PATH?" << std::endl;
+                    m_out.GetErrorOutputStream() << L"note: wperf uses LLVM's objdump. You can install Visual Studio 'C++ Clang Compiler...' and 'MSBuild support for LLVM'" << std::endl;
+                    throw fatal_exception("Failed to call disassembler!");
                 }
             }
             HardwareInformation hardwareInformation{ 0 };

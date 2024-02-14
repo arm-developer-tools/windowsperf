@@ -1266,7 +1266,14 @@ The columns are pretty simmilar to what you would get from `--annotate` except t
 WindowsPerf uses LLVM's [objdump](https://llvm.org/docs/CommandGuide/llvm-objdump.html) and it needs to be available on PATH or else you will get the following message 
 
 ```
-Failed to call disassembler - Is it on PATH?
+Error executing disassembler `llvm-objdump`. Is it on PATH?
+note: wperf uses LLVM's objdump. You can install Visual Studio 'C++ Clang Compiler...' and 'MSBuild support for LLVM'
+Failed to call disassembler!
 ```
 
-You can either download LLVM from its [releases page](https://releases.llvm.org/) or followng the instructions [here](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md?ref_type=heads#build-dependencies) to get it installed within Visual Studio.
+You can either:
+- Download LLVM from its [releases page](https://releases.llvm.org/) or
+- Follow the instructions [here](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md?ref_type=heads#build-dependencies) to get it installed within Visual Studio.
+  - Shortcut: You need clang targeting `aarch64-pc-windows-msvc`:
+    - Go to Visual Studio Installer and install: Modify -> Individual Components -> search "clang".
+    - Install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."

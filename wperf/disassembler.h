@@ -104,7 +104,10 @@ class Disassembler
 
     VOID Spawn(const std::wstring& command);
 public:
-    Disassembler(const std::wstring& cmd, const std::wstring& cmdline, const std::wstring& cmdFrom, const std::wstring& cmdTo) : m_command(cmd), m_commandLine(cmdline), m_commandLineFrom(cmdFrom), m_commandLineTo(cmdTo) {}
+    Disassembler(const std::wstring& cmd,
+        const std::wstring& cmdline,
+        const std::wstring& cmdFrom,
+        const std::wstring& cmdTo) : m_command(cmd), m_commandLine(cmdline), m_commandLineFrom(cmdFrom), m_commandLineTo(cmdTo) {}
 
     VOID Close()
     {
@@ -136,6 +139,11 @@ public:
         CloseHandle(m_piProcInfo.hThread);
 
         return true;
+    }
+
+    std::wstring GetCommand()
+    {
+        return m_command;
     }
 
     std::wstringstream m_processOutput;
