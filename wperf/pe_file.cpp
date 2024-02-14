@@ -180,17 +180,15 @@ void parse_pdb_file(std::wstring pdb_file, std::vector<FuncSymDesc>& sym_info, b
 
     if (status != S_OK)
     {
-        if (status == REGDB_E_CLASSNOTREG)
-        {
-            m_out.GetOutputStream() << L"Status REGDB_E_CLASSNOTREG indicates that DIA SDK class is not registered!" << std::endl;
-            m_out.GetOutputStream() << L"See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
-            m_out.GetOutputStream() << L"Try registering this service with command:" << std::endl;
-            m_out.GetOutputStream() << std::endl;
-            m_out.GetOutputStream() << L"\t" << L"> cd \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\DIA SDK\\bin\\arm64\"" << std::endl;
-            m_out.GetOutputStream() << L"\t" << L"> regsvr32 msdia140.dll" << std::endl;
-        }
-        else
-            m_out.GetOutputStream() << L"status: 0x" << std::hex << status << std::endl;
+        m_out.GetOutputStream() << L"Status REGDB_E_CLASSNOTREG indicates that DIA SDK class is not registered!" << std::endl;
+        m_out.GetOutputStream() << L"See https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2019" << std::endl;
+        m_out.GetOutputStream() << L"Try registering this service (as Administrator) with command:" << std::endl;
+        m_out.GetOutputStream() << std::endl;
+        m_out.GetOutputStream() << L"\t" << L"> cd \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\DIA SDK\\bin\\arm64\"" << std::endl;
+        m_out.GetOutputStream() << L"\t" << L"> regsvr32 msdia140.dll" << std::endl;
+
+        if (status != REGDB_E_CLASSNOTREG)
+            m_out.GetOutputStream() << L"CoCreateInstance failed with status: 0x" << std::hex << status << std::endl;
 
         throw fatal_exception("CoCreateInstance failed for DIA");
     }

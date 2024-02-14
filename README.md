@@ -51,10 +51,14 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 # Building WindowsPerf project
 
 - Currently WindowsPerf is targeted for Windows on Arm devices. Both, user space `wperf` application and Kernel-mode driver `wperf-driver` are `ARM64` binaries.
-- Both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation. You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
+- Both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured for cross compilation.
+  - You can build WindowsPerf natively on `ARM64` machines but please note that native compilation may be still wobbly due to constant improvements to WDK Kit.
 - `wperf` application require [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022) support.
   - You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
   - If the `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you’ve installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.
+  - You may see `wperf` error message `CoCreateInstance failed for DIA` in case DIA SDK is not installed or registered as a COM service.
+
+As an Administrator run from command line:
 
 ```
 > cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin\arm64"
