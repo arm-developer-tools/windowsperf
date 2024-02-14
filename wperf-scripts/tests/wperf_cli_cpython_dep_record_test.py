@@ -112,7 +112,7 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
     symbol_name = hotest_symbol["symbol"]
 
     if find_sample(samples, HOT_SYMBOL) is False:
-        pytest.skip(f"{benchmark} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{HOT_SYMBOL}' -- sampling mismatch")
+        pytest.skip(f"{pyhton_d_exe_path} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{HOT_SYMBOL}' -- sampling mismatch")
 
     evt_sample = find_sample(samples, HOT_SYMBOL)
     assert evt_sample is not None, f"Can't find `{HOT_SYMBOL}` symbol in sampling output!"
