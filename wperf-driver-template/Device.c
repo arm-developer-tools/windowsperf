@@ -28,7 +28,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 #include "driver.h"
 #if defined ENABLE_TRACING
 #include "device.tmh"
@@ -134,7 +133,6 @@ WperfDriver_TCreateDevice(
         pDevExt = GetDeviceGetContext(device);
         pDevExt->PrivateDeviceData = 0;
 
-
         //
         // Create a device interface so that applications can find and talk
         // to us.
@@ -155,7 +153,6 @@ WperfDriver_TCreateDevice(
 
     return status;
 }
-
 
 /// <summary>
 /// This event is called by the Framework when the device is started
@@ -220,4 +217,3 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     return STATUS_SUCCESS;
-}

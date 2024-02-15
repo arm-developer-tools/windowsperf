@@ -39,8 +39,6 @@
 #endif
 
 
-
-
 //
 // WDFDRIVER Events
 //
