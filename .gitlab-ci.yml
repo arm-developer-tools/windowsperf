@@ -91,13 +91,13 @@ test_python:
   script:
       - >
         $env:PATH += ";C:\wenv\arm64\python\tools";
+        python -m pip install -r .\wperf-scripts\requirements.txt;
         $MPATH=$(pwd);cd c:\ci;mkdir $CI_JOB_ID; cd $MPATH;
-        cp wperf\ARM64\Release\wperf.exe c:\ci\$CI_JOB_ID;
         cp -Recurse -Force .\wperf-scripts\tests c:\ci\$CI_JOB_ID;
-        cd c:\ci\$CI_JOB_ID;
-        $env:PATH += ";C:\ci\$CI_JOB_ID";
-        python -m pip install pytest;
-        cd tests;python -m pytest --maxfail=1 --junitxml=$MPATH\test_result.xml;
+        cp wperf\ARM64\Release\wperf.exe c:\ci\$CI_JOB_ID\tests;
+        cd c:\ci\$CI_JOB_ID\tests;
+        $env:PATH += ";C:\ci\$CI_JOB_ID\tests";
+        python -m pytest --maxfail=1 --junitxml=$MPATH\test_result.xml;
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_python)/i'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
