@@ -102,7 +102,7 @@ GetDevicePath(
     nextInterface = deviceInterfaceList + wcslen(deviceInterfaceList) + 1;
     if (*nextInterface != UNICODE_NULL) {
         WindowsPerfDbgPrint("Warning: More than one device interface instance found. \n"
-                            "         Selecting first matching device.\n\n");
+                            "         Selecting first matching device  %S.\n\n", nextInterface);
     }
 
     hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
