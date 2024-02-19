@@ -61,12 +61,17 @@ extern HANDLE pmc_resource_handle;
 extern CoreInfo* core_info;
 KEVENT sync_reset_dpc;
 extern UINT64* last_fpc_read;
-extern UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
+extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 extern struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC];
 
 static UINT64 core_read_counter_helper(UINT32 counter_idx)
 {
     return CoreReadCounter(counter_idx_map[counter_idx]);
+}
+
+VOID core_write_counter_helper(UINT32 counter_idx, __int64 val)
+{
+    CoreWriteCounter(counter_idx_map[counter_idx], val);
 }
 
 // For the fixed counter we are getting the delta from the last readings.

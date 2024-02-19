@@ -73,6 +73,7 @@ struct hw_cfg
     UINT16  core_num;
     UINT64  midr_value;
     UINT64  id_aa64dfr0_value;
+    UINT8   counter_idx_map[AARCH64_MAX_HWC_SUPP + 1]; // We cannot correctly infer this from user mode.
 };
 
 struct version_info

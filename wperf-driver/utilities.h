@@ -30,7 +30,6 @@
 
 
 VOID update_last_fixed_counter(UINT64 core_idx);
-VOID core_write_counter(UINT32 counter_idx, __int64 val);
 PCHAR DbgStatusStr(NTSTATUS status);
 PCHAR GetIoctlStr(ULONG ioctl);
 VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT file_object);

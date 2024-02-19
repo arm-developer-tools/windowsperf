@@ -62,6 +62,7 @@ extern UINT64 id_aa64dfr0_el1_value;
 extern HANDLE pmc_resource_handle;
 extern CoreInfo* core_info;
 extern KEVENT sync_reset_dpc;
+extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 static UINT16 armv8_arch_core_events[] =
 {
 #define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) b,
@@ -74,7 +75,6 @@ extern LOCK_STATUS   current_status;
 
 // must sync with enum pmu_ctl_action
 static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
-
 
 static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, UINT32 core_end, UINT16 core_event_num, UINT16* core_events, UINT64 filter_bits)
 {
@@ -356,8 +356,6 @@ NTSTATUS deviceControl(
         *outputSize = 0;
         break;
     }
-
-
     case IOCTL_PMU_CTL_SAMPLE_STOP:
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
@@ -422,8 +420,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_PMU_CTL_SAMPLE_GET:
     {
         struct PMUCtlGetSampleHdr* ctl_req = (struct PMUCtlGetSampleHdr*)pInBuffer;
@@ -469,8 +465,6 @@ NTSTATUS deviceControl(
         KeReleaseSpinLock(&core->SampleLock, oldIrql);
         break;
     }
-
-
     case IOCTL_PMU_CTL_SAMPLE_SET_SRC:
     {
         // does our process own the lock?
@@ -495,13 +489,17 @@ NTSTATUS deviceControl(
         int gpc_num = 0;
         for (int i = 0; i < sample_src_num; i++)
         {
+            /* Here we greedly assign events to GPCs. We cannot have more events than GPCs as we don't have multiplex implemented
+            * for sampling. We need to use counter_idx_map here as the gpc_num-nth available GPC might not be the one we expect it to be.
+            */
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Setting sample src to event_src = %d interval = %d gpc = %d\n", sample_req->sources[i].event_src, sample_req->sources[i].interval, counter_idx_map[gpc_num]));
             SampleSrcDesc* src_desc = &sample_req->sources[i];
             UINT32 event_src = src_desc->event_src;
             UINT32 interval = src_desc->interval;
             if (event_src == CYCLE_EVENT_IDX)
                 core->sample_interval[31] = interval;
             else
-                core->sample_interval[gpc_num++] = interval;
+                core->sample_interval[counter_idx_map[gpc_num++]] = interval;
         }
 
         PWORK_ITEM_CTXT context;
@@ -515,8 +513,6 @@ NTSTATUS deviceControl(
         *outputSize = 0;
         break;
     }
-
-
     case IOCTL_PMU_CTL_START:
     case IOCTL_PMU_CTL_STOP:
     case IOCTL_PMU_CTL_RESET:
@@ -756,8 +752,6 @@ NTSTATUS deviceControl(
         *outputSize = 0;
         break;
     }
-
-
     case IOCTL_PMU_CTL_QUERY_HW_CFG:
     {
         // does our process own the lock?
@@ -789,6 +783,7 @@ NTSTATUS deviceControl(
         out->part_id = (midr_value >> 4) & 0xfff;
         out->midr_value = midr_value;
         out->id_aa64dfr0_value = id_aa64dfr0_el1_value;
+        RtlCopyMemory(out->counter_idx_map, counter_idx_map, sizeof(counter_idx_map));
 
         *outputSize = sizeof(struct hw_cfg);
         if (*outputSize > OutBufSize)
@@ -798,8 +793,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_PMU_CTL_QUERY_SUPP_EVENTS:
     {
         // does our process own the lock?
@@ -900,8 +893,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_PMU_CTL_QUERY_VERSION:
     {
         // does our process own the lock?
@@ -949,8 +940,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_PMU_CTL_ASSIGN_EVENTS:
     {
         // does our process own the lock?
@@ -1060,8 +1049,6 @@ NTSTATUS deviceControl(
         *outputSize = 0;
         break;
     }
-
-
     case IOCTL_PMU_CTL_READ_COUNTING:
     {
         // does our process own the lock?
@@ -1150,8 +1137,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_DSU_CTL_INIT:
     {
         // does our process own the lock?
@@ -1192,8 +1177,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_DSU_CTL_READ_COUNTING:
     {
         // does our process own the lock?
@@ -1290,8 +1273,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_DMC_CTL_INIT:
     {
         // does our process own the lock?
@@ -1360,8 +1341,6 @@ NTSTATUS deviceControl(
         }
         break;
     }
-
-
     case IOCTL_DMC_CTL_READ_COUNTING:
     {
         // does our process own the lock?

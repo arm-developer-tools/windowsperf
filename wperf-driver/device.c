@@ -75,7 +75,7 @@ UINT64 dfr0_value = 0;
 UINT64 midr_value = 0;
 UINT64 id_aa64dfr0_el1_value = 0;
 HANDLE pmc_resource_handle = NULL;
-UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
+UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 CoreInfo* core_info = NULL;
 // Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
 // See comment on CoreCounterReset() for an explanation.
@@ -99,6 +99,11 @@ enum
 //
 //
 
+/* ov_flags here are the overflow flags taken from PMOVSCLR_EL0, you can find the definition
+* of this register here https://developer.arm.com/documentation/ddi0595/2021-03/External-Registers/PMOVSCLR-EL0--Performance-Monitors-Overflow-Flag-Status-Clear-register
+* It essentially is a bitmap where the nth bit represents the nth GPC. When the nth bit is set it means that it overflowed. 
+* Writing anything to this register has the effect of clearing it.
+*/
 #define PMOVSCLR_VALID_BITS_MASK 0xffffffffULL
 static UINT64 arm64_clear_ov_flags(void)
 {
@@ -115,12 +120,15 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 {
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
     CoreInfo* core = core_info + core_idx;
+    /* core->ov_mask represents the bitmap with the GPCs that this core is using. We do a & with ov_flags to 
+    * check if any of the GPCs we are interested were overflown.
+    */
     UINT64 ov_flags = arm64_clear_ov_flags();
     ov_flags &= core->ov_mask;
 
     if (!ov_flags)
         return;
-
+    
     core->sample_generated++;
 
     if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
@@ -147,6 +155,8 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 
         KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
 
+        /* Here all the GPC indexes are raw indexes and do not need to be mapped. 
+        */
         for (int i = 0; i < 32; i++)
         {
             if (!(ov_flags & (1ULL << i)))
@@ -157,15 +167,11 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
             if (i == 31)
                 _WriteStatusReg(PMCCNTR_EL0, (__int64)val);
             else
-                core_write_counter(i, (__int64)val);
+                CoreWriteCounter(i, (__int64)val);
         }
         CoreCounterStart();
     }
 }
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -173,7 +179,6 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 //   D E V I C E   Related functions
 //
 //
-
 
 // Default events that will be assigned to counters when driver loaded.
 struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
@@ -212,8 +217,6 @@ struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
     {PMU_EVENT_L2I_TLB_REFILL,          FILTER_EXCL_EL1, 30,                0},
 };
 
-
-
 VOID free_pmu_resource(VOID)
 {
     if (pmc_resource_handle == NULL)
@@ -232,18 +235,6 @@ VOID free_pmu_resource(VOID)
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "HalFreeHardwareCounters: success\n"));
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 VOID WindowsPerfDeviceUnload()
 {
@@ -461,14 +452,14 @@ WindowsPerfDeviceCreate(
 
     // Finally, alloc PMU counters
     // 1) Query for free PMU counters
-    const size_t counter_idx_map_size = sizeof(UINT32) * (AARCH64_MAX_HWC_SUPP + 1);
+    const size_t counter_idx_map_size = sizeof(UINT8) * (AARCH64_MAX_HWC_SUPP + 1);
     RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
 
     PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
     TmpCounterResourceList.Count = 1;
     TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
     UINT8 numFreeCounters = 0;
-    for (UINT32 i = 0; i < numGPC; i++)
+    for (UINT8 i = 0; i < numGPC; i++)
     {
         TmpCounterResourceList.Descriptors[0].u.CounterIndex = i;
         status = HalAllocateHardwareCounters(NULL, 0, &TmpCounterResourceList, &pmc_resource_handle);
@@ -506,7 +497,7 @@ WindowsPerfDeviceCreate(
     }
     RtlSecureZeroMemory(CounterResourceList, AllocationSize);
     CounterResourceList->Count = numFreeCounters;
-    for (UINT32 i = 0; i < numFreeCounters; i++)
+    for (UINT8 i = 0; i < numFreeCounters; i++)
     {
         CounterResourceList->Descriptors[i].u.CounterIndex = counter_idx_map[i];
         CounterResourceList->Descriptors[i].Type = ResourceTypeSingle;
@@ -538,11 +529,11 @@ WindowsPerfDeviceCreate(
         status = KeSetHardwareCounterConfiguration(&counter_descs[i], 1);
         if (status == STATUS_WMI_ALREADY_ENABLED)
         {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", i));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", counter_idx_map[i]));
         }
         else if (status != STATUS_SUCCESS)
         {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", i, status));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", counter_idx_map[i], status));
             return status;
         }
     }
@@ -631,7 +622,8 @@ WindowsPerfDeviceCreate(
     {
         CoreInfo* core = &core_info[i];
         core->timer_round = 0;
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Calling calling reset dpc in loop, i is %d core index is %lld\n", i, core->idx));
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Calling reset dpc in loop, i is %d core index is %lld\n", i, core->idx));
         KeInsertQueueDpc(&core->dpc_reset, (VOID*)numCores, NULL);
     }
 
