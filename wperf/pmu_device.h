@@ -194,6 +194,8 @@ public:
     uint32_t dsu_cluster_num;
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;
+    uint8_t counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
+    std::map<uint8_t, uint8_t> counter_idx_unmap;
     bool do_verbose;
 
     uint8_t gpc_nums[EVT_CLASS_NUM];

@@ -945,9 +945,9 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                 if (!found)
                     sd.desc.name = L"unknown";
 
-                for (uint32_t counter_idx = 0; counter_idx < 32; counter_idx++)
+                for (auto const& [mapped_counter_idx, counter_idx] : __pmu_device->counter_idx_unmap)
                 {
-                    if (!(a.ov_flags & (1i64 << (UINT64)counter_idx)))
+                    if (!(a.ov_flags & (1i64 << (UINT64)mapped_counter_idx)))
                         continue;
 
                     bool inserted = false;

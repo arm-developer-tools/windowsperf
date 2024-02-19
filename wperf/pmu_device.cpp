@@ -189,6 +189,19 @@ void pmu_device::init()
     gpc_nums[EVT_CORE] = gpc_num;
     pmu_ver = hw_cfg.pmu_ver;
     total_gpc_num = hw_cfg.total_gpc_num;
+    memcpy(counter_idx_map, hw_cfg.counter_idx_map, sizeof(hw_cfg.counter_idx_map));
+    /* Since we allocate events to GPCs greedily, in a situation where all GPCs are
+    * available the n-th event is assigned to the n-th GPC. When not all GPCs are available howerver, 
+    * we need the `counter_idx_map` to translate to the real GPC number. 
+    * The `ov_flags` returned from the driver has the real GPC numbers, so to resolve samples we require
+    * a way to map back from real GPC numbers to the n-th apporach described above. The 
+    * `counter_idx_unmap` carries this information.
+    */
+    for (uint8_t i = 0; i < gpc_num; i++)
+    {
+        counter_idx_unmap[hw_cfg.counter_idx_map[i]] = i; // f^-1(f(x)) = x
+    }
+    counter_idx_unmap[AARCH64_MAX_HWC_SUPP] = AARCH64_MAX_HWC_SUPP;
 
     vendor_name = get_vendor_name(hw_cfg.vendor_id);
     core_outs = std::make_unique<ReadOut[]>(core_num);

@@ -187,3 +187,46 @@ UINT64 CoreReadCounter(UINT32 counter_idx)
 
     return 0xcafedead;
 }
+
+#define WRITE_COUNTER(N) case N: _WriteStatusReg(PMEVCNTR##N##_EL0, (__int64)val); break;
+VOID CoreWriteCounter(UINT32 counter_idx, __int64 val)
+{
+    switch (counter_idx)
+    {
+        WRITE_COUNTER(0);
+        WRITE_COUNTER(1);
+        WRITE_COUNTER(2);
+        WRITE_COUNTER(3);
+        WRITE_COUNTER(4);
+        WRITE_COUNTER(5);
+        WRITE_COUNTER(6);
+        WRITE_COUNTER(7);
+        WRITE_COUNTER(8);
+        WRITE_COUNTER(9);
+        WRITE_COUNTER(10);
+        WRITE_COUNTER(11);
+        WRITE_COUNTER(12);
+        WRITE_COUNTER(13);
+        WRITE_COUNTER(14);
+        WRITE_COUNTER(15);
+        WRITE_COUNTER(16);
+        WRITE_COUNTER(17);
+        WRITE_COUNTER(18);
+        WRITE_COUNTER(19);
+        WRITE_COUNTER(20);
+        WRITE_COUNTER(21);
+        WRITE_COUNTER(22);
+        WRITE_COUNTER(23);
+        WRITE_COUNTER(24);
+        WRITE_COUNTER(25);
+        WRITE_COUNTER(26);
+        WRITE_COUNTER(27);
+        WRITE_COUNTER(28);
+        WRITE_COUNTER(29);
+        WRITE_COUNTER(30);
+    default:
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
+            "WindowsPerf: Warn: Invalid PMEVTYPE index: %d\n", counter_idx));
+        break;
+    }
+}

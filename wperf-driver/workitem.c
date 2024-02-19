@@ -40,14 +40,15 @@
 #include "core.h"
 #include "sysregs.h"
 
-
 extern struct dmcs_desc dmc_array;
 extern UINT8 dsu_numGPC;
 extern UINT16 dsu_numCluster;
 extern UINT16 dsu_sizeCluster;
 extern UINT8 numFreeGPC;
 extern CoreInfo* core_info;
-extern  UINT32 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
+extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
+
+extern VOID core_write_counter_helper(UINT32 counter_idx, __int64 val);
 
 /* Enable/Disable the counter associated with the event */
 static VOID event_enable_counter(struct pmu_event_kernel* event)
@@ -60,12 +61,10 @@ static VOID event_disable_counter(struct pmu_event_kernel* event)
     CoreCounterDisable(1U << counter_idx_map[event->counter_idx]);
 }
 
-
 static VOID core_counter_set_type_helper(UINT32 counter_idx, __int64 evtype_val)
 {
     CoreCouterSetType(counter_idx_map[counter_idx], evtype_val);
 }
-
 
 static VOID event_config_type(struct pmu_event_kernel* event)
 {
@@ -240,10 +239,12 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             }
             else
             {
+                // Since gpc_num is being increased at each execution it might not represent real GPCs and it needs to be mapped.
                 core_counter_set_type_helper(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
                 ov_mask |= 1ULL << counter_idx_map[gpc_num];
                 core_counter_enable_irq_helper(gpc_num);
-                core_write_counter(gpc_num, (__int64)val);
+                core_write_counter_helper(gpc_num, (__int64)val);
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Enabling event 0x%x to GPC %d with ov_mask 0x%llx\n", event_src, counter_idx_map[gpc_num], ov_mask));
                 gpc_num++;
             }
         }
