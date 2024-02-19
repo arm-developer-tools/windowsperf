@@ -72,7 +72,6 @@ Return Value:
 {
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
-    WDF_OBJECT_ATTRIBUTES attributes;
 
 #if defined ENABLE_TRACING
     WPP_INIT_TRACING(DriverObject, RegistryPath);
@@ -87,7 +86,7 @@ Return Value:
 
     status = WdfDriverCreate(DriverObject,
                              RegistryPath,
-                             &attributes,
+                             WDF_NO_OBJECT_ATTRIBUTES,
                              &config,
                              WDF_NO_HANDLE
                              );

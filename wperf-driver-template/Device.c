@@ -33,8 +33,8 @@
 #include "device.tmh"
 #endif
 
-EVT_WDF_DEVICE_SELF_MANAGED_IO_INIT WindowsPerfEvtDeviceSelfManagedIoStart;
-EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND WindowsPerfEvtDeviceSelfManagedIoSuspend;
+EVT_WDF_DEVICE_SELF_MANAGED_IO_INIT WindowsPerf_tEvtDeviceSelfManagedIoStart;
+EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND WindowsPerf_tEvtDeviceSelfManagedIoSuspend;
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WperfDriver_TCreateDevice)
@@ -94,14 +94,14 @@ WperfDriver_TCreateDevice(
     // Register pnp/power callbacks so that we can start and stop the timer as the device
     // gets started and stopped.
     //
-    pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = WindowsPerfEvtDeviceSelfManagedIoStart;
-    pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = WindowsPerfEvtDeviceSelfManagedIoSuspend;
+    pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = WindowsPerf_tEvtDeviceSelfManagedIoStart;
+    pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = WindowsPerf_tEvtDeviceSelfManagedIoSuspend;
 
     //
     // Function used for both Init and Restart Callbacks
     //
 #pragma warning(suppress: 28024)
-    pnpPowerCallbacks.EvtDeviceSelfManagedIoRestart = WindowsPerfEvtDeviceSelfManagedIoStart;
+    pnpPowerCallbacks.EvtDeviceSelfManagedIoRestart = WindowsPerf_tEvtDeviceSelfManagedIoStart;
 
     WdfDeviceInitSetPowerPageable(DeviceInit);
 
@@ -167,11 +167,11 @@ WperfDriver_TCreateDevice(
 /// <param name="Device">Handle to a framework device object.</param>
 /// <returns>NTSTATUS - Failures will result in the device stack being torn down.</returns>
 NTSTATUS
-WindowsPerfEvtDeviceSelfManagedIoStart(
+WindowsPerf_tEvtDeviceSelfManagedIoStart(
     IN  WDFDEVICE Device
 )
 {
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "--> WindowsPerf_tEvtDeviceSelfManagedIoInit\n"));
 
     //
     // Restart the queue and the periodic timer. We stopped them before going
@@ -179,7 +179,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     //
     WdfIoQueueStart(WdfDeviceGetDefaultQueue(Device));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<-- WindowsPerf_tEvtDeviceSelfManagedIoInit\n"));
 
     return STATUS_SUCCESS;
 }
@@ -193,13 +193,13 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
 /// <returns>NTSTATUS - The driver is not allowed to fail this function.  If it does, the
 ///  device stack will be torn down.</returns>
 NTSTATUS
-WindowsPerfEvtDeviceSelfManagedIoSuspend(
+WindowsPerf_tEvtDeviceSelfManagedIoSuspend(
     IN  WDFDEVICE Device
 )
 {
     PAGED_CODE();
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "--> WindowsPerf_tEvtDeviceSelfManagedIoSuspend\n"));
 
     //
     // Before we stop the timer we should make sure there are no outstanding
@@ -214,6 +214,6 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     //
     WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(Device));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<-- WindowsPerf_tEvtDeviceSelfManagedIoSuspend\n"));
 
     return STATUS_SUCCESS;
