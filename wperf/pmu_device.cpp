@@ -2232,6 +2232,19 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].note");
     col_test_result.push_back(evt_notes);
+    col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [counter_idx_map]");
+
+    // Print index of every mapped GPC index
+    std::wstring counter_idx_map_str;
+    for (auto i = 0; i < (sizeof(hw_cfg.counter_idx_map) / sizeof(hw_cfg.counter_idx_map[0])); i++)
+    {
+        auto gpc_num = hw_cfg.counter_idx_map[i];
+        if (!counter_idx_map_str.empty())
+            counter_idx_map_str += L",";
+        counter_idx_map_str += std::to_wstring(gpc_num);
+    }
+
+    col_test_result.push_back(counter_idx_map_str);
 
     // Configuration
     std::vector<std::wstring> config_strs;

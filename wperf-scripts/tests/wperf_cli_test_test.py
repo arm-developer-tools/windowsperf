@@ -63,6 +63,21 @@ def test_wperf_test_json_file_output_valid(tmp_path):
     except:
         assert 0
 
+def test_wperf_test_counter_idx_map():
+    cmd = 'wperf test --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
+    gpc_num = int(gpc_num, 16)
+    counter_idx_map = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [counter_idx_map]")
+
+    l = counter_idx_map.split(",")
+    all_gpcs = set([int(v) for v in l[:5]])
+
+    # All GPCs that are free and allocated by the driver must be different
+    assert len(all_gpcs) == gpc_num, f"{all_gpcs} size != gpc_num={gpc_num}"
+
 def test_wperf_test_MIDR_reg():
     """ Test if MIDR register is exposed with `wperf test`. """
     cmd = 'wperf test --json'
