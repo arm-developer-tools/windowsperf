@@ -74,7 +74,7 @@ def test_wperf_test_counter_idx_map():
     counter_idx_map = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [counter_idx_map]")
 
     l = counter_idx_map.split(",")
-    all_gpcs = set([int(v) for v in l[:5]])
+    all_gpcs = set([int(v) for v in l[:gpc_num]])
 
     # All GPCs that are free and allocated by the driver must be different
     assert len(all_gpcs) == gpc_num, f"{all_gpcs} size != gpc_num={gpc_num}"
