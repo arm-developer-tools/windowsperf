@@ -602,8 +602,16 @@ void pmu_device::set_builtin_metrics(std::wstring metric_name, std::wstring raw_
     struct pmu_device_cfg pmu_cfg;
     get_pmu_device_cfg(pmu_cfg);
 
-    parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, metric_name, pmu_cfg);
-    builtin_metrics[metric_name] = mdesc;
+    try
+    {
+        parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, metric_name, pmu_cfg);
+        builtin_metrics[metric_name] = mdesc;
+    }
+    catch (const fatal_exception&)
+    {
+        m_out.GetOutputStream() << L"Warning: Metric " << metric_name << " is unable to be used due to lack of hardware resources." << std::endl;
+    }
+
     mdesc.events.clear();
     mdesc.groups.clear();
 }
