@@ -980,8 +980,15 @@ void user_request::load_config_metrics(std::wstring config_name, const struct pm
             {
                 metric_desc mdesc;
                 mdesc.raw_str = trim(component);
-                parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, key, pmu_cfg);
-                metrics[key] = mdesc;
+                try
+                {
+                    parse_events_str(mdesc.raw_str, mdesc.events, mdesc.groups, key, pmu_cfg);
+                    metrics[key] = mdesc;
+                }
+                catch (const fatal_exception&)
+                {
+                    m_out.GetOutputStream() << L"Warning: Metric " << key << " is unable to be used due to lack of hardware resources." << std::endl;
+                }
             }
             else
             {
