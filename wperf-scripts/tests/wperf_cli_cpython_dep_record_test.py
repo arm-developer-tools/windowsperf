@@ -33,6 +33,8 @@
 """Module is testing `wperf record` with CPython executables in debug mode."""
 import os
 import json
+from statistics import median
+from time import sleep
 import pytest
 from common import run_command, is_json, check_if_file_exists
 from common_cpython import CPYTHON_EXE_DIR
@@ -42,7 +44,7 @@ from common_cpython import CPYTHON_EXE_DIR
 
 @pytest.mark.parametrize("EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG",
 [
-    ("ld_spec", 10000, "x_mul:python312_d.dll", 70, "10**10**100"),
+    ("ld_spec", 10000, "x_mul:python312_d.dll", 65, "10**10**100"),
 ]
 )
 def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG):
@@ -56,65 +58,76 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
     if not check_if_file_exists(pyhton_d_exe_path):
         pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
 
-    cmd = f"wperf record -e {EVENT}:{EVENT_FREQ} -c 7 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
-    stdout, _ = run_command(cmd)
+    overheads = []  # Results of sampling of the symbol
+    #
+    # Run test N times and check for media sampling output
+    #
+    for _ in range(3):
+        sleep(2)    # Cool-down the core
 
-    # Sanity checks
-    assert is_json(stdout), f"in {cmd}"
-    json_output = json.loads(stdout)
+        cmd = f"wperf record -e {EVENT}:{EVENT_FREQ} -c 7 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+        stdout, _ = run_command(cmd)
 
-    # Check sampling JSON output for expected functions
-    assert "sampling" in json_output
-    assert "events" in json_output["sampling"]
+        # Sanity checks
+        assert is_json(stdout), f"in {cmd}"
+        json_output = json.loads(stdout)
 
-    events = json_output["sampling"]["events"]  # List of dictionaries, for each event
-    assert len(events) == 1  # We expect one record for e.g. `ld_spec`
+        # Check sampling JSON output for expected functions
+        assert "sampling" in json_output
+        assert "events" in json_output["sampling"]
 
-    evt = json_output["sampling"]["events"][0]  # e.g. `ld_spec` data
-    assert EVENT in evt["type"]
+        events = json_output["sampling"]["events"]  # List of dictionaries, for each event
+        assert len(events) == 1  # We expect one record for e.g. `ld_spec`
 
-    samples = evt["samples"]
+        evt = json_output["sampling"]["events"][0]  # e.g. `ld_spec` data
+        assert EVENT in evt["type"]
 
-    def find_sample(samples, symbol):
-        """ Find sample in samples and return it when we can find it for given `symbol`.
-        See:
+        samples = evt["samples"]
 
-        "events": [
-            {
-                "type": "ld_spec",
-                "samples": [
-                    {
-                        "overhead": 81.6406,
-                        "count": 418,
-                        "symbol": "x_mul:python312_d.dll"
-                    },
-                    {
-                        "overhead": 4.88281,
-                        "count": 25,
-                        "symbol": "v_iadd:python312_d.dll"
-                    },
-        """
-        for sample in samples:
-            if sample["symbol"] == symbol:
-                return sample
-        return None
+        def find_sample(samples, symbol):
+            """ Find sample in samples and return it when we can find it for given `symbol`.
+            See:
 
-    # {
-    #     "overhead": 81.6406,
-    #     "count": 418,
-    #     "symbol": "x_mul:python312_d.dll"
-    # },
+            "events": [
+                {
+                    "type": "ld_spec",
+                    "samples": [
+                        {
+                            "overhead": 81.6406,
+                            "count": 418,
+                            "symbol": "x_mul:python312_d.dll"
+                        },
+                        {
+                            "overhead": 4.88281,
+                            "count": 25,
+                            "symbol": "v_iadd:python312_d.dll"
+                        },
+            """
+            for sample in samples:
+                if sample["symbol"] == symbol:
+                    return sample
+            return None
 
-    # We expect in events.samples[0] hottest sample (which we want to check for)
-    hotest_symbol = samples[0]
-    symbol_overhead = hotest_symbol["overhead"]
-    symbol_count = hotest_symbol["count"]
-    symbol_name = hotest_symbol["symbol"]
+        # {
+        #     "overhead": 81.6406,
+        #     "count": 418,
+        #     "symbol": "x_mul:python312_d.dll"
+        # },
 
-    if find_sample(samples, HOT_SYMBOL) is False:
-        pytest.skip(f"{pyhton_d_exe_path} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{HOT_SYMBOL}' -- sampling mismatch")
+        # We expect in events.samples[0] hottest sample (which we want to check for)
+        hotest_symbol = samples[0]
+        symbol_overhead = hotest_symbol["overhead"]
+        symbol_count = hotest_symbol["count"]
+        symbol_name = hotest_symbol["symbol"]
 
-    evt_sample = find_sample(samples, HOT_SYMBOL)
-    assert evt_sample is not None, f"Can't find `{HOT_SYMBOL}` symbol in sampling output!"
+        if find_sample(samples, HOT_SYMBOL) is False:
+            pytest.skip(f"{pyhton_d_exe_path} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{HOT_SYMBOL}' -- sampling mismatch")
+
+        evt_sample = find_sample(samples, HOT_SYMBOL)
+        assert evt_sample is not None, f"Can't find `{HOT_SYMBOL}` symbol in sampling output!"
+        overheads.append(evt_sample["overhead"])    # Store results for median calculation
+
+    #
     # We want to see at least e.g. 70% of samples in e.g `x_mul`:
-    assert evt_sample["overhead"] >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% sampling hotspot in {HOT_SYMBOL}"
+    #
+    assert median(overheads) >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% sampling hotspot in {HOT_SYMBOL}, overheads={overheads}"

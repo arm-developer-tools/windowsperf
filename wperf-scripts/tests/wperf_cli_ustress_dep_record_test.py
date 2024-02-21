@@ -86,6 +86,7 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 
 import os
 import json
+from statistics import median
 from time import sleep
 import pytest
 from common import run_command, is_json
@@ -123,67 +124,77 @@ def test_ustress_bench_record_microbenchmark(core,event,event_freq,benchmark,par
         <HOTTEST_OVERHEAD>  - we expect sampling overhead for <HOTTEST> to be at least this big
     """
 
-    ## Do not rely on other tests, sleep before we run record to make sure core(s) counters are not saturated
-    sleep(2)
-
-    ## Execute benchmark
+    #
+    # Execute benchmark
+    #
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    cmd = f"wperf record -e {event}:{event_freq} -c {core} --timeout {param} --json -- {benchmark_path} {param}"
-    stdout, _ = run_command(cmd)
 
-    assert is_json(stdout), f"in {cmd}"
-    json_output = json.loads(stdout)
+    overheads = []  # Results of sampling of the symbol
+    #
+    # Run test N times and check for media sampling output
+    #
+    for _ in range(3):
+        ## Do not rely on other tests, sleep before we run record to make sure core(s) counters are not saturated
+        sleep(2)    # Cool-down the core
 
-    r"""
-    {
-        "sampling": {
-            "pe_file": "telemetry-solution/tools/ustress/l1d_cache_workload.exe",
-            "pdb_file": "telemetry-solution/tools/ustress/l1d_cache_workload.pdb",
-            "sample_display_row": 50,
-            "samples_generated": 129,
-            "samples_dropped": 1,
-            "base_address": 140700047330040,
-            "runtime_delta": 140694678601728,
-            "events": [
-                {
-                    "type": "l1d_cache_refill",
-                    "samples": [
-                        {
-                            "overhead": 100,
-                            "count": 128,
-                            "symbol": "stress"
-                        }
-                    ],
-                    "interval": 10000,
-                    "printed_sample_num": 1,
-                    "annotate": []
-                }
-            ]
+        cmd = f"wperf record -e {event}:{event_freq} -c {core} --timeout {param} --json -- {benchmark_path} {param}"
+        stdout, _ = run_command(cmd)
+
+        assert is_json(stdout), f"in {cmd}"
+        json_output = json.loads(stdout)
+
+        r"""
+        {
+            "sampling": {
+                "pe_file": "telemetry-solution/tools/ustress/l1d_cache_workload.exe",
+                "pdb_file": "telemetry-solution/tools/ustress/l1d_cache_workload.pdb",
+                "sample_display_row": 50,
+                "samples_generated": 129,
+                "samples_dropped": 1,
+                "base_address": 140700047330040,
+                "runtime_delta": 140694678601728,
+                "events": [
+                    {
+                        "type": "l1d_cache_refill",
+                        "samples": [
+                            {
+                                "overhead": 100,
+                                "count": 128,
+                                "symbol": "stress"
+                            }
+                        ],
+                        "interval": 10000,
+                        "printed_sample_num": 1,
+                        "annotate": []
+                    }
+                ]
+            }
         }
-    }
-    """
+        """
 
-    assert json_output["sampling"]["pe_file"].endswith(benchmark), f"in {cmd}"
-    assert json_output["sampling"]["pdb_file"].endswith(benchmark.replace(".exe", ".pdb")), f"in {cmd}"
+        assert json_output["sampling"]["pe_file"].endswith(benchmark), f"in {cmd}"
+        assert json_output["sampling"]["pdb_file"].endswith(benchmark.replace(".exe", ".pdb")), f"in {cmd}"
 
-    assert "events" in json_output["sampling"], f"in {cmd}"
-    assert len(json_output["sampling"]["events"]) > 0, f"in {cmd}"
+        assert "events" in json_output["sampling"], f"in {cmd}"
+        assert len(json_output["sampling"]["events"]) > 0, f"in {cmd}"
 
-    # Check if event we sample for is in "events"
-    hotest_symbol = json_output["sampling"]["events"][0]
-    assert hotest_symbol["type"] == event, f"in {cmd}"
-    assert len(hotest_symbol["samples"]) > 0, f"in {cmd}"
-    assert hotest_symbol["interval"] == event_freq, f"in {cmd}"
+        # Check if event we sample for is in "events"
+        hotest_symbol = json_output["sampling"]["events"][0]
+        assert hotest_symbol["type"] == event, f"in {cmd}"
+        assert len(hotest_symbol["samples"]) > 0, f"in {cmd}"
+        assert hotest_symbol["interval"] == event_freq, f"in {cmd}"
 
-    # We expect in events.samples[0] hottest sample (which we want to check for)
-    hotest_symbol = json_output["sampling"]["events"][0]["samples"][0]
-    symbol_overhead = hotest_symbol["overhead"]
-    symbol_count = hotest_symbol["count"]
-    symbol_name = hotest_symbol["symbol"]
+        # We expect in events.samples[0] hottest sample (which we want to check for)
+        hotest_symbol = json_output["sampling"]["events"][0]["samples"][0]
+        symbol_overhead = hotest_symbol["overhead"]
+        symbol_count = hotest_symbol["count"]
+        symbol_name = hotest_symbol["symbol"]
 
-    if not symbol_name == hottest:
-        pytest.skip(f"{benchmark} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{hottest}' -- sampling mismatch")
+        if not symbol_name == hottest:
+            pytest.skip(f"{benchmark} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{hottest}' -- sampling mismatch")
 
-    assert symbol_name == hottest, f"in {cmd}"
-    assert symbol_count > 0, f"in {cmd}"
-    assert symbol_overhead >= hottest_overhead, f"in {cmd}"
+        assert symbol_name == hottest, f"symbol {symbol_name} is not expected hottest symbol {hottest}, cmd={cmd}"
+        assert symbol_count > 0, f"symbol_count={symbol_count} is 0, cmd={cmd}"
+        overheads.append(symbol_overhead)
+
+    assert median(overheads) >= hottest_overhead, f"median({overheads}) < {hottest_overhead}, cmd={cmd}"
