@@ -60,7 +60,6 @@ GetDevicePath(
     CONFIGRET cr = CR_SUCCESS;
     PWSTR deviceInterfaceList = NULL;
     ULONG deviceInterfaceListLength = 0;
-    PWSTR nextInterface;
     HRESULT hr = E_FAIL;
     BOOL bRet = TRUE;
 
@@ -152,26 +151,23 @@ GetDevicePath(
             continue;
         }
 
-        // hardware IDs is a null sperated list of strings, 
-        PWSTR hdId;
-        for (hdId = deviceHWIdList; *hdId; hdId += wcslen(hdId) + 1)
+        // hardware IDs is a null sperated list of strings per device.
+        PWSTR hwId;
+        for (hwId = deviceHWIdList; *hwId; hwId += wcslen(hwId) + 1)
         {
-            WindowsPerfDbgPrint("Found HW ID  %S\n\n", hdId);
+            WindowsPerfDbgPrint("Found HW ID  %S\n\n", hwId);
+
+            if (wcscmp(hwId, L"Root\\WPERFDRIVER") == 0)
+            {
+                hr = StringCchCopy(DevicePath, BufLen, deviceInterface);
+                if (FAILED(hr)) {
+                    bRet = FALSE;
+                    WindowsPerfDbgPrint("Error: StringCchCopy failed with HRESULT 0x%x", hr);
+                }
+                goto clean0;
+            }
         }
 
-    }
-
-    nextInterface = deviceInterfaceList + wcslen(deviceInterfaceList) + 1;
-    if (*nextInterface != UNICODE_NULL) {
-        WindowsPerfDbgPrint("Warning: More than one device interface instance found. \n"
-                            "         Selecting first matching device.\n\n");
-    }
-
-    hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
-    if (FAILED(hr)) {
-        bRet = FALSE;
-        WindowsPerfDbgPrint("Error: StringCchCopy failed with HRESULT 0x%x", hr);
-        goto clean0;
     }
 
 clean0:
