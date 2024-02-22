@@ -37,6 +37,7 @@ import os
 import pytest
 from common import run_command, is_json
 from common import wperf_metric_is_available
+from fixtures import fixture_is_enough_GPCs
 
 N_CORES = os.cpu_count()
 CORES_ODD = ",".join(str(c) for c in range(0, N_CORES) if c & 1)
@@ -50,30 +51,15 @@ TOPDOWN_L1_EVENTS = "{l1i_tlb_refill,l1i_tlb},{inst_spec,ld_spec},{st_spec,inst_
 @pytest.mark.parametrize("sleep,cores,metric,events",
 [
     # Slowly progress towards insanity ;)
-    (5, CORES_ODD, "",                   "CPU_CYCLES,ld_spec,st_spec,vfp_spec"),
-    (5, CORES_ODD, "imix",               "CPU_CYCLES,{cpu_cycles,stall_backend}"),
-    (5, CORES_ODD, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend}"),
-    (5, CORES_ODD, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill}"),
-    (5, CORES_ODD, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec}"),
-    (5, CORES_ODD, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
-    (5, CORES_ALL, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
-
-    (5, CORES_EVEN, "",                   "CPU_CYCLES,ld_spec,st_spec,vfp_spec"),
-    (5, CORES_EVEN, "imix",               "CPU_CYCLES,{cpu_cycles,stall_backend}"),
-    (5, CORES_EVEN, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend}"),
-    (5, CORES_EVEN, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill}"),
-    (5, CORES_EVEN, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec}"),
-    (5, CORES_EVEN, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
-    (5, CORES_ALL,  "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
-
-    # Level 1 Top down example events
-    (5, CORES_ODD,  "", TOPDOWN_L1_EVENTS),
-    (5, CORES_EVEN, "", TOPDOWN_L1_EVENTS),
-    (5, CORES_ALL,  "", TOPDOWN_L1_EVENTS),
+    (5, CORES_ODD,  "", "CPU_CYCLES,ld_spec,st_spec,vfp_spec,br_mis_pred_retired,inst_spec,dtlb_walk"),
+    (5, CORES_EVEN, "", "CPU_CYCLES,ld_spec,st_spec,vfp_spec,br_mis_pred_retired,inst_spec,dtlb_walk"),
+    (5, CORES_ALL,  "", "CPU_CYCLES,ld_spec,st_spec,vfp_spec,br_mis_pred_retired,inst_spec,dtlb_walk"),
 ]
 )
+@pytest.mark.xfail("not fixture_is_enough_GPCs(1)", reason="this test requires at least 1 GPCs")
 def test_wperf_hammer_core(sleep,cores,metric,events):
     """ Stress test CORE PMU events, with mix of metrics, groups and separate events.
+        Assume at least 1 GPC is available.
     """
     cmd = 'wperf stat'.split()
     if events:
@@ -83,7 +69,75 @@ def test_wperf_hammer_core(sleep,cores,metric,events):
     if metric and wperf_metric_is_available(metric):
         cmd += ['-m', metric]
     if sleep:
-        cmd += ['sleep', str(sleep)]
+        cmd += ['--timeout', str(sleep)]
+
+    cmd += ['--json']
+
+    stdout, _ = run_command(cmd)
+    assert is_json(stdout), "in %s" % (' '.join(cmd))
+
+@pytest.mark.parametrize("sleep,cores,metric,events",
+[
+    # Slowly progress towards insanity ;)
+    (5, CORES_ODD, "",                   "CPU_CYCLES,ld_spec,st_spec,vfp_spec"),
+    (5, CORES_ODD, "imix",               "CPU_CYCLES,{cpu_cycles,stall_backend}"),
+    (5, CORES_ODD, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend}"),
+    (5, CORES_ODD, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill}"),
+
+    (5, CORES_EVEN, "",                   "CPU_CYCLES,ld_spec,st_spec,vfp_spec"),
+    (5, CORES_EVEN, "imix",               "CPU_CYCLES,{cpu_cycles,stall_backend}"),
+    (5, CORES_EVEN, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend}"),
+    (5, CORES_EVEN, "imix,icache",        "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill}"),
+]
+)
+@pytest.mark.xfail("not fixture_is_enough_GPCs(2)", reason="this test requires at least 2 GPCs")
+def test_wperf_hammer_core_req_min_2_GPCs(sleep,cores,metric,events):
+    """ Stress test CORE PMU events, with mix of metrics, groups and separate events.
+        Assume at least 1 GPC is available.
+    """
+    cmd = 'wperf stat'.split()
+    if events:
+        cmd += ['-e', events]
+    if cores:
+        cmd += ['-c', cores]
+    if metric and wperf_metric_is_available(metric):
+        cmd += ['-m', metric]
+    if sleep:
+        cmd += ['--timeout', str(sleep)]
+
+    cmd += ['--json']
+
+    stdout, _ = run_command(cmd)
+    assert is_json(stdout), "in %s" % (' '.join(cmd))
+
+@pytest.mark.parametrize("sleep,cores,metric,events",
+[
+    (5, CORES_ODD, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
+    (5, CORES_ALL, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
+
+    (5, CORES_EVEN, "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
+    (5, CORES_ALL,  "imix,icache,dcache", "CPU_CYCLES,{cpu_cycles,stall_backend},br_mis_pred_retired,inst_spec,dtlb_walk,{cpu_cycles,stall_frontend},{l1d_tlb,l1d_tlb_refill},{ld_spec,st_spec,ldst_spec},{unaligned_ld_spec,unaligned_st_spec,unaligned_ldst_spec}"),
+
+    # Level 1 Top down example events
+    (5, CORES_ODD,  "", TOPDOWN_L1_EVENTS),
+    (5, CORES_EVEN, "", TOPDOWN_L1_EVENTS),
+    (5, CORES_ALL,  "", TOPDOWN_L1_EVENTS),
+]
+)
+@pytest.mark.xfail("not fixture_is_enough_GPCs(3)", reason="this test requires at least 3 GPCs")
+def test_wperf_hammer_core_req_min_3_GPCs(sleep,cores,metric,events):
+    """ Stress test CORE PMU events, with mix of metrics, groups and separate events.
+        Assume at least 1 GPC is available.
+    """
+    cmd = 'wperf stat'.split()
+    if events:
+        cmd += ['-e', events]
+    if cores:
+        cmd += ['-c', cores]
+    if metric and wperf_metric_is_available(metric):
+        cmd += ['-m', metric]
+    if sleep:
+        cmd += ['--timeout', str(sleep)]
 
     cmd += ['--json']
 
