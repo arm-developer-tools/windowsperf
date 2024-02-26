@@ -93,3 +93,92 @@ PCHAR GetIoctlStr(ULONG ioctl)
     default:                                return "unknown IOCTL!";
 	}
 }
+
+
+VOID SetMeBusyForce(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT  file_object) // always suceeds
+{
+    KIRQL oldirql;
+
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    dev_ext->current_status.status = STS_BUSY;
+    dev_ext->current_status.ioctl = ioctl;
+    dev_ext->current_status.file_object = file_object;
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
+}
+
+BOOLEAN SetMeBusy(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if the lock is held by another process
+{
+    BOOLEAN ret = FALSE;
+    KIRQL oldirql;
+
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    if ((dev_ext->current_status.file_object != file_object)  // if we dont hold the lock, and the lock is busy
+        &&
+        (dev_ext->current_status.status == STS_BUSY))
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "SetMeBusy : %s : device is busy with file object %p with ioctl %s active\n",
+            GetIoctlStr(ioctl),
+            dev_ext->current_status.file_object,
+            GetIoctlStr(dev_ext->current_status.ioctl)));
+        ret = FALSE;
+    }
+    else // else we hold the lock or the lock isnt held, so we get the lock and succeed
+    {
+        dev_ext->current_status.status = STS_BUSY;
+        dev_ext->current_status.ioctl = ioctl;
+        dev_ext->current_status.file_object = file_object;
+        ret = TRUE;
+    }
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
+    return ret;
+}
+
+BOOLEAN AmILocking(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT  file_object)// returns TRUE if file objects match
+{
+    BOOLEAN  ret = FALSE;
+    KIRQL oldirql;
+
+#if!defined DBG
+    UNREFERENCED_PARAMETER(ioctl);
+#endif
+
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    if (file_object == dev_ext->current_status.file_object) // if we hold the lock, return TRUE, and also update the active ioctl
+    {
+        ret = TRUE;
+        dev_ext->current_status.ioctl = ioctl;
+    }
+    else
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "AmILocking : %s : device is busy with file object %p with ioctl %s active\n",
+            GetIoctlStr(ioctl),
+            dev_ext->current_status.file_object,
+            GetIoctlStr(dev_ext->current_status.ioctl)));
+    }
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
+    return ret;
+}
+
+BOOLEAN SetMeIdle(PDEVICE_EXTENSION dev_ext, WDFFILEOBJECT  file_object)// returns failure if the lock is not held by this process
+{
+    KIRQL oldirql;
+    BOOLEAN ret = FALSE;
+
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    if (file_object == dev_ext->current_status.file_object)
+    {
+        dev_ext->current_status.status = STS_IDLE;
+        dev_ext->current_status.ioctl = 0;
+        dev_ext->current_status.file_object = 0;
+        ret = TRUE;
+    }
+    else
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "SetMeIdle : lock is held by process %p,  not this one, %p\n",
+            dev_ext->current_status.file_object,
+            file_object));
+        ret = FALSE;
+    }
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
+    return ret;
+}

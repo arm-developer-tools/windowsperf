@@ -36,14 +36,16 @@
 typedef struct _QUEUE_CONTEXT {
 
     ULONG PrivateDeviceData;  // just a placeholder
+    PDEVICE_EXTENSION devExt;
 
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, QueueGetContext)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext)
 
 NTSTATUS
-WperfDriver_TQueueInitialize(
-    _In_ WDFDEVICE Device
+WperfDriver_TIOInitialize(
+    _In_ WDFDEVICE Device,
+    _In_ PDEVICE_EXTENSION devExt
     );
 
 //

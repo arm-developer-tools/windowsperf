@@ -32,7 +32,8 @@
 #include <wdf.h>
 #include <initguid.h>
 #include "device.h"
-#include "queue.h"
+#include "IO.h"
+#include "utilities.h"
 #include "..\wperf-common\iorequest.h"
 #if defined ENABLE_TRACING
 #include "trace.h"

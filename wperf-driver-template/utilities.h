@@ -33,3 +33,7 @@
 
 PCHAR DbgStatusStr(NTSTATUS status);
 PCHAR GetIoctlStr(ULONG ioctl);
+VOID SetMeBusyForce(PDEVICE_EXTENSION dev_ext,  ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeBusy(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN AmILocking(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeIdle(PDEVICE_EXTENSION dev_ext, WDFFILEOBJECT file_object);

@@ -30,6 +30,16 @@
 
 #include "..\wperf-common\public.h"
 
+
+
+typedef struct _LOCK_STATUS
+{
+    enum status_flag status;
+    ULONG ioctl;
+    KSPIN_LOCK sts_lock;
+    WDFFILEOBJECT  file_object;
+} LOCK_STATUS;
+
 //
 // The device context performs the same job as
 // a WDM device extension in the driver frameworks
@@ -37,6 +47,7 @@
 typedef struct _DEVICE_EXTENSION
 {
     ULONG PrivateDeviceData;  // just a placeholder
+    LOCK_STATUS   current_status;
 
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
