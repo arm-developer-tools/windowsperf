@@ -84,6 +84,10 @@ Most of code style preferences are defined in project solution (`.sln`) and/or p
 
 To learn more about how to define code style settings per-project see article [Code style preferences](https://learn.microsoft.com/en-us/visualstudio/ide/code-styles-and-code-cleanup?view=vs-2022).
 
+# Creating Reliable Kernel-Mode Drivers
+
+You can read more about how to create reliable Windows Kernel Drivers, just follow these [guidelines](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/creating-reliable-kernel-mode-drivers).
+
 # Testing your changes
 
 You should test your code locally before you submit a patch.

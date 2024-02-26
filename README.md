@@ -79,18 +79,6 @@ Please note that SDK and WDK versions installed on your system must be compatibl
 
 WindowsPerf solution is implemented in `C/C++17`.
 
-### Debugging Kernel-Mode driver
-
-You can see `wperf-driver` debug printouts with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview). Kernel-Mode debug prints are produced with macros [DbgPrint](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprint) and [DbgPrintEx](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprintex).
-
-After adding a sampling model we've moved to more robust tracing. For kernel driver traces please use [TraceView](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/traceview) application. You will need to present the TraceView with the `wperf-driver.pdb` file and you are ready to go!
-
-Debugging Tools for Windows supports kernel debugging over a USB cable using EEM on an Arm device. Please refer to [Setting Up Kernel-Mode Debugging over USB EEM on an Arm device using KDNET](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-kernel-mode-debugging-over-usb-eem-arm-kdnet) article for more details.
-
-### Creating Reliable Kernel-Mode Drivers
-
-To create a reliable kernel-mode driver, follow these [guidelines](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/creating-reliable-kernel-mode-drivers).
-
 ## Build solution from command line
 
 ```

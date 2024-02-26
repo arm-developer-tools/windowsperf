@@ -10,6 +10,18 @@ You can build `wperf-driver` project from command line:
 > devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf-driver\wperf-driver.vcxproj
 ```
 
+# Debugging Kernel-Mode driver
+
+You can see `wperf-driver` debug printouts with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview). Kernel-Mode debug prints are produced with macros [KdPrintEx](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-kdprintex).
+
+After adding a sampling model we've moved to more robust tracing. For kernel driver traces please use [TraceView](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/traceview) application. You will need to present the TraceView with the `wperf-driver.pdb` file and you are ready to go!
+
+Debugging Tools for Windows supports kernel debugging over a USB cable using EEM on an Arm device. Please refer to [Setting Up Kernel-Mode Debugging over USB EEM on an Arm device using KDNET](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-kernel-mode-debugging-over-usb-eem-arm-kdnet) article for more details.
+
+## Tracing wperf-driver
+
+Enable Kernel Driver tracing with project specific `ENABLE_TRACING` macro. In order to use it just set it at the VS `wperf-driver` project `Properties` -> `C/C++` -> `Preprocessor` -> `Preprocessor Definitions`.
+
 # Kernel Driver Installation
 
 Kernel drivers can be installed and removed on ARM64 machines with DevCon command.
