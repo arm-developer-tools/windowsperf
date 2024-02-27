@@ -47,6 +47,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-driver-template", "wp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wperf-driver_t", "wperf-driver_t", "{19570BB2-DCCA-4033-B0E2-9489049E8DFB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "template_test", "template_test\template_test.vcxproj", "{E46C6398-B2F7-4ADA-9EC4-65502480B57A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -163,6 +165,18 @@ Global
 		{E8A5BA11-541E-486F-9AA2-FD23F3266266}.Release|x64.ActiveCfg = Release|x64
 		{E8A5BA11-541E-486F-9AA2-FD23F3266266}.Release|x64.Build.0 = Release|x64
 		{E8A5BA11-541E-486F-9AA2-FD23F3266266}.Release|x64.Deploy.0 = Release|x64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Debug|ARM64.Build.0 = Debug|ARM64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Debug|Win32.Build.0 = Debug|Win32
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Debug|x64.ActiveCfg = Debug|x64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Debug|x64.Build.0 = Debug|x64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Release|ARM64.ActiveCfg = Release|ARM64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Release|ARM64.Build.0 = Release|ARM64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Release|Win32.ActiveCfg = Release|Win32
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Release|Win32.Build.0 = Release|Win32
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Release|x64.ActiveCfg = Release|x64
+		{E46C6398-B2F7-4ADA-9EC4-65502480B57A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
