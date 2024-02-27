@@ -22,7 +22,7 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="wperf-driver-template.inf">
+    <Inf Include="wperf-driver-DMC.inf">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>

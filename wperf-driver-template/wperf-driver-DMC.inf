@@ -31,13 +31,13 @@
 ;/*++
 ;
 ;	Module Name:
-;   	wperf-driver-template.INF
+;   	wperf-driver-DMC.INF
 ;
 ;	Abstract:
 ;   	INF file for installing the WPERFDRIVER Kernel Driver
 ;
 ;	Installation Notes:
-;   	Using Devcon: Type "devcon install wperf-driver-template.inf root\WPERFDRIVER" to install
+;   	Using Devcon: Type "devcon install wperf-driver-DMC.inf root\WPERFDRIVER" to install
 ;
 ;--*/
 [Version]
@@ -45,7 +45,7 @@ Signature="$WINDOWS NT$"
 Class=System 
 ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318} 
 Provider=%ManufacturerName%
-CatalogFile=wperf-driver-template.cat
+CatalogFile=wperf-driver-DMC.cat
 DriverVer= ; TODO: set DriverVer in stampinf property pages
 PnpLockdown=1
 
@@ -57,7 +57,7 @@ WPERFDRIVER_T_Device_CoInstaller_CopyFiles = 11
 1 = %DiskName%,,,""
 
 [SourceDisksFiles]
-wperf-driver-template.sys  = 1,,
+wperf-driver-DMC.sys  = 1,,
 WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
 
 ;*****************************************
@@ -68,25 +68,25 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 %ManufacturerName%=Standard,ntarm64.10.0...22000
 
 [Standard.ntarm64.10.0...22000]
-%WPERFDRIVER_T.DeviceDesc%=WPERFDRIVER_T_Device, Root\WPERFDRIVER_T ; TODO: edit hw-id
+%WPERFDRIVER_DMC.DeviceDesc%=WPERFDRIVER_T_Device, Root\WPERFDRIVER_DMC ; TODO: edit hw-id
 
 [WPERFDRIVER_T_Device.NT]
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-wperf-driver-template.sys,,,2
+wperf-driver-DMC.sys,,,2
 
 ;-------------- Service installation
 [WPERFDRIVER_T_Device.NT.Services]
-AddService = WPERFDRIVER_T,%SPSVCINST_ASSOCSERVICE%, WPERFDRIVER_T_Service_Inst
+AddService = WPERFDRIVER_DMC,%SPSVCINST_ASSOCSERVICE%, WPERFDRIVER_T_Service_Inst
 
-; -------------- WPERFDRIVER_T driver install sections
+; -------------- WPERFDRIVER_DMC driver install sections
 [WPERFDRIVER_T_Service_Inst]
-DisplayName    = %WPERFDRIVER_T.SVCDESC%
+DisplayName    = %WPERFDRIVER_DMC.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START
 ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %12%\wperf-driver-template.sys
+ServiceBinary  = %12%\wperf-driver-DMC.sys
 
 ;
 ;--- WPERFDRIVER_T_Device Coinstaller installation ------
@@ -103,13 +103,13 @@ HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfC
 WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
 
 [WPERFDRIVER_T_Device.NT.Wdf]
-KmdfService =  WPERFDRIVER_T, WPERFDRIVER_T_wdfsect
+KmdfService =  WPERFDRIVER_DMC, WPERFDRIVER_T_wdfsect
 [WPERFDRIVER_T_wdfsect]
 KmdfLibraryVersion = $KMDFVERSION$
 
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
 ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
-DiskName = "WPERFDRIVER_T Installation Disk"
-WPERFDRIVER_T.DeviceDesc = "WPERFDRIVER_T Device"
-WPERFDRIVER_T.SVCDESC = "wperf-driver-template Service"
+DiskName = "WPERFDRIVER_DMC Installation Disk"
+WPERFDRIVER_DMC.DeviceDesc = "WPERFDRIVER_DMC Device"
+WPERFDRIVER_DMC.SVCDESC = "wperf-driver-DMC Service"
