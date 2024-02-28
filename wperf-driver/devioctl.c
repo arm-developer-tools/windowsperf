@@ -126,6 +126,7 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     context->event_num = core_event_num;
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for action %d\n", context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
+    WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
     return STATUS_SUCCESS;
 }
@@ -179,6 +180,7 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
     context->event_num = dsu_event_num;
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for action %d\n", context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
+    WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
     return STATUS_SUCCESS;
 }
@@ -352,6 +354,7 @@ NTSTATUS deviceControl(
         context->action = PMU_CTL_SAMPLE_START;
         context->core_idx = core_idx;
         WdfWorkItemEnqueue(queueContext->WorkItem);
+        WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
         *outputSize = 0;
         break;
@@ -407,6 +410,7 @@ NTSTATUS deviceControl(
         context->action = PMU_CTL_SAMPLE_STOP;
         context->core_idx = core_idx;
         WdfWorkItemEnqueue(queueContext->WorkItem);
+        WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
         struct PMUSampleSummary* out = (struct PMUSampleSummary*)pOutBuffer;
         out->sample_generated = core_info[core_idx].sample_generated;
@@ -509,6 +513,7 @@ NTSTATUS deviceControl(
         context->sample_req = sample_req;
         context->sample_src_num = sample_src_num;
         WdfWorkItemEnqueue(queueContext->WorkItem);
+        WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
         *outputSize = 0;
         break;
@@ -587,6 +592,7 @@ NTSTATUS deviceControl(
         context->do_func2 = dsu_func;
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! enqueuing for action %d\n", context->action));
         WdfWorkItemEnqueue(queueContext->WorkItem);
+        WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
         if (ctl_flags & CTL_FLAG_DMC)
         {
