@@ -44,16 +44,23 @@
 #define MAX_STRING_LENGTH 1024
 #define MAX_HARDWARELIST_SIZE 2048
 
+#define STANDARD 1
+#define TEMPLATE 2
+
 // Taken from wperf-driver INF file.
-PCWSTR instanceId = L"WPERFDRIVER";
-PCWSTR hardwareId = L"Root\\WPERFDRIVER";
-PCWSTR compatibleIds = L"Root\\WPERFDRIVER";
-PCWSTR devDescription = L"WPERFDRIVER Driver";
+PCWSTR instanceId ;
+PCWSTR hardwareId ;
+PCWSTR compatibleIds ;
+PCWSTR devDescription;
 
 std::wstring *FullInfPath = nullptr;
 const std::wstring InfName(L"wperf-driver.inf");
+const std::wstring InfName_t(L"wperf-driver-template.inf");
 
-void GetFullInfPath()
+
+
+
+void GetFullInfPath(int type)
 {
     if(FullInfPath == nullptr)
     {
@@ -64,7 +71,10 @@ void GetFullInfPath()
         {
             GetCurrentDirectory(size, buff);
             std::wstringstream wstream;
-            wstream << std::wstring(buff) << L"\\" << InfName;
+            if(type == STANDARD)
+                wstream << std::wstring(buff) << L"\\" << InfName;
+            else 
+                wstream << std::wstring(buff) << L"\\" << InfName_t;
             FullInfPath = new std::wstring(wstream.str().c_str());
             free(buff);
         }
@@ -170,7 +180,8 @@ BOOL do_remove_device()
         std::cout << "Device found" << std::endl;
         if (!SetupDiCallClassInstaller(DIF_REMOVE, deviceInfoSet, &deviceInfoData))
         {
-            std::cerr << "Error uninstalling device " << std::endl;
+            int errCode = GetLastError();
+            std::cerr << "Error uninstalling device " << errCode <<  std::endl;
             exit = false;
             goto clean;
         }
@@ -275,19 +286,46 @@ clean:
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cerr << "usage: app_name install|uninstall" << std::endl;
+        std::cerr << "usage: app_name install|uninstall  WPERFDRIVER|WPERFDRIVER_T" << std::endl;
         return -1;
     }
     int errorCode = 0;
 
-    GetFullInfPath();
+    std::string user_command(argv[1]);
+    std::string device_chosen(argv[2]);
+
+    if ("WPERFDRIVER" == device_chosen)
+    {
+        instanceId = L"WPERFDRIVER";
+        hardwareId = L"Root\\WPERFDRIVER";
+        compatibleIds = L"Root\\WPERFDRIVER";
+        devDescription = L"WPERFDRIVER Driver";
+        GetFullInfPath(STANDARD);
+    }
+
+    else if ("WPERFDRIVER_T" == device_chosen)
+    {
+        instanceId = L"WPERFDRIVER_T";
+        hardwareId = L"Root\\WPERFDRIVER_T";
+        compatibleIds = L"Root\\WPERFDRIVER_T";
+        devDescription = L"WPERFDRIVER Driver Template";
+        GetFullInfPath(TEMPLATE);
+    }
+
+    else {
+        std::cerr << "Unrecognized command " << device_chosen << "." << std::endl;
+        errorCode = -1;
+        goto clean_exit;
+    }
+
+    
 
     bool is_install;
 
-    std::string user_command(argv[1]);
-    std::cout << "Executing command: " << user_command << "." << std::endl;
+
+    std::cout << "Executing command: " << user_command << "."  << device_chosen << "."  << std::endl;
 
     if ("install" == user_command)
     {

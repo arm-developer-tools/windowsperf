@@ -239,6 +239,7 @@ NTSTATUS deviceControl(
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE for file object %p\n", file_object));
 
+
         struct lock_request* in = (struct lock_request*)pInBuffer;
         enum status_flag out = STS_BUSY;
 
@@ -250,8 +251,10 @@ NTSTATUS deviceControl(
         else if (in->flag == LOCK_GET)
         {
             if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
+            {
                 out = STS_LOCK_AQUIRED;
-            // Note: else STS_BUSY;
+                // Note: else STS_BUSY;
+            }
         }
         else
         {
@@ -281,8 +284,10 @@ NTSTATUS deviceControl(
 
         if (in->flag == LOCK_RELEASE)
         {
-            if (SetMeIdle(file_object)) // returns fialure if this process doesnt own the lock 
+            if (SetMeIdle(file_object)) // returns failure if this process doesnt own the lock 
+            {
                 out = STS_IDLE;         // All went well and we went IDLE
+            }
             // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
         }
         else

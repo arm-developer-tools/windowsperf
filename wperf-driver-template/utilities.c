@@ -30,21 +30,12 @@
 
 
 #include "driver.h"
-#include "device.h"
 #if defined ENABLE_TRACING
 #include "utilities.tmh"
 #endif
-#include "sysregs.h"
 
-extern UINT64* last_fpc_read;
-extern UINT8   counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 
-// Just update last_fpc_read, this is the fixed counter equivalent to CoreCounterReset
-void update_last_fixed_counter(UINT64 core_idx)
-{
-    last_fpc_read[core_idx] = _ReadStatusReg(PMCCNTR_EL0);
-}
-extern LOCK_STATUS   current_status;
+
 
 PCHAR DbgStatusStr(NTSTATUS status)
 {
@@ -103,51 +94,46 @@ PCHAR GetIoctlStr(ULONG ioctl)
 	}
 }
 
-VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT  file_object) // always suceeds
+
+VOID SetMeBusyForce(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT  file_object) // always suceeds
 {
     KIRQL oldirql;
 
-    KeAcquireSpinLock(&current_status.sts_lock, &oldirql);
-    current_status.status = STS_BUSY;
-    current_status.ioctl = ioctl;
-    current_status.file_object = file_object;
-    KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    dev_ext->current_status.status = STS_BUSY;
+    dev_ext->current_status.ioctl = ioctl;
+    dev_ext->current_status.file_object = file_object;
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
 }
 
-BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if the lock is held by another process
+BOOLEAN SetMeBusy(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if the lock is held by another process
 {
     BOOLEAN ret = FALSE;
     KIRQL oldirql;
 
-    KeAcquireSpinLock(&current_status.sts_lock, &oldirql);
-    if( (current_status.file_object != file_object)  // if we dont hold the lock, and the lock is busy
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    if ((dev_ext->current_status.file_object != file_object)  // if we dont hold the lock, and the lock is busy
         &&
-        (current_status.status == STS_BUSY) )
+        (dev_ext->current_status.status == STS_BUSY))
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "SetMeBusy : %s : device is busy with file object %p with ioctl %s active\n",
             GetIoctlStr(ioctl),
-            current_status.file_object,
-            GetIoctlStr(current_status.ioctl)));
+            dev_ext->current_status.file_object,
+            GetIoctlStr(dev_ext->current_status.ioctl)));
         ret = FALSE;
     }
     else // else we hold the lock or the lock isnt held, so we get the lock and succeed
     {
-        current_status.status = STS_BUSY;
-        current_status.ioctl = ioctl;
-        current_status.file_object = file_object;
-        // Get PMU counters  if we dont already have them
-        if (!current_status.pmu_held)
-        {
-            get_pmu_resource();
-            current_status.pmu_held = 1;
-        }
+        dev_ext->current_status.status = STS_BUSY;
+        dev_ext->current_status.ioctl = ioctl;
+        dev_ext->current_status.file_object = file_object;
         ret = TRUE;
     }
-    KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
     return ret;
 }
 
-BOOLEAN AmILocking(ULONG ioctl, WDFFILEOBJECT  file_object)// returns TRUE if file objects match
+BOOLEAN AmILocking(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT  file_object)// returns TRUE if file objects match
 {
     BOOLEAN  ret = FALSE;
     KIRQL oldirql;
@@ -156,45 +142,43 @@ BOOLEAN AmILocking(ULONG ioctl, WDFFILEOBJECT  file_object)// returns TRUE if fi
     UNREFERENCED_PARAMETER(ioctl);
 #endif
 
-    KeAcquireSpinLock(&current_status.sts_lock, &oldirql);
-    if (file_object == current_status.file_object) // if we hold the lock, return TRUE, and also update the active ioctl
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    if (file_object == dev_ext->current_status.file_object) // if we hold the lock, return TRUE, and also update the active ioctl
     {
-        ret = TRUE;  
-        current_status.ioctl = ioctl;
+        ret = TRUE;
+        dev_ext->current_status.ioctl = ioctl;
     }
     else
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "AmILocking : %s : device is busy with file object %p with ioctl %s active\n", 
-                    GetIoctlStr(ioctl), 
-                    current_status.file_object, 
-                    GetIoctlStr(current_status.ioctl)));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "AmILocking : %s : device is busy with file object %p with ioctl %s active\n",
+            GetIoctlStr(ioctl),
+            dev_ext->current_status.file_object,
+            GetIoctlStr(dev_ext->current_status.ioctl)));
     }
-    KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
     return ret;
 }
 
-BOOLEAN SetMeIdle(WDFFILEOBJECT  file_object)// returns failure if the lock is not held by this process
+BOOLEAN SetMeIdle(PDEVICE_EXTENSION dev_ext, WDFFILEOBJECT  file_object)// returns failure if the lock is not held by this process
 {
     KIRQL oldirql;
     BOOLEAN ret = FALSE;
 
-    KeAcquireSpinLock(&current_status.sts_lock, &oldirql);
-    if (file_object == current_status.file_object)
+    KeAcquireSpinLock(&dev_ext->current_status.sts_lock, &oldirql);
+    if (file_object == dev_ext->current_status.file_object)
     {
-        current_status.status = STS_IDLE;
-        current_status.ioctl = 0;
-        current_status.file_object = 0;
-        free_pmu_resource();
-        current_status.pmu_held = 0;
+        dev_ext->current_status.status = STS_IDLE;
+        dev_ext->current_status.ioctl = 0;
+        dev_ext->current_status.file_object = 0;
         ret = TRUE;
     }
     else
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "SetMeIdle : lock is held by process %p,  not this one, %p\n",
-            current_status.file_object,
+            dev_ext->current_status.file_object,
             file_object));
         ret = FALSE;
     }
-    KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+    KeReleaseSpinLock(&dev_ext->current_status.sts_lock, oldirql);
     return ret;
 }

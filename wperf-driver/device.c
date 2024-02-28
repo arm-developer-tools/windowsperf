@@ -236,9 +236,97 @@ VOID free_pmu_resource(VOID)
     }
 }
 
+
+NTSTATUS get_pmu_resource(VOID)
+{
+    NTSTATUS status;
+
+    // 1) Query for free PMU counters
+    const size_t counter_idx_map_size = sizeof(UINT32) * (AARCH64_MAX_HWC_SUPP + 1);
+    RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
+
+    PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
+    TmpCounterResourceList.Count = 1;
+    TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
+    UINT8 numFreeCounters = 0;
+    for (UINT8 i = 0; i < numGPC; i++)
+    {
+        TmpCounterResourceList.Descriptors[0].u.CounterIndex = i;
+        status = HalAllocateHardwareCounters(NULL, 0, &TmpCounterResourceList, &pmc_resource_handle);
+        if (status == STATUS_SUCCESS)
+        {
+            counter_idx_map[numFreeCounters] = i;
+            numFreeCounters++;
+            HalFreeHardwareCounters(pmc_resource_handle);
+        }
+    }
+    if (numFreeCounters == 0)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "HAL: counters allocated by other kernel modules\n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d free general purpose hardware counters detected\n", numFreeCounters));
+
+    counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
+
+#ifdef _DEBUG
+    for (UINT8 i = 0; i < numGPC; i++)
+    {
+        i %= AARCH64_MAX_HWC_SUPP;
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
+    }
+#endif
+
+    // 2) Alloc PMU counters that are free
+    size_t AllocationSize = FIELD_OFFSET(PHYSICAL_COUNTER_RESOURCE_LIST, Descriptors[numFreeCounters]);
+    PPHYSICAL_COUNTER_RESOURCE_LIST CounterResourceList = (PPHYSICAL_COUNTER_RESOURCE_LIST)ExAllocatePool2(POOL_FLAG_NON_PAGED, AllocationSize, 'CRCL');
+    if (CounterResourceList == NULL)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "ExAllocatePoolWithTag: failed \n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    RtlSecureZeroMemory(CounterResourceList, AllocationSize);
+    CounterResourceList->Count = numFreeCounters;
+    for (UINT32 i = 0; i < numFreeCounters; i++)
+    {
+        CounterResourceList->Descriptors[i].u.CounterIndex = counter_idx_map[i];
+        CounterResourceList->Descriptors[i].Type = ResourceTypeSingle;
+    }
+
+    status = HalAllocateHardwareCounters(NULL, 0, CounterResourceList, &pmc_resource_handle);
+    ExFreePoolWithTag(CounterResourceList, 'CRCL');
+    if (status == STATUS_INSUFFICIENT_RESOURCES)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: counters allocated by other kernel modules\n"));
+        return status;
+    }
+
+    if (status != STATUS_SUCCESS)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: allocate failed 0x%x\n", status));
+        return status;
+    }
+    numFreeGPC = numFreeCounters;
+
+    return status;
+}
+
+
+
+
+
+
+
+
+
+
+
 VOID WindowsPerfDeviceUnload()
 {
+    // just incase unlock wasnt called, which normally releases the pmu recourse,
+    // do it here are device remove too
     free_pmu_resource();
+
     if (core_info)
         ExFreePoolWithTag(core_info, 'CORE');
 
@@ -450,73 +538,6 @@ WindowsPerfDeviceCreate(
     numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
 
-    // Finally, alloc PMU counters
-    // 1) Query for free PMU counters
-    const size_t counter_idx_map_size = sizeof(UINT8) * (AARCH64_MAX_HWC_SUPP + 1);
-    RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
-
-    PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
-    TmpCounterResourceList.Count = 1;
-    TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
-    UINT8 numFreeCounters = 0;
-    for (UINT8 i = 0; i < numGPC; i++)
-    {
-        TmpCounterResourceList.Descriptors[0].u.CounterIndex = i;
-        status = HalAllocateHardwareCounters(NULL, 0, &TmpCounterResourceList, &pmc_resource_handle);
-        if (status == STATUS_SUCCESS)
-        {
-            counter_idx_map[numFreeCounters] = i;
-            numFreeCounters++;
-            HalFreeHardwareCounters(pmc_resource_handle);
-        }
-    }
-    if (numFreeCounters == 0)
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "HAL: counters allocated by other kernel modules\n"));
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%d free general purpose hardware counters detected\n", numFreeCounters));
-
-    counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
-
-#ifdef _DEBUG
-    for (UINT8 i = 0; i < numGPC; i++)
-    {
-        i %= AARCH64_MAX_HWC_SUPP;
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
-    }
-#endif
-
-    // 2) Alloc PMU counters that are free
-    size_t AllocationSize = FIELD_OFFSET(PHYSICAL_COUNTER_RESOURCE_LIST, Descriptors[numFreeCounters]);
-    PPHYSICAL_COUNTER_RESOURCE_LIST CounterResourceList = (PPHYSICAL_COUNTER_RESOURCE_LIST)ExAllocatePool2(POOL_FLAG_NON_PAGED, AllocationSize, 'CRCL');
-    if (CounterResourceList == NULL)
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "ExAllocatePoolWithTag: failed \n"));
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-    RtlSecureZeroMemory(CounterResourceList, AllocationSize);
-    CounterResourceList->Count = numFreeCounters;
-    for (UINT8 i = 0; i < numFreeCounters; i++)
-    {
-        CounterResourceList->Descriptors[i].u.CounterIndex = counter_idx_map[i];
-        CounterResourceList->Descriptors[i].Type = ResourceTypeSingle;
-    }
-
-    status = HalAllocateHardwareCounters(NULL, 0, CounterResourceList, &pmc_resource_handle);
-    ExFreePoolWithTag(CounterResourceList, 'CRCL');
-    if (status == STATUS_INSUFFICIENT_RESOURCES)
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: counters allocated by other kernel modules\n"));
-        return status;
-    }
-
-    if (status != STATUS_SUCCESS)
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: allocate failed 0x%x\n", status));
-        return status;
-    }
-    numFreeGPC = numFreeCounters;
 
     // This driver expose private APIs (IOCTL commands), but also enable ThreadProfiling APIs.
     HARDWARE_COUNTER counter_descs[AARCH64_MAX_HWC_SUPP] = {0};
@@ -611,9 +632,7 @@ WindowsPerfDeviceCreate(
     // Port End
     //
 
-    current_status.file_object = 0;
-    current_status.ioctl = 0;
-    current_status.status = STS_IDLE;
+    RtlSecureZeroMemory(&current_status, sizeof(LOCK_STATUS));
     KeInitializeSpinLock(&current_status.sts_lock);
 
     //  and finally do a reset on the hardware to make sure it is in a known state.  The reset dpc sets the event, so we have 

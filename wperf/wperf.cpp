@@ -60,7 +60,6 @@ GetDevicePath(
     CONFIGRET cr = CR_SUCCESS;
     PWSTR deviceInterfaceList = NULL;
     ULONG deviceInterfaceListLength = 0;
-    PWSTR nextInterface;
     HRESULT hr = E_FAIL;
     BOOL bRet = TRUE;
 
@@ -99,17 +98,76 @@ GetDevicePath(
         goto clean0;
     }
 
-    nextInterface = deviceInterfaceList + wcslen(deviceInterfaceList) + 1;
-    if (*nextInterface != UNICODE_NULL) {
-        WindowsPerfDbgPrint("Warning: More than one device interface instance found. \n"
-                            "         Selecting first matching device.\n\n");
-    }
+    PWSTR deviceInterface;
 
-    hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
-    if (FAILED(hr)) {
-        bRet = FALSE;
-        WindowsPerfDbgPrint("Error: StringCchCopy failed with HRESULT 0x%x", hr);
-        goto clean0;
+    for (deviceInterface = deviceInterfaceList; *deviceInterface; deviceInterface += wcslen(deviceInterface) + 1)
+    {
+        DEVPROPTYPE devicePropertyType;
+        ULONG deviceHWIdListLength = 256;
+        WCHAR deviceHWIdList[256];
+        CONFIGRET cr1 = CR_SUCCESS;
+
+        WindowsPerfDbgPrint("Found device  %S\n\n", deviceInterface);
+
+        ULONG deviceInstanceIdLength = MAX_DEVICE_ID_LEN;
+        WCHAR deviceInstanceId[MAX_DEVICE_ID_LEN];
+
+        cr1 = CM_Get_Device_Interface_Property(
+            deviceInterface,
+            &DEVPKEY_Device_InstanceId,
+            &devicePropertyType,
+            (PBYTE)deviceInstanceId,
+            &deviceInstanceIdLength,
+            0);
+        if (cr1 != CR_SUCCESS)
+        {
+            UINT err = GetLastError();
+            WindowsPerfDbgPrint("CM_Get_Device_Interface_Property DEVPKEY_Device_InstanceId failed with 0x%X %d\n\n", cr1, err);
+            continue;
+        }
+        WindowsPerfDbgPrint("Found instance %S\n\n", deviceInstanceId);
+
+        DEVINST deviceInstanceHandle;
+
+        cr1 = CM_Locate_DevNode(&deviceInstanceHandle, deviceInstanceId, CM_LOCATE_DEVNODE_NORMAL);
+        if (cr1 != CR_SUCCESS)
+        {
+            UINT err = GetLastError();
+            WindowsPerfDbgPrint("CM_Locate_DevNode  failed with 0x%X %d\n\n", cr1, err);
+            continue;
+        }
+
+        cr1 = CM_Get_DevNode_Property(
+            deviceInstanceHandle,
+            &DEVPKEY_Device_HardwareIds,
+            &devicePropertyType,
+            (PBYTE)deviceHWIdList,
+            &deviceHWIdListLength,
+            0);
+        if(cr1  != CR_SUCCESS)
+        {
+            UINT err = GetLastError();
+            WindowsPerfDbgPrint("CM_Get_Device_Interface_Property DEVPKEY_Device_HardwareIds failed with 0x%X %d\n\n", cr1, err);
+            continue;
+        }
+
+        // hardware IDs is a null sperated list of strings per device.
+        PWSTR hwId;
+        for (hwId = deviceHWIdList; *hwId; hwId += wcslen(hwId) + 1)
+        {
+            WindowsPerfDbgPrint("Found HW ID  %S\n\n", hwId);
+
+            if (wcscmp(hwId, L"Root\\WPERFDRIVER") == 0)
+            {
+                hr = StringCchCopy(DevicePath, BufLen, deviceInterface);
+                if (FAILED(hr)) {
+                    bRet = FALSE;
+                    WindowsPerfDbgPrint("Error: StringCchCopy failed with HRESULT 0x%x", hr);
+                }
+                goto clean0;
+            }
+        }
+
     }
 
 clean0:

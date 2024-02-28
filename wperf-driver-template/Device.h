@@ -28,41 +28,40 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "wperf-common\public.h"
+#include "..\wperf-common\public.h"
+
+
+
+typedef struct _LOCK_STATUS
+{
+    enum status_flag status;
+    ULONG ioctl;
+    KSPIN_LOCK sts_lock;
+    WDFFILEOBJECT  file_object;
+} LOCK_STATUS;
 
 //
 // The device context performs the same job as
 // a WDM device extension in the driver frameworks
 //
-typedef struct _DEVICE_CONTEXT
+typedef struct _DEVICE_EXTENSION
 {
     ULONG PrivateDeviceData;  // just a placeholder
+    LOCK_STATUS   current_status;
 
-} DEVICE_CONTEXT, *PDEVICE_CONTEXT;
+} DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 //
-// This macro will generate an inline function called WdfObjectGet_DEVICE_CONTEXT
+// This macro will generate an inline function called DeviceGetContext
 // which will be used to get a pointer to the device context memory
 // in a type safe manner.
 //
-WDF_DECLARE_CONTEXT_TYPE(DEVICE_CONTEXT)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_EXTENSION, GetDeviceGetContext)
 
 //
 // Function to initialize the device and its callbacks
 //
 NTSTATUS
-WindowsPerfDeviceCreate(
-    PWDFDEVICE_INIT DeviceInit
+WperfDriver_TCreateDevice(
+    _Inout_ PWDFDEVICE_INIT DeviceInit
     );
-
-VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID free_pmu_resource(VOID);
-
-NTSTATUS get_pmu_resource(VOID);

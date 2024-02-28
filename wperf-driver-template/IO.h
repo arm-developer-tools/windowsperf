@@ -28,41 +28,28 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "wperf-common\public.h"
 
 //
-// The device context performs the same job as
-// a WDM device extension in the driver frameworks
+// This is the context that can be placed per queue
+// and would contain per queue information.
 //
-typedef struct _DEVICE_CONTEXT
-{
+typedef struct _QUEUE_CONTEXT {
+
     ULONG PrivateDeviceData;  // just a placeholder
+    PDEVICE_EXTENSION devExt;
 
-} DEVICE_CONTEXT, *PDEVICE_CONTEXT;
+} QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
-//
-// This macro will generate an inline function called WdfObjectGet_DEVICE_CONTEXT
-// which will be used to get a pointer to the device context memory
-// in a type safe manner.
-//
-WDF_DECLARE_CONTEXT_TYPE(DEVICE_CONTEXT)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext)
 
-//
-// Function to initialize the device and its callbacks
-//
 NTSTATUS
-WindowsPerfDeviceCreate(
-    PWDFDEVICE_INIT DeviceInit
+WperfDriver_TIOInitialize(
+    _In_ WDFDEVICE Device,
+    _In_ PDEVICE_EXTENSION devExt
     );
 
-VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
-
-VOID free_pmu_resource(VOID);
-
-NTSTATUS get_pmu_resource(VOID);
+//
+// Events from the IoQueue object
+//
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL WperfDriver_TEvtIoDeviceControl;
+EVT_WDF_IO_QUEUE_IO_STOP WperfDriver_TEvtIoStop;
