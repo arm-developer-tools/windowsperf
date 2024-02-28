@@ -67,7 +67,7 @@ typedef struct WORK_ITEM_CTXT_
 {
     UINT32 core_idx;
     UINT32 core_base, core_end, event_num;
-    UINT32 ctl_flags;
+    UINT32 cctl_flags;
     struct pmu_ctl_hdr* ctl_req;
     size_t cores_count;
     _Bool isDSU;

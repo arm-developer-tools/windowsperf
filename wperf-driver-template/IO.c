@@ -112,6 +112,13 @@ Return Value:
     return status;
 }
 
+
+
+//static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
+//static VOID(*dsu_ctl_funcs[3])(VOID) = { DSUCounterStart, DSUCounterStop, DSUCounterReset };
+static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8, struct dmcs_desc*) = { DmcCounterStart, DmcCounterStop, DmcCounterReset };
+
+
 VOID
 WperfDriver_TEvtIoDeviceControl(
     _In_ WDFQUEUE Queue,
@@ -119,7 +126,7 @@ WperfDriver_TEvtIoDeviceControl(
     _In_ size_t OutputBufferLength,
     _In_ size_t InputBufferLength,
     _In_ ULONG IoControlCode
-    )
+)
 /*++
 
 Routine Description:
@@ -145,13 +152,14 @@ Return Value:
 
 --*/
 {
-    NTSTATUS                   status              = STATUS_SUCCESS;
-    PQUEUE_CONTEXT      queueContext   = GetQueueContext(Queue);
-    PDEVICE_EXTENSION devExt               = queueContext->devExt;
-    WDFFILEOBJECT         fileObject          = WdfRequestGetFileObject(Request);
+    NTSTATUS                   status = STATUS_SUCCESS;
+    PQUEUE_CONTEXT      queueContext = GetQueueContext(Queue);
+    PDEVICE_EXTENSION devExt = queueContext->devExt;
+    WDFFILEOBJECT         fileObject = WdfRequestGetFileObject(Request);
     WDFMEMORY              memory;
-    PVOID                        inBuffer             = 0;
-    PVOID                        outBuffer           = 0;
+    PVOID                        inBuffer = 0;
+    PVOID                        outBuffer = 0;
+    ULONG                       retDataSize = 0;
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WperfDriver_TEvtIoDeviceControl : %s \n", GetIoctlStr(IoControlCode)));
 
@@ -186,92 +194,504 @@ Return Value:
 
     switch (IoControlCode)
     {
-        case IOCTL_PMU_CTL_LOCK_ACQUIRE:
+    case IOCTL_PMU_CTL_LOCK_ACQUIRE:
+    {
+        if (InputBufferLength != sizeof(struct lock_request))
         {
-            if (InputBufferLength != sizeof(struct lock_request))
-            {
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid inputsize %ld for IOCTL_PMU_CTL_LOCK_ACQUIRE\n", InputBufferLength));
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid inputsize %ld for IOCTL_PMU_CTL_LOCK_ACQUIRE\n", InputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
-            if (OutputBufferLength != sizeof(enum status_flag))
-            {
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid outputsize %ld for IOCTL_PMU_CTL_LOCK_ACQUIRE\n", OutputBufferLength));
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
+        if (OutputBufferLength != sizeof(enum status_flag))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid outputsize %ld for IOCTL_PMU_CTL_LOCK_ACQUIRE\n", OutputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_LOCK_ACQUIRE for file object %p\n", fileObject));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_LOCK_ACQUIRE for file object %p\n", fileObject));
 
-            struct lock_request* in = (struct lock_request*)inBuffer;
-            enum status_flag out = STS_BUSY;
+        struct lock_request* in = (struct lock_request*)inBuffer;
+        enum status_flag out = STS_BUSY;
 
-            if (in->flag == LOCK_GET_FORCE)
-            {
+        if (in->flag == LOCK_GET_FORCE)
+        {
+            out = STS_LOCK_AQUIRED;
+            SetMeBusyForce(devExt, IoControlCode, fileObject);
+        }
+        else if (in->flag == LOCK_GET)
+        {
+            if (SetMeBusy(devExt, IoControlCode, fileObject)) // returns failure if the lock is already held by another process
                 out = STS_LOCK_AQUIRED;
-                SetMeBusyForce(devExt, IoControlCode, fileObject);
-            }
-            else if (in->flag == LOCK_GET)
-            {
-                if (SetMeBusy(devExt, IoControlCode, fileObject)) // returns failure if the lock is already held by another process
-                    out = STS_LOCK_AQUIRED;
-                // Note: else STS_BUSY;
-            }
-            else
-            {
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid flag %d for IOCTL_PMU_CTL_LOCK_ACQUIRE\n", in->flag));
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            *((enum status_flag*)outBuffer) = out;
-            WdfRequestSetInformation(Request, (ULONG_PTR)sizeof(enum status_flag));
-            break;
+            // Note: else STS_BUSY;
         }
-
-        case IOCTL_PMU_CTL_LOCK_RELEASE:
+        else
         {
-            if (InputBufferLength != sizeof(struct lock_request))
-            {
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid inputsize %ld for IOCTL_PMU_CTL_LOCK_RELEASE\n", InputBufferLength));
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            if (OutputBufferLength != sizeof(enum status_flag))
-            {
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid outputsize %ld for IOCTL_PMU_CTL_LOCK_RELEASE\n", OutputBufferLength));
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_LOCK_RELEASE for file_object %p\n", fileObject));
-
-            struct lock_request* in = (struct lock_request*)inBuffer;
-            enum status_flag out = STS_BUSY;
-
-            if (in->flag == LOCK_RELEASE)
-            {
-                if (SetMeIdle(devExt, fileObject)) // returns fialure if this process doesnt own the lock 
-                    out = STS_IDLE;         // All went well and we went IDLE
-                // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
-            }
-            else
-            {
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid flag %d for IOCTL_PMU_CTL_LOCK_RELEASE\n", in->flag));
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            *((enum status_flag*)outBuffer) = out;
-            WdfRequestSetInformation(Request, (ULONG_PTR)sizeof(enum status_flag));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid flag %d for IOCTL_PMU_CTL_LOCK_ACQUIRE\n", in->flag));
+            status = STATUS_INVALID_PARAMETER;
             break;
         }
+
+        *((enum status_flag*)outBuffer) = out;
+        retDataSize = sizeof(enum status_flag);
+        break;
     }
 
+    case IOCTL_PMU_CTL_LOCK_RELEASE:
+    {
+        if (InputBufferLength != sizeof(struct lock_request))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid inputsize %ld for IOCTL_PMU_CTL_LOCK_RELEASE\n", InputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (OutputBufferLength != sizeof(enum status_flag))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid outputsize %ld for IOCTL_PMU_CTL_LOCK_RELEASE\n", OutputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_LOCK_RELEASE for file_object %p\n", fileObject));
+
+        struct lock_request* in = (struct lock_request*)inBuffer;
+        enum status_flag out = STS_BUSY;
+
+        if (in->flag == LOCK_RELEASE)
+        {
+            if (SetMeIdle(devExt, fileObject)) // returns fialure if this process doesnt own the lock 
+                out = STS_IDLE;         // All went well and we went IDLE
+            // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
+        }
+        else
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "invalid flag %d for IOCTL_PMU_CTL_LOCK_RELEASE\n", in->flag));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        *((enum status_flag*)outBuffer) = out;
+        retDataSize = sizeof(enum status_flag));
+        break;
+    }
+    case IOCTL_PMU_CTL_START:
+    case IOCTL_PMU_CTL_STOP:
+    case IOCTL_PMU_CTL_RESET:
+    {
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)inBuffer;
+        UINT8 dmc_ch_base = 0, dmc_ch_end = 0, dmc_idx = ALL_DMC_CHANNEL;
+        UINT32 ctl_flags = ctl_req->flags;
+        size_t cores_count = ctl_req->cores_idx.cores_count;
+        int dmc_core_idx = ALL_CORE;
+        ULONG funcsIdx = 0;
+
+        // does our process own the lock?
+        if (!AmILocking(devExt, IoControlCode, fileObject))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+        if (InputBufferLength != sizeof(struct pmu_ctl_hdr))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for IoControlCode %d\n", InputBufferLength, GetIoctlStr(IoControlCode)));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (cores_count == 0 || cores_count >= MAX_PMU_CTL_CORES_COUNT)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid cores_count=%llu (must be 1-%d) for IoControlCode %d\n",
+                cores_count, MAX_PMU_CTL_CORES_COUNT, GetIoctlStr(IoControlCode)));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for IoControlCode %d\n",
+                ctl_req->flags, GetIoctlStr(IoControlCode)));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid cores_no for IoControlCode %d\n", GetIoctlStr(IoControlCode)));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: IoControlCode %d\n", GetIoctlStr(IoControlCode)));
+
+        VOID(*core_func)(VOID) = NULL;
+        VOID(*dsu_func)(VOID) = NULL;
+        VOID(*dmc_func)(UINT8, UINT8, struct dmcs_desc*) = NULL;
+        if (IoControlCode == IOCTL_PMU_CTL_START)
+            funcsIdx = 0;
+        if (IoControlCode == IOCTL_PMU_CTL_STOP)
+            funcsIdx = 1;
+        if (IoControlCode == IOCTL_PMU_CTL_RESET)
+            funcsIdx = 2;
 
 
+
+        if (ctl_flags & CTL_FLAG_CORE)
+            core_func = core_ctl_funcs[funcsIdx];
+        if (ctl_flags & CTL_FLAG_DSU)
+            dsu_func = dsu_ctl_funcs[funcsIdx];
+
+        PWORK_ITEM_CTXT context;
+        context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+        context->action = PMU_CTL_START;
+        context->do_func = core_func;
+        context->do_func2 = dsu_func;
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! enqueuing for action %d\n", context->action));
+        WdfWorkItemEnqueue(queueContext->WorkItem);
+
+        if (ctl_flags & CTL_FLAG_DMC)
+        {
+            dmc_func = dmc_ctl_funcs[funcsIdx];
+            dmc_idx = ctl_req->dmc_idx;
+
+            if (dmc_idx == ALL_DMC_CHANNEL)
+            {
+                dmc_ch_base = 0;
+                dmc_ch_end = dmc_array.dmc_num;
+            }
+            else
+            {
+                dmc_ch_base = dmc_idx;
+                dmc_ch_end = dmc_idx + 1;
+            }
+
+            DmcChannelIterator(dmc_ch_base, dmc_ch_end, dmc_func, &dmc_array);
+            // Use last core from all used.
+            dmc_core_idx = ctl_req->cores_idx.cores_no[cores_count - 1];
+        }
+
+        if (action == PMU_CTL_START)
+        {
+
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_START cores_count %lld\n", cores_count));
+            for (auto k = 0; k < cores_count; k++)
+            {
+                int i = ctl_req->cores_idx.cores_no[k];
+                CoreInfo* core = &core_info[i];
+                if (core->timer_running)
+                {
+                    KeCancelTimer(&core->timer);
+                    core->timer_running = 0;
+                }
+
+                core->prof_core = PROF_DISABLED;
+                core->prof_dsu = PROF_DISABLED;
+                core->prof_dmc = PROF_DISABLED;
+
+                UINT8 do_multiplex = 0;
+
+                if (ctl_flags & CTL_FLAG_CORE)
+                {
+                    UINT8 do_core_multiplex = !!(core->events_num > (UINT32)(numFreeGPC + numFPC));
+                    core->prof_core = do_core_multiplex ? PROF_MULTIPLEX : PROF_NORMAL;
+                    do_multiplex |= do_core_multiplex;
+                }
+
+                if (ctl_flags & CTL_FLAG_DSU)
+                {
+                    UINT8 dsu_cluster_head = !(i & (dsu_sizeCluster - 1));
+                    if (cores_count != numCores || dsu_cluster_head)
+                    {
+                        UINT8 do_dsu_multiplex = !!(core->dsu_events_num > (UINT32)(dsu_numGPC + dsu_numFPC));
+                        core->prof_dsu = do_dsu_multiplex ? PROF_MULTIPLEX : PROF_NORMAL;
+                        do_multiplex |= do_dsu_multiplex;
+                    }
+                }
+
+                if ((ctl_flags & CTL_FLAG_DMC) && i == dmc_core_idx)
+                {
+                    core->prof_dmc = PROF_NORMAL;
+                    core->dmc_ch = dmc_idx;
+                }
+
+                if (core->prof_core == PROF_DISABLED && core->prof_dsu == PROF_DISABLED && core->prof_dmc == PROF_DISABLED)
+                    continue;
+
+                KeInitializeTimer(&core->timer);
+                core->timer_running = 1;
+
+                const LONGLONG ns100 = -10000;  // negative, the expiration time is relative to the current system time
+                LARGE_INTEGER DueTime;
+                LONG Period = PMU_CTL_START_PERIOD;
+
+                if (ctl_req->period >= PMU_CTL_START_PERIOD_MIN
+                    && ctl_req->period <= PMU_CTL_START_PERIOD)
+                    Period = ctl_req->period;
+
+                DueTime.QuadPart = do_multiplex ? (Period * ns100) : (2 * (LONGLONG)Period * ns100);
+                Period = do_multiplex ? Period : (2 * Period);
+
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! ctl_req->period = %d\n", ctl_req->period));
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! count.period = %d\n", Period));
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! DueTime.QuadPart = %lld\n", DueTime.QuadPart));
+
+                PRKDPC dpc = do_multiplex ? &core->dpc_multiplex : &core->dpc_overflow;
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_START calling set timer multiplex %s for loop k  %d core idx %lld\n", do_multiplex ? "TRUE" : "FALSE", k, core->idx));
+                KeSetTimerEx(&core->timer, DueTime, Period, dpc);
+            }
+        }
+        else if (action == PMU_CTL_STOP)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_STOP\n"));
+            for (auto k = 0; k < cores_count; k++)
+            {
+                int i = ctl_req->cores_idx.cores_no[k];
+                CoreInfo* core = &core_info[i];
+                if (core->timer_running)
+                {
+                    KeCancelTimer(&core->timer);
+                    core->timer_running = 0;
+                }
+            }
+        }
+        else if (action == PMU_CTL_RESET)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_RESET  cores_count %lld\n", cores_count));
+            for (auto k = 0; k < cores_count; k++)
+            {
+                int i = ctl_req->cores_idx.cores_no[k];
+                CoreInfo* core = &core_info[i];
+                core->timer_round = 0;
+                struct pmu_event_pseudo* events = &core->events[0];
+                UINT32 events_num = core->events_num;
+                for (UINT32 j = 0; j < events_num; j++)
+                {
+                    events[j].value = 0;
+                    events[j].scheduled = 0;
+                }
+
+                struct pmu_event_pseudo* dsu_events = &core->dsu_events[0];
+                UINT32 dsu_events_num = core->dsu_events_num;
+                for (UINT32 j = 0; j < dsu_events_num; j++)
+                {
+                    dsu_events[j].value = 0;
+                    dsu_events[j].scheduled = 0;
+                }
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_RESET calling insert dpc  loop k is %d core index is %lld\n", k, core->idx));
+                KeInsertQueueDpc(&core->dpc_reset, (VOID*)cores_count, NULL);  // cores_count has been validated so the DPC will always be called prior to the code below waiting on its completion
+            }
+            LARGE_INTEGER li;
+            li.QuadPart = 0;
+            KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, 0, &li); // wait for all dpcs to complete
+            KeClearEvent(&sync_reset_dpc);
+            cpunos = 0;
+
+            if (ctl_flags & CTL_FLAG_DMC)
+            {
+                for (UINT8 ch_idx = dmc_ch_base; ch_idx < dmc_ch_end; ch_idx++)
+                {
+                    struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
+                    struct pmu_event_pseudo* events = dmc->clk_events;
+                    UINT8 events_num = dmc->clk_events_num;
+                    for (UINT8 j = 0; j < events_num; j++)
+                    {
+                        events[j].value = 0;
+                        events[j].scheduled = 0;
+                    }
+
+                    events = dmc->clkdiv2_events;
+                    events_num = dmc->clkdiv2_events_num;
+                    for (UINT8 j = 0; j < events_num; j++)
+                    {
+                        events[j].value = 0;
+                        events[j].scheduled = 0;
+                    }
+                }
+            }
+        }
+
+        *outputSize = 0;
+        break;
+    }
+
+    case IOCTL_DMC_CTL_INIT:
+    {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+        struct dmc_ctl_hdr* ctl_req = (struct dmc_ctl_hdr*)pInBuffer;
+        ULONG expected_size;
+
+        dmc_array.dmc_num = ctl_req->dmc_num;
+        expected_size = sizeof(struct dmc_ctl_hdr) + dmc_array.dmc_num * sizeof(UINT64) * 2;
+
+        if (InputBufferLength != expected_size)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid InputBufferLength %ld for DMC_CTL_INIT\n", InputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!dmc_array.dmcs)
+        {
+            dmc_array.dmcs = (struct dmc_desc*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(struct dmc_desc) * ctl_req->dmc_num, 'DMCR');
+            if (!dmc_array.dmcs)
+            {
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "DMC_CTL_INIT: allocate dmcs failed\n"));
+                status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
+            {
+                UINT64 iomem_len = ctl_req->addr[2 * i + 1] - ctl_req->addr[2 * i] + 1;
+                PHYSICAL_ADDRESS phy_addr;
+                phy_addr.QuadPart = ctl_req->addr[2 * i];
+                dmc_array.dmcs[i].iomem_start = (UINT64)MmMapIoSpace(phy_addr, iomem_len, MmNonCached);
+                if (!dmc_array.dmcs[i].iomem_start)
+                {
+                    ExFreePool(dmc_array.dmcs);
+                    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: MmMapIoSpace failed\n"));
+                    status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+                dmc_array.dmcs[i].iomem_len = iomem_len;
+                dmc_array.dmcs[i].clk_events_num = 0;
+                dmc_array.dmcs[i].clkdiv2_events_num = 0;
+            }
+            if (status != STATUS_SUCCESS)
+                break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: DMC_CTL_INIT\n"));
+
+        struct dmc_cfg* out = (struct dmc_cfg*)pOutBuffer;
+        out->clk_fpc_num = 0;
+        out->clk_gpc_num = DMC_CLK_NUMGPC;
+        out->clkdiv2_fpc_num = 0;
+        out->clkdiv2_gpc_num = DMC_CLKDIV2_NUMGPC;
+        *outputSize = sizeof(struct dmc_cfg);
+        if (*outputSize > OutBufSize)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "*outputSize > OutBufSize\n"));
+            status = STATUS_BUFFER_TOO_SMALL;
+        }
+        break;
+    }
+    case IOCTL_DMC_CTL_READ_COUNTING:
+    {
+        // does our process own the lock?
+        if (!AmILocking(IoCtlCode, file_object))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
+        UINT8 dmc_idx = ctl_req->dmc_idx;
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: DMC_CTL_READ_COUNTING\n"));
+
+        if (InputBufferLength != sizeof(struct pmu_ctl_hdr))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid InputBufferLength %ld for DMC_CTL_READ_COUNTING\n", InputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
+                ctl_req->flags, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        if (dmc_idx != ALL_DMC_CHANNEL && dmc_idx >= dmc_array.dmc_num)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid dmc_idx %d for DMC_CTL_READ_COUNTING\n", dmc_idx));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        ULONG outputSizeExpect, outputSizeReturned;
+
+        if (dmc_idx == ALL_DMC_CHANNEL)
+            outputSizeExpect = sizeof(DMCReadOut) * dmc_array.dmc_num;
+        else
+            outputSizeExpect = sizeof(DMCReadOut);
+
+        UINT8 dmc_ch_base, dmc_ch_end;
+
+        if (dmc_idx == ALL_DMC_CHANNEL)
+        {
+            dmc_ch_base = 0;
+            dmc_ch_end = dmc_array.dmc_num;
+        }
+        else
+        {
+            dmc_ch_base = dmc_idx;
+            dmc_ch_end = dmc_idx + 1;
+        }
+
+        outputSizeReturned = 0;
+
+        for (UINT8 i = dmc_ch_base; i < dmc_ch_end; i++)
+        {
+            struct dmc_desc* dmc = dmc_array.dmcs + i;
+            DMCReadOut* out = (DMCReadOut*)((UINT8*)pOutBuffer + sizeof(DMCReadOut) * (i - dmc_ch_base));
+            UINT8 clk_events_num = dmc->clk_events_num;
+            UINT8 clkdiv2_events_num = dmc->clkdiv2_events_num;
+            out->clk_events_num = clk_events_num;
+            out->clkdiv2_events_num = clkdiv2_events_num;
+
+            struct pmu_event_usr* to_events = out->clk_events;
+            struct pmu_event_pseudo* from_events = dmc->clk_events;
+            for (UINT8 j = 0; j < clk_events_num; j++)
+            {
+                struct pmu_event_pseudo* from_event = from_events + j;
+                struct pmu_event_usr* to_event = to_events + j;
+                to_event->event_idx = from_event->event_idx;
+                to_event->scheduled = from_event->scheduled;
+                to_event->value = from_event->value;
+            }
+
+            to_events = out->clkdiv2_events;
+            from_events = dmc->clkdiv2_events;
+            for (UINT8 j = 0; j < clkdiv2_events_num; j++)
+            {
+                struct pmu_event_pseudo* from_event = from_events + j;
+                struct pmu_event_usr* to_event = to_events + j;
+                to_event->event_idx = from_event->event_idx;
+                to_event->scheduled = from_event->scheduled;
+                to_event->value = from_event->value;
+            }
+
+            outputSizeReturned += sizeof(DMCReadOut);
+        }
+
+        *outputSize = outputSizeReturned;
+        if (*outputSize > OutBufSize)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "*outputSize > OutBufSize\n"));
+            status = STATUS_BUFFER_TOO_SMALL;
+        }
+        break;
+    }
+    default:
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid action %d\n", action));
+        status = STATUS_INVALID_PARAMETER;
+        *outputSize = 0;
+        break;
+    }
+    }
+    WdfRequestSetInformation(Request, (ULONG_PTR)retDataSize);
     WdfRequestComplete(Request, STATUS_SUCCESS);
 
     return;
