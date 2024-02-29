@@ -850,7 +850,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--")
         {
             if (!(do_record || do_count))
-                m_out.GetOutputStream() << L"warning: only `stat` and `record` support process spawn!" << std::endl;
+                m_out.GetErrorOutputStream() << L"warning: only `stat` and `record` support process spawn!" << std::endl;
 
             waiting_commandline = true;
             /* We will reload here PE file name to spawn. `waiting_commandline` will expect this
@@ -861,7 +861,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        m_out.GetOutputStream() << L"warning: unexpected arg '" << a << L"' ignored" << std::endl;
+        m_out.GetErrorOutputStream() << L"warning: unexpected arg '" << a << L"' ignored" << std::endl;
     }
 
     // Support custom outpus for --output
@@ -987,7 +987,7 @@ void user_request::load_config_metrics(std::wstring config_name, const struct pm
                 }
                 catch (const fatal_exception&)
                 {
-                    m_out.GetOutputStream() << L"Warning: Metric " << key << " is unable to be used due to lack of hardware resources." << std::endl;
+                    m_out.GetErrorOutputStream() << L"warning: Metric " << key << " is unable to be used due to lack of hardware resources." << std::endl;
                 }
             }
             else

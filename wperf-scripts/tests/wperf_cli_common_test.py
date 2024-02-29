@@ -40,8 +40,8 @@ from common import run_command, is_json, check_if_file_exists
 def test_wperf_wrong_argument():
     """ Test `wperf` invalid argument output  """
     cmd = 'wperf WRONG_ARGUMENT'
-    stdout, _ = run_command(cmd.split())
-    assert b'unexpected arg' in stdout
+    _, stderr = run_command(cmd.split())
+    assert b'unexpected arg' in stderr
 
 def test_wperf_version_json(record_property):
     """ Test `wperf --version` JSON output  """

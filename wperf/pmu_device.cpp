@@ -671,7 +671,7 @@ void pmu_device::set_builtin_metrics(std::wstring metric_name, std::wstring raw_
     }
     catch (const fatal_exception&)
     {
-        m_out.GetOutputStream() << L"Warning: Metric " << metric_name << " is unable to be used due to lack of hardware resources." << std::endl;
+        m_out.GetErrorOutputStream() << L"warning: Metric " << metric_name << " is unable to be used due to lack of hardware resources." << std::endl;
     }
 
     mdesc.events.clear();
