@@ -270,6 +270,7 @@ private:
 
     // wperf test helpers
     void get_event_scheduling_test_data(_In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events, _Out_ std::wstring& evt_indexes, _Out_ std::wstring& evt_notes, enum evt_class e_class);
+    std::wstring get_counter_idx_map_str(const struct hw_cfg& hw_cfg);
 
     bool detect_armh_dsu();
     bool detect_armh_dma();

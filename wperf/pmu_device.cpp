@@ -2165,6 +2165,21 @@ void pmu_device::get_event_scheduling_test_data(_In_ std::map<enum evt_class, st
         evt_notes.pop_back();
 }
 
+// Helper function. Generate string with index of every mapped GPC index
+std::wstring pmu_device::get_counter_idx_map_str(const struct hw_cfg& hw_cfg)
+{
+    std::wstring counter_idx_map_str;
+    for (auto i = 0; i < (sizeof(hw_cfg.counter_idx_map) / sizeof(hw_cfg.counter_idx_map[0])); i++)
+    {
+        auto gpc_num = hw_cfg.counter_idx_map[i];
+        if (!counter_idx_map_str.empty())
+            counter_idx_map_str += L",";
+        counter_idx_map_str += std::to_wstring(gpc_num);
+    }
+
+    return counter_idx_map_str;
+}
+
 void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_  std::vector<std::wstring>& col_test_result,
     _In_ uint32_t enable_bits, _In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events)
 {
@@ -2256,6 +2271,8 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     col_test_result.push_back(IntToHexWideString(hw_cfg.midr_value, 20));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]");
     col_test_result.push_back(IntToHexWideString(hw_cfg.id_aa64dfr0_value, 20));
+    col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [counter_idx_map]");
+    col_test_result.push_back(get_counter_idx_map_str(hw_cfg));
 
     // Tests General Purpose Counters detection
     col_test_name.push_back(L"gpc_nums[EVT_CORE]");
@@ -2302,19 +2319,6 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     col_test_result.push_back(evt_indexes);
     col_test_name.push_back(L"ioctl_events[EVT_DMC_CLKDIV2].note");
     col_test_result.push_back(evt_notes);
-    col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [counter_idx_map]");
-
-    // Print index of every mapped GPC index
-    std::wstring counter_idx_map_str;
-    for (auto i = 0; i < (sizeof(hw_cfg.counter_idx_map) / sizeof(hw_cfg.counter_idx_map[0])); i++)
-    {
-        auto gpc_num = hw_cfg.counter_idx_map[i];
-        if (!counter_idx_map_str.empty())
-            counter_idx_map_str += L",";
-        counter_idx_map_str += std::to_wstring(gpc_num);
-    }
-
-    col_test_result.push_back(counter_idx_map_str);
 
     // Configuration
     std::vector<std::wstring> config_strs;
