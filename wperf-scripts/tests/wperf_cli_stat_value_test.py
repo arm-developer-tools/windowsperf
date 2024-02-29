@@ -72,7 +72,10 @@ def wperf_stat_values_perm_events(events, timeout, cores):
 
 @pytest.mark.parametrize("events_to_count,timeout,cores",
     wperf_stat_values_perm_events("ld_spec,st_spec,inst_spec", 3, 0) +
-    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 0)
+    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 0) +
+
+    wperf_stat_values_perm_events("ld_spec,st_spec,inst_spec", 3, ALL_CORES) +
+    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, ALL_CORES)
 )
 @pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
 def test_wperf_stat_json_values_for_inst_spec(events_to_count,timeout,cores):
@@ -145,12 +148,19 @@ def test_wperf_stat_json_values_for_inst_spec(events_to_count,timeout,cores):
     assert total_counts > 0, "All counter values were zeros, total_counts={total_counts}"     # Something is wrong if all event counters are ZERO
 
 
-@pytest.mark.parametrize("events_to_count,timeout,cores",
+@pytest.mark.parametrize("events_to_count,timeout,core",
     wperf_stat_values_perm_events("ld_spec,st_spec,inst_spec", 3, 0) +
-    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 0)
+    wperf_stat_values_perm_events("ld_spec,st_spec,inst_spec", 3, 1) +
+    wperf_stat_values_perm_events("ld_spec,st_spec,inst_spec", 3, 2) +
+    wperf_stat_values_perm_events("ld_spec,st_spec,inst_spec", 3, 3) +
+
+    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 0) +
+    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 1) +
+    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 2) +
+    wperf_stat_values_perm_events("ld_spec,st_spec,vfp_spec,inst_spec", 3, 3)
 )
 @pytest.mark.xfail("not fixture_is_enough_GPCs(5)", reason="this test requires at least 5 GPCs")
-def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,cores):
+def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,core):
     """ Test if events in a only group are following common sense size. E.g.
     * inst_spec >= ld_spec
     * inst_spec >= st_spec
@@ -162,6 +172,7 @@ def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,cores):
     events_to_count = events_to_count.split(",")
 
     assert "inst_spec" in events_to_count   #   This test require 'inst_spec' event
+    assert int(core), f"specify only one core! `core` argument must be INTEGER, now is core={core}"
 
     #
     # Try all permutations (order of) the events so that we make sure position
@@ -170,7 +181,7 @@ def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,cores):
     events = ",".join(events_to_count)
     events = "{" + events + "}"
 
-    cmd = f"wperf stat -e {events} -c {cores} --timeout {timeout}"
+    cmd = f"wperf stat -e {events} -c {core} --timeout {timeout}"
     stdout, _ = run_command(cmd.split())
 
     events_in_cli = re.findall(rb"([0-9,]+)  ([a-z_]+)", stdout)
