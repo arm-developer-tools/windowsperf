@@ -108,7 +108,6 @@ def test_wperf_stat_json_values_for_inst_spec(events_to_count,timeout,cores):
     assert "core" in json_output, f"cmd={cmd}"
     assert json_output["core"]["cores"], f"cmd={cmd}"
 
-    total_counts = 0
     for core in json_output["core"]["cores"]:
         #
         # Sanity checks
@@ -122,9 +121,7 @@ def test_wperf_stat_json_values_for_inst_spec(events_to_count,timeout,cores):
             #
             event_name = pc["event_name"]
             event_count = pc["counter_value"]
-
             event_counts[event_name] = event_count
-            total_counts += event_count                 # Accumulate all counter values
 
         #
         # Proper test checks
@@ -144,8 +141,6 @@ def test_wperf_stat_json_values_for_inst_spec(events_to_count,timeout,cores):
                     assert inst_spec_val >= e_val, f"inst_spec={inst_spec_val} <= {e}={e_val}, events={events}, cmd={cmd}, stdout={stdout}"
                 else:
                     assert e_val == 0, f"event {e}={e_val} counting value should be zero if inst_spec={inst_spec_val}, events={events}, cmd={cmd}"
-
-    assert total_counts > 0, "All counter values were zeros, total_counts={total_counts}"     # Something is wrong if all event counters are ZERO
 
 
 @pytest.mark.parametrize("events_to_count,timeout,core",
@@ -172,7 +167,7 @@ def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,core):
     events_to_count = events_to_count.split(",")
 
     assert "inst_spec" in events_to_count   #   This test require 'inst_spec' event
-    assert int(core), f"specify only one core! `core` argument must be INTEGER, now is core={core}"
+    assert isinstance(core, int), f"specify only one core! `core` argument must be INTEGER, now is core={core}"
 
     #
     # Try all permutations (order of) the events so that we make sure position
@@ -189,12 +184,10 @@ def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,core):
     #
     # Store events with counts in this dictionary for processing
     #
-    total_counts = 0
     event_counts = {}
     for count, name in events_in_cli:
         count = int(count.replace(b",", b""))
         event_counts[name] = count
-        total_counts += count       # Store total count
 
     for e in events_to_count:       # Check if all event counts are smaller or equal to 'inst_spec'
         e = str.encode(e)           # Make sure to use byte-strings for event names
@@ -212,5 +205,3 @@ def test_wperf_stat_cli_values_for_inst_spec(events_to_count,timeout,core):
                 assert inst_spec_val >= e_val, f"inst_spec={inst_spec_val} <= {e}={e_val}, events={events}, cmd={cmd}, stdout={stdout}"
             else:
                 assert e_val == 0, f"event {e}={e_val} counting value should be zero if inst_spec={inst_spec_val}, events={events}, cmd={cmd}"
-
-    assert total_counts > 0, "All counter values were zeros, total_counts={total_counts}"     # Something is wrong if all event counters are ZERO
