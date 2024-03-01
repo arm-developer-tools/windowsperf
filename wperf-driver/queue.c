@@ -33,6 +33,7 @@
 #if defined ENABLE_TRACING
 #include "queue.tmh"
 #endif
+#include "device.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
@@ -79,6 +80,7 @@ Return Value:
     PQUEUE_CONTEXT queueContext;
     WDF_IO_QUEUE_CONFIG    queueConfig;
     WDF_OBJECT_ATTRIBUTES  queueAttributes;
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
 
     PAGED_CODE();
 
@@ -150,6 +152,9 @@ Return Value:
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
     }
 
+    // store a reference to the queue context in our device extension
+    pDevExt->pQueContext = queueContext;
+
     return status;
 }
 
@@ -167,6 +172,9 @@ WindowsPerfEvtDeviceControl(
     size_t bufsize = 0;
     PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
     WDFFILEOBJECT  file_object = WdfRequestGetFileObject(Request);
+    WDFDEVICE        device = WdfFileObjectGetDevice(file_object);
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(device);
+
 
     queueContext->CurrentRequest = NULL;
     queueContext->inBuffer = NULL;
@@ -175,6 +183,12 @@ WindowsPerfEvtDeviceControl(
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! Queue 0x%p Request 0x%p OutputBufferLength %llu InputBufferLength %llu IoControlCode %lu\n",
         Queue, Request, OutputBufferLength, InputBufferLength, IoControlCode));
 
+
+    if (pDevExt->AskedToRemove)
+    {
+        WdfRequestComplete(Request, STATUS_INVALID_DEVICE_STATE);
+        return;
+    }
 
     //
     // Get the memory buffers

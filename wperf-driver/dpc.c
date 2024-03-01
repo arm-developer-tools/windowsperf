@@ -63,6 +63,7 @@ KEVENT sync_reset_dpc;
 extern UINT64* last_fpc_read;
 extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 extern struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC];
+extern running;
 
 static UINT64 core_read_counter_helper(UINT32 counter_idx)
 {
@@ -124,6 +125,9 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
+
+    if (!running)
+        return;
 
     if (ctx == NULL)
         return;
@@ -231,6 +235,9 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
 
+    if (!running)
+        return;
+
     if (ctx == NULL)
         return;
 
@@ -251,6 +258,9 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(sys_arg2);
+
+    if (!running)
+        return;
 
     if (ctx == NULL)
         return;
@@ -274,6 +284,9 @@ VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID
     UNREFERENCED_PARAMETER(ctx);
     UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
+
+    if (!running)
+        return;
 
     CoreCounterReset();
 

@@ -29,23 +29,27 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "wperf-common\public.h"
-
+#include "queue.h"
 //
 // The device context performs the same job as
 // a WDM device extension in the driver frameworks
 //
-typedef struct _DEVICE_CONTEXT
+typedef struct _DEVICE_EXTENSION
 {
     ULONG PrivateDeviceData;  // just a placeholder
+    USHORT InUse;
+    USHORT AskedToRemove;
+    PQUEUE_CONTEXT  pQueContext;
 
-} DEVICE_CONTEXT, *PDEVICE_CONTEXT;
+} DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 //
-// This macro will generate an inline function called WdfObjectGet_DEVICE_CONTEXT
+// This macro will generate an inline function called GetDeviceExtension
 // which will be used to get a pointer to the device context memory
 // in a type safe manner.
 //
-WDF_DECLARE_CONTEXT_TYPE(DEVICE_CONTEXT)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_EXTENSION, GetDeviceExtension)
+
 
 //
 // Function to initialize the device and its callbacks

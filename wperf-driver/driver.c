@@ -53,9 +53,8 @@ WindowsPerfEvtWdfDriverUnload(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
 #endif
 
-    WindowsPerfDeviceUnload();
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "unloaded\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<====> WindowsPerfEvtWdfDriverUnload\n"));
 
     //
     // Stop WPP Tracing

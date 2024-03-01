@@ -82,6 +82,7 @@ CoreInfo* core_info = NULL;
 UINT64* last_fpc_read = NULL;
 extern KEVENT sync_reset_dpc;
 LOCK_STATUS   current_status;
+USHORT running = 1;
 
 enum
 {
@@ -236,8 +237,89 @@ VOID free_pmu_resource(VOID)
     }
 }
 
-VOID WindowsPerfDeviceUnload()
+
+
+static void FileCreate(
+	WDFDEVICE Device,
+	WDFREQUEST Request,
+	WDFFILEOBJECT FileObject
+)
 {
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(FileObject);
+	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCreate\n"));
+    pDevExt->InUse++;
+	WdfRequestComplete(Request, STATUS_SUCCESS);
+	return;
+}
+
+
+static void FileClose(
+	WDFFILEOBJECT FileObject
+)
+{
+    WDFDEVICE               device = WdfFileObjectGetDevice(FileObject);
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(device);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCose\n"));
+    pDevExt->InUse--;
+}
+
+
+//
+// Port End
+//
+
+
+NTSTATUS WindowsPerfDeviceQueryRemove(
+    WDFDEVICE Device
+)
+{
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
+    KEVENT						evt;
+    LARGE_INTEGER		li;
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> WindowsPerfDeviceQueryRemove \n"));
+    li.QuadPart = -1 * 100000;   // units of 100 nanoseconds  100 x 10^-9  so 10 ms
+    KeInitializeEvent(&evt, NotificationEvent, FALSE);
+    pDevExt->AskedToRemove = 1;
+    running = 0;  // ideally we should pass a device extension in the context to the dpcs 
+
+    // stall the unload request untill all file handles are closed
+    while (pDevExt->InUse)
+    {
+        KeWaitForSingleObject(&evt, Executive, KernelMode, FALSE, &li);
+    }
+
+    // wait for the event
+    KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, FALSE, &li);
+
+    // cancel timers and dpcs
+    for (ULONG i = 0; i < numCores; i++)
+    {
+        CoreInfo* core = &core_info[i];
+        KeRemoveQueueDpc(&core->dpc_queue);
+        KeRemoveQueueDpc(&core->dpc_reset);
+        KeRemoveQueueDpc(&core->dpc_overflow);
+        KeRemoveQueueDpc(&core->dpc_multiplex);
+        KeCancelTimer(&core->timer);
+    }
+
+    /// clear the work item
+    WdfWorkItemFlush(pDevExt->pQueContext->WorkItem);
+
+       
+    return STATUS_SUCCESS;
+}
+
+
+void WindowsPerfDeviceIOCleanup(
+     WDFDEVICE Device
+)
+{
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
+    pDevExt->AskedToRemove = 1;
+    running = 0;
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> WindowsPerfDeviceIOCleanup\n"));
     free_pmu_resource();
     if (core_info)
         ExFreePoolWithTag(core_info, 'CORE');
@@ -260,34 +342,6 @@ VOID WindowsPerfDeviceUnload()
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
 }
 
-#ifdef DBG
-static void FileCreate(
-	WDFDEVICE Device,
-	WDFREQUEST Request,
-	WDFFILEOBJECT FileObject
-)
-{
-	UNREFERENCED_PARAMETER(Device);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(FileObject);
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "=====================>FileCreate\n"));
-
-	WdfRequestComplete(Request, STATUS_SUCCESS);
-	return;
-}
-
-static void FileClose(
-	WDFFILEOBJECT FileObject
-)
-{
-	UNREFERENCED_PARAMETER(FileObject);
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<======================FileCose\n"));
-}
-#endif
-
-//
-// Port End
-//
 
 /// <summary>
 /// Worker routine called to create a device and its software resources.
@@ -303,7 +357,7 @@ WindowsPerfDeviceCreate(
 )
 {
     WDF_OBJECT_ATTRIBUTES   deviceAttributes;
-    PDEVICE_CONTEXT deviceContext;
+    PDEVICE_EXTENSION pDevExt;
     WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
     WDFDEVICE device;
     NTSTATUS status;
@@ -320,6 +374,9 @@ WindowsPerfDeviceCreate(
     //
     pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = WindowsPerfEvtDeviceSelfManagedIoStart;
     pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = WindowsPerfEvtDeviceSelfManagedIoSuspend;
+    pnpPowerCallbacks.EvtDeviceQueryRemove = WindowsPerfDeviceQueryRemove;   // IRP_MN_QUERY_REMOVE_DEVICE
+    pnpPowerCallbacks.EvtDeviceSelfManagedIoCleanup = WindowsPerfDeviceIOCleanup; // IRP_MN_REMOVE_DEVICE
+
 
     //
     // Function used for both Init and Restart Callbacks
@@ -335,17 +392,13 @@ WindowsPerfDeviceCreate(
     //
     WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
 
-#ifdef DBG
+
     // Register for file object creation, we dont need callbacks to file open and close etc
     WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, FileCreate, FileClose, WDF_NO_EVENT_CALLBACK);
-#else
-    WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, WDF_NO_EVENT_CALLBACK, WDF_NO_EVENT_CALLBACK, WDF_NO_EVENT_CALLBACK);
-#endif
-
     WdfDeviceInitSetFileObjectConfig(DeviceInit, &FileObjectConfig, WDF_NO_OBJECT_ATTRIBUTES);
     
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
-
+    //  create the FDO device
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_EXTENSION);
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
     if (NT_SUCCESS(status)) {
@@ -356,8 +409,10 @@ WindowsPerfDeviceCreate(
         // the device context. If you pass a wrong object  handle
         // it will return NULL and assert if run under framework verifier mode.
         //
-        deviceContext = WdfObjectGet_DEVICE_CONTEXT(device);
-        deviceContext->PrivateDeviceData = 0;
+        pDevExt = GetDeviceExtension(device);
+        pDevExt->PrivateDeviceData = 0;
+        pDevExt->InUse = 0;
+        pDevExt->AskedToRemove = 0;
 
         //
         // Create a device interface so that application can find and talk
@@ -616,6 +671,7 @@ WindowsPerfDeviceCreate(
     current_status.status = STS_IDLE;
     KeInitializeSpinLock(&current_status.sts_lock);
 
+
     //  and finally do a reset on the hardware to make sure it is in a known state.  The reset dpc sets the event, so we have 
     // to call this after the event is initialised of couse
     for (ULONG i = 0; i < numCores; i++)
@@ -647,7 +703,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     IN  WDFDEVICE Device
     )
 {
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "=====> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     //
     // Restart the queue and the periodic timer. We stopped them before going
@@ -655,7 +711,7 @@ WindowsPerfEvtDeviceSelfManagedIoStart(
     //
     WdfIoQueueStart(WdfDeviceGetDefaultQueue(Device));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL,  "<-- WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL,  "<===== WindowsPerfEvtDeviceSelfManagedIoInit\n"));
 
     return STATUS_SUCCESS;
 }
@@ -675,7 +731,7 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
 {
     PAGED_CODE();
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "--> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "=====> WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     //
     // Before we stop the timer we should make sure there are no outstanding
@@ -690,7 +746,7 @@ WindowsPerfEvtDeviceSelfManagedIoSuspend(
     //
     WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(Device));
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL,  "<-- WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL,  "<===== WindowsPerfEvtDeviceSelfManagedIoSuspend\n"));
 
     return STATUS_SUCCESS;
 }

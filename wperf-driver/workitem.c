@@ -49,6 +49,7 @@ extern CoreInfo* core_info;
 extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 
 extern VOID core_write_counter_helper(UINT32 counter_idx, __int64 val);
+extern USHORT running;
 
 /* Enable/Disable the counter associated with the event */
 static VOID event_enable_counter(struct pmu_event_kernel* event)
@@ -104,6 +105,9 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 {
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
+
+    if (!running)
+        return;
 
     const enum pmu_ctl_action action = context->action;
     const UINT32 core_idx = context->core_idx;
@@ -270,4 +274,5 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     KeRevertToUserGroupAffinityThread(&old_affinity);
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! Exit\n"));
+
 }
