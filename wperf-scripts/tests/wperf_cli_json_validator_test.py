@@ -36,6 +36,7 @@ import os
 import pytest
 from jsonschema import validate
 from common import run_command, get_schema
+from common import wperf_metric_is_available
 
 ### Test cases
 
@@ -131,3 +132,22 @@ def test_wperf_timeline_json_stdout_schema(request, tmp_path):
         except Exception as err:
             assert False, f"Unexpected {err=}, {type(err)=}"
         assert True
+
+@pytest.mark.parametrize("metric", [ ("ddr_bw") ])
+def test_wperf_dmc_json_output(request, tmp_path, metric):
+    """ Test for DMC / DDR part of the JSON schema.
+    """
+    test_path = os.path.dirname(request.path)
+
+    if not wperf_metric_is_available(metric):
+        pytest.skip(f"unsupported metric: {metric}")
+
+    cmd = f"wperf stat -m {metric} --json --timeout 1"
+    stdout, _ = run_command(cmd.split())
+
+    json_output = json.loads(stdout)
+
+    try:
+        validate(instance=json_output, schema=get_schema("stat", test_path))
+    except Exception as err:
+        assert False, f"Unexpected {err=}, {type(err)=}"
