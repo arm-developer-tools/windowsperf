@@ -65,6 +65,20 @@ def test_cpython_bench_build__deps():
 def test_cpython_bench_build__make():
     """ Build CPython using its own build script. """
 
+    #
+    # If we've already built CPython we may want to skip re-build
+    # Check for expected build output files
+    #
+    build_artifacts_present = []
+    build_artifacts = ["python_d.exe", "python_d.pdb"]
+    for f in build_artifacts:
+        p = os.path.join(CPYTHON_EXE_DIR, f)
+        build_artifacts_present.append(os.path.isfile(p))
+
+    if all(build_artifacts_present):
+        clean_bat_path = os.path.join(CPYTHON_DIR, "clean.bat")
+        pytest.skip(f"skipping CPython rebuild procedure (already built), cleanup CPython build with '{clean_bat_path}'")
+
     ### Build CPython for this platform, with debug on (-d) and for ARM64 platform (-p ARM64)
     build_bat_path = os.path.join(CPYTHON_DIR, "build.bat")
     cmd = f"{build_bat_path} -d -p ARM64"
