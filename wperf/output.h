@@ -482,8 +482,7 @@ struct WPerfStatJSON
                 }, table);                
             }
             os << LiteralConstants<CharType>::m_bracket_close << std::endl;
-            if (!m_corePerformanceTables.empty())
-                os << LiteralConstants<CharType>::m_comma << std::endl;
+            os << LiteralConstants<CharType>::m_comma << std::endl;
 
             std::visit([&os, &jsonType](auto&& arg) { os << LITERALCONSTANTS_GET("\"overall\": ") << arg.Print(jsonType).str() << std::endl; }, m_coreOverall);
             os << LiteralConstants<CharType>::m_comma << std::endl;
