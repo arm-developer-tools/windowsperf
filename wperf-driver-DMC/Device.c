@@ -129,7 +129,7 @@ WperfDriver_TCreateDevice(
     // Get a pointer to the device context structure that we just associated
     // with the device object.
     devExt = GetDeviceGetContext(device);
-    devExt->PrivateDeviceData = 0;
+    RtlZeroMemory(devExt, sizeof(DEVICE_EXTENSION));
 
 
     // Create a device interface so that applications can find and talk

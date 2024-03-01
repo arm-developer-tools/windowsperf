@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -30,10 +31,12 @@
 
 
 
+VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array);
+VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array);
+VOID DmcCounterReset(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array);
 
-PCHAR DbgStatusStr(NTSTATUS status);
-PCHAR GetIoctlStr(ULONG ioctl);
-VOID SetMeBusyForce(PDEVICE_EXTENSION dev_ext,  ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN SetMeBusy(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN AmILocking(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN SetMeIdle(PDEVICE_EXTENSION dev_ext, WDFFILEOBJECT file_object);
+UINT64 DmcCounterRead(UINT8 ch_idx, UINT16 counter_idx, struct dmcs_desc *dmc_array);
+VOID DmcChannelIterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8, struct dmcs_desc*), struct dmcs_desc *dmc_array);
+VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx, struct dmcs_desc *dmc_array);
+
+VOID UpdateDmcCounting(UINT8 dmc_ch, struct dmcs_desc *dmc_array);

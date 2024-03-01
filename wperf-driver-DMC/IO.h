@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -34,13 +35,35 @@
 // and would contain per queue information.
 //
 typedef struct _QUEUE_CONTEXT {
-
-    ULONG PrivateDeviceData;  // just a placeholder
     PDEVICE_EXTENSION devExt;
-
+    PVOID       inBuffer;
+    PVOID       outBuffer;
+    WDFWORKITEM WorkItem;
+    enum pmu_ctl_action action;     // Current action
+    WDFREQUEST  CurrentRequest;
+    NTSTATUS    CurrentStatus;
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext)
+
+
+typedef struct WORK_ITEM_CTXT_
+{
+    UINT32 core_idx;
+    UINT32 core_base, core_end, event_num;
+    UINT32 cctl_flags;
+    struct pmu_ctl_hdr* ctl_req;
+    size_t cores_count;
+    _Bool isDSU;
+    int sample_src_num;
+    PMUSampleSetSrcHdr* sample_req;
+    enum pmu_ctl_action action;
+    //struct pmu_event_pseudo* events;
+    VOID(*do_func)(VOID);
+    VOID(*do_func2)(VOID);
+} WORK_ITEM_CTXT, * PWORK_ITEM_CTXT;
+
+WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
 
 NTSTATUS
 WperfDriver_TIOInitialize(

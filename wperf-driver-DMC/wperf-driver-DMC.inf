@@ -51,7 +51,7 @@ PnpLockdown=1
 
 [DestinationDirs]
 DefaultDestDir = 12
-WPERFDRIVER_T_Device_CoInstaller_CopyFiles = 11
+WPERFDRIVER_DMC_Device_CoInstaller_CopyFiles = 11
 
 [SourceDisksNames]
 1 = %DiskName%,,,""
@@ -68,20 +68,20 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 %ManufacturerName%=Standard,ntarm64.10.0...22000
 
 [Standard.ntarm64.10.0...22000]
-%WPERFDRIVER_DMC.DeviceDesc%=WPERFDRIVER_T_Device, Root\WPERFDRIVER_DMC ; TODO: edit hw-id
+%WPERFDRIVER_DMC.DeviceDesc%=WPERFDRIVER_DMC_Device, Root\WPERFDRIVER_DMC ; TODO: edit hw-id
 
-[WPERFDRIVER_T_Device.NT]
+[WPERFDRIVER_DMC_Device.NT]
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
 wperf-driver-DMC.sys,,,2
 
 ;-------------- Service installation
-[WPERFDRIVER_T_Device.NT.Services]
-AddService = WPERFDRIVER_DMC,%SPSVCINST_ASSOCSERVICE%, WPERFDRIVER_T_Service_Inst
+[WPERFDRIVER_DMC_Device.NT.Services]
+AddService = WPERFDRIVER_DMC,%SPSVCINST_ASSOCSERVICE%, WPERFDRIVER_DMC_Service_Inst
 
 ; -------------- WPERFDRIVER_DMC driver install sections
-[WPERFDRIVER_T_Service_Inst]
+[WPERFDRIVER_DMC_Service_Inst]
 DisplayName    = %WPERFDRIVER_DMC.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START
@@ -89,22 +89,22 @@ ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\wperf-driver-DMC.sys
 
 ;
-;--- WPERFDRIVER_T_Device Coinstaller installation ------
+;--- WPERFDRIVER_DMC_Device Coinstaller installation ------
 ;
 
-[WPERFDRIVER_T_Device.NT.CoInstallers]
-AddReg=WPERFDRIVER_T_Device_CoInstaller_AddReg
-CopyFiles=WPERFDRIVER_T_Device_CoInstaller_CopyFiles
+[WPERFDRIVER_DMC_Device.NT.CoInstallers]
+AddReg=WPERFDRIVER_DMC_Device_CoInstaller_AddReg
+CopyFiles=WPERFDRIVER_DMC_Device_CoInstaller_CopyFiles
 
-[WPERFDRIVER_T_Device_CoInstaller_AddReg]
+[WPERFDRIVER_DMC_Device_CoInstaller_AddReg]
 HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
 
-[WPERFDRIVER_T_Device_CoInstaller_CopyFiles]
+[WPERFDRIVER_DMC_Device_CoInstaller_CopyFiles]
 WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
 
-[WPERFDRIVER_T_Device.NT.Wdf]
-KmdfService =  WPERFDRIVER_DMC, WPERFDRIVER_T_wdfsect
-[WPERFDRIVER_T_wdfsect]
+[WPERFDRIVER_DMC_Device.NT.Wdf]
+KmdfService =  WPERFDRIVER_DMC, WPERFDRIVER_DMC_wdfsect
+[WPERFDRIVER_DMC_wdfsect]
 KmdfLibraryVersion = $KMDFVERSION$
 
 [Strings]

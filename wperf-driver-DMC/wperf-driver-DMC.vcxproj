@@ -23,12 +23,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c" />
+    <ClCompile Include="dmc.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="IO.c" />
     <ClCompile Include="utilities.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Device.h" />
+    <ClInclude Include="dmc.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="IO.h" />
     <ClInclude Include="Trace.h" />

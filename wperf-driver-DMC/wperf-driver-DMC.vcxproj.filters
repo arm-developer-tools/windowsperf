@@ -42,6 +42,9 @@
     <ClInclude Include="IO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dmc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -54,6 +57,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="IO.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dmc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -46,6 +46,7 @@
 
 #define STANDARD 1
 #define TEMPLATE 2
+#define DMC 3
 
 // Taken from wperf-driver INF file.
 PCWSTR instanceId ;
@@ -56,7 +57,7 @@ PCWSTR devDescription;
 std::wstring *FullInfPath = nullptr;
 const std::wstring InfName(L"wperf-driver.inf");
 const std::wstring InfName_t(L"wperf-driver-template.inf");
-
+const std::wstring InfName_dmc(L"wperf-driver-DMC.inf");
 
 
 
@@ -73,8 +74,14 @@ void GetFullInfPath(int type)
             std::wstringstream wstream;
             if(type == STANDARD)
                 wstream << std::wstring(buff) << L"\\" << InfName;
-            else 
+            else if (type == TEMPLATE)
                 wstream << std::wstring(buff) << L"\\" << InfName_t;
+            else if (type == DMC)
+                wstream << std::wstring(buff) << L"\\" << InfName_t;
+
+            else // default to stock driver
+                wstream << std::wstring(buff) << L"\\" << InfName;
+
             FullInfPath = new std::wstring(wstream.str().c_str());
             free(buff);
         }
@@ -288,7 +295,7 @@ int main(int argc, char* argv[])
 {
     if (argc != 3)
     {
-        std::cerr << "usage: app_name install|uninstall  WPERFDRIVER|WPERFDRIVER_T" << std::endl;
+        std::cerr << "usage: app_name install|uninstall  WPERFDRIVER|WPERFDRIVER_T|WPERFDRIVER_DMC" << std::endl;
         return -1;
     }
     int errorCode = 0;
@@ -311,6 +318,15 @@ int main(int argc, char* argv[])
         hardwareId = L"Root\\WPERFDRIVER_T";
         compatibleIds = L"Root\\WPERFDRIVER_T";
         devDescription = L"WPERFDRIVER Driver Template";
+        GetFullInfPath(TEMPLATE);
+    }
+
+    else if ("WPERFDRIVER_DMC" == device_chosen)
+    {
+        instanceId = L"WPERFDRIVER_DMC";
+        hardwareId = L"Root\\WPERFDRIVER_DMC";
+        compatibleIds = L"Root\\WPERFDRIVER_DMC";
+        devDescription = L"WPERFDRIVER Driver DMC";
         GetFullInfPath(TEMPLATE);
     }
 

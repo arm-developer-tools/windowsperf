@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -28,22 +29,12 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <ntddk.h>
-#include <wdf.h>
-#include <initguid.h>
-#include "device.h"
-#include "IO.h"
-#include "utilities.h"
-#include "..\wperf-common\iorequest.h"
-#if defined ENABLE_TRACING
-#include "trace.h"
-#endif
 
 
-//
-// WDFDRIVER Events
-//
 
-DRIVER_INITIALIZE DriverEntry;
-EVT_WDF_DRIVER_DEVICE_ADD WperfDriver_TEvtDeviceAdd;
-EVT_WDF_DRIVER_UNLOAD WperfDriver_TEvtDriverUnload;
+PCHAR DbgStatusStr(NTSTATUS status);
+PCHAR GetIoctlStr(ULONG ioctl);
+VOID SetMeBusyForce(PDEVICE_EXTENSION dev_ext,  ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeBusy(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN AmILocking(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeIdle(PDEVICE_EXTENSION dev_ext, WDFFILEOBJECT file_object);

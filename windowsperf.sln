@@ -43,7 +43,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-lib-c-compat", "wperf
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wperf-lib", "wperf-lib", "{F473AD42-0B3D-4255-8176-B3A89A7AD6A9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-driver-DMC", "wperf-driver-template\wperf-driver-template.vcxproj", "{E8A5BA11-541E-486F-9AA2-FD23F3266266}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-driver-DMC", "wperf-driver-DMC\wperf-driver-DMC.vcxproj", "{E8A5BA11-541E-486F-9AA2-FD23F3266266}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

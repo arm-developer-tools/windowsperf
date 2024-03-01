@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -28,40 +29,26 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <ntddk.h>
+#include <wdf.h>
+#include <initguid.h>
+#include "..\wperf-common\iorequest.h"
+#include "..\wperf-common\macros.h"
 #include "..\wperf-common\public.h"
+#include "device.h"
+#include "IO.h"
+#include "utilities.h"
+#include "dmc.h"
 
+#if defined ENABLE_TRACING
+#include "trace.h"
+#endif
 
-
-typedef struct _LOCK_STATUS
-{
-    enum status_flag status;
-    ULONG ioctl;
-    KSPIN_LOCK sts_lock;
-    WDFFILEOBJECT  file_object;
-} LOCK_STATUS;
 
 //
-// The device context performs the same job as
-// a WDM device extension in the driver frameworks
+// WDFDRIVER Events
 //
-typedef struct _DEVICE_EXTENSION
-{
-    ULONG PrivateDeviceData;  // just a placeholder
-    LOCK_STATUS   current_status;
 
-} DEVICE_EXTENSION, *PDEVICE_EXTENSION;
-
-//
-// This macro will generate an inline function called DeviceGetContext
-// which will be used to get a pointer to the device context memory
-// in a type safe manner.
-//
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_EXTENSION, GetDeviceGetContext)
-
-//
-// Function to initialize the device and its callbacks
-//
-NTSTATUS
-WperfDriver_TCreateDevice(
-    _Inout_ PWDFDEVICE_INIT DeviceInit
-    );
+DRIVER_INITIALIZE DriverEntry;
+EVT_WDF_DRIVER_DEVICE_ADD WperfDriver_TEvtDeviceAdd;
+EVT_WDF_DRIVER_UNLOAD WperfDriver_TEvtDriverUnload;
