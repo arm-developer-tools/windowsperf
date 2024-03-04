@@ -247,13 +247,22 @@ NTSTATUS deviceControl(
         if (in->flag == LOCK_GET_FORCE)
         {
             out = STS_LOCK_AQUIRED;
+            LONG oldval = InterlockedExchange(&current_status.pmu_held, 1);
+            if(oldval == 0)
+                get_pmu_resource();
+
             SetMeBusyForce(IoCtlCode, file_object);
         }
         else if (in->flag == LOCK_GET)
         {
             if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
+            {
+                LONG oldval = InterlockedExchange(&current_status.pmu_held, 1);
+                if (oldval == 0)
+                    get_pmu_resource();
                 out = STS_LOCK_AQUIRED;
-            // Note: else STS_BUSY;
+                // Note: else STS_BUSY;
+            }
         }
         else
         {
@@ -283,8 +292,13 @@ NTSTATUS deviceControl(
 
         if (in->flag == LOCK_RELEASE)
         {
-            if (SetMeIdle(file_object)) // returns fialure if this process doesnt own the lock 
+            if (SetMeIdle(file_object)) // returns failure if this process doesnt own the lock 
+            {
                 out = STS_IDLE;         // All went well and we went IDLE
+                LONG oldval = InterlockedExchange(&current_status.pmu_held, 0);
+                if (oldval == 1)
+                    free_pmu_resource();
+            }
             // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
         }
         else

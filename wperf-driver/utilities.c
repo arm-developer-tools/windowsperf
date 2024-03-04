@@ -138,6 +138,7 @@ BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if
         ret = TRUE;
     }
     KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+
     return ret;
 }
 

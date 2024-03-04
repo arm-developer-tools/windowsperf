@@ -47,9 +47,9 @@ extern UINT16 dsu_sizeCluster;
 extern UINT8 numFreeGPC;
 extern CoreInfo* core_info;
 extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
-
 extern VOID core_write_counter_helper(UINT32 counter_idx, __int64 val);
 extern USHORT running;
+extern LOCK_STATUS   current_status;
 
 /* Enable/Disable the counter associated with the event */
 static VOID event_enable_counter(struct pmu_event_kernel* event)
@@ -107,6 +107,9 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
 
     if (!running)
+        return;
+
+    if (current_status.status == STS_IDLE)
         return;
 
     const enum pmu_ctl_action action = context->action;

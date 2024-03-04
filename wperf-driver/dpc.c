@@ -64,6 +64,7 @@ extern UINT64* last_fpc_read;
 extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 extern struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC];
 extern running;
+extern LOCK_STATUS   current_status;
 
 static UINT64 core_read_counter_helper(UINT32 counter_idx)
 {
@@ -130,6 +131,9 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
         return;
 
     if (ctx == NULL)
+        return;
+
+    if (current_status.status == STS_IDLE)
         return;
 
     CoreInfo* core = (CoreInfo*)ctx;
@@ -241,6 +245,9 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     if (ctx == NULL)
         return;
 
+    if (current_status.status == STS_IDLE)
+        return;
+
     CoreInfo* core = (CoreInfo*)ctx;
     if (core->prof_core != PROF_DISABLED)
         update_core_counting(core);
@@ -263,6 +270,9 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
         return;
 
     if (ctx == NULL)
+        return;
+
+    if (current_status.status == STS_IDLE)
         return;
 
     CoreInfo* core = (CoreInfo*)ctx;
