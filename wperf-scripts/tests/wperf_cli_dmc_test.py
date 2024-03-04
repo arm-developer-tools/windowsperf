@@ -97,4 +97,4 @@ def test_wperf_dmc_json_output(metric):
         # Check if this is INTEGER
         #
         assert isinstance(counter["counter_value"], int)    # it's a dec integer value
-        assert int(ounter["event_idx"], 16)                 # it's a hex string
+        assert int(counter["event_idx"], 16)                 # it's a hex string
