@@ -31,12 +31,12 @@
 
 
 
-VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array);
-VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array);
-VOID DmcCounterReset(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array);
+VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx,  dmcs_desc *dmc_array);
+VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx,  dmcs_desc *dmc_array);
+VOID DmcCounterReset(UINT8 ch_idx, UINT8 counter_idx,  dmcs_desc *dmc_array);
 
-UINT64 DmcCounterRead(UINT8 ch_idx, UINT16 counter_idx, struct dmcs_desc *dmc_array);
-VOID DmcChannelIterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8, struct dmcs_desc*), struct dmcs_desc *dmc_array);
-VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx, struct dmcs_desc *dmc_array);
+UINT64 DmcCounterRead(UINT8 ch_idx, UINT16 counter_idx,  dmcs_desc *dmc_array);
+VOID DmcChannelIterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8,  dmcs_desc*),  dmcs_desc *dmc_array);
+VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx,  dmcs_desc *dmc_array);
 
-VOID UpdateDmcCounting(UINT8 dmc_ch, struct dmcs_desc *dmc_array);
+VOID UpdateDmcCounting(UINT8 dmc_ch,  dmcs_desc *dmc_array);

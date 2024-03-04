@@ -77,12 +77,15 @@ void GetFullInfPath(int type)
             else if (type == TEMPLATE)
                 wstream << std::wstring(buff) << L"\\" << InfName_t;
             else if (type == DMC)
-                wstream << std::wstring(buff) << L"\\" << InfName_t;
+                wstream << std::wstring(buff) << L"\\" << InfName_dmc;
 
             else // default to stock driver
                 wstream << std::wstring(buff) << L"\\" << InfName;
 
             FullInfPath = new std::wstring(wstream.str().c_str());
+
+            std::wcout << FullInfPath->c_str() << std::endl;
+
             free(buff);
         }
         else {
@@ -224,7 +227,7 @@ BOOL do_create_device()
 
      if (!SetupDiGetINFClass(FullInfPath->c_str(), &classGUID, className, sizeof(className) / sizeof(WCHAR), 0))
     {
-        std::cerr << "Error getting INF Class information" << std::endl;
+        std::cerr << "Error getting INF Class information " << FullInfPath << std::endl;
         exit = false;
         goto clean;
     }
@@ -327,7 +330,7 @@ int main(int argc, char* argv[])
         hardwareId = L"Root\\WPERFDRIVER_DMC";
         compatibleIds = L"Root\\WPERFDRIVER_DMC";
         devDescription = L"WPERFDRIVER Driver DMC";
-        GetFullInfPath(TEMPLATE);
+        GetFullInfPath(DMC);
     }
 
     else {

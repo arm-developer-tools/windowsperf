@@ -49,7 +49,7 @@ typedef struct _QUEUE_CONTEXT QUEUE_CONTEXT, * PQUEUE_CONTEXT;
 //
 // Structures
 //
-struct pmu_event_pseudo
+typedef struct _pmu_event_pseudo
 {
     UINT32 event_idx;
     UINT64 filter_bits;
@@ -57,15 +57,15 @@ struct pmu_event_pseudo
     UINT32 enable_irq;
     UINT64 value;
     UINT64 scheduled;
-};
+}pmu_event_pseudo, *ppmu_event_pseudo;
 
-struct pmu_event_kernel
+typedef struct _pmu_event_kernel
 {
     UINT32 event_idx;
     UINT64 filter_bits;
     UINT32 counter_idx;
     UINT32 enable_irq;
-};
+}pmu_event_kernel, *ppmu_event_kernel;
 
 
 enum prof_action
@@ -91,26 +91,26 @@ enum dmc_clk_event
     DMC_CLK_EVT_NUM,
 };
 
-struct dmc_desc
+typedef struct _dmc_desc
 {
     UINT64 iomem_start;
     UINT64 iomem_len;
-    struct pmu_event_pseudo clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
-    struct pmu_event_pseudo clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
+    pmu_event_pseudo clk_events[MAX_MANAGED_DMC_CLK_EVENTS];
+    pmu_event_pseudo clkdiv2_events[MAX_MANAGED_DMC_CLKDIV2_EVENTS];
     UINT8 clk_events_num;
     UINT8 clkdiv2_events_num;
-};
+}dmc_desc, *pdmc_desc;
 
-struct dmcs_desc
+typedef struct _dmcs_desc
 {
-    struct dmc_desc* dmcs;
+    pdmc_desc dmcs;
     UINT8 dmc_num;
-};
+}dmcs_desc, *pdmcs_desc;
 
 typedef struct core_info
 {
-    struct pmu_event_pseudo events[MAX_MANAGED_CORE_EVENTS];
-    struct pmu_event_pseudo dsu_events[MAX_MANAGED_DSU_EVENTS];
+    pmu_event_pseudo events[MAX_MANAGED_CORE_EVENTS];
+    pmu_event_pseudo dsu_events[MAX_MANAGED_DSU_EVENTS];
     UINT32 events_num;
     UINT32 dsu_events_num;
     UINT64 timer_round;
@@ -118,8 +118,8 @@ typedef struct core_info
     UINT8 timer_running;
     UINT8 dmc_ch;
     KDPC dpc_overflow, dpc_multiplex, dpc_queue, dpc_reset;
-    enum prof_action prof_core;
-    enum prof_action prof_dsu;
+    //enum prof_action prof_core;
+    //enum prof_action prof_dsu;
     enum prof_action prof_dmc;
     KSPIN_LOCK SampleLock;
     PQUEUE_CONTEXT get_sample_irp;
@@ -148,7 +148,7 @@ typedef struct _LOCK_STATUS
 typedef struct _DEVICE_EXTENSION
 {
     LOCK_STATUS   current_status;
-    struct dmcs_desc dmc_array;
+    dmcs_desc dmc_array;
     UINT8 dsu_numGPC;
     UINT16 dsu_numCluster;
     UINT16 dsu_sizeCluster;
@@ -163,13 +163,16 @@ typedef struct _DEVICE_EXTENSION
     UINT64 dfr0_value;
     UINT64 midr_value;
     UINT64 id_aa64dfr0_el1_value;
-    HANDLE pmc_resource_handleL;
+    HANDLE pmc_resource_handle;
     UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
     CoreInfo* core_info;
     // Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
     // See comment on CoreCounterReset() for an explanation.
     UINT64* last_fpc_read ;
     KEVENT sync_reset_dpc;
+    volatile long  InUse;
+    USHORT AskedToRemove;
+    PQUEUE_CONTEXT  queContext;
 
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
@@ -178,7 +181,7 @@ typedef struct _DEVICE_EXTENSION
 // which will be used to get a pointer to the device context memory
 // in a type safe manner.
 //
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_EXTENSION, GetDeviceGetContext)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_EXTENSION, GetDeviceExtension)
 
 //
 // Function to initialize the device and its callbacks

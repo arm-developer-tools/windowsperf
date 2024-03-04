@@ -39,6 +39,8 @@
 #include "IO.h"
 #include "utilities.h"
 #include "dmc.h"
+#include "core.h"
+#include "sysregs.h"
 
 #if defined ENABLE_TRACING
 #include "trace.h"
@@ -52,3 +54,14 @@
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_DEVICE_ADD WperfDriver_TEvtDeviceAdd;
 EVT_WDF_DRIVER_UNLOAD WperfDriver_TEvtDriverUnload;
+
+
+VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID event_enable(PDEVICE_EXTENSION devExt, ppmu_event_kernel evt);

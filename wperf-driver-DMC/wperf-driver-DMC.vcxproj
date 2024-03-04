@@ -22,17 +22,22 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core.c" />
     <ClCompile Include="Device.c" />
     <ClCompile Include="dmc.c" />
+    <ClCompile Include="dpc.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="IO.c" />
     <ClCompile Include="utilities.c" />
+    <ClCompile Include="workitem.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="dmc.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="IO.h" />
+    <ClInclude Include="sysregs.h" />
     <ClInclude Include="Trace.h" />
     <ClInclude Include="utilities.h" />
   </ItemGroup>

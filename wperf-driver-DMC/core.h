@@ -30,50 +30,27 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-//
-// This is the context that can be placed per queue
-// and would contain per queue information.
-//
-typedef struct _QUEUE_CONTEXT {
-    PDEVICE_EXTENSION devExt;
-    PVOID       inBuffer;
-    PVOID       outBuffer;
-    WDFWORKITEM WorkItem;
-    enum pmu_ctl_action action;     // Current action
-    WDFREQUEST  CurrentRequest;
-    NTSTATUS    CurrentStatus;
-} QUEUE_CONTEXT, *PQUEUE_CONTEXT;
+#define ARMV8_PMCR_MASK         0x3f
+#define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
+#define ARMV8_PMCR_P            (1 << 1) /*  Reset all counters */
+#define ARMV8_PMCR_C            (1 << 2) /*  Cycle counter reset */
+#define ARMV8_PMCR_LC           (1 << 6) /*  Overflow on 64-bit cycle counter*/
+#define ARMV8_PMCR_LP           (1 << 7) /*  Long event counter enable */
+#define ARMV8_PMCR_N_SHIFT         0x0B  /*  The number of event counters implemented */
+#define ARMV8_PMCR_N_MASK          0x1F  
+#define	FILTER_EXCL_EL1	(1U << 31)
+#define ARMV8_EVTYPE_MASK   0xc800ffff  // Mask for writable bits
 
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext)
-
-
-typedef struct WORK_ITEM_CTXT_
-{
-    UINT32 core_idx;
-    UINT32 core_base, core_end, event_num;
-    UINT32 cctl_flags;
-    struct pmu_ctl_hdr* ctl_req;
-    size_t cores_count;
-    _Bool isDSU;
-    int sample_src_num;
-    PMUSampleSetSrcHdr* sample_req;
-    ULONG IoCtl;
-    //struct pmu_event_pseudo* events;
-    VOID(*do_func)(VOID);
-    VOID(*do_func2)(VOID);
-    PDEVICE_EXTENSION devExt;
-} WORK_ITEM_CTXT, * PWORK_ITEM_CTXT;
-
-WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
-
-NTSTATUS
-WperfDriver_TIOInitialize(
-    _In_ WDFDEVICE Device,
-    _In_ PDEVICE_EXTENSION devExt
-    );
-
-//
-// Events from the IoQueue object
-//
-EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL WperfDriver_TEvtIoDeviceControl;
-EVT_WDF_IO_QUEUE_IO_STOP WperfDriver_TEvtIoStop;
+VOID CpuHasLongEventSupportSet(UINT8 has_long_event_support_);
+UINT32 CorePmcrGet(VOID);
+VOID CorePmcrSet(UINT32 val);
+VOID CoreCounterDisable(UINT32 mask);
+VOID CoreCounterEnable(UINT32 mask);
+VOID CoreCounterReset(VOID);
+VOID CoreCounterIrqDisable(UINT32 mask);
+VOID CoreCounterStart(VOID);
+VOID CoreCounterStop(VOID);
+VOID CoreCounterEnableIrq(UINT32 mask);
+VOID CoreCouterSetType(UINT32 counter_idx, __int64 evtype_val);
+UINT64 CoreReadCounter(UINT32 counter_idx);
+VOID CoreWriteCounter(UINT32 counter_idx, __int64 val);
