@@ -221,7 +221,6 @@ void pmu_device::init()
         struct dsu_cfg cfg;
         DWORD res_len;
 
-        ctl.action = DSU_CTL_INIT;
         assert(dsu_cluster_num <= USHRT_MAX);
         assert(dsu_cluster_size <= USHRT_MAX);
         ctl.cluster_num = (uint16_t)dsu_cluster_num;
@@ -265,7 +264,6 @@ void pmu_device::init()
             ctl->addr[i * 2 + 1] = dmc_regions[i].second;
         }
 
-        ctl->action = DMC_CTL_INIT;
         assert(dmc_regions.size() <= UCHAR_MAX);
         ctl->dmc_num = (uint8_t)dmc_regions.size();
         BOOL status = DeviceAsyncIoControl(m_device_handle, DMC_CTL_INIT, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
@@ -519,7 +517,6 @@ void pmu_device::set_sample_src(std::vector<struct evt_sample_src>& sample_sourc
         ctl->sources[0].filter_bits = sample_kernel ? 0 : FILTER_BIT_EXCL_EL1;
     }
 
-    ctl->action = PMU_CTL_SAMPLE_SET_SRC;
     ctl->core_idx = cores_idx[0];   // Only one core for sampling!
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SAMPLE_SET_SRC, ctl, (DWORD)sz, NULL, 0, &res_len);
     delete[] ctl;
@@ -531,7 +528,6 @@ void pmu_device::set_sample_src(std::vector<struct evt_sample_src>& sample_sourc
 bool pmu_device::get_sample(std::vector<FrameChain>& sample_info)
 {
     struct PMUCtlGetSampleHdr hdr;
-    hdr.action = PMU_CTL_SAMPLE_GET;
     hdr.core_idx = cores_idx[0];
     DWORD res_len;
 
@@ -556,7 +552,6 @@ void pmu_device::start_sample()
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_SAMPLE_START;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
     ctl.flags = CTL_FLAG_CORE;
@@ -576,7 +571,6 @@ void  pmu_device::lock(bool force_lock)
 {
     struct lock_request req;
 
-    req.action = PMU_CTL_LOCK_ACQUIRE;
     req.flag = force_lock ? LOCK_GET_FORCE : LOCK_GET;
     DWORD resplen = 0;
     enum status_flag sts_flag = STS_BUSY;
@@ -604,7 +598,6 @@ void pmu_device::unlock()
 
     struct lock_request req;
 
-    req.action = PMU_CTL_LOCK_RELEASE;
     req.flag = LOCK_RELEASE;
     DWORD resplen = 0;
     enum status_flag sts_flag = STS_BUSY;
@@ -630,7 +623,6 @@ void pmu_device::stop_sample()
     struct pmu_sample_summary summary;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_SAMPLE_STOP;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
     ctl.flags = CTL_FLAG_CORE;
@@ -683,7 +675,6 @@ void pmu_device::start(uint32_t flags = CTL_FLAG_CORE)
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_START;
     ctl.cores_idx.cores_count = cores_idx.size();
     std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
 
@@ -701,7 +692,6 @@ void pmu_device::stop(uint32_t flags = CTL_FLAG_CORE)
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_STOP;
     ctl.cores_idx.cores_count = cores_idx.size();
     std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
     ctl.dmc_idx = dmc_idx;
@@ -717,7 +707,6 @@ void pmu_device::reset(uint32_t flags = CTL_FLAG_CORE)
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_RESET;
     ctl.cores_idx.cores_count = cores_idx.size();
     std::copy(cores_idx.begin(), cores_idx.end(), ctl.cores_idx.cores_no);
     ctl.dmc_idx = dmc_idx;
@@ -898,7 +887,6 @@ void pmu_device::events_assign(uint32_t core_idx, std::map<enum evt_class, std::
     struct pmu_ctl_evt_assign_hdr* ctl =
         reinterpret_cast<struct pmu_ctl_evt_assign_hdr*>(buf.get());
 
-    ctl->action = PMU_CTL_ASSIGN_EVENTS;
     ctl->core_idx = core_idx;
     ctl->dmc_idx = dmc_idx;
     count_kernel = include_kernel;
@@ -931,7 +919,6 @@ void pmu_device::core_events_read_nth(uint8_t core_no)
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_READ_COUNTING;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = core_no;
     ctl.flags = CTL_FLAG_CORE;
@@ -956,7 +943,6 @@ void pmu_device::dsu_events_read_nth(uint8_t core_no)
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = DSU_CTL_READ_COUNTING;
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = core_no;
     ctl.flags = CTL_FLAG_DSU;
@@ -981,7 +967,6 @@ void pmu_device::dmc_events_read(void)
     struct pmu_ctl_hdr ctl;
     DWORD res_len;
 
-    ctl.action = DMC_CTL_READ_COUNTING;
     ctl.dmc_idx = dmc_idx;
     ctl.flags = CTL_FLAG_DMC;
 
@@ -997,7 +982,6 @@ void pmu_device::do_version_query(_Out_ version_info& driver_ver)
     struct pmu_ctl_ver_hdr ctl;
     DWORD res_len;
 
-    ctl.action = PMU_CTL_QUERY_VERSION;
     ctl.version.major = MAJOR;
     ctl.version.minor = MINOR;
     ctl.version.patch = PATCH;

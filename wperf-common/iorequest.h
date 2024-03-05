@@ -141,7 +141,6 @@ enum lock_flag
 
 struct lock_request
 {
-    enum pmu_ctl_action action;
     enum lock_flag flag;
 };
 
@@ -156,7 +155,6 @@ typedef struct
 #pragma warning(disable:4200)
 typedef struct
 {
-    enum pmu_ctl_action action;
     UINT32 core_idx;
     SampleSrcDesc sources[0];
 } PMUSampleSetSrcHdr;
@@ -177,7 +175,6 @@ typedef struct
 
 struct PMUCtlGetSampleHdr
 {
-    enum pmu_ctl_action action;
     UINT32 core_idx;
 };
 
@@ -189,7 +186,6 @@ struct PMUSamplePayload
 
 struct pmu_ctl_ver_hdr
 {
-    enum pmu_ctl_action action;
     struct version_info version;
 };
 
@@ -201,7 +197,6 @@ struct pmu_ctl_cores_count_hdr
 
 struct pmu_ctl_hdr
 {
-	enum pmu_ctl_action action;
     struct pmu_ctl_cores_count_hdr cores_idx;
     LONG period;
 	UINT8 dmc_idx;
@@ -215,7 +210,6 @@ struct pmu_ctl_hdr
 
 struct pmu_ctl_evt_assign_hdr
 {
-    enum pmu_ctl_action action;
     UINT32 core_idx;
     UINT8 dmc_idx;
     UINT64 filter_bits;
@@ -241,7 +235,6 @@ typedef struct pmu_event_read_out
 //
 struct dsu_ctl_hdr
 {
-    enum pmu_ctl_action action;
     UINT16 cluster_num;
     UINT16 cluster_size;
 };
@@ -282,7 +275,6 @@ typedef struct dmc_pmu_event_read_out
 #pragma warning(disable:4200)
 struct dmc_ctl_hdr
 {
-    enum pmu_ctl_action action;
     UINT8 dmc_num;
     UINT64 addr[0];
 };

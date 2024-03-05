@@ -219,15 +219,6 @@ NTSTATUS deviceControl(
         return STATUS_INVALID_PARAMETER;
     }
 
-    enum pmu_ctl_action* pBuf_action  = (enum pmu_ctl_action*)pInBuffer;
-
-    if (*pBuf_action != (LONG)action)
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid header action for %d\n",
-            action));
-        return STATUS_INVALID_PARAMETER;
-    }
-
     switch (IoCtlCode)
     {
     case IOCTL_PMU_CTL_LOCK_ACQUIRE:
