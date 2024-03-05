@@ -178,37 +178,45 @@ def test_ustress_bench_2_orthogonal_metrics_l1d_cache_workload():
     metrics = "scalar_fp_percentage,l1d_cache_miss_ratio"
     benchmark = "l1d_cache_workload.exe"
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    cmd = f"wperf stat -m {metrics}  -c 7 --timeout 5 --json -- {benchmark_path} 10"
-    stdout, _ = run_command(cmd)
-    json_output = json.loads(stdout)
 
-    """Expected:
-        ...
-        Telemetry Solution Metrics:
-        core  product_name  metric_name           value  unit
-        ====  ============  ===========           =====  ====
-           7  neoverse-n1   l1d_cache_miss_ratio  1.000  per cache access
-           7  neoverse-n1   scalar_fp_percentage  0.000  percent of operations
-    """
+    scalar_fp_percentage_vals = []
+    l1d_cache_miss_ratio_vals = []
 
-    assert 'core' in json_output
-    assert 'ts_metric' in json_output['core']
-    assert 'Telemetry_Solution_Metrics' in json_output['core']['ts_metric']
-    assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == len(metrics.split(","))
+    for _ in range(3):
+        cmd = f"wperf stat -m {metrics}  -c 7 --timeout 5 --json -- {benchmark_path} 100"
+        stdout, _ = run_command(cmd)
+        json_output = json.loads(stdout)
 
-    l1d_cache_miss_ratio = None
-    scalar_fp_percentage = None
+        """Expected:
+            ...
+            Telemetry Solution Metrics:
+            core  product_name  metric_name           value  unit
+            ====  ============  ===========           =====  ====
+               7  neoverse-n1   l1d_cache_miss_ratio  1.000  per cache access
+               7  neoverse-n1   scalar_fp_percentage  0.000  percent of operations
+        """
 
-    for metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics']:
-        if metric["metric_name"] == 'l1d_cache_miss_ratio':
-            l1d_cache_miss_ratio = float(metric["value"])
-        if metric["metric_name"] == 'scalar_fp_percentage':
-            scalar_fp_percentage = float(metric["value"])
+        assert 'core' in json_output
+        assert 'ts_metric' in json_output['core']
+        assert 'Telemetry_Solution_Metrics' in json_output['core']['ts_metric']
+        assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == len(metrics.split(","))
 
-    assert l1d_cache_miss_ratio is not None
-    assert scalar_fp_percentage is not None
-    assert l1d_cache_miss_ratio >= 0.90, f"expected `l1d_cache_miss_ratio` == ~1.000, for workload {benchmark}"
-    assert scalar_fp_percentage <= 0.10, f"expected ` scalar_fp_percentage` ==  ~0.000, for workload {benchmark}"
+        l1d_cache_miss_ratio = None
+        scalar_fp_percentage = None
+
+        for metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics']:
+            if metric["metric_name"] == 'l1d_cache_miss_ratio':
+                l1d_cache_miss_ratio = float(metric["value"])
+            if metric["metric_name"] == 'scalar_fp_percentage':
+                scalar_fp_percentage = float(metric["value"])
+
+        assert l1d_cache_miss_ratio is not None
+        assert scalar_fp_percentage is not None
+        l1d_cache_miss_ratio_vals.append(l1d_cache_miss_ratio)
+        scalar_fp_percentage_vals.append(scalar_fp_percentage)
+
+    assert median(l1d_cache_miss_ratio_vals) >= 0.90, f"expected `l1d_cache_miss_ratio` == ~1.000, for workload {benchmark}"
+    assert median(scalar_fp_percentage_vals) <= 0.10, f"expected ` scalar_fp_percentage` ==  ~0.000, for workload {benchmark}"
 
 def test_ustress_bench_2_orthogonal_metrics_fpmul_workload():
     """ Run `fpmul_workload.exe` for two orthogonal metrics, expect:
@@ -225,34 +233,42 @@ def test_ustress_bench_2_orthogonal_metrics_fpmul_workload():
     metrics = "scalar_fp_percentage,l1d_cache_miss_ratio"
     benchmark = "fpmul_workload.exe"
     benchmark_path = os.path.join(TS_USTRESS_DIR, benchmark)
-    cmd = f"wperf stat -m {metrics}  -c 7 --timeout 5 --json -- {benchmark_path} 10"
-    stdout, _ = run_command(cmd)
-    json_output = json.loads(stdout)
 
-    """Expected on `neoverse-n1`:
-        ...
-        Telemetry Solution Metrics:
-        core  product_name  metric_name           value  unit
-        ====  ============  ===========           =====  ====
-           7  neoverse-n1   l1d_cache_miss_ratio   0.000  per cache access
-           7  neoverse-n1   scalar_fp_percentage  57.143  percent of operations
-    """
+    scalar_fp_percentage_vals = []
+    l1d_cache_miss_ratio_vals = []
 
-    assert 'core' in json_output
-    assert 'ts_metric' in json_output['core']
-    assert 'Telemetry_Solution_Metrics' in json_output['core']['ts_metric']
-    assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == len(metrics.split(","))
+    for _ in range(3):
+        cmd = f"wperf stat -m {metrics}  -c 7 --timeout 5 --json -- {benchmark_path} 100"
+        stdout, _ = run_command(cmd)
+        json_output = json.loads(stdout)
 
-    l1d_cache_miss_ratio = None
-    scalar_fp_percentage = None
+        """Expected on `neoverse-n1`:
+            ...
+            Telemetry Solution Metrics:
+            core  product_name  metric_name           value  unit
+            ====  ============  ===========           =====  ====
+               7  neoverse-n1   l1d_cache_miss_ratio   0.000  per cache access
+               7  neoverse-n1   scalar_fp_percentage  57.143  percent of operations
+        """
 
-    for metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics']:
-        if metric["metric_name"] == 'l1d_cache_miss_ratio':
-            l1d_cache_miss_ratio = float(metric["value"])
-        if metric["metric_name"] == 'scalar_fp_percentage':
-            scalar_fp_percentage = float(metric["value"])
+        assert 'core' in json_output
+        assert 'ts_metric' in json_output['core']
+        assert 'Telemetry_Solution_Metrics' in json_output['core']['ts_metric']
+        assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == len(metrics.split(","))
 
-    assert l1d_cache_miss_ratio is not None
-    assert scalar_fp_percentage is not None
-    assert l1d_cache_miss_ratio <= 0.10, f"expected `l1d_cache_miss_ratio` == ~0.000, for workload {benchmark}"
-    assert scalar_fp_percentage >= 50.0, f"expected ` scalar_fp_percentage`> ~50.000, for workload {benchmark}"
+        l1d_cache_miss_ratio = None
+        scalar_fp_percentage = None
+
+        for metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics']:
+            if metric["metric_name"] == 'l1d_cache_miss_ratio':
+                l1d_cache_miss_ratio = float(metric["value"])
+            if metric["metric_name"] == 'scalar_fp_percentage':
+                scalar_fp_percentage = float(metric["value"])
+
+        assert l1d_cache_miss_ratio is not None
+        assert scalar_fp_percentage is not None
+        l1d_cache_miss_ratio_vals.append(l1d_cache_miss_ratio)
+        scalar_fp_percentage_vals.append(scalar_fp_percentage)
+
+    assert median(l1d_cache_miss_ratio_vals) <= 0.10, f"expected `l1d_cache_miss_ratio` == ~0.000, for workload {benchmark}"
+    assert median(scalar_fp_percentage_vals) >= 50.0, f"expected ` scalar_fp_percentage`> ~50.000, for workload {benchmark}"
