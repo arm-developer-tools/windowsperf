@@ -376,6 +376,11 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
         return false;
     }
 
+    HANDLE process_handle = NULL;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+    bool spawned_process = false;
+
     static size_t event_index = 0;
     static size_t core_index = 0;
 
@@ -463,9 +468,6 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
             // === Spawn counting process ===
             bool do_count_process_spawn = stat_conf->pe_file != NULL;
             DWORD pid;
-            HANDLE process_handle = NULL;
-            PROCESS_INFORMATION pi;
-            ZeroMemory(&pi, sizeof(pi));
             // === Spawn counting process ===
             if (do_count_process_spawn)
             {
@@ -485,6 +487,7 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                 }
 
                 process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+                spawned_process = true;
             }
 
             do
@@ -607,6 +610,7 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
                 TerminateProcess(pi.hProcess, 0);
                 CloseHandle(pi.hThread);
                 CloseHandle(process_handle);
+                spawned_process = false;
             }
         }
         else
@@ -645,6 +649,12 @@ extern "C" bool wperf_stat(PSTAT_CONF stat_conf, PSTAT_INFO stat_info)
     }
     catch (...)
     {
+        if (spawned_process)
+        {
+            TerminateProcess(pi.hProcess, 0);
+            CloseHandle(pi.hThread);
+            CloseHandle(process_handle);
+        }
         return false;
     }
 
@@ -658,6 +668,11 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
         // sample_conf and __pmu_device should not be NULL.
         return false;
     }
+
+    HANDLE process_handle;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+    bool spawned_process = false;
 
     static size_t event_index = 0;
     static size_t sample_index = 0;
@@ -743,10 +758,7 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             HMODULE hMods[1024];
             DWORD cbNeeded;
             DWORD pid;
-            HANDLE process_handle;
-            PROCESS_INFORMATION pi;
             TCHAR imageFileName[MAX_PATH];
-            ZeroMemory(&pi, sizeof(pi));
 
             if (sample_conf->record)
             {
@@ -767,6 +779,7 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                     // failed to read module name
                     return false;
                 }
+                spawned_process = true;
             }
             else
             {
@@ -873,6 +886,7 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
             {
                 TerminateProcess(pi.hProcess, 0);
                 CloseHandle(pi.hThread);
+                spawned_process = false;
             }
             CloseHandle(process_handle);
 
@@ -1124,6 +1138,11 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
     }
     catch (...)
     {
+        if (spawned_process)
+        {
+            TerminateProcess(pi.hProcess, 0);
+            CloseHandle(pi.hThread);
+        }
         return false;
     }
 
