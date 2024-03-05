@@ -84,6 +84,10 @@ wmain(
     wstr_vec raw_args;
 
     LLVMDisassembler disassembler;
+    bool spawned_process = false;
+    HANDLE process_handle = NULL;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
 
     try {
         pmu_device.init();
@@ -207,9 +211,6 @@ wmain(
             // === Spawn counting process ===
             bool do_count_process_spawn = request.sample_pe_file.size();
             DWORD pid;
-            HANDLE process_handle = NULL;
-            PROCESS_INFORMATION pi;
-            ZeroMemory(&pi, sizeof(pi));
             // === Spawn counting process ===
             if (do_count_process_spawn)
             {
@@ -232,6 +233,7 @@ wmain(
                     m_out.GetOutputStream() << request.sample_pe_file << " pid is " << pid << std::endl;
 
                 process_handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, pid);
+                spawned_process = true;
             }
 
             do
@@ -348,6 +350,7 @@ wmain(
                 TerminateProcess(pi.hProcess, 0);
                 CloseHandle(pi.hThread);
                 CloseHandle(process_handle);
+                spawned_process = false;
             }
 
             if (request.do_timeline)
@@ -415,10 +418,7 @@ wmain(
             auto hMods = std::make_unique<HMODULE[]>(MAX_MODULES);     // HMODULE hMods[1024];
             DWORD cbNeeded;
             DWORD pid;
-            HANDLE process_handle;
-            PROCESS_INFORMATION pi;
             TCHAR imageFileName[MAX_PATH];
-            ZeroMemory(&pi, sizeof(pi));
 
             //If the user asked to record we should spawn the process ourselves.
             if (request.do_record)
@@ -446,6 +446,7 @@ wmain(
                     m_out.GetErrorOutputStream() << "Error getting module name " << GetLastError() << "." << std::endl;
                     throw fatal_exception("Unable to read module name.");
                 }
+                spawned_process = true;
             }
             else {
                 pid = FindProcess(request.sample_image_name);
@@ -637,6 +638,7 @@ wmain(
             {
                 TerminateProcess(pi.hProcess, 0);
                 CloseHandle(pi.hThread);
+                spawned_process = false;
             }
             CloseHandle(process_handle);
             
@@ -1053,6 +1055,12 @@ wmain(
     }
 
 clean_exit:
+    if(spawned_process)
+    {
+        TerminateProcess(pi.hProcess, 0);
+        CloseHandle(pi.hThread);
+        CloseHandle(process_handle);
+    }
     disassembler.Close();
     return exit_code;
 }
