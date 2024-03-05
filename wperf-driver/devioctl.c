@@ -474,6 +474,9 @@ NTSTATUS deviceControl(
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
         context->action = PMU_CTL_START;
+        context->ctl_flags = ctl_flags;
+        context->ctl_req = ctl_req;
+        context->cores_count = cores_count;
         context->do_func = core_func;
         context->do_func2 = dsu_func;
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! enqueuing for action %d\n", context->action));
