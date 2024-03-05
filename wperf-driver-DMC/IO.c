@@ -194,8 +194,6 @@ Return Value:
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WperfDriver_TEvtIoDeviceControl : %s \n", GetIoctlStr(IoControlCode)));
 
-
-
     if (InputBufferLength)
     {
         status = WdfRequestRetrieveInputMemory(Request, &memory);
@@ -249,13 +247,22 @@ Return Value:
         if (in->flag == LOCK_GET_FORCE)
         {
             out = STS_LOCK_AQUIRED;
+            LONG oldval = InterlockedExchange(&devExt->current_status.pmu_held, 1);
+            if (oldval == 0)
+                get_pmu_resource(devExt);
+
             SetMeBusyForce(devExt, IoControlCode, fileObject);
         }
         else if (in->flag == LOCK_GET)
         {
             if (SetMeBusy(devExt, IoControlCode, fileObject)) // returns failure if the lock is already held by another process
+            {
+                LONG oldval = InterlockedExchange(&devExt->current_status.pmu_held, 1);
+                if (oldval == 0)
+                    get_pmu_resource(devExt);
                 out = STS_LOCK_AQUIRED;
-            // Note: else STS_BUSY;
+                // Note: else STS_BUSY;
+            }
         }
         else
         {
@@ -292,8 +299,13 @@ Return Value:
 
         if (in->flag == LOCK_RELEASE)
         {
-            if (SetMeIdle(devExt, fileObject)) // returns fialure if this process doesnt own the lock 
+            if (SetMeIdle(devExt, fileObject)) // returns failure if this process doesnt own the lock 
+            {
                 out = STS_IDLE;         // All went well and we went IDLE
+                LONG oldval = InterlockedExchange(&devExt->current_status.pmu_held, 0);
+                if (oldval == 1)
+                    free_pmu_resource(devExt);
+            }
             // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
         }
         else
@@ -305,6 +317,52 @@ Return Value:
 
         *((enum status_flag*)outBuffer) = out;
         retDataSize = sizeof(enum status_flag);
+        break;
+    }
+
+    case IOCTL_PMU_CTL_QUERY_HW_CFG:
+    {
+        // does our process own the lock?
+        if (!AmILocking(devExt, IoControlCode, fileObject))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+        if (InputBufferLength != sizeof(enum pmu_ctl_action))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_HW_CFG\n", InputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_QUERY_HW_CFG\n"));
+
+        struct hw_cfg* out = (struct hw_cfg*)inBuffer;
+        out->core_num = (UINT16)devExt->numCores;
+        out->fpc_num = numFPC;
+        out->gpc_num = devExt->numFreeGPC;
+        out->total_gpc_num = devExt->numGPC;
+        out->pmu_ver = (devExt->dfr0_value >> 8) & 0xf;
+        out->vendor_id = (devExt->midr_value >> 24) & 0xff;
+        out->variant_id = (devExt->midr_value >> 20) & 0xf;
+        out->arch_id = (devExt->midr_value >> 16) & 0xf;
+        out->rev_id = devExt->midr_value & 0xf;
+        out->part_id = (devExt->midr_value >> 4) & 0xfff;
+        out->midr_value = devExt->midr_value;
+        out->id_aa64dfr0_value = devExt->id_aa64dfr0_el1_value;
+        RtlCopyMemory(out->counter_idx_map, devExt->counter_idx_map, sizeof(devExt->counter_idx_map));
+
+        retDataSize = sizeof(struct hw_cfg);
+        if (retDataSize > OutputBufferLength)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "retDataSize > OutputBufferLength\n"));
+            status = STATUS_BUFFER_TOO_SMALL;
+        }
+        else
+        {
+            RtlCopyMemory(outBuffer, out, sizeof(struct hw_cfg));
+        }
         break;
     }
     case IOCTL_PMU_CTL_START:
@@ -355,8 +413,6 @@ Return Value:
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: IoControlCode %d\n", GetIoctlStr(IoControlCode)));
 
-        //VOID(*core_func)(VOID) = NULL;
-        //VOID(*dsu_func)(VOID) = NULL;
         VOID(*dmc_func)(UINT8, UINT8,  dmcs_desc*) = NULL;
 
         if (IoControlCode == IOCTL_PMU_CTL_START)
@@ -696,7 +752,7 @@ Return Value:
         break;
     }
 
-    WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, retDataSize);
+    WdfRequestCompleteWithInformation(Request, status, retDataSize);
 
     return;
 }

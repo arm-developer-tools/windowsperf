@@ -108,6 +108,12 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
     const UINT32 core_idx = context->core_idx;
 
+    if (context->devExt->current_status.status == STS_IDLE)
+        return;
+
+    if (context->devExt->AskedToRemove)
+        return;
+
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! Entry (%d) for action %s\n", core_idx, GetIoctlStr(context->IoCtl)));
 /*
     if (context->IoCtl  == PMU_CTL_ASSIGN_EVENTS)

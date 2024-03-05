@@ -139,6 +139,7 @@ typedef struct _LOCK_STATUS
     ULONG ioctl;
     KSPIN_LOCK sts_lock;
     WDFFILEOBJECT  file_object;
+    LONG pmu_held;
 } LOCK_STATUS;
 
 //

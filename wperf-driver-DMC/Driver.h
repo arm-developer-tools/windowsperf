@@ -65,3 +65,7 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
 VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
 
 VOID event_enable(PDEVICE_EXTENSION devExt, ppmu_event_kernel evt);
+
+VOID free_pmu_resource(PDEVICE_EXTENSION devExt);
+
+NTSTATUS get_pmu_resource(PDEVICE_EXTENSION devExt);

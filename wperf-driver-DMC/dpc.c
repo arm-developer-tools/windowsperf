@@ -103,6 +103,12 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     if (ctx == NULL)
         return;
 
+    if (devExt->current_status.status == STS_IDLE)
+        return;
+
+    if (devExt->AskedToRemove)
+        return;
+
     CoreInfo* core = (CoreInfo*)ctx;
     UINT64 round = core->timer_round;
     UINT64 new_round = round + 1;
@@ -169,6 +175,12 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     if (ctx == NULL)
         return;
 
+    if (devExt->current_status.status == STS_IDLE)
+        return;
+
+    if (devExt->AskedToRemove)
+        return;
+
     CoreInfo* core = (CoreInfo*)ctx;
 
     if (core->prof_dmc != PROF_DISABLED)
@@ -185,6 +197,12 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     if (ctx == NULL)
         return;
 
+    if (devExt->current_status.status == STS_IDLE)
+        return;
+
+    if (devExt->AskedToRemove)
+        return;
+
     CoreInfo* core = (CoreInfo*)ctx;
     CoreCounterStop();
     //update_last_fixed_counter(core->idx);
@@ -198,13 +216,18 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
         KeSetEvent(&devExt->sync_reset_dpc, 0, FALSE);
 }
 
+
+// called during device create, so cane be called with askedToRemove set true, or when status is STS_BUSY (opened with app)
 VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(ctx);
-    UNREFERENCED_PARAMETER(sys_arg2);
+    UNREFERENCED_PARAMETER(sys_arg1);
 
-    PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)sys_arg1;
+    PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)sys_arg2;
+
+    if (devExt == NULL)
+        return;
 
     CoreCounterReset();
 
