@@ -270,8 +270,7 @@ NTSTATUS get_pmu_resource(VOID)
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
 
     // 1) Query for free PMU counters
-    const size_t counter_idx_map_size = sizeof(UINT32) * (AARCH64_MAX_HWC_SUPP + 1);
-    RtlSecureZeroMemory(counter_idx_map, counter_idx_map_size);
+    RtlSecureZeroMemory(counter_idx_map, sizeof(counter_idx_map));
 
     PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
     TmpCounterResourceList.Count = 1;
