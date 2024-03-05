@@ -113,9 +113,8 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
         return;
 
     const enum pmu_ctl_action action = context->action;
-    const UINT32 core_idx = context->core_idx;
-
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! Entry (%d) for action %d\n", core_idx, action));
+    
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! Entry for action %d\n", action));
 
     if (action == PMU_CTL_ASSIGN_EVENTS)
     {
@@ -203,6 +202,10 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     GROUP_AFFINITY old_affinity, new_affinity;
     PROCESSOR_NUMBER ProcNumber;
+
+    const UINT32 core_idx = context->core_idx;
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! Entry (%d) for action %d\n", core_idx, action));
 
     RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
     RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
