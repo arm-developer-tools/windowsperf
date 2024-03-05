@@ -799,6 +799,19 @@ NTSTATUS deviceControl(
         out->id_aa64dfr0_value = id_aa64dfr0_el1_value;
         RtlCopyMemory(out->counter_idx_map, counter_idx_map, sizeof(counter_idx_map));
 
+        {   // Setup HW_CFG capability string for this driver:
+            const wchar_t device_id_str[] =
+                WPERF_HW_CFG_CAPS_CORE_STAT L";"
+                WPERF_HW_CFG_CAPS_CORE_SAMPLE L";"
+                WPERF_HW_CFG_CAPS_CORE_DSU L";"
+                WPERF_HW_CFG_CAPS_CORE_DMC;
+
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "*outputSize > OutBufSize\n"));
+
+            RtlSecureZeroMemory(out->device_id_str, sizeof(out->device_id_str));
+            RtlCopyMemory(out->device_id_str, device_id_str, sizeof(device_id_str));
+        }
+
         *outputSize = sizeof(struct hw_cfg);
         if (*outputSize > OutBufSize)
         {

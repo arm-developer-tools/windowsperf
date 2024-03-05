@@ -32,6 +32,12 @@
 #include "wperf-common\macros.h"
 #include "pmu.h"
 
+/*
+    DMC device description STRING, used by user space to distinguish devices in driver(s).
+*/
+// DMC device for wperf `stat` command supports `dmc_clk` and `dmc_clkdiv2` prefixed events.
+#define WPERF_HW_CFG_CAPS_CORE_DMC      L"dmc.stat=dmc_clk,dmc_clkdiv2"
+
 #define DMC_COUNTER_BASE(val)			(0x10 + (UINT64)val * 0x28)
 #define DMC_COUNTER_CTL_OFFSET			(0x10)
 #define DMC_COUNTER_VAL_OFFSET			(0x20)

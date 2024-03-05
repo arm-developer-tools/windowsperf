@@ -2257,6 +2257,8 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     col_test_result.push_back(IntToHexWideString(hw_cfg.id_aa64dfr0_value, 20));
     col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [counter_idx_map]");
     col_test_result.push_back(get_counter_idx_map_str(hw_cfg));
+    col_test_name.push_back(L"PMU_CTL_QUERY_HW_CFG [device_id_str]");
+    col_test_result.push_back(std::wstring(hw_cfg.device_id_str));
 
     // Tests General Purpose Counters detection
     col_test_name.push_back(L"gpc_nums[EVT_CORE]");

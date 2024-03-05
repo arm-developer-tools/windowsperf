@@ -32,6 +32,7 @@
 #include "wperf-common\macros.h"
 
 #define MAX_GITVER_SIZE 32
+#define MAX_DEVICE_ID_STR_SIZE 128
 
 //
 // Below structures represent binary protocol between wperf and wperf-driver
@@ -74,6 +75,7 @@ struct hw_cfg
     UINT64  midr_value;
     UINT64  id_aa64dfr0_value;
     UINT8   counter_idx_map[AARCH64_MAX_HWC_SUPP + 1]; // We cannot correctly infer this from user mode.
+    wchar_t device_id_str[MAX_DEVICE_ID_STR_SIZE];      // Driver devices and their capabilities
 };
 
 struct version_info

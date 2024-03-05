@@ -36,6 +36,12 @@
 #include "coreinfo.h"
 #include "sysregs.h"
 
+/*
+    DSU device description STRING, used by user space to distinguish devices in driver(s).
+*/
+// DSU device for wperf `stat` command supports `dsu` prefixed events.
+#define WPERF_HW_CFG_CAPS_CORE_DSU      L"dsu.stat=dsu"
+
 // DSU
 #define CLUSTERPMCR_E               0x01
 #define CLUSTERPMCR_P               0x02

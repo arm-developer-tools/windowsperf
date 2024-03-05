@@ -33,6 +33,7 @@
 
 """Module is testing `wperf test` features."""
 import json
+import re
 from common import run_command, is_json, check_if_file_exists
 from common import get_result_from_test_results, wperf_test_get_key_val
 from common import arm64_vendor_names
@@ -140,3 +141,47 @@ def test_wperf_test_gpc_values():
     total_gpc_num = int(total_gpc_num, 16)  # it's a hex string e,g,. 0x0005
 
     assert gpc_num <= total_gpc_num
+
+def test_wperf_test_device_id_str_values():
+    """ Test if `device_id_str` string is formatted correctly by the driver. """
+    #
+    # E.g.:"
+    #   PMU_CTL_QUERY_HW_CFG [device_id_str]                core.stat=core;core.sample=core;dsu.stat=dsu;dmc.stat=dmc_clk,dmc_clkdiv2
+    #
+    device_id_str = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "device_id_str")
+
+    devices = device_id_str.split(";")
+    assert len(devices) >= 1    # There should be at least one device available
+
+    for device in devices:
+        #
+        # Devices should be non-empty strings
+        #
+        assert len(device), f"device={device} in device_id_str={devices} is an empty string"
+
+        #
+        # Check if we split with `=` between type.func and events supported
+        #
+        assert len(device.split("=")) == 2
+        (type_func, events) = device.split("=")
+
+        #
+        # Check each `,` separated event for spelling
+        #
+        for event in events.split(","):
+            assert re.match("^[a-z0-9_-]*$", event.lower()),    f"event='{event}' string in device='{device}' contains illegal characters"
+
+        #
+        # Check if we split with `.` between `dev_type` and `dev_func`
+        #
+        assert len(type_func.split(".")) == 2
+        (dev_type, dev_func) = type_func.split(".")
+
+        assert dev_type.isalpha(),  f"not all the characters in the '{dev_type}' are letters"
+        assert dev_func.isalpha(),  f"not all the characters in the '{dev_func}' are letters"
+
+        #
+        # Sanity checks for current `wperf` implementation
+        #
+        assert dev_type in ["core", "dsu", "dmc", "spe"], f"unknown type={dev_type} of device, driver for new device or unknown driver device type?"
+        assert dev_func in ["stat", "sample", "record"]   # `record` implies `sample` and is its alias
