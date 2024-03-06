@@ -46,7 +46,6 @@
 #include "trace.h"
 #endif
 
-
 //
 // WDFDRIVER Events
 //

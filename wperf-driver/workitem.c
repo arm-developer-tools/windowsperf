@@ -162,7 +162,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             int i = context->ctl_req->cores_idx.cores_no[k];
             VOID(*dsu_func2)(VOID) = context->do_func2;
 
-            if (context->cctl_flags & CTL_FLAG_DSU)
+            if (context->ctl_flags & CTL_FLAG_DSU)
             {
                 int cluster_no = i / dsu_sizeCluster;
 

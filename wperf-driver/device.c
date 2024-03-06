@@ -220,6 +220,8 @@ struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
 
 VOID free_pmu_resource(VOID)
 {
+    if (pmc_resource_handle == NULL)
+        return;
 
     for (ULONG i = 0; i < numCores; i++)
     {
@@ -251,10 +253,6 @@ VOID free_pmu_resource(VOID)
         }
     }
 
-    // Uninstall PMI isr
-  //  PMIHANDLER isr = NULL;
-  //  if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
-  //      KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
 }
 
 

@@ -71,6 +71,11 @@ static UINT64 core_read_counter_helper(UINT32 counter_idx)
     return CoreReadCounter(counter_idx_map[counter_idx]);
 }
 
+VOID core_write_counter_helper(UINT32 counter_idx, __int64 val)
+{
+    CoreWriteCounter(counter_idx_map[counter_idx], val);
+}
+
 // For the fixed counter we are getting the delta from the last readings.
 static UINT64 get_fixed_counter_value(UINT64 core_idx)
 {

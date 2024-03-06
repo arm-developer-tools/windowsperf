@@ -751,3 +751,4 @@ WperfDriver_TDeviceSelfManagedIoSuspend(
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<==== WperfDriver_TDeviceSelfManagedIoSuspend\n"));
 
     return STATUS_SUCCESS;
+}
