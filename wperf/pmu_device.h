@@ -107,6 +107,10 @@ public:
     ~pmu_device();
 
     void init();
+    void core_init();
+    void dsu_init();
+    void dmc_init();
+
     HANDLE init_device();
     void init_ts_metrics();
     void init_ts_events();
@@ -195,8 +199,8 @@ public:
 
     uint8_t core_num, total_gpc_num;
     std::map<std::wstring, metric_desc> builtin_metrics;
-    bool has_dsu;
-    bool has_dmc;
+    bool m_has_dsu = false;
+    bool m_has_dmc = false;
     uint32_t dsu_cluster_num;
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;

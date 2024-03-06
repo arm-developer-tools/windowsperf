@@ -91,8 +91,8 @@ std::map<std::wstring, std::wstring> pmu_device::m_product_alias =
 };
 
 
-pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), has_dsu(false), dsu_cluster_num(0),
-    dsu_cluster_size(0), has_dmc(false), dmc_num(0), enc_bits(0), core_num(0),
+pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), dsu_cluster_num(0),
+    dsu_cluster_size(0), dmc_num(0), enc_bits(0), core_num(0),
     dmc_idx(0), pmu_ver(0), timeline_mode(false), vendor_name(0), do_verbose(false)
 {
     for (int e = EVT_CLASS_FIRST; e < EVT_CLASS_NUM; e++)
@@ -178,9 +178,12 @@ HANDLE pmu_device::init_device()
 void pmu_device::init()
 {
     m_device_handle = init_device();
-
+    drvconfig::init();
     lock(do_force_lock);
+}
 
+void pmu_device::core_init()
+{
     struct hw_cfg hw_cfg;
     query_hw_cfg(hw_cfg);
 
@@ -193,10 +196,10 @@ void pmu_device::init()
     total_gpc_num = hw_cfg.total_gpc_num;
     memcpy(counter_idx_map, hw_cfg.counter_idx_map, sizeof(hw_cfg.counter_idx_map));
     /* Since we allocate events to GPCs greedily, in a situation where all GPCs are
-    * available the n-th event is assigned to the n-th GPC. When not all GPCs are available howerver, 
-    * we need the `counter_idx_map` to translate to the real GPC number. 
+    * available the n-th event is assigned to the n-th GPC. When not all GPCs are available howerver,
+    * we need the `counter_idx_map` to translate to the real GPC number.
     * The `ov_flags` returned from the driver has the real GPC numbers, so to resolve samples we require
-    * a way to map back from real GPC numbers to the n-th apporach described above. The 
+    * a way to map back from real GPC numbers to the n-th apporach described above. The
     * `counter_idx_unmap` carries this information.
     */
     for (uint8_t i = 0; i < gpc_num; i++)
@@ -209,80 +212,83 @@ void pmu_device::init()
     core_outs = std::make_unique<ReadOut[]>(core_num);
     memset(core_outs.get(), 0, sizeof(ReadOut) * core_num);
 
-    drvconfig::init();
-
     hw_cfg_detected(hw_cfg);
+}
 
-    // Detect unCore PMU from Arm Ltd - System Cache
-    has_dsu = detect_armh_dsu();
-    if (has_dsu)
+void pmu_device::dsu_init()
+{
+    m_has_dsu = detect_armh_dsu();
+    if (m_has_dsu == false)
+        return;
+
+    struct dsu_ctl_hdr ctl;
+    struct dsu_cfg cfg;
+    DWORD res_len;
+
+    assert(dsu_cluster_num <= USHRT_MAX);
+    assert(dsu_cluster_size <= USHRT_MAX);
+    ctl.cluster_num = (uint16_t)dsu_cluster_num;
+    ctl.cluster_size = (uint16_t)dsu_cluster_size;
+    BOOL status = DeviceAsyncIoControl(m_device_handle, DSU_CTL_INIT, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
+    if (!status)
     {
-        struct dsu_ctl_hdr ctl;
-        struct dsu_cfg cfg;
-        DWORD res_len;
-
-        assert(dsu_cluster_num <= USHRT_MAX);
-        assert(dsu_cluster_size <= USHRT_MAX);
-        ctl.cluster_num = (uint16_t)dsu_cluster_num;
-        ctl.cluster_size = (uint16_t)dsu_cluster_size;
-        BOOL status = DeviceAsyncIoControl(m_device_handle, DSU_CTL_INIT, &ctl, sizeof(dsu_ctl_hdr), &cfg, sizeof(dsu_cfg), &res_len);
-        if (!status)
-        {
-            m_out.GetErrorOutputStream() << L"DSU_CTL_INIT failed" << std::endl;
-            throw fatal_exception("ERROR_PMU_INIT");
-        }
-
-        if (res_len != sizeof(struct dsu_cfg))
-        {
-            m_out.GetErrorOutputStream() << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
-            throw fatal_exception("ERROR_PMU_INIT");
-        }
-
-        gpc_nums[EVT_DSU] = cfg.gpc_num;
-        fpc_nums[EVT_DSU] = cfg.fpc_num;
-
-        dsu_outs = std::make_unique<DSUReadOut[]>(dsu_cluster_num);
-        memset(dsu_outs.get(), 0, sizeof(DSUReadOut) * dsu_cluster_num);
-
-        set_builtin_metrics(L"l3_cache", L"/dsu/l3d_cache,/dsu/l3d_cache_refill");
+        m_out.GetErrorOutputStream() << L"DSU_CTL_INIT failed" << std::endl;
+        throw fatal_exception("ERROR_PMU_INIT");
     }
 
+    if (res_len != sizeof(struct dsu_cfg))
+    {
+        m_out.GetErrorOutputStream() << L"DSU_CTL_INIT returned unexpected length of data" << std::endl;
+        throw fatal_exception("ERROR_PMU_INIT");
+    }
+
+    gpc_nums[EVT_DSU] = cfg.gpc_num;
+    fpc_nums[EVT_DSU] = cfg.fpc_num;
+
+    dsu_outs = std::make_unique<DSUReadOut[]>(dsu_cluster_num);
+    memset(dsu_outs.get(), 0, sizeof(DSUReadOut) * dsu_cluster_num);
+
+    set_builtin_metrics(L"l3_cache", L"/dsu/l3d_cache,/dsu/l3d_cache_refill");
+}
+
+void pmu_device::dmc_init()
+{
     // unCore PMU - DDR controller
-    has_dmc = detect_armh_dma();
-    if (has_dmc)
+    m_has_dmc = detect_armh_dma();
+    if (m_has_dmc == false)
+        return;
+
+    size_t len = sizeof(dmc_ctl_hdr) + dmc_regions.size() * sizeof(uint64_t) * 2;
+    std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(len);
+
+    struct dmc_ctl_hdr* ctl = (struct dmc_ctl_hdr*)buf.get();
+    struct dmc_cfg cfg;
+    DWORD res_len;
+
+    for (int i = 0; i < dmc_regions.size(); i++)
     {
-        size_t len = sizeof(dmc_ctl_hdr) + dmc_regions.size() * sizeof(uint64_t) * 2;
-        std::unique_ptr<uint8_t[]> buf = std::make_unique<uint8_t[]>(len);
-
-        struct dmc_ctl_hdr* ctl = (struct dmc_ctl_hdr*)buf.get();
-        struct dmc_cfg cfg;
-        DWORD res_len;
-
-        for (int i = 0; i < dmc_regions.size(); i++)
-        {
-            ctl->addr[i * 2] = dmc_regions[i].first;
-            ctl->addr[i * 2 + 1] = dmc_regions[i].second;
-        }
-
-        assert(dmc_regions.size() <= UCHAR_MAX);
-        ctl->dmc_num = (uint8_t)dmc_regions.size();
-        BOOL status = DeviceAsyncIoControl(m_device_handle, DMC_CTL_INIT, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
-        if (!status)
-        {
-            m_out.GetErrorOutputStream() << L"DMC_CTL_INIT failed" << std::endl;
-            throw fatal_exception("ERROR_PMU_INIT");
-        }
-
-        gpc_nums[EVT_DMC_CLK] = cfg.clk_gpc_num;
-        fpc_nums[EVT_DMC_CLK] = 0;
-        gpc_nums[EVT_DMC_CLKDIV2] = cfg.clkdiv2_gpc_num;
-        fpc_nums[EVT_DMC_CLKDIV2] = 0;
-
-        dmc_outs = std::make_unique<DMCReadOut[]>(ctl->dmc_num);
-        memset(dmc_outs.get(), 0, sizeof(DMCReadOut) * ctl->dmc_num);
-
-        set_builtin_metrics(L"ddr_bw", L"/dmc_clkdiv2/rdwr");
+        ctl->addr[i * 2] = dmc_regions[i].first;
+        ctl->addr[i * 2 + 1] = dmc_regions[i].second;
     }
+
+    assert(dmc_regions.size() <= UCHAR_MAX);
+    ctl->dmc_num = (uint8_t)dmc_regions.size();
+    BOOL status = DeviceAsyncIoControl(m_device_handle, DMC_CTL_INIT, ctl, (DWORD)len, &cfg, (DWORD)sizeof(dmc_cfg), &res_len);
+    if (!status)
+    {
+        m_out.GetErrorOutputStream() << L"DMC_CTL_INIT failed" << std::endl;
+        throw fatal_exception("ERROR_PMU_INIT");
+    }
+
+    gpc_nums[EVT_DMC_CLK] = cfg.clk_gpc_num;
+    fpc_nums[EVT_DMC_CLK] = 0;
+    gpc_nums[EVT_DMC_CLKDIV2] = cfg.clkdiv2_gpc_num;
+    fpc_nums[EVT_DMC_CLKDIV2] = 0;
+
+    dmc_outs = std::make_unique<DMCReadOut[]>(ctl->dmc_num);
+    memset(dmc_outs.get(), 0, sizeof(DMCReadOut) * ctl->dmc_num);
+
+    set_builtin_metrics(L"ddr_bw", L"/dmc_clkdiv2/rdwr");
 }
 
 void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
@@ -462,7 +468,7 @@ void pmu_device::post_init(std::vector<uint8_t> cores_idx_init, uint32_t dmc_idx
     timeline_mode = timeline_mode_init;
     enc_bits = enable_bits;
 
-    if (has_dsu)
+    if (m_has_dsu)
         // Gather all DSU numbers for specified core in set of unique DSU numbers
         for (uint32_t i : cores_idx)
             dsu_cores.insert(i / dsu_cluster_size);
@@ -2600,17 +2606,17 @@ void pmu_device::get_pmu_device_cfg(struct pmu_device_cfg& cfg)
     cfg.dsu_cluster_num = dsu_cluster_num;
     cfg.dsu_cluster_size = dsu_cluster_size;
     cfg.dmc_num = dmc_num;
-    cfg.has_dsu = has_dsu;
-    cfg.has_dmc = has_dmc;
+    cfg.has_dsu = m_has_dsu;
+    cfg.has_dmc = m_has_dmc;
     cfg.total_gpc_num = total_gpc_num;
 }
 
 uint32_t pmu_device::stop_bits()
 {
     uint32_t stop_bits = CTL_FLAG_CORE;
-    if (has_dsu)
+    if (m_has_dsu)
         stop_bits |= CTL_FLAG_DSU;
-    if (has_dmc)
+    if (m_has_dmc)
         stop_bits |= CTL_FLAG_DMC;
 
     return stop_bits;

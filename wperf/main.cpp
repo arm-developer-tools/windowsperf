@@ -96,6 +96,9 @@ wmain(
 
     try {
         pmu_device.init();
+        pmu_device.core_init();
+        pmu_device.dsu_init();
+        pmu_device.dmc_init();
     }
     catch (const locked_exception&)
     {
