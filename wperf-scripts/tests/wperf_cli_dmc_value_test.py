@@ -31,14 +31,15 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-These are basic DMC test. Please note that DMC (Dynamic Memory Controller)
-aka DDR is not present or supported by WindowsPerf on all platforms.
+These are basic DMC value test (to check if we output sane numbers from DMC channels).
+Please note that DMC (Dynamic Memory Controller) aka DDR is not present or supported
+by WindowsPerf on all platforms.
 
 Requires:
     pytest -    install with `pip install -U pytest`
 
 Usage:
-    >pytest wperf_cli_dmc_test.py
+    >pytest wperf_cli_dmc_value_test.py
 
 """
 
@@ -53,15 +54,15 @@ from common import wperf_metric_is_available
     ("ddr_bw"),     # Example of supported DMC metric
 ]
 )
-def test_wperf_dmc_json_output(metric):
-    """ Simple smoke test to make sure we can export DMC only data to JSON.
+def test_wperf_dmc_value_json_output(metric):
+    """ Simple smoke test to make sure JSON data in DDR channels is not all zero.
         Note: we do not have to define -c when we use DMC as DMC is not
               using CPU cores and has its own channels.
     """
     if not wperf_metric_is_available(metric):
         pytest.skip(f"unsupported metric: {metric}")
 
-    cmd = f"wperf stat -m {metric} --json --timeout 3"
+    cmd = f"wperf stat -m {metric} --json --timeout 5"
     stdout, _ = run_command(cmd)
     assert is_json(stdout)
 
@@ -85,6 +86,8 @@ def test_wperf_dmc_json_output(metric):
             "event_note": "e,ddr_bw"
         },
     """
+    rdwr_total = 0
+
     PMU_Performance_Counters = json_output["dmc"]["pmu"]["PMU_Performance_Counters"]
     for counter in PMU_Performance_Counters:
         assert "pmu_id" in counter
@@ -98,3 +101,9 @@ def test_wperf_dmc_json_output(metric):
         #
         assert isinstance(counter["counter_value"], int)    # it's a dec integer value
         assert int(counter["event_idx"], 16)                 # it's a hex string
+        rdwr_total += counter["counter_value"]
+
+    #
+    # There should be some traffic at least on one channel
+    #
+    assert rdwr_total > 0, f"no traffic on all DDR channels!"
