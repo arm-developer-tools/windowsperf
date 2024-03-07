@@ -65,12 +65,12 @@ typedef struct
     std::vector<LineNumberDesc> lines;
 } FuncSymDesc;
 
-typedef struct
+typedef struct _ModuleMetaData
 {
     std::wstring mod_name;
     std::wstring mod_path;
-    uint64_t mod_baseOfDll;
-    HMODULE handle;
+    uint64_t mod_baseOfDll{};
+    HMODULE handle{};
     std::vector<FuncSymDesc> sym_info;
 } ModuleMetaData;
 
