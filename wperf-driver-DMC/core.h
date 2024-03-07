@@ -30,6 +30,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+/*
+    CORE (default) device description STRING, used by user space to distinguish devices in driver(s).
+    Note: CORE is default device, events with no prefix are treated as CORE.
+*/
+// CORE device for wperf `stat` command supports `/core/` prefixed events.
+#define WPERF_HW_CFG_CAPS_CORE_STAT     L"core.stat=core"
+// CORE device for wperf `sample` command supports `/core/` prefixed events.
+#define WPERF_HW_CFG_CAPS_CORE_SAMPLE   L"core.sample=core"
+
 #define ARMV8_PMCR_MASK         0x3f
 #define ARMV8_PMCR_E            (1 << 0) /*  Enable all counters */
 #define ARMV8_PMCR_P            (1 << 1) /*  Reset all counters */

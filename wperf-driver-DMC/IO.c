@@ -143,12 +143,68 @@ Return Value:
     return status;
 }
 
+static UINT16 armv8_arch_core_events[] =
+{
+#define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) b,
+#include "wperf-common\armv8-arch-events.def"
+#undef WPERF_ARMV8_ARCH_EVENTS
+};
 
+/*
+static NTSTATUS evt_assign_core(PDEVICE_EXTENSION devExt, PQUEUE_CONTEXT queueContext, UINT32 core_base, UINT32 core_end, UINT16 core_event_num, UINT16* core_events, UINT64 filter_bits)
+{
+    if ((core_event_num + numFPC) > MAX_MANAGED_CORE_EVENTS)
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: assigned core_event_num %d > %d\n",
+            core_event_num, (MAX_MANAGED_CORE_EVENTS - numFPC)));
+        return STATUS_INVALID_PARAMETER;
+    }
 
-//static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
-//static VOID(*dsu_ctl_funcs[3])(VOID) = { DSUCounterStart, DSUCounterStop, DSUCounterReset };
-//static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8, struct dmcs_desc*) = { DmcCounterStart, DmcCounterStop, DmcCounterReset };
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: assign %d events (%s)\n",
+        core_event_num, core_event_num > devExt->numFreeGPC ? "multiplexing" : "no-multiplexing"));
 
+    for (UINT32 i = core_base; i < core_end; i++)
+    {
+        CoreInfo* core = &devExt->core_info[i];
+        core->events_num = core_event_num + numFPC;
+        UINT32 init_num = core_event_num <= devExt->numFreeGPC ? core_event_num : devExt->numFreeGPC;
+        ppmu_event_pseudo events = &core->events[0];
+
+        RtlSecureZeroMemory(&events[numFPC], sizeof(pmu_event_pseudo) * (MAX_MANAGED_CORE_EVENTS - numFPC));
+
+        // Don't clear event_idx and counter_idx, they are fixed.
+        events[0].value = 0;
+        events[0].scheduled = 0;
+        events[0].filter_bits = filter_bits;
+        events[0].counter_idx = CYCLE_COUNTER_IDX;
+
+        for (UINT32 j = 0; j < core_event_num; j++)
+        {
+            ppmu_event_kernel event = (ppmu_event_kernel)&events[numFPC + j];
+
+            event->event_idx = core_events[j];
+            event->filter_bits = filter_bits;
+            event->enable_irq = 0;
+            if (j < init_num)
+                event->counter_idx = j;
+            else
+                event->counter_idx = INVALID_COUNTER_IDX;
+        }
+    }
+
+    PWORK_ITEM_CTXT context;
+    context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
+    context->IoCtl = IOCTL_PMU_CTL_ASSIGN_EVENTS;
+    context->isDSU = false;
+    context->core_base = core_base;
+    context->core_end = core_end;
+    context->event_num = core_event_num;
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for IOCTL_PMU_CTL_ASSIGN_EVENTS\n"));
+    WdfWorkItemEnqueue(queueContext->WorkItem);
+    WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
+
+    return STATUS_SUCCESS;
+}*/
 
 VOID
 WperfDriver_TEvtIoDeviceControl(
@@ -353,6 +409,16 @@ Return Value:
         out->id_aa64dfr0_value = devExt->id_aa64dfr0_el1_value;
         RtlCopyMemory(out->counter_idx_map, devExt->counter_idx_map, sizeof(devExt->counter_idx_map));
 
+        {   // Setup HW_CFG capability string for this driver:
+            const wchar_t device_id_str[] =
+                WPERF_HW_CFG_CAPS_CORE_DMC;
+
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "*outputSize > OutBufSize\n"));
+
+            RtlSecureZeroMemory(out->device_id_str, sizeof(out->device_id_str));
+            RtlCopyMemory(out->device_id_str, device_id_str, sizeof(device_id_str));
+        }
+
         retDataSize = sizeof(struct hw_cfg);
         if (retDataSize > OutputBufferLength)
         {
@@ -501,7 +567,7 @@ Return Value:
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! DueTime.QuadPart = %lld\n", DueTime.QuadPart));
 
                 PRKDPC dpc = do_multiplex ? &core->dpc_multiplex : &core->dpc_overflow;
-                dpc->SystemArgument1 = devExt;
+                dpc->SystemArgument2 = devExt;
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_START calling set timer multiplex %s for loop k  %d core idx %lld\n", do_multiplex ? "TRUE" : "FALSE", k, core->idx));
                 KeSetTimerEx(&core->timer, DueTime, Period, dpc);
             }
@@ -578,6 +644,212 @@ Return Value:
         break;
     }
 
+    case IOCTL_PMU_CTL_ASSIGN_EVENTS:
+    {
+        // does our process own the lock?
+        if (!AmILocking(devExt, IoControlCode, fileObject))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_ASSIGN_EVENTS\n"));
+
+        struct pmu_ctl_evt_assign_hdr* ctl_req = (struct pmu_ctl_evt_assign_hdr*)inBuffer;
+        //UINT64 filter_bits = ctl_req->filter_bits;
+        UINT32 core_idx = ctl_req->core_idx;
+        UINT32 core_base, core_end;
+
+        if (core_idx == ALL_CORE)
+        {
+            core_base = 0;
+            core_end = devExt->numCores;
+        }
+        else
+        {
+            core_base = core_idx;
+            core_end = core_idx + 1;
+        }
+
+        ULONG avail_sz = (ULONG)InputBufferLength - sizeof(struct pmu_ctl_evt_assign_hdr);
+        UINT8* payload_addr = (UINT8*)inBuffer + sizeof(struct pmu_ctl_evt_assign_hdr);
+
+        for (ULONG consumed_sz = 0; consumed_sz < avail_sz;)
+        {
+            struct evt_hdr* hdr = (struct evt_hdr*)(payload_addr + consumed_sz);
+            enum evt_class evt_class = hdr->evt_class;
+            UINT16 evt_num = hdr->num;
+            UINT16* raw_evts = (UINT16*)(hdr + 1);
+
+
+            if (evt_class == EVT_DMC_CLK || evt_class == EVT_DMC_CLKDIV2)
+            {
+                UINT8 dmc_idx = ctl_req->dmc_idx;
+                UINT8 ch_base, ch_end;
+
+                if (dmc_idx == ALL_DMC_CHANNEL)
+                {
+                    ch_base = 0;
+                    ch_end = devExt->dmc_array.dmc_num;
+                }
+                else
+                {
+                    ch_base = dmc_idx;
+                    ch_end = dmc_idx + 1;
+                }
+
+                for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
+                {
+                    pdmc_desc  dmc = devExt->dmc_array.dmcs + ch_idx;
+                    dmc->clk_events_num = 0;
+                    dmc->clkdiv2_events_num = 0;
+                    RtlSecureZeroMemory(dmc->clk_events, sizeof(pmu_event_pseudo) * MAX_MANAGED_DMC_CLK_EVENTS);
+                    RtlSecureZeroMemory(dmc->clkdiv2_events, sizeof(pmu_event_pseudo) * MAX_MANAGED_DMC_CLKDIV2_EVENTS);
+                    ppmu_event_pseudo to_events;
+                    UINT16 counter_adj;
+
+                    if (evt_class == EVT_DMC_CLK)
+                    {
+                        to_events = dmc->clk_events;
+                        dmc->clk_events_num = (UINT8)evt_num;
+                        counter_adj = DMC_CLKDIV2_NUMGPC;
+                    }
+                    else
+                    {
+                        to_events = dmc->clkdiv2_events;
+                        dmc->clkdiv2_events_num = (UINT8)evt_num;
+                        counter_adj = 0;
+                    }
+
+                    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL_PMU_CTL_ASSIGN_EVENTS event class invalid %d\n",
+                        evt_class));
+
+                    for (UINT16 i = 0; i < evt_num; i++)
+                    {
+                        ppmu_event_pseudo to_event = to_events + i;
+                        to_event->event_idx = raw_evts[i];
+                        // clk event counters start after clkdiv2 counters
+                        to_event->counter_idx = counter_adj + i;
+                        to_event->value = 0;
+                        DmcEnableEvent(ch_idx, counter_adj + i, raw_evts[i], &devExt->dmc_array);
+                    }
+                }
+            }
+            else
+            {
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: assign %d dmc_%s_events (no-multiplexing)\n",
+                    evt_num, evt_class == EVT_DMC_CLK ? "clk" : "clkdiv2"));
+                status = STATUS_INVALID_PARAMETER;
+            }
+
+            consumed_sz += sizeof(struct evt_hdr) + evt_num * sizeof(UINT16);
+        }
+
+        retDataSize = 0;
+        break;
+    }
+
+
+    case IOCTL_PMU_CTL_QUERY_SUPP_EVENTS:
+    {
+        // does our process own the lock?
+        if (!AmILocking(devExt, IoControlCode, fileObject))
+        {
+            status = STATUS_INVALID_DEVICE_STATE;
+            break;
+        }
+
+        if (InputBufferLength != sizeof(enum pmu_ctl_action))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid inputsize %ld for PMU_CTL_QUERY_SUPP_EVENTS\n", InputBufferLength));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: QUERY_SUPP_EVENTS\n"));
+
+        struct evt_hdr* hdr = (struct evt_hdr*)outBuffer;
+        hdr->evt_class = EVT_CORE;
+        UINT16 core_evt_num = sizeof(armv8_arch_core_events) / sizeof(armv8_arch_core_events[0]);
+        hdr->num = core_evt_num;
+        int return_size = 0;
+
+        UINT16* out = (UINT16*)((UINT8*)outBuffer + sizeof(struct evt_hdr));
+        for (int i = 0; i < core_evt_num; i++)
+            out[i] = armv8_arch_core_events[i];
+
+        out = out + core_evt_num;
+        return_size = sizeof(struct evt_hdr);
+        return_size += sizeof(armv8_arch_core_events);
+
+        if (devExt->dsu_numGPC)
+        {
+            hdr = (struct evt_hdr*)out;
+            hdr->evt_class = EVT_DSU;
+            UINT16 dsu_evt_num = 0;
+
+            out = (UINT16*)((UINT8*)out + sizeof(struct evt_hdr));
+
+            for (UINT16 i = 0; i < 32; i++)
+            {
+                if (devExt->dsu_evt_mask_lo & (1 << i))
+                    out[dsu_evt_num++] = i;
+            }
+
+            for (UINT16 i = 0; i < 32; i++)
+            {
+                if (devExt->dsu_evt_mask_hi & (1 << i))
+                    out[dsu_evt_num++] = 32 + i;
+            }
+
+            hdr->num = dsu_evt_num;
+
+            return_size += sizeof(struct evt_hdr);
+            return_size += dsu_evt_num * sizeof(UINT16);
+
+            out = out + dsu_evt_num;
+        }
+
+        if (devExt->dmc_array.dmcs)
+        {
+            hdr = (struct evt_hdr*)out;
+            hdr->evt_class = EVT_DMC_CLK;
+            UINT16 dmc_evt_num = 0;
+
+            out = (UINT16*)((UINT8*)out + sizeof(struct evt_hdr));
+
+            for (UINT16 evt_idx = 0; evt_idx < DMC_CLK_EVT_NUM; evt_idx++)
+                out[dmc_evt_num++] = evt_idx;
+
+            hdr->num = dmc_evt_num;
+
+            return_size += sizeof(struct evt_hdr);
+            return_size += dmc_evt_num * sizeof(UINT16);
+            out = out + dmc_evt_num;
+
+            hdr = (struct evt_hdr*)out;
+            hdr->evt_class = EVT_DMC_CLKDIV2;
+            dmc_evt_num = 0;
+            out = (UINT16*)((UINT8*)out + sizeof(struct evt_hdr));
+
+            for (UINT16 evt_idx = 0; evt_idx < DMC_CLKDIV2_EVT_NUM; evt_idx++)
+                out[dmc_evt_num++] = evt_idx;
+
+            hdr->num = dmc_evt_num;
+
+            return_size += sizeof(struct evt_hdr);
+            return_size += dmc_evt_num * sizeof(UINT16);
+            out = out + dmc_evt_num;
+        }
+
+        retDataSize = return_size;
+        if (retDataSize > OutputBufferLength)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "retDataSize > OutputBufferLength\n"));
+            status = STATUS_BUFFER_TOO_SMALL;
+        }
+        break;
+    }
     case IOCTL_DMC_CTL_INIT:
     {
         // does our process own the lock?
@@ -745,8 +1017,12 @@ Return Value:
         }
         break;
     }
+
+
+
+
     default:
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid %d\n", IoControlCode));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: invalid %s\n", GetIoctlStr(IoControlCode)));
         status = STATUS_INVALID_PARAMETER;
         retDataSize = 0;
         break;

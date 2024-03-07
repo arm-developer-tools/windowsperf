@@ -97,11 +97,16 @@ static VOID update_core_counting(PDEVICE_EXTENSION devExt, CoreInfo* core)
 VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
     UNREFERENCED_PARAMETER(dpc);
+    UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
-    PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)sys_arg1;
 
     if (ctx == NULL)
         return;
+
+    CoreInfo* core = (CoreInfo*)ctx;
+
+
+    PDEVICE_EXTENSION devExt = core->devExt;
 
     if (devExt->current_status.status == STS_IDLE)
         return;
@@ -109,7 +114,6 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     if (devExt->AskedToRemove)
         return;
 
-    CoreInfo* core = (CoreInfo*)ctx;
     UINT64 round = core->timer_round;
     UINT64 new_round = round + 1;
 /*
@@ -169,19 +173,21 @@ VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
     UNREFERENCED_PARAMETER(dpc);
+    UNREFERENCED_PARAMETER(sys_arg1);
     UNREFERENCED_PARAMETER(sys_arg2);
-    PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)sys_arg1;
 
     if (ctx == NULL)
         return;
+
+    CoreInfo* core = (CoreInfo*)ctx;
+
+    PDEVICE_EXTENSION devExt = core->devExt;
 
     if (devExt->current_status.status == STS_IDLE)
         return;
 
     if (devExt->AskedToRemove)
         return;
-
-    CoreInfo* core = (CoreInfo*)ctx;
 
     if (core->prof_dmc != PROF_DISABLED)
         UpdateDmcCounting(core->dmc_ch, &devExt->dmc_array);
@@ -192,10 +198,15 @@ VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
     UNREFERENCED_PARAMETER(dpc);
-    PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)sys_arg2;
+    UNREFERENCED_PARAMETER(sys_arg1);
+    UNREFERENCED_PARAMETER(sys_arg2);
 
     if (ctx == NULL)
         return;
+
+    CoreInfo* core = (CoreInfo*)ctx;
+
+    PDEVICE_EXTENSION devExt = core->devExt;
 
     if (devExt->current_status.status == STS_IDLE)
         return;
@@ -203,7 +214,6 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
     if (devExt->AskedToRemove)
         return;
 
-    CoreInfo* core = (CoreInfo*)ctx;
     CoreCounterStop();
     //update_last_fixed_counter(core->idx);
     devExt->last_fpc_read[core->idx] = _ReadStatusReg(PMCCNTR_EL0);

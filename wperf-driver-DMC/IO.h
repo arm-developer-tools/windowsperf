@@ -57,7 +57,7 @@ typedef struct WORK_ITEM_CTXT_
     _Bool isDSU;
     int sample_src_num;
     PMUSampleSetSrcHdr* sample_req;
-    ULONG IoCtl;
+    INT IoCtl;
     //struct pmu_event_pseudo* events;
     VOID(*do_func)(VOID);
     VOID(*do_func2)(VOID);

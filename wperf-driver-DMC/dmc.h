@@ -29,7 +29,11 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+/*
+    DMC device description STRING, used by user space to distinguish devices in driver(s).
+*/
+// DMC device for wperf `stat` command supports `dmc_clk` and `dmc_clkdiv2` prefixed events.
+#define WPERF_HW_CFG_CAPS_CORE_DMC      L"dmc.stat=dmc_clk,dmc_clkdiv2"
 
 VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx,  dmcs_desc *dmc_array);
 VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx,  dmcs_desc *dmc_array);

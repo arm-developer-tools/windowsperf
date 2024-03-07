@@ -45,6 +45,7 @@
 #define DMC_CLK_NUMGPC					2
 
 typedef struct _QUEUE_CONTEXT QUEUE_CONTEXT, * PQUEUE_CONTEXT;
+typedef struct _DEVICE_EXTENSION  DEVICE_EXTENSION, * PDEVICE_EXTENSION;
 
 //
 // Structures
@@ -130,6 +131,7 @@ typedef struct core_info
     UINT32 sample_interval[AARCH64_MAX_HWC_SUPP + numFPC];
     UINT64 ov_mask;
     UINT64 idx;
+    PDEVICE_EXTENSION devExt;
 } CoreInfo;
 
 

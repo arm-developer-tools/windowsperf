@@ -631,6 +631,7 @@ WperfDriver_TCreateDevice(
     {
         CoreInfo* core = &devExt->core_info[i];
         core->idx = i;
+        core->devExt = devExt;
 
         PROCESSOR_NUMBER ProcNumber;
         status = KeGetProcessorNumberFromIndex(i, &ProcNumber);

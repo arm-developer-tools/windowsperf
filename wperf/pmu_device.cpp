@@ -229,7 +229,8 @@ void pmu_device::init()
         if (!status)
         {
             m_out.GetErrorOutputStream() << L"DSU_CTL_INIT failed" << std::endl;
-            throw fatal_exception("ERROR_PMU_INIT");
+            //throw fatal_exception("ERROR_PMU_INIT");
+            goto lookatDMC;
         }
 
         if (res_len != sizeof(struct dsu_cfg))
@@ -247,6 +248,7 @@ void pmu_device::init()
         set_builtin_metrics(L"l3_cache", L"/dsu/l3d_cache,/dsu/l3d_cache_refill");
     }
 
+lookatDMC:
     // unCore PMU - DDR controller
     has_dmc = detect_armh_dma();
     if (has_dmc)
@@ -270,7 +272,8 @@ void pmu_device::init()
         if (!status)
         {
             m_out.GetErrorOutputStream() << L"DMC_CTL_INIT failed" << std::endl;
-            throw fatal_exception("ERROR_PMU_INIT");
+            //throw fatal_exception("ERROR_PMU_INIT");
+            goto exit;
         }
 
         gpc_nums[EVT_DMC_CLK] = cfg.clk_gpc_num;
@@ -283,6 +286,8 @@ void pmu_device::init()
 
         set_builtin_metrics(L"ddr_bw", L"/dmc_clkdiv2/rdwr");
     }
+exit:
+    return;
 }
 
 void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
