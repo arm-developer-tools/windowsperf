@@ -32,7 +32,7 @@
 # Makefile (GNU Make 3.81)
 #
 
-.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib release
+.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib package
 
 #
 # *** INTRODUCTION ***
@@ -126,13 +126,31 @@ wperf-lib:
 
 test: wperf-test wperf-test-run
 
-release:
+#
+# Simple mechanism to "flat" package build artifacts in one directory
+#
+package:
 	rm -rf release
 	mkdir release
-	copy wperf\$(make_arch)\$(make_config)\wperf.exe release
-	xcopy /E wperf-driver\ARM64\$(make_config)\wperf-driver release
-	copy wperf-lib\$(make_arch)\$(make_config)\wperf-lib.lib release
-	copy wperf-devgen\ARM64\$(make_config)\wperf-devgen.exe release
+#
+# wperf and wperf-devgen. files
+#
+	cp -p "./wperf/$(make_arch)/$(make_config)/wperf.exe" release/
+	cp -p "./wperf-devgen/$(make_arch)/$(make_config)/wperf-devgen.exe" release/
+#
+# wperf-lib files
+#
+	cp -p "./wperf-lib/$(make_arch)/$(make_config)/wperf-lib.dll" release/
+	cp -p "./wperf-lib-app/$(make_arch)/$(make_config)/wperf-lib-app.exe" release/
+	cp -p "./wperf-lib-app/wperf-lib-c-compat/$(make_arch)/$(make_config)/wperf-lib-c-compat.exe" release/
+	cp -p "./wperf-lib-app/wperf-lib-timeline/$(make_arch)/$(make_config)/wperf-lib-timeline.exe" release/
+#
+# Driver files
+#
+	cp -p "./wperf-driver/$(make_arch)/$(make_config)/wperf-driver/wperf-driver.sys" release/
+	cp -p "./wperf-driver/$(make_arch)/$(make_config)/wperf-driver/wperf-driver.cat" release/
+	cp -p "./wperf-driver/$(make_arch)/$(make_config)/wperf-driver/wperf-driver.inf" release/
+	cp -p "./wperf-driver/$(make_arch)/$(make_config)/wperf-driver.pdb" release/
 
 clean:
 	devenv windowsperf.sln /Clean "$(make_config)|$(make_arch)" 2>&1
