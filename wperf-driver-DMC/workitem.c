@@ -35,16 +35,6 @@
 #include "workitem.tmh"
 #endif
 
-/*
-extern struct dmcs_desc dmc_array;
-extern UINT8 dsu_numGPC;
-extern UINT16 dsu_numCluster;
-extern UINT16 dsu_sizeCluster;
-extern UINT8 numFreeGPC;
-extern CoreInfo* core_info;
-extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
-extern VOID core_write_counter_helper(UINT32 counter_idx, __int64 val);
-*/
 
 /* Enable/Disable the counter associated with the event */
 static VOID event_enable_counter(PDEVICE_EXTENSION devExt, ppmu_event_kernel event)

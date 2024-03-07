@@ -157,7 +157,7 @@ GetDevicePath(
         {
             WindowsPerfDbgPrint("Found HW ID  %S\n\n", hwId);
 
-            if (wcscmp(hwId, L"Root\\WPERFDRIVER") == 0)
+            if (wcscmp(hwId, L"Root\\WPERFDRIVER_DMC") == 0)
             {
                 hr = StringCchCopy(DevicePath, BufLen, deviceInterface);
                 if (FAILED(hr)) {

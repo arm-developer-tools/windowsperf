@@ -42,10 +42,7 @@ static UINT64 core_read_counter_helper(PDEVICE_EXTENSION devExt, UINT32 counter_
     return CoreReadCounter(devExt->counter_idx_map[counter_idx]);
 }
 
-VOID core_write_counter_helper(PDEVICE_EXTENSION devExt, UINT32 counter_idx, __int64 val)
-{
-    CoreWriteCounter(devExt->counter_idx_map[counter_idx], val);
-}
+
 
 // For the fixed counter we are getting the delta from the last readings.
 static UINT64 get_fixed_counter_value(PDEVICE_EXTENSION devExt, UINT64 core_idx)
