@@ -56,11 +56,11 @@ typedef struct
     ULONGLONG virtualAddress;
 } LineNumberDesc;
 
-typedef struct
+typedef struct _FuncSymDesc
 {
-    uint32_t sec_idx;
-    uint32_t size;
-    uint64_t offset;
+    uint32_t sec_idx{};
+    uint32_t size{};
+    uint64_t offset{};
     std::wstring name;
     std::vector<LineNumberDesc> lines;
 } FuncSymDesc;
@@ -84,12 +84,12 @@ typedef struct
     std::vector<std::pair<uint64_t, uint64_t>> pc;
 } SampleDesc;
 
-typedef struct
+typedef struct _PeFileMetaData
 {
     std::wstring pe_name;
     std::wstring pdb_file;
-    uint64_t static_entry_point;
-    uint64_t image_base;
+    uint64_t static_entry_point{};
+    uint64_t image_base{};
     std::vector<SectionDesc> sec_info;
     std::vector<std::wstring> sec_import;
 } PeFileMetaData;

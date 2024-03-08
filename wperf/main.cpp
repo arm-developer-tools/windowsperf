@@ -676,6 +676,7 @@ wmain(
                 {
                     for (const auto& c : sec_info)
                     {
+                        assert(b.sec_idx);
                         if (c.idx == (b.sec_idx - 1))
                         {
                             sec_base = image_base + c.offset + runtime_vaddr_delta;
@@ -710,10 +711,13 @@ wmain(
 
                             for (auto& b : mmd.sym_info)
                                 for (const auto& c : value.sec_info)
-                                    if (c.idx == (b.sec_idx - 1))
                                     {
-                                        sec_base = (UINT64)mmd.handle + c.offset;
-                                        break;
+                                        assert(b.sec_idx);
+                                        if (c.idx == (b.sec_idx - 1))
+                                        {
+                                            sec_base = (UINT64)mmd.handle + c.offset;
+                                            break;
+                                        }
                                     }
 
                             for (const auto& b : mmd.sym_info)
