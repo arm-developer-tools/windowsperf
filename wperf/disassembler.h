@@ -39,8 +39,8 @@ DWORD WINAPI ReadStdOut(LPVOID lpParam);
 
 struct DisassembledInstruction
 {
-    DWORD_PTR m_address;
-    DWORD_PTR m_instruction;
+    DWORD_PTR m_address{};
+    DWORD_PTR m_instruction{};
     std::wstring m_asm;
 };
 

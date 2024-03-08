@@ -72,12 +72,12 @@ struct product_alias
 struct product_configuration
 {
     std::wstring arch_str;
-    uint8_t implementer;
-    uint8_t major_revision;
-    uint8_t minor_revision;
-    uint8_t num_bus_slots;
-    uint8_t num_slots;
-    uint16_t part_num;
+    uint8_t implementer{};
+    uint8_t major_revision{};
+    uint8_t minor_revision{};
+    uint8_t num_bus_slots{};
+    uint8_t num_slots{};
+    uint16_t part_num{};
     std::wstring pmu_architecture;
     std::wstring product_name;
 };
@@ -85,7 +85,7 @@ struct product_configuration
 struct product_event
 {
     std::wstring name;              // Event name
-    uint16_t index;                 // Event index
+    uint16_t index{};                 // Event index
     std::wstring title;             // Event title / short description
 };
 
