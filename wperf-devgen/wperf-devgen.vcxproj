@@ -62,6 +62,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(CoreLibraryDependencies);swdevice.lib;setupapi.lib;newdev.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -80,6 +86,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(CoreLibraryDependencies);swdevice.lib;setupapi.lib;newdev.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="wperf-devgen.cpp" />
