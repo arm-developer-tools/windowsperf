@@ -43,13 +43,13 @@ namespace drvconfig {
 
     enum access
     {
-        DRVCONFIG_RO,
-        DRVCONFIG_RW,
+        DRVCONFIG_RO,   // This config value can be only read
+        DRVCONFIG_RW,   // This config value can be also changed
     };
 
     struct property {
         std::variant<LONG, std::wstring> value;
-        enum access access;
+        enum access access { DRVCONFIG_RO };
         std::wstring unit;
     };
 
