@@ -41,6 +41,9 @@
 #include <devpkey.h>
 #include <newdev.h>
 
+#include "wperf-common\public_ver.h"
+#include "wperf-common\gitver.h"
+
 #define MAX_STRING_LENGTH 1024
 #define MAX_HARDWARELIST_SIZE 2048
 
@@ -273,13 +276,77 @@ clean:
     return exit;
 }
 
+void print_help_header()
+{
+    std::wcout << L"WindowsPerf-DevGen"
+        << L" ver. " << MAJOR << "." << MINOR << "." << PATCH
+        << L" ("
+        << WPERF_GIT_VER_STR
+        << L"/"
+#ifdef _DEBUG
+        << L"Debug"
+#else
+        << L"Release"
+#endif
+        << L") WindowsPerf's Kernel Driver Installer."
+        << std::endl;
+
+    std::wcout << L"Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues"
+        << std::endl;
+}
+
+void print_usage()
+{
+    const wchar_t* wsHelp = LR"(
+NAME:
+    wperf-devgen - Install WindowsPerf Kernel Driver
+
+SYNOPSIS:
+    wperf [--version] [--help] [OPTIONS]
+
+OPTIONS:
+
+    -h, --help
+        Run wperf-devgen help command.
+
+    --version
+        Display version.
+
+    install
+        Install WindowsPerf Kernel Driver.
+
+    uninstall
+        Uninstall previously installed WindowsPerf Kernel Driver
+)";
+
+    std::wcout << wsHelp;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 2)
     {
-        std::cerr << "usage: app_name install|uninstall" << std::endl;
+        print_help_header();
+        print_usage();
         return -1;
     }
+    else
+    {
+        // Simple command line parser with only one valid CLI argument
+        std::string cli_arg = argv[1];
+        if (cli_arg == "--help" || cli_arg == "-h")
+        {
+            print_help_header();
+            print_usage();
+            return 0;
+        }
+        else if (cli_arg == "--version")
+        {
+            print_help_header();
+            return 0;
+        }
+    }
+
     int errorCode = 0;
 
     GetFullInfPath();
