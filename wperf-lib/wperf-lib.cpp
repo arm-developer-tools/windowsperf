@@ -88,6 +88,9 @@ extern "C" bool wperf_init()
     {
         __pmu_device = new pmu_device();
         __pmu_device->init();
+        __pmu_device->core_init();
+        __pmu_device->dsu_init();
+        __pmu_device->dmc_init();
         __pmu_cfg = new pmu_device_cfg();
         __pmu_device->get_pmu_device_cfg(*__pmu_cfg);
         __pmu_device->do_verbose = false;

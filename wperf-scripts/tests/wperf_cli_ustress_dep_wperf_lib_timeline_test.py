@@ -146,8 +146,9 @@ def test_ustress_bench_execute_micro_benchmark(core,N,I,metric,benchmark,param,t
     assert len(cvs_files) == 1, f"in {cmd}"
 
     metric_values = get_metric_values(cvs_files[0], metric)
-    med = median(metric_values)
+    assert len(metric_values) > 0, f"in {cmd}"
 
+    med = median(metric_values)
     assert len(metric_values) == N, f"in {cmd}"      # We should get <N> rows in CSV file with metric values
 
     if not med >= threshold:
