@@ -467,7 +467,7 @@ WperfDriver_TCreateDevice(
     WDFDEVICE device;
     NTSTATUS status;
     WDF_FILEOBJECT_CONFIG FileObjectConfig;
-
+        
 
     PAGED_CODE();
 
@@ -508,7 +508,7 @@ WperfDriver_TCreateDevice(
 
     if (!NT_SUCCESS(status))
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WdfDeviceCreate failed 0x%X %S", status, DbgStatusStr(status)));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WdfDeviceCreate failed 0x%X %S\n", status, DbgStatusStr(status)));
         return status;
     }
 
