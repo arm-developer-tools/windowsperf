@@ -40,6 +40,15 @@ from datetime import datetime
 from os import linesep
 from common import is_json, run_command
 
+PYTEST_CLI_OPTION_ENABLE_BENCH_XPERF = "--enable-bench-xperf"
+
+def pytest_addoption(parser):
+    """ Pass different values to a test function, depending on command line options
+    """
+    parser.addoption(
+        PYTEST_CLI_OPTION_ENABLE_BENCH_XPERF, action="store_true"
+    )
+
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     """ Create sections for terminal summary.
         See https://docs.pytest.org/en/6.2.x/reference.html#pytest.hookspec.pytest_terminal_summary
