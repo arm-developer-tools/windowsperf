@@ -656,9 +656,6 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
 
     const enum pmu_ctl_action action = context->action;
-    const UINT32 core_idx = context->core_idx;
-
-    KdPrint(("%!FUNC! Entry (%d) for action %d", core_idx, action));
 
     if (action == PMU_CTL_ASSIGN_EVENTS)
     {
@@ -746,6 +743,10 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     GROUP_AFFINITY old_affinity, new_affinity;
     PROCESSOR_NUMBER ProcNumber;
+
+    const UINT32 core_idx = context->core_idx;
+
+    KdPrint(("%!FUNC! Entry (%d) for action %d", core_idx, action));
 
     RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
     RtlSecureZeroMemory(&old_affinity, sizeof(GROUP_AFFINITY));
@@ -1018,6 +1019,9 @@ NTSTATUS deviceControl(
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
         context->action = PMU_CTL_START;
+        context->ctl_flags = ctl_flags;
+        context->ctl_req = ctl_req;
+        context->cores_count = cores_count;
         context->do_func = core_func;
         context->do_func2 = dsu_func;
         KdPrint(("%!FUNC! %!LINE! enqueuing for action %d", context->action));
