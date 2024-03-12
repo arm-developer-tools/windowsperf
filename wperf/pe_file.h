@@ -35,25 +35,25 @@
 
 #include "dia2.h"
 
-typedef struct
+typedef struct _SectionDesc
 {
-    uint32_t idx;
-    uint64_t offset;
-    uint64_t virtual_size;
+    uint32_t idx{};
+    uint64_t offset{};
+    uint64_t virtual_size{};
     std::wstring name;
 } SectionDesc;
 
-typedef struct
+typedef struct _LineNumberDesc
 {
     std::wstring source_file;
-    DWORD lineNum;
-    DWORD colNum;
-    BOOL isStatement;
-    DWORD addressSection;
-    DWORD addressOffset;
-    DWORD length;
-    DWORD rva;
-    ULONGLONG virtualAddress;
+    DWORD lineNum{};
+    DWORD colNum{};
+    BOOL isStatement{};
+    DWORD addressSection{};
+    DWORD addressOffset{};
+    DWORD length{};
+    DWORD rva{};
+    ULONGLONG virtualAddress{};
 } LineNumberDesc;
 
 typedef struct _FuncSymDesc
@@ -74,13 +74,12 @@ typedef struct _ModuleMetaData
     std::vector<FuncSymDesc> sym_info;
 } ModuleMetaData;
 
-typedef struct
+typedef struct _SampleDesc
 {
-    uint32_t freq;
-    //std::wstring name;
+    uint32_t freq{};
     FuncSymDesc desc;
-    ModuleMetaData *module;
-    uint32_t event_src;
+    ModuleMetaData* module{};
+    uint32_t event_src{};
     std::vector<std::pair<uint64_t, uint64_t>> pc;
 } SampleDesc;
 
