@@ -28,28 +28,42 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <stdio.h>
 #include "wperf-lib.h"
 
 // This app should contain all the available functions in wperf-lib,
 // so we can make sure linking this C file with wperf-lib.lib is OK.
 
+#define RUN_AND_CHECK(func) if (func == false) { printf("Execution of "#func "\t ... FAIL \n"); wperf_close(); return -1; } else { printf("Test "#func "\t ... PASS \n"); }
+
 int main()
 {
-    wperf_init();
-    wperf_close();
-    wperf_set_verbose(true);
-    wperf_driver_version(NULL);
-    wperf_version(NULL);
-    wperf_list_events(NULL, NULL);
-    wperf_list_num_events(NULL, NULL);
-    wperf_list_metrics(NULL, NULL);
-    wperf_list_num_metrics(NULL, NULL);
-    wperf_list_num_metrics_events(NULL, NULL);
-    wperf_stat(NULL, NULL);
-    wperf_sample(NULL, NULL);
-    wperf_sample_annotate(NULL, NULL);
-    wperf_sample_stats(NULL, NULL);
-    wperf_num_cores(NULL);
-    wperf_test(NULL, NULL);
+    LIST_CONF list_conf;
+    TEST_CONF test_conf;
+    VERSION_INFO driver_ver;
+    int num_cores, num_events, num_metrics, num_metric_events;
+
+    RUN_AND_CHECK(wperf_init());
+    RUN_AND_CHECK(wperf_set_verbose(true));
+    RUN_AND_CHECK(wperf_driver_version(&driver_ver));
+    RUN_AND_CHECK(wperf_version(&driver_ver));
+    RUN_AND_CHECK(wperf_list_events(&list_conf, NULL));
+    RUN_AND_CHECK(wperf_list_num_events(&list_conf, &num_events));
+    RUN_AND_CHECK(wperf_list_metrics(&list_conf, NULL));
+    RUN_AND_CHECK(wperf_list_num_metrics(&list_conf, &num_metrics));
+    RUN_AND_CHECK(wperf_list_num_metrics_events(&list_conf, &num_metric_events));
+
+    {
+        // Below functions will return false as they require some extra instrumentation
+        // This functions are tested in wperf-lib-app so we will not test them here.
+        wperf_stat(NULL, NULL);
+        wperf_sample(NULL, NULL);
+        wperf_sample_annotate(NULL, NULL);
+        wperf_sample_stats(NULL, NULL);
+    }
+
+    RUN_AND_CHECK(wperf_num_cores(&num_cores));
+    RUN_AND_CHECK(wperf_test(&test_conf, NULL));
+    RUN_AND_CHECK(wperf_close());
     return 0;
 }

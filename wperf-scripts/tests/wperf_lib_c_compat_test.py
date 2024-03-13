@@ -30,10 +30,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" This simple module calls `wperf-lib-app.exe` to check if its running correctly.
+
+""" This simple module calls `wperf-lib-c-compat.exe` to check if its running correctly.
 """
 
-import re
 import subprocess
 import pytest
 from common import run_command
@@ -41,38 +41,37 @@ from common import run_command
 
 ### Test cases
 
-def test_wperf_lib_app():
-    """ Run wperf-lib-app.exe and verify a few invariants. """
+def test_wperf_lib_c_compat():
+    """ Run wperf-lib-c-compat.exe and verify a few invariants. """
     try:
-        process = subprocess.run(["wperf-lib-app.exe"], capture_output=True, text=True)
+        process = subprocess.run(["wperf-lib-c-compat.exe"], capture_output=True, text=True)
     except Exception as error:
         run_command("wperf --force-lock".split())
-        pytest.skip(f"Can not run wperf-lib-app.exe, reason={error}")
+        pytest.skip(f"Can not run wperf-lib-c-compat.exe, reason={error}")
 
     #
     # If this executable fails we will clear the lock
     #
     run_command("wperf --force-lock".split())
 
-    # wperf-lib-app's return value should be 0
+    # wperf-lib-c-compat's return value should be 0
     assert process.returncode == 0
 
-    # wperf-lib-app should print to stdout wperf_driver_version, wperf_version, etc.
-    assert 'wperf_driver_version:' in process.stdout
-    assert 'wperf_version:' in process.stdout
-    assert 'wperf_list_num_events:' in process.stdout
-    assert 'wperf_list_events:' in process.stdout
-    assert 'wperf_list_num_metrics:' in process.stdout
-    assert 'wperf_list_num_metrics_events:' in process.stdout
-    assert 'wperf_list_metrics:' in process.stdout
-    assert 'wperf_stat:' in process.stdout
+    """
+    >wperf-lib-c-compat.exe
+    Test wperf_init()        ... PASS
+    Test wperf_set_verbose(true)     ... PASS
+    Test wperf_driver_version(&driver_ver)   ... PASS
+    Test wperf_version(&driver_ver)  ... PASS
+    Test wperf_list_events(&list_conf, NULL)         ... PASS
+    Test wperf_list_num_events(&list_conf, &num_events)      ... PASS
+    Test wperf_list_metrics(&list_conf, NULL)        ... PASS
+    Test wperf_list_num_metrics(&list_conf, &num_metrics)    ... PASS
+    Test wperf_list_num_metrics_events(&list_conf, &num_metric_events)       ... PASS
+    Test wperf_num_cores(&num_cores)         ... PASS
+    Test wperf_test(&test_conf, NULL)        ... PASS
+    Test wperf_close()       ... PASS
+    """
 
-    # The number of lines with 'wperf_list_events:' should match the value
-    # returned by wperf_list_num_events.
-    result = re.search(r"wperf_list_num_events: (\d+)", process.stdout)
-    assert process.stdout.count('wperf_list_events:') == int(result.group(1))
-
-    # The number of lines with 'wperf_list_metrics:' should match the value
-    # returned by wperf_list_num_metrics_events.
-    result = re.search(r"wperf_list_num_metrics_events: (\d+)", process.stdout)
-    assert process.stdout.count('wperf_list_metrics:') == int(result.group(1))
+    assert '... FAIL' not in process.stdout
+    assert process.stdout.count("... PASS") > 0
