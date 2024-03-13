@@ -76,4 +76,3 @@ WperfDriver_TIOInitialize(
 // Events from the IoQueue object
 //
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL WperfDriver_TEvtIoDeviceControl;
-EVT_WDF_IO_QUEUE_IO_STOP WperfDriver_TEvtIoStop;

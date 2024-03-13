@@ -40,6 +40,15 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
 #pragma alloc_text (PAGE, WperfDriver_TIOInitialize)
 #endif
 
+
+
+// This file containe the 'queue' initialisation and since the queue sets the entry point for IOCTLS, the IOCTL handler is in this file too. 
+// In the same vein, device.c creates the device, and it the device sets the open and close entry points, so those are in that file
+// IOCTL handlers tend to be quite big, especially so since often the Irp needs handling on the way back up from a lower device, 
+//  so there is twice as much code, one section sends it down, the other handles it on the way up, as the lower driver, usually a PDO, sets some values in the Irp
+
+
+
 NTSTATUS
 WperfDriver_TIOInitialize(
     _In_ WDFDEVICE Device,
@@ -86,7 +95,6 @@ Return Value:
         );
 
     queueConfig.EvtIoDeviceControl = WperfDriver_TEvtIoDeviceControl;
-    queueConfig.EvtIoStop = WperfDriver_TEvtIoStop;
 
 
     // Fill in our QUEUE_CONTEXT size
@@ -150,61 +158,6 @@ static UINT16 armv8_arch_core_events[] =
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
-/*
-static NTSTATUS evt_assign_core(PDEVICE_EXTENSION devExt, PQUEUE_CONTEXT queueContext, UINT32 core_base, UINT32 core_end, UINT16 core_event_num, UINT16* core_events, UINT64 filter_bits)
-{
-    if ((core_event_num + numFPC) > MAX_MANAGED_CORE_EVENTS)
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: assigned core_event_num %d > %d\n",
-            core_event_num, (MAX_MANAGED_CORE_EVENTS - numFPC)));
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: assign %d events (%s)\n",
-        core_event_num, core_event_num > devExt->numFreeGPC ? "multiplexing" : "no-multiplexing"));
-
-    for (UINT32 i = core_base; i < core_end; i++)
-    {
-        CoreInfo* core = &devExt->core_info[i];
-        core->events_num = core_event_num + numFPC;
-        UINT32 init_num = core_event_num <= devExt->numFreeGPC ? core_event_num : devExt->numFreeGPC;
-        ppmu_event_pseudo events = &core->events[0];
-
-        RtlSecureZeroMemory(&events[numFPC], sizeof(pmu_event_pseudo) * (MAX_MANAGED_CORE_EVENTS - numFPC));
-
-        // Don't clear event_idx and counter_idx, they are fixed.
-        events[0].value = 0;
-        events[0].scheduled = 0;
-        events[0].filter_bits = filter_bits;
-        events[0].counter_idx = CYCLE_COUNTER_IDX;
-
-        for (UINT32 j = 0; j < core_event_num; j++)
-        {
-            ppmu_event_kernel event = (ppmu_event_kernel)&events[numFPC + j];
-
-            event->event_idx = core_events[j];
-            event->filter_bits = filter_bits;
-            event->enable_irq = 0;
-            if (j < init_num)
-                event->counter_idx = j;
-            else
-                event->counter_idx = INVALID_COUNTER_IDX;
-        }
-    }
-
-    PWORK_ITEM_CTXT context;
-    context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
-    context->IoCtl = IOCTL_PMU_CTL_ASSIGN_EVENTS;
-    context->isDSU = false;
-    context->core_base = core_base;
-    context->core_end = core_end;
-    context->event_num = core_event_num;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for IOCTL_PMU_CTL_ASSIGN_EVENTS\n"));
-    WdfWorkItemEnqueue(queueContext->WorkItem);
-    WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
-
-    return STATUS_SUCCESS;
-}*/
 
 VOID
 WperfDriver_TEvtIoDeviceControl(
@@ -479,7 +432,7 @@ Return Value:
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: IoControlCode %d\n", GetIoctlStr(IoControlCode)));
 
-        VOID(*dmc_func)(UINT8, UINT8,  dmcs_desc*) = NULL;
+        VOID(*dmc_func)(UINT8, UINT8, dmcs_desc*) = NULL;
 
         if (IoControlCode == IOCTL_PMU_CTL_START)
             dmc_func = DmcCounterStart;
@@ -517,7 +470,7 @@ Return Value:
 
         // Use last core from all used.
         dmc_core_idx = ctl_req->cores_idx.cores_no[cores_count - 1];
-       
+
 
         if (IoControlCode == IOCTL_PMU_CTL_START)
         {
@@ -539,13 +492,13 @@ Return Value:
 
                 UINT8 do_multiplex = 0;
 
-                if ( i == dmc_core_idx)
+                if (i == dmc_core_idx)
                 {
                     core->prof_dmc = PROF_NORMAL;
                     core->dmc_ch = dmc_idx;
                 }
 
-                if ( core->prof_dmc == PROF_DISABLED)
+                if (core->prof_dmc == PROF_DISABLED)
                     continue;
 
                 KeInitializeTimer(&core->timer);
@@ -853,7 +806,7 @@ Return Value:
     case IOCTL_DMC_CTL_INIT:
     {
         // does our process own the lock?
-        if (!AmILocking(devExt,  IoControlCode, fileObject))
+        if (!AmILocking(devExt, IoControlCode, fileObject))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1029,86 +982,6 @@ Return Value:
     }
 
     WdfRequestCompleteWithInformation(Request, status, retDataSize);
-
-    return;
-}
-
-VOID
-WperfDriver_TEvtIoStop(
-    _In_ WDFQUEUE Queue,
-    _In_ WDFREQUEST Request,
-    _In_ ULONG ActionFlags
-)
-/*++
-
-Routine Description:
-
-    This event is invoked for a power-managed queue before the device leaves the working state (D0).
-
-Arguments:
-
-    Queue -  Handle to the framework queue object that is associated with the
-             I/O request.
-
-    Request - Handle to a framework request object.
-
-    ActionFlags - A bitwise OR of one or more WDF_REQUEST_STOP_ACTION_FLAGS-typed flags
-                  that identify the reason that the callback function is being called
-                  and whether the request is cancelable.
-
-Return Value:
-
-    VOID
-
---*/
-{
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL,
-                "%!FUNC! Queue 0x%p, Request 0x%p ActionFlags %d", 
-                Queue, Request, ActionFlags));
-
-#if !defined DBG
-    UNREFERENCED_PARAMETER(Queue);
-    UNREFERENCED_PARAMETER(Request);
-    UNREFERENCED_PARAMETER(ActionFlags);
-#endif
-
-    //
-    // In most cases, the EvtIoStop callback function completes, cancels, or postpones
-    // further processing of the I/O request.
-    //
-    // Typically, the driver uses the following rules:
-    //
-    // - If the driver owns the I/O request, it calls WdfRequestUnmarkCancelable
-    //   (if the request is cancelable) and either calls WdfRequestStopAcknowledge
-    //   with a Requeue value of TRUE, or it calls WdfRequestComplete with a
-    //   completion status value of STATUS_SUCCESS or STATUS_CANCELLED.
-    //
-    //   Before it can call these methods safely, the driver must make sure that
-    //   its implementation of EvtIoStop has exclusive access to the request.
-    //
-    //   In order to do that, the driver must synchronize access to the request
-    //   to prevent other threads from manipulating the request concurrently.
-    //   The synchronization method you choose will depend on your driver's design.
-    //
-    //   For example, if the request is held in a shared context, the EvtIoStop callback
-    //   might acquire an internal driver lock, take the request from the shared context,
-    //   and then release the lock. At this point, the EvtIoStop callback owns the request
-    //   and can safely complete or requeue the request.
-    //
-    // - If the driver has forwarded the I/O request to an I/O target, it either calls
-    //   WdfRequestCancelSentRequest to attempt to cancel the request, or it postpones
-    //   further processing of the request and calls WdfRequestStopAcknowledge with
-    //   a Requeue value of FALSE.
-    //
-    // A driver might choose to take no action in EvtIoStop for requests that are
-    // guaranteed to complete in a small amount of time.
-    //
-    // In this case, the framework waits until the specified request is complete
-    // before moving the device (or system) to a lower power state or removing the device.
-    // Potentially, this inaction can prevent a system from entering its hibernation state
-    // or another low system power state. In extreme cases, it can cause the system
-    // to crash with bugcheck code 9F.
-    //
 
     return;
 }
