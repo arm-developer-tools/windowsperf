@@ -133,6 +133,12 @@ wmain(
         goto clean_exit;
     }
 
+    if (request.do_detect)
+    {
+        pmu_device.do_detect();
+        goto clean_exit;
+    }
+
     if (request.do_help)
     {
         user_request::print_help();

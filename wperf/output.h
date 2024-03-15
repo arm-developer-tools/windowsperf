@@ -196,6 +196,18 @@ struct VersionOutputTraits : public TableOutputTraits<CharType>
 };
 
 template <typename CharType>
+struct DetectOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("Device Instance ID"),
+            LITERALCONSTANTS_GET("Hardware IDs"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("Devices");
+};
+
+template <typename CharType>
 struct SamplingOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
@@ -957,6 +969,7 @@ using DisassemblyOutputTraitsL = DisassemblyOutputTraits<GlobalCharType>;
 template <bool isVerbose>
 using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType, isVerbose>;
 
+using DetectOutputTraitsL = DetectOutputTraits<GlobalCharType>;
 using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
 using SamplingOutputTraitsL = SamplingOutputTraits<GlobalCharType>;
 

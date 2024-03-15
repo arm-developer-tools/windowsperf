@@ -2368,6 +2368,136 @@ void pmu_device::do_version(_Out_ version_info& driver_ver)
     m_out.Print(table, true);
 }
 
+bool pmu_device::do_detect_prep_detect(std::map<std::wstring, std::wstring> &device_interface_list)
+{
+    CONFIGRET cr = CR_SUCCESS;
+    PWSTR deviceInterfaceList = NULL;
+    ULONG deviceInterfaceListLength = 0;
+    BOOL bRet = TRUE;
+
+    LPGUID InterfaceGuid = (LPGUID)&GUID_DEVINTERFACE_WINDOWSPERF;
+
+    cr = CM_Get_Device_Interface_List_Size(
+        &deviceInterfaceListLength,
+        InterfaceGuid,
+        NULL,
+        CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+    if (cr != CR_SUCCESS)
+    {
+        m_out.GetErrorOutputStream() << L"error: 0x%x retrieving device interface list size" << std::endl;
+        goto clean0;
+    }
+
+    if (deviceInterfaceListLength <= 1)
+    {
+        bRet = FALSE;
+        m_out.GetErrorOutputStream() << L"error: no active device interfaces found, is the driver loaded?" << std::endl;
+        goto clean0;
+    }
+
+    deviceInterfaceList = (PWSTR)malloc(deviceInterfaceListLength * sizeof(WCHAR));
+    if (deviceInterfaceList == NULL)
+    {
+        m_out.GetErrorOutputStream() << L"error: allocating memory for device interface list" << std::endl;
+        goto clean0;
+    }
+    ZeroMemory(deviceInterfaceList, deviceInterfaceListLength * sizeof(WCHAR));
+
+    cr = CM_Get_Device_Interface_List(
+        InterfaceGuid,
+        NULL,
+        deviceInterfaceList,
+        deviceInterfaceListLength,
+        CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+    if (cr != CR_SUCCESS)
+    {
+        m_out.GetErrorOutputStream() << L"error: 0x%x retrieving device interface list" << std::endl;
+        goto clean0;
+    }
+
+    for (PWSTR deviceInterface = deviceInterfaceList; *deviceInterface; deviceInterface += wcslen(deviceInterface) + 1)
+    {
+        DEVPROPTYPE devicePropertyType;
+        ULONG deviceHWIdListLength = 512;
+        std::unique_ptr<WCHAR[]> deviceHWIdList = std::make_unique<WCHAR[]>(deviceHWIdListLength);
+        CONFIGRET cr1 = CR_SUCCESS;
+
+        ULONG deviceInstanceIdLength = MAX_DEVICE_ID_LEN;
+        WCHAR deviceInstanceId[MAX_DEVICE_ID_LEN];
+
+        cr1 = CM_Get_Device_Interface_Property(
+            deviceInterface,
+            &DEVPKEY_Device_InstanceId,
+            &devicePropertyType,
+            (PBYTE)deviceInstanceId,
+            &deviceInstanceIdLength,
+            0);
+        if (cr1 != CR_SUCCESS)
+        {
+            continue;
+        }
+
+        device_interface_list[std::wstring(deviceInterface)] = std::wstring();
+
+        DEVINST deviceInstanceHandle;
+
+        cr1 = CM_Locate_DevNode(&deviceInstanceHandle, deviceInstanceId, CM_LOCATE_DEVNODE_NORMAL);
+        if (cr1 != CR_SUCCESS)
+        {
+            continue;
+        }
+
+        cr1 = CM_Get_DevNode_Property(
+            deviceInstanceHandle,
+            &DEVPKEY_Device_HardwareIds,
+            &devicePropertyType,
+            (PBYTE)deviceHWIdList.get(),
+            &deviceHWIdListLength,
+            0);
+        if (cr1 != CR_SUCCESS)
+        {
+            continue;
+        }
+
+        // hardware IDs is a null sperated list of strings per device, pull it apart
+        for (PWSTR hwId = deviceHWIdList.get(); *hwId; hwId += wcslen(hwId) + 1)
+        {
+            // store each hardware ID on comma separated list
+            if (device_interface_list[deviceInterface].empty() == false)
+                device_interface_list[deviceInterface] += std::wstring(L",");
+            device_interface_list[deviceInterface] += std::wstring(hwId);
+        }
+    }
+
+clean0:
+    if (deviceInterfaceList != NULL) {
+        free(deviceInterfaceList);
+    }
+    if (CR_SUCCESS != cr) {
+        bRet = FALSE;
+    }
+
+    return bRet;
+}
+
+void pmu_device::do_detect()
+{
+    std::map<std::wstring, std::wstring> device_interface_list;
+    std::vector<std::wstring> col_interface_id, col_hardware_ids;
+    if (do_detect_prep_detect(device_interface_list))
+    {
+        for (auto& [interface_id, hardware_ids] : device_interface_list) {
+            col_interface_id.push_back(interface_id);
+            col_hardware_ids.push_back(hardware_ids);
+        }
+
+        TableOutput<DetectOutputTraitsL, GlobalCharType> table(m_outputType);
+        table.PresetHeaders();
+        table.Insert(col_interface_id, col_hardware_ids);
+        m_out.Print(table, true);
+    }
+}
+
 bool pmu_device::detect_armh_dsu()
 {
     ULONG DeviceListLength = 0;

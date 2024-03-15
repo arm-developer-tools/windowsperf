@@ -1,0 +1,20 @@
+{
+    "type": "object",
+    "required": [ "Devices" ],
+    "additionalProperties": false,
+    "properties": {
+        "Devices": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "required": [ "Device_Instance_ID", "Hardware_IDs" ],
+                "additionalProperties": false,
+                "properties": {
+                    "Device_Instance_ID": { "type" : "string" },
+                    "Hardware_IDs": { "type" : "string" }
+                }
+            }
+        }
+    }
+}

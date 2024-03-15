@@ -175,6 +175,8 @@ public:
 
     void print_core_metrics(std::vector<struct evt_noted>& events);
 
+    static bool do_detect_prep_detect(std::map<std::wstring, std::wstring> &device_interface_list);      // device_interface_list[device_interface] -> hardware_ids
+    static void do_detect();
     void do_list(const std::map<std::wstring, metric_desc>& metrics);
     void do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_name,
         _Out_ std::vector<std::wstring>& col_raw_index, _Out_ std::vector<std::wstring>& col_event_type,

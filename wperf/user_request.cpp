@@ -667,6 +667,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (a == L"detect")
+        {
+            do_detect = true;
+            continue;
+        }
+
         if (a == L"--image_name")
         {
             waiting_image_name = true;

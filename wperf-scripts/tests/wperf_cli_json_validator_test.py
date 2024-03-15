@@ -40,7 +40,7 @@ from common import wperf_metric_is_available
 
 ### Test cases
 
-@pytest.mark.parametrize("scheme_name", [ "version", "list", "test", "stat" ])
+@pytest.mark.parametrize("scheme_name", [ "version", "list", "test", "stat", "detect" ])
 def test_wperf_json_schema(request, tmp_path, scheme_name):
     """ Test `wperf` JSON output against scheme """
     test_path = os.path.dirname(request.path)
@@ -51,6 +51,8 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
         cmd_type = "list"
     elif "test" in scheme_name:
         cmd_type = "test"
+    elif "detect" in scheme_name:
+        cmd_type = "detect"
     elif "stat" in scheme_name:
         cmd_type = "stat -e cpu_cycles sleep 1"
     cmd = f'wperf {cmd_type} --output {file_path}'
@@ -64,7 +66,7 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
         assert False
     assert True
 
-@pytest.mark.parametrize("scheme_name", [ "version", "list", "test", "stat" ])
+@pytest.mark.parametrize("scheme_name", [ "version", "list", "test", "stat", "detect" ])
 def test_wperf_json_stdout_schema(request, tmp_path, scheme_name):
     """ Test `wperf` JSON output against scheme """
     test_path = os.path.dirname(request.path)
@@ -75,6 +77,8 @@ def test_wperf_json_stdout_schema(request, tmp_path, scheme_name):
         cmd_type = "list"
     elif "test" in scheme_name:
         cmd_type = "test"
+    elif "detect" in scheme_name:
+        cmd_type = "detect"
     elif "stat" in scheme_name:
         cmd_type = "stat -e cpu_cycles sleep 1"
     cmd = f'wperf {cmd_type} --json'
