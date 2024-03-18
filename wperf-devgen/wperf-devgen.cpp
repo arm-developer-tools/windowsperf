@@ -92,10 +92,10 @@ BOOL do_update_driver()
         }
         std::cerr << std::endl;
 
-        goto clean;
+        goto clean_update_driver;
     }
 
-clean:
+clean_update_driver:
     return exit;
 }
 
@@ -123,6 +123,7 @@ BOOL do_search(HDEVINFO& deviceInfoSet, SP_DEVINFO_DATA& devInfoData)
         while (ptr[0] != L'\0')
         {
             std::wstring currHardwareId(ptr);
+
             if (std::wstring(hardwareId) == currHardwareId)
             {
                 std::wcout << std::wstring(ptr) << std::endl;
@@ -148,14 +149,14 @@ BOOL do_remove_device()
     ZeroMemory(hwIdList, sizeof(hwIdList));
     if (FAILED(StringCchCopy(hwIdList, LINE_LEN, hardwareId))) {
         exit = false;
-        goto clean;
+        goto clean_remove_device;
     }
 
     if (!SetupDiGetINFClass(FullInfPath->c_str(), &classGUID, className, sizeof(className) / sizeof(WCHAR), 0))
     {
         std::cerr << "Error getting INF Class information" << std::endl;
         exit = false;
-        goto clean;
+        goto clean_remove_device;
     }
 
     deviceInfoSet = SetupDiGetClassDevs(NULL, NULL, NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
@@ -163,7 +164,7 @@ BOOL do_remove_device()
     {
         std::cerr << "Error retrieving class deviceInfoSet " <<  std::endl;
         exit = false;
-        goto clean;
+        goto clean_remove_device;
     }
 
     found = do_search(deviceInfoSet, deviceInfoData);
@@ -175,16 +176,16 @@ BOOL do_remove_device()
         {
             std::cerr << "Error uninstalling device " << std::endl;
             exit = false;
-            goto clean;
+            goto clean_remove_device;
         }
     }
     else {
         std::cerr << "Error - WindowsPerf Device not found" << std::endl;
         exit = false;
-        goto clean;
+        goto clean_remove_device;
     }
 
-clean:
+clean_remove_device:
     if (deviceInfoSet != INVALID_HANDLE_VALUE) {
         SetupDiDestroyDeviceInfoList(deviceInfoSet);
     }
@@ -204,14 +205,14 @@ BOOL do_create_device()
     ZeroMemory(hwIdList, sizeof(hwIdList));
     if (FAILED(StringCchCopy(hwIdList, LINE_LEN, hardwareId))) {
         exit = false;
-        goto clean;
+        goto clean_create_device;
     }
 
      if (!SetupDiGetINFClass(FullInfPath->c_str(), &classGUID, className, sizeof(className) / sizeof(WCHAR), 0))
     {
         std::cerr << "Error getting INF Class information" << std::endl;
         exit = false;
-        goto clean;
+        goto clean_create_device;
     }
 
     // Search for the device first
@@ -221,14 +222,14 @@ BOOL do_create_device()
         {
             std::cerr << "Error retrieving class deviceInfoSet " << std::endl;
             exit = false;
-            goto clean;
+            goto clean_create_device;
         }
 
         if (do_search(deviceInfoSet, deviceInfoData))
         {
             std::cerr << "Device already installed" << std::endl;
             exit = false;
-            goto clean;
+            goto clean_create_device;
         }
     }
 
@@ -237,7 +238,7 @@ BOOL do_create_device()
     {
         std::cerr << "Error creating device info list" << std::endl;
         exit = false;
-        goto clean;
+        goto clean_create_device;
     }
 
     deviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
@@ -251,14 +252,14 @@ BOOL do_create_device()
     {
         std::cerr << "Error creating device info" << std::endl;
         exit = false;
-        goto clean;
+        goto clean_create_device;
     }
 
     if (!SetupDiSetDeviceRegistryProperty(deviceInfoSet, &deviceInfoData, SPDRP_HARDWAREID, (LPBYTE)hwIdList, ((DWORD)wcslen(hwIdList) + 1 + 1) * sizeof(WCHAR)))
     {
         std::cerr << "Error setting device registry property" << std::endl;
         exit = false;
-        goto clean;
+        goto clean_create_device;
     }
 
     if (!SetupDiCallClassInstaller(DIF_REGISTERDEVICE,
@@ -268,7 +269,7 @@ BOOL do_create_device()
         std::cerr << "Error calling class installer" << std::endl;
         exit = false;
     }
-clean:
+clean_create_device:
     if (deviceInfoSet != INVALID_HANDLE_VALUE) {
         SetupDiDestroyDeviceInfoList(deviceInfoSet);
     }
