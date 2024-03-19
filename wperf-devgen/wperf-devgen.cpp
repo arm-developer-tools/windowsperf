@@ -62,17 +62,17 @@ void GetFullInfPath()
     {
         /* Get full inf file path. */
         DWORD size = GetCurrentDirectory(0, NULL);
-        wchar_t* buff = (wchar_t*)malloc(sizeof(wchar_t) * size);
-        if (buff)
+        try
         {
-            GetCurrentDirectory(size, buff);
+            std::unique_ptr<wchar_t[]> buff = std::make_unique<wchar_t[]>(size);
+            GetCurrentDirectory(size, buff.get());
             std::wstringstream wstream;
-            wstream << std::wstring(buff) << L"\\" << InfName;
+            wstream << std::wstring(buff.get()) << L"\\" << InfName;
             FullInfPath = new std::wstring(wstream.str().c_str());
-            free(buff);
         }
-        else {
-            std::cerr << "Error allocating buffer." << std::endl;
+        catch (const std::bad_alloc& e)
+        {
+            std::cerr << "Error allocating buffer: " << e.what() << std::endl;
             exit(-1);
         }
     }
