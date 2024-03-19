@@ -31,85 +31,77 @@
 
 
 #include "driver.h"
-#include "device.h"
 #if defined ENABLE_TRACING
 #include "workitem.tmh"
 #endif
-#include "utilities.h"
-#include "dsu.h"
-#include "core.h"
-#include "sysregs.h"
 
-extern struct dmcs_desc dmc_array;
-extern UINT8 dsu_numGPC;
-extern UINT16 dsu_numCluster;
-extern UINT16 dsu_sizeCluster;
-extern UINT8 numFreeGPC;
-extern CoreInfo* core_info;
-extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
-extern VOID core_write_counter_helper(UINT32 counter_idx, __int64 val);
-extern USHORT running;
-extern LOCK_STATUS   current_status;
 
 /* Enable/Disable the counter associated with the event */
-static VOID event_enable_counter(struct pmu_event_kernel* event)
+static VOID event_enable_counter(PDEVICE_EXTENSION devExt, ppmu_event_kernel event)
 {
-    CoreCounterEnable(1U << counter_idx_map[event->counter_idx]);
+    CoreCounterEnable(1U << devExt->counter_idx_map[event->counter_idx]);
 }
 
-static VOID event_disable_counter(struct pmu_event_kernel* event)
+static VOID event_disable_counter(PDEVICE_EXTENSION devExt, ppmu_event_kernel event)
 {
-    CoreCounterDisable(1U << counter_idx_map[event->counter_idx]);
+    CoreCounterDisable(1U << devExt->counter_idx_map[event->counter_idx]);
 }
 
-static VOID core_counter_set_type_helper(UINT32 counter_idx, __int64 evtype_val)
+static VOID core_counter_set_type_helper(PDEVICE_EXTENSION devExt, UINT32 counter_idx, __int64 evtype_val)
 {
-    CoreCouterSetType(counter_idx_map[counter_idx], evtype_val);
+    CoreCouterSetType(devExt->counter_idx_map[counter_idx], evtype_val);
 }
 
-static VOID event_config_type(struct pmu_event_kernel* event)
+static VOID event_config_type(PDEVICE_EXTENSION devExt, ppmu_event_kernel event)
 {
     UINT32 event_idx = event->event_idx;
 
     if (event_idx == CYCLE_EVENT_IDX)
         _WriteStatusReg(PMCCFILTR_EL0, (__int64)event->filter_bits);
     else
-        core_counter_set_type_helper(event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
+        core_counter_set_type_helper(devExt, event->counter_idx, (__int64)((UINT64)event_idx | event->filter_bits));
 }
 
-static VOID core_counter_enable_irq_helper(UINT32 idx)
+static VOID core_counter_enable_irq_helper(PDEVICE_EXTENSION devExt, UINT32 idx)
 {
-    CoreCounterEnableIrq(1U << counter_idx_map[idx]);
+    CoreCounterEnableIrq(1U << devExt->counter_idx_map[idx]);
 }
 
-static VOID core_counter_disable_irq_helper(UINT32 idx)
+static VOID core_counter_disable_irq_helper(PDEVICE_EXTENSION devExt, UINT32 idx)
 {
-    CoreCounterIrqDisable(1U << counter_idx_map[idx]);
+    CoreCounterIrqDisable(1U << devExt->counter_idx_map[idx]);
 }
 
-VOID event_enable(struct pmu_event_kernel* event)
+static VOID core_write_counter_helper(PDEVICE_EXTENSION devExt, UINT32 counter_idx, __int64 val)
 {
-    event_disable_counter(event);
+    CoreWriteCounter(devExt->counter_idx_map[counter_idx], val);
+}
 
-    event_config_type(event);
+VOID event_enable(PDEVICE_EXTENSION devExt, ppmu_event_kernel evt)
+{
+    event_disable_counter(devExt, evt);
 
-    if (event->enable_irq)
-        core_counter_enable_irq_helper(event->counter_idx);
+    event_config_type(devExt, evt);
+
+    if (evt->enable_irq)
+        core_counter_enable_irq_helper(devExt, evt->counter_idx);
     else
-        core_counter_disable_irq_helper(event->counter_idx);
+        core_counter_disable_irq_helper(devExt, evt->counter_idx);
 
-    event_enable_counter(event);
+    event_enable_counter(devExt, evt);
 }
 
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 {
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(WorkItem);
+    const UINT32 core_idx = context->core_idx;
 
-    if (!running)
+
+    if (context->devExt->current_status.status == STS_IDLE)
         return;
 
-    if (current_status.status == STS_IDLE)
+    if (context->devExt->AskedToRemove)
         return;
 
     const enum pmu_ctl_action action = context->action;
@@ -118,7 +110,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     if (action == PMU_CTL_ASSIGN_EVENTS)
     {
-        VOID(*func)(struct pmu_event_kernel* event) = NULL;
+        VOID(*func)(PDEVICE_EXTENSION devExt, ppmu_event_kernel event) = NULL;
         if (context->isDSU)
         {
             func = DSUEventEnable;
@@ -141,13 +133,13 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             new_affinity.Mask = 1ULL << (ProcNumber.Number);
             KeSetSystemGroupAffinityThread(&new_affinity, &old_affinity);
 
-            CoreInfo* core = &core_info[i];
-            UINT32 init_num = context->event_num <= numFreeGPC ? context->event_num : numFreeGPC;
-            struct pmu_event_pseudo* events = &core->events[0];
+            CoreInfo* core = &context->devExt->core_info[i];
+            UINT32 init_num = context->event_num <= context->devExt->numFreeGPC ? context->event_num : context->devExt->numFreeGPC;
+            ppmu_event_pseudo events = &core->events[0];
             for (UINT32 j = 0; j < init_num; j++)
             {
-                struct pmu_event_kernel* event = (struct pmu_event_kernel*)&events[numFPC + j];
-                func(event);
+                ppmu_event_kernel event = ( pmu_event_kernel*)&events[numFPC + j];
+                func(context->devExt, event);
             }
             KeRevertToUserGroupAffinityThread(&old_affinity);
         }
@@ -164,7 +156,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
             if (context->ctl_flags & CTL_FLAG_DSU)
             {
-                int cluster_no = i / dsu_sizeCluster;
+                int cluster_no = i / context->devExt->dsu_sizeCluster;
 
                 // This works only if ctl_req->cores_idx.cores_no[] is sorted
                 // We will only cofigure one core in cluster with per_core_exec
@@ -203,8 +195,6 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     GROUP_AFFINITY old_affinity, new_affinity;
     PROCESSOR_NUMBER ProcNumber;
 
-    const UINT32 core_idx = context->core_idx;
-
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%!FUNC! Entry (%d) for action %d\n", core_idx, action));
 
     RtlSecureZeroMemory(&new_affinity, sizeof(GROUP_AFFINITY));
@@ -229,7 +219,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
 
     case PMU_CTL_SAMPLE_SET_SRC:
     {
-        update_last_fixed_counter(core_idx);
+        context->devExt->last_fpc_read[core_idx] = _ReadStatusReg(PMCCNTR_EL0);
         CoreCounterStop();
         CoreCounterReset();
 
@@ -250,18 +240,21 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
             else
             {
                 // Since gpc_num is being increased at each execution it might not represent real GPCs and it needs to be mapped.
-                core_counter_set_type_helper(gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
-                ov_mask |= 1ULL << counter_idx_map[gpc_num];
-                core_counter_enable_irq_helper(gpc_num);
-                core_write_counter_helper(gpc_num, (__int64)val);
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Enabling event 0x%x to GPC %d with ov_mask 0x%llx\n", event_src, counter_idx_map[gpc_num], ov_mask));
+                core_counter_set_type_helper(context->devExt, gpc_num, (__int64)((UINT64)event_src | (UINT64)filter_bits));
+                ov_mask |= 1ULL << context->devExt->counter_idx_map[gpc_num];
+                core_counter_enable_irq_helper(context->devExt, gpc_num);
+                core_write_counter_helper(context->devExt, gpc_num, (__int64)val);
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Enabling event 0x%x to GPC %d with ov_mask 0x%llx\n", 
+                    event_src, 
+                    context->devExt->counter_idx_map[gpc_num],
+                    ov_mask));
                 gpc_num++;
             }
         }
 
-        for (; gpc_num < numFreeGPC; gpc_num++)
-            core_counter_disable_irq_helper(gpc_num);
-        CoreInfo* core = core_info + context->core_idx;
+        for (; gpc_num < context->devExt->numFreeGPC; gpc_num++)
+            core_counter_disable_irq_helper(context->devExt, gpc_num);
+        CoreInfo* core = context->devExt->core_info + context->core_idx;
         core->ov_mask = ov_mask;
         break;
     }
@@ -270,7 +263,7 @@ VOID EvtWorkItemFunc(WDFWORKITEM WorkItem)
     {
         CoreCounterStop();
 
-        CoreInfo* core = core_info + core_idx;
+        CoreInfo* core = context->devExt->core_info + core_idx;
         for (int i = 0; i < 32; i++)
             if (core->ov_mask & (1ULL << i))
                 CoreCounterIrqDisable(1U << i);

@@ -29,12 +29,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <ntddk.h>
-#include <wdf.h>
-#include "wperf-common\macros.h"
-#include "pmu.h"
-#include "coreinfo.h"
-#include "sysregs.h"
 
 /*
     DSU device description STRING, used by user space to distinguish devices in driver(s).
@@ -55,8 +49,8 @@
 VOID DSUCounterStart(VOID);
 VOID DSUCounterStop(VOID);
 VOID DSUCounterReset(VOID);
-VOID DSUEventEnable(struct pmu_event_kernel* event);
-UINT64 DSUEventGetCounting(struct pmu_event_kernel* event);
+VOID DSUEventEnable(PDEVICE_EXTENSION devExt,  pmu_event_kernel* event);
+UINT64 DSUEventGetCounting( pmu_event_kernel* event);
 VOID DSUProbePMU(OUT UINT8* dsu_numGPC, OUT UINT32* dsu_evt_mask_lo, OUT UINT32* dsu_evt_mask_hi);
 VOID DSUUpdateDSUCounting(IN CoreInfo* core);
 

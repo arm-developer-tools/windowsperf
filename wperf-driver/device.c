@@ -29,16 +29,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "driver.h"
-#include "device.h"
 #if defined ENABLE_TRACING
 #include "device.tmh"
 #endif
-#include "utilities.h"
-#include "dmc.h"
-#include "core.h"
-#include "spe.h"
-#include "coreinfo.h"
-#include "sysregs.h"
+
 
 
 //
@@ -52,37 +46,7 @@ EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND WindowsPerfEvtDeviceSelfManagedIoSuspend;
 #pragma alloc_text (PAGE, WindowsPerfDeviceCreate)
 #pragma alloc_text (PAGE, WindowsPerfEvtDeviceSelfManagedIoSuspend)
 #endif
-
-//
-// Port Begin
-//
-
-
-struct dmcs_desc dmc_array = { 0 };
-
-UINT8 dsu_numGPC = 0;
-UINT16 dsu_numCluster = 0;
-UINT16 dsu_sizeCluster = 0;
-
-// bit N set if evt N is supported, not used at the moment, but should.
-UINT32 dsu_evt_mask_lo = 0;
-UINT32 dsu_evt_mask_hi = 0;
-LONG volatile cpunos = 0;
-ULONG numCores = 0;
-UINT8 numGPC = 0;
-UINT8 numFreeGPC = 0;
-UINT64 dfr0_value = 0;
-UINT64 midr_value = 0;
-UINT64 id_aa64dfr0_el1_value = 0;
-HANDLE pmc_resource_handle = NULL;
-UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
-CoreInfo* core_info = NULL;
-// Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
-// See comment on CoreCounterReset() for an explanation.
-UINT64* last_fpc_read = NULL;
-extern KEVENT sync_reset_dpc;
-LOCK_STATUS   current_status;
-USHORT running = 1;
+CoreInfo* core_info = NULL;  // ISR needs a global reference
 
 enum
 {
@@ -91,7 +55,7 @@ enum
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
-
+CoreInfo* gcore_info = NULL; // ISR needs a global reference
 
 
 //////////////////////////////////////////////////////////////////
@@ -120,8 +84,8 @@ typedef VOID (*PMIHANDLER)(PKTRAP_FRAME TrapFrame);
 VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 {
     ULONG core_idx = KeGetCurrentProcessorNumberEx(NULL);
-    CoreInfo* core = core_info + core_idx;
-    /* core->ov_mask represents the bitmap with the GPCs that this core is using. We do a & with ov_flags to 
+    CoreInfo* core = gcore_info + core_idx;
+    /* core->ov_mask represents the bitmap with the GPCs that this core is using. We do a & with ov_flags to
     * check if any of the GPCs we are interested were overflown.
     */
     UINT64 ov_flags = arm64_clear_ov_flags();
@@ -129,7 +93,7 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 
     if (!ov_flags)
         return;
-    
+
     core->sample_generated++;
 
     if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
@@ -156,7 +120,7 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 
         KeReleaseSpinLockFromDpcLevel(&core->SampleLock);
 
-        /* Here all the GPC indexes are raw indexes and do not need to be mapped. 
+        /* Here all the GPC indexes are raw indexes and do not need to be mapped.
         */
         for (int i = 0; i < 32; i++)
         {
@@ -182,7 +146,7 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 //
 
 // Default events that will be assigned to counters when driver loaded.
-struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
+pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
 {
     {CYCLE_EVENT_IDX,                   FILTER_EXCL_EL1, CYCLE_COUNTER_IDX, 0},
     {PMU_EVENT_INST_RETIRED,            FILTER_EXCL_EL1, 0,                 0},
@@ -218,12 +182,14 @@ struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
     {PMU_EVENT_L2I_TLB_REFILL,          FILTER_EXCL_EL1, 30,                0},
 };
 
-VOID free_pmu_resource(VOID)
+
+
+VOID free_pmu_resource(PDEVICE_EXTENSION devExt)
 {
 
-    for (ULONG i = 0; i < numCores; i++)
+    for (ULONG i = 0; i < devExt->numCores; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &devExt->core_info[i];
         //if (core->timer_running)
         {
             KeCancelTimer(&core->timer);
@@ -235,11 +201,11 @@ VOID free_pmu_resource(VOID)
         KeRemoveQueueDpc(&core->dpc_overflow);
     }
 
-    if (pmc_resource_handle != NULL)
+    if (devExt->pmc_resource_handle != NULL)
     {
-        NTSTATUS status = HalFreeHardwareCounters(pmc_resource_handle);
+        NTSTATUS status = HalFreeHardwareCounters(devExt->pmc_resource_handle);
 
-        pmc_resource_handle = NULL;
+        devExt->pmc_resource_handle = NULL;
 
         if (status != STATUS_SUCCESS)
         {
@@ -251,40 +217,37 @@ VOID free_pmu_resource(VOID)
         }
     }
 
-    // Uninstall PMI isr
-  //  PMIHANDLER isr = NULL;
-  //  if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
-  //      KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
 }
 
 
-NTSTATUS get_pmu_resource(VOID)
+NTSTATUS get_pmu_resource(PDEVICE_EXTENSION devExt)
 {
     NTSTATUS status;
-    
-    UINT32 pmcr = CorePmcrGet();
-    numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d general purpose hardware counters detected\n", numGPC));
 
-    numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
+    UINT32 pmcr = CorePmcrGet();
+    devExt->numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d general purpose hardware counters detected\n", devExt->numGPC));
+
+    devExt->numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", devExt->numCores));
 
     // 1) Query for free PMU counters
-    RtlSecureZeroMemory(counter_idx_map, sizeof(counter_idx_map));
+    const size_t counter_idx_map_size = sizeof(UINT8) * (AARCH64_MAX_HWC_SUPP + 1);
+    RtlSecureZeroMemory(devExt->counter_idx_map, counter_idx_map_size);
 
     PHYSICAL_COUNTER_RESOURCE_LIST TmpCounterResourceList = { 0 };
     TmpCounterResourceList.Count = 1;
     TmpCounterResourceList.Descriptors[0].Type = ResourceTypeSingle;
     UINT8 numFreeCounters = 0;
-    for (UINT8 i = 0; i < numGPC; i++)
+    for (UINT8 i = 0; i < devExt->numGPC; i++)
     {
         TmpCounterResourceList.Descriptors[0].u.CounterIndex = i;
-        status = HalAllocateHardwareCounters(NULL, 0, &TmpCounterResourceList, &pmc_resource_handle);
+        status = HalAllocateHardwareCounters(NULL, 0, &TmpCounterResourceList, &devExt->pmc_resource_handle);
         if (status == STATUS_SUCCESS)
         {
-            counter_idx_map[numFreeCounters] = i;
+            devExt->counter_idx_map[numFreeCounters] = i;
             numFreeCounters++;
-            HalFreeHardwareCounters(pmc_resource_handle);
+            HalFreeHardwareCounters(devExt->pmc_resource_handle);
         }
     }
     if (numFreeCounters == 0)
@@ -294,13 +257,13 @@ NTSTATUS get_pmu_resource(VOID)
     }
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d free general purpose hardware counters detected\n", numFreeCounters));
 
-    counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
+    devExt->counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
 
 #ifdef _DEBUG
-    for (UINT8 i = 0; i < numGPC; i++)
+    for (UINT8 i = 0; i < devExt->numGPC; i++)
     {
         i %= AARCH64_MAX_HWC_SUPP;
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "counter_idx_map[%u] => %u\n", i, counter_idx_map[i]));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "counter_idx_map[%u] => %u\n", i, devExt->counter_idx_map[i]));
     }
 #endif
 
@@ -316,11 +279,11 @@ NTSTATUS get_pmu_resource(VOID)
     CounterResourceList->Count = numFreeCounters;
     for (UINT32 i = 0; i < numFreeCounters; i++)
     {
-        CounterResourceList->Descriptors[i].u.CounterIndex = counter_idx_map[i];
+        CounterResourceList->Descriptors[i].u.CounterIndex = devExt->counter_idx_map[i];
         CounterResourceList->Descriptors[i].Type = ResourceTypeSingle;
     }
 
-    status = HalAllocateHardwareCounters(NULL, 0, CounterResourceList, &pmc_resource_handle);
+    status = HalAllocateHardwareCounters(NULL, 0, CounterResourceList, &devExt->pmc_resource_handle);
     ExFreePoolWithTag(CounterResourceList, 'CRCL');
     if (status == STATUS_INSUFFICIENT_RESOURCES)
     {
@@ -333,55 +296,55 @@ NTSTATUS get_pmu_resource(VOID)
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: allocate failed 0x%x\n", status));
         return status;
     }
-    numFreeGPC = numFreeCounters;
+    devExt->numFreeGPC = numFreeCounters;
 
     // This driver expose private APIs (IOCTL commands), but also enable ThreadProfiling APIs.
     HARDWARE_COUNTER counter_descs[AARCH64_MAX_HWC_SUPP] = { 0 };
     RtlSecureZeroMemory(&counter_descs, sizeof(counter_descs));
-    for (int i = 0; i < numFreeGPC; i++)
+    for (int i = 0; i < devExt->numFreeGPC; i++)
     {
         counter_descs[i].Type = PMCCounter;
-        counter_descs[i].Index = counter_idx_map[i];
+        counter_descs[i].Index = devExt->counter_idx_map[i];
 
         status = KeSetHardwareCounterConfiguration(&counter_descs[i], 1);
         if (status == STATUS_WMI_ALREADY_ENABLED)
         {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", counter_idx_map[i]));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d already enabled for ThreadProfiling\n", 
+                devExt->counter_idx_map[i]));
         }
         else if (status != STATUS_SUCCESS)
         {
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", counter_idx_map[i], status));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "KeSetHardwareCounterConfiguration: counter %d failed 0x%x\n", 
+                devExt->counter_idx_map[i], status));
             return status;
         }
     }
 
 
-    
-
-    for (ULONG i = 0; i < numCores; i++)
+    for (ULONG i = 0; i < devExt->numCores; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &devExt->core_info[i];
         core->idx = i;
-        core->events_num = numFPC + numFreeGPC;
+        core->events_num = numFPC + devExt->numFreeGPC;
         for (UINT32 k = 0; k < core->events_num; k++)
-            RtlCopyMemory(core->events + k, default_events + k, sizeof(struct pmu_event_kernel));
+            RtlCopyMemory(core->events + k, default_events + k, sizeof(pmu_event_kernel));
 
         // Enable  events and counters
-        PRKDPC dpc = &core_info[i].dpc_queue;
+        PRKDPC dpc = &devExt->core_info[i].dpc_queue;
 
         KeSetImportanceDpc(dpc, HighImportance);
-        KeInsertQueueDpc(dpc, NULL, NULL);
+        KeInsertQueueDpc(dpc, NULL, devExt);
     }
 
     //  and finally do a reset on the hardware to make sure it is in a known state.  The reset dpc sets the event, so we have 
     // to call this after the event is initialised of couse
-    for (ULONG i = 0; i < numCores; i++)
+    for (ULONG i = 0; i < devExt->numCores; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &devExt->core_info[i];
         core->timer_round = 0;
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Calling reset dpc in loop, i is %d core index is %lld\n", i, core->idx));
-        KeInsertQueueDpc(&core->dpc_reset, (VOID*)numCores, NULL);
+        KeInsertQueueDpc(&core->dpc_reset, (VOID*)devExt->numCores, devExt);
     }
 
     return status;
@@ -389,29 +352,29 @@ NTSTATUS get_pmu_resource(VOID)
 
 
 static void FileCreate(
-	WDFDEVICE Device,
-	WDFREQUEST Request,
-	WDFFILEOBJECT FileObject
+    WDFDEVICE Device,
+    WDFREQUEST Request,
+    WDFFILEOBJECT FileObject
 )
 {
-    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(FileObject);
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCreate\n"));
-    pDevExt->InUse++;
-	WdfRequestComplete(Request, STATUS_SUCCESS);
-	return;
+    UNREFERENCED_PARAMETER(Request);
+    UNREFERENCED_PARAMETER(FileObject);
+    PDEVICE_EXTENSION  devExt = GetDeviceExtension(Device);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====>FileCreate\n"));
+    InterlockedIncrement(&devExt->InUse);
+    WdfRequestComplete(Request, STATUS_SUCCESS);
+    return;
 }
 
 
 static void FileClose(
-	WDFFILEOBJECT FileObject
+    WDFFILEOBJECT FileObject
 )
 {
     WDFDEVICE               device = WdfFileObjectGetDevice(FileObject);
-    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(device);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCose\n"));
-    pDevExt->InUse--;
+    PDEVICE_EXTENSION  devExt = GetDeviceExtension(device);
+    InterlockedDecrement(&devExt->InUse);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====>FileCose\n"));
 }
 
 
@@ -424,28 +387,27 @@ NTSTATUS WindowsPerfDeviceQueryRemove(
     WDFDEVICE Device
 )
 {
-    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
+    PDEVICE_EXTENSION  devExt = GetDeviceExtension(Device);
     KEVENT						evt;
     LARGE_INTEGER		li;
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> WindowsPerfDeviceQueryRemove \n"));
     li.QuadPart = -1 * 100000;   // units of 100 nanoseconds  100 x 10^-9  so 10 ms
     KeInitializeEvent(&evt, NotificationEvent, FALSE);
-    pDevExt->AskedToRemove = 1;
-    running = 0;  // ideally we should pass a device extension in the context to the dpcs 
+    devExt->AskedToRemove = 1;
 
     // stall the unload request untill all file handles are closed
-    while (pDevExt->InUse)
+    while (devExt->InUse)
     {
         KeWaitForSingleObject(&evt, Executive, KernelMode, FALSE, &li);
     }
 
     // wait for the event
-    KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, FALSE, &li);
+    KeWaitForSingleObject(&devExt->sync_reset_dpc, Executive, KernelMode, FALSE, &li);
 
     // cancel timers and dpcs
-    for (ULONG i = 0; i < numCores; i++)
+    for (ULONG i = 0; i < devExt->numCores; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &devExt->core_info[i];
         KeRemoveQueueDpc(&core->dpc_queue);
         KeRemoveQueueDpc(&core->dpc_reset);
         KeRemoveQueueDpc(&core->dpc_overflow);
@@ -454,9 +416,9 @@ NTSTATUS WindowsPerfDeviceQueryRemove(
     }
 
     /// clear the work item
-    WdfWorkItemFlush(pDevExt->pQueContext->WorkItem);
+    WdfWorkItemFlush(devExt->queContext->WorkItem);
 
-       
+
     return STATUS_SUCCESS;
 }
 
@@ -465,24 +427,28 @@ void WindowsPerfDeviceIOCleanup(
      WDFDEVICE Device
 )
 {
-    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
-    pDevExt->AskedToRemove = 1;
-    running = 0;
+    PDEVICE_EXTENSION  devExt = GetDeviceExtension(Device);
+
+    devExt->AskedToRemove = 1;
+
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> WindowsPerfDeviceIOCleanup\n"));
-    free_pmu_resource();
-    if (core_info)
-        ExFreePoolWithTag(core_info, 'CORE');
+    free_pmu_resource(devExt);
+    
+    if (devExt->core_info)
+        ExFreePoolWithTag(devExt->core_info, 'CORE');
+    devExt->core_info = gcore_info = NULL;
 
-    if (last_fpc_read)
-        ExFreePoolWithTag(last_fpc_read, 'LAST');
+    if (devExt->last_fpc_read)
+        ExFreePoolWithTag(devExt->last_fpc_read, 'LAST');
+    devExt->last_fpc_read = NULL;
 
-    if (dmc_array.dmcs)
+    if (devExt->dmc_array.dmcs)
     {
-        for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
-            MmUnmapIoSpace((PVOID)dmc_array.dmcs[i].iomem_start, dmc_array.dmcs[i].iomem_len);
+        for (UINT8 i = 0; i < devExt->dmc_array.dmc_num; i++)
+            MmUnmapIoSpace((PVOID)devExt->dmc_array.dmcs[i].iomem_start, devExt->dmc_array.dmcs[i].iomem_len);
 
-        ExFreePoolWithTag(dmc_array.dmcs, 'DMCR');
-        dmc_array.dmcs = NULL;
+        ExFreePoolWithTag(devExt->dmc_array.dmcs, 'DMCR');
+        devExt->dmc_array.dmcs = NULL;
     }
 
     // Uninstall PMI isr
@@ -505,8 +471,8 @@ WindowsPerfDeviceCreate(
     PWDFDEVICE_INIT DeviceInit
 )
 {
-    WDF_OBJECT_ATTRIBUTES   deviceAttributes;
-    PDEVICE_EXTENSION pDevExt;
+    WDF_OBJECT_ATTRIBUTES deviceAttributes;
+    PDEVICE_EXTENSION devExt;
     WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
     WDFDEVICE device;
     NTSTATUS status;
@@ -545,49 +511,50 @@ WindowsPerfDeviceCreate(
     // Register for file object creation, we dont need callbacks to file open and close etc
     WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, FileCreate, FileClose, WDF_NO_EVENT_CALLBACK);
     WdfDeviceInitSetFileObjectConfig(DeviceInit, &FileObjectConfig, WDF_NO_OBJECT_ATTRIBUTES);
-    
+
     //  create the FDO device
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_EXTENSION);
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
-    if (NT_SUCCESS(status)) {
-        //
-        // Get the device context and initialize it. WdfObjectGet_DEVICE_CONTEXT is an
-        // inline function generated by WDF_DECLARE_CONTEXT_TYPE macro in the
-        // device.h header file. This function will do the type checking and return
-        // the device context. If you pass a wrong object  handle
-        // it will return NULL and assert if run under framework verifier mode.
-        //
-        pDevExt = GetDeviceExtension(device);
-        pDevExt->PrivateDeviceData = 0;
-        pDevExt->InUse = 0;
-        pDevExt->AskedToRemove = 0;
+    if (!NT_SUCCESS(status))
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WdfDeviceCreate failed 0x%X %s\n", status, DbgStatusStr(status)));
+        return status;
+    }
 
-        //
-        // Create a device interface so that application can find and talk
-        // to us.
-        //
-        status = WdfDeviceCreateDeviceInterface(
-            device,
-            &GUID_DEVINTERFACE_WINDOWSPERF,
-            NULL // ReferenceString
+    // Get a pointer to the device context structure that we just associated
+    // with the device object.
+    devExt = GetDeviceExtension(device);
+    RtlZeroMemory(devExt, sizeof(DEVICE_EXTENSION));
+
+
+    // Create a device interface so that applications can find and talk
+    // to us.
+    status = WdfDeviceCreateDeviceInterface(
+        device,
+        &GUID_DEVINTERFACE_WINDOWSPERF,
+        NULL // ReferenceString
         );
 
-        if (NT_SUCCESS(status)) {
-            //
-            // Initialize the I/O Package and any Queues
-            //
-            status = WindowsPerfQueueInitialize(device);
+    if (!NT_SUCCESS(status)) 
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WdfDeviceCreateDeviceInterface failed 0x%X %s", status, DbgStatusStr(status)));
+        return status;
+    }
 
-        }
+    status = WindowsPerfQueueInitialize(device, devExt);
+    if (!NT_SUCCESS(status))
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WperfDriver_TIOInitialize failed 0x%X %s", status, DbgStatusStr(status)));
+        return status;
     }
 
     //
     // Port Begin
     //
 
-    dfr0_value = _ReadStatusReg(ID_DFR0_EL1);
-    int pmu_ver = (dfr0_value >> 8) & 0xf;
+    devExt->dfr0_value = _ReadStatusReg(ID_DFR0_EL1);
+    int pmu_ver = (devExt->dfr0_value >> 8) & 0xf;
 
     if (pmu_ver == 0x0)
     {
@@ -597,14 +564,14 @@ WindowsPerfDeviceCreate(
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "PMU version %d\n", pmu_ver));
 
-    midr_value = _ReadStatusReg(MIDR_EL1);
+    devExt->midr_value = _ReadStatusReg(MIDR_EL1);
 
 #if defined(DBG) || defined(ENABLE_TRACING)
-    UINT8 implementer = (midr_value >> 24) & 0xff;
-    UINT8 variant = (midr_value >> 20) & 0xf;
-    UINT8 arch_num = (midr_value >> 16) & 0xf;
-    UINT16 part_num = (midr_value >> 4) & 0xfff;
-    UINT8 revision = midr_value & 0xf;
+    UINT8 implementer = (devExt->midr_value >> 24) & 0xff;
+    UINT8 variant = (devExt->midr_value >> 20) & 0xf;
+    UINT8 arch_num = (devExt->midr_value >> 16) & 0xf;
+    UINT16 part_num = (devExt->midr_value >> 4) & 0xfff;
+    UINT8 revision = devExt->midr_value & 0xf;
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "arch: %d, implementer %d, variant: %d, part_num: %d, revision: %d\n",
         arch_num, implementer, variant, part_num, revision));
 #endif
@@ -613,10 +580,10 @@ WindowsPerfDeviceCreate(
         CpuHasLongEventSupportSet(1);
 
     // Arm Statistical Profiling Extensions (SPE) detection
-    id_aa64dfr0_el1_value = _ReadStatusReg(ID_AA64DFR0_EL1);
-    UINT8 aa64_pms_ver = ID_AA64DFR0_EL1_PMSVer(id_aa64dfr0_el1_value);
-    UINT8 aa64_pmu_ver = ID_AA64DFR0_EL1_PMUVer(id_aa64dfr0_el1_value);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "AArch64 Debug Feature Register 0: 0x%llX\n", id_aa64dfr0_el1_value));
+    devExt->id_aa64dfr0_el1_value = _ReadStatusReg(ID_AA64DFR0_EL1);
+    UINT8 aa64_pms_ver = ID_AA64DFR0_EL1_PMSVer(devExt->id_aa64dfr0_el1_value);
+    UINT8 aa64_pmu_ver = ID_AA64DFR0_EL1_PMUVer(devExt->id_aa64dfr0_el1_value);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "AArch64 Debug Feature Register 0: 0x%llX\n", devExt->id_aa64dfr0_el1_value));
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "pmu_ver: 0x%x, pms_ver: 0x%u\n", aa64_pmu_ver, aa64_pms_ver));
 
     {   // Print SPE feature version
@@ -647,31 +614,34 @@ WindowsPerfDeviceCreate(
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Performance Monitors Extension: %s\n", pmu_str));
     }
 
-    numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
+    devExt->numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", devExt->numCores));
 
-
-    core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * numCores, 'CORE');
-    if (core_info == NULL)
+    devExt->core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * devExt->numCores, 'CORE');
+    if (devExt->core_info == NULL)
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "ExAllocatePoolWithTag: failed \n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-    RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
+    RtlSecureZeroMemory(devExt->core_info, sizeof(CoreInfo) * devExt->numCores);
+
+    // ISR needs to access it too, 
+    gcore_info = devExt->core_info;
 
 
-    last_fpc_read = (UINT64*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT64) * numCores, 'LAST');
-    if (!last_fpc_read)
+    devExt->last_fpc_read = (UINT64*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT64) * devExt->numCores, 'LAST');
+    if (!devExt->last_fpc_read)
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s:%d - ExAllocatePool2: failed\n", __FUNCTION__, __LINE__));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-    RtlSecureZeroMemory(last_fpc_read, sizeof(UINT64) * numCores);
+    RtlSecureZeroMemory(devExt->last_fpc_read, sizeof(UINT64) * devExt->numCores);
 
-    for (ULONG i = 0; i < numCores; i++)
+    for (ULONG i = 0; i < devExt->numCores; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &devExt->core_info[i];
         core->idx = i;
+        core->devExt = devExt;
 
         PROCESSOR_NUMBER ProcNumber;
         status = KeGetProcessorNumberFromIndex(i, &ProcNumber);
@@ -682,22 +652,22 @@ WindowsPerfDeviceCreate(
         KeInitializeSpinLock(&core->SampleLock);
 
         // Enable  events and counters
-        PRKDPC dpc = &core_info[i].dpc_queue;
+        PRKDPC dpc = &devExt->core_info[i].dpc_queue;
         KeInitializeDpc(dpc, arm64pmc_enable_default, NULL);
         status = KeSetTargetProcessorDpcEx(dpc, &ProcNumber);
         if (status != STATUS_SUCCESS)
             return status;
         KeSetImportanceDpc(dpc, HighImportance);
-        KeInsertQueueDpc(dpc, NULL, NULL);
+        KeInsertQueueDpc(dpc, NULL, devExt);
 
         //Initialize DPCs for counting
-        PRKDPC dpc_overflow = &core_info[i].dpc_overflow;
-        PRKDPC dpc_multiplex = &core_info[i].dpc_multiplex;
-        PRKDPC dpc_reset = &core_info[i].dpc_reset;
+        PRKDPC dpc_overflow = &devExt->core_info[i].dpc_overflow;
+        PRKDPC dpc_multiplex = &devExt->core_info[i].dpc_multiplex;
+        PRKDPC dpc_reset = &devExt->core_info[i].dpc_reset;
 
-        KeInitializeDpc(dpc_overflow, overflow_dpc, &core_info[i]);
-        KeInitializeDpc(dpc_multiplex, multiplex_dpc, &core_info[i]);
-        KeInitializeDpc(dpc_reset, reset_dpc, &core_info[i]);
+        KeInitializeDpc(dpc_overflow, overflow_dpc, &devExt->core_info[i]);
+        KeInitializeDpc(dpc_multiplex, multiplex_dpc, &devExt->core_info[i]);
+        KeInitializeDpc(dpc_reset, reset_dpc, &devExt->core_info[i]);
         KeSetTargetProcessorDpcEx(dpc_overflow, &ProcNumber);
         KeSetTargetProcessorDpcEx(dpc_multiplex, &ProcNumber);
         KeSetTargetProcessorDpcEx(dpc_reset, &ProcNumber);
@@ -707,7 +677,7 @@ WindowsPerfDeviceCreate(
     }
 
 
-    KeInitializeEvent(&sync_reset_dpc, NotificationEvent, FALSE);
+    KeInitializeEvent(&devExt->sync_reset_dpc, NotificationEvent, FALSE);
 
 
     PMIHANDLER isr = arm64_pmi_ISR;
@@ -723,8 +693,8 @@ WindowsPerfDeviceCreate(
     // Port End
     //
 
-    RtlSecureZeroMemory(&current_status, sizeof(LOCK_STATUS));
-    KeInitializeSpinLock(&current_status.sts_lock);
+    RtlSecureZeroMemory(&devExt->current_status, sizeof(LOCK_STATUS));
+    KeInitializeSpinLock(&devExt->current_status.sts_lock);
 
     return status;
 }
@@ -744,9 +714,9 @@ WindowsPerfDeviceCreate(
 NTSTATUS
 WindowsPerfEvtDeviceSelfManagedIoStart(
     IN  WDFDEVICE Device
-    )
+)
 {
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "=====> WindowsPerfEvtDeviceSelfManagedIoInit\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "====> WperfDriver_TDeviceSelfManagedIoStart\n"));
 
     //
     // Restart the queue and the periodic timer. We stopped them before going

@@ -29,40 +29,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "driver.h"
-#include "device.h"
 #if defined ENABLE_TRACING
 #include "devioctl.tmh"
 #endif
-#include "utilities.h"
-#include "dmc.h"
-#include "dsu.h"
-#include "core.h"
-#include "wperf-common\gitver.h"
-#include "wperf-common\inline.h"
+
 
 
 static VOID(*dsu_ctl_funcs[3])(VOID) = { DSUCounterStart, DSUCounterStop, DSUCounterReset };
-static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8, struct dmcs_desc*) = { DmcCounterStart, DmcCounterStop, DmcCounterReset };
+static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8,  dmcs_desc*) = { DmcCounterStart, DmcCounterStop, DmcCounterReset };
 
 
-extern struct dmcs_desc dmc_array;
-extern UINT8 dsu_numGPC;
-extern UINT16 dsu_numCluster;
-extern UINT16 dsu_sizeCluster;
-// bit N set if evt N is supported, not used at the moment, but should.
-extern UINT32 dsu_evt_mask_lo;
-extern UINT32 dsu_evt_mask_hi;
-extern LONG volatile cpunos;
-extern ULONG numCores;
-extern UINT8 numGPC;
-extern UINT8 numFreeGPC;
-extern UINT64 dfr0_value;
-extern UINT64 midr_value;
-extern UINT64 id_aa64dfr0_el1_value;
-extern HANDLE pmc_resource_handle;
-extern CoreInfo* core_info;
-extern KEVENT sync_reset_dpc;
-extern UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 static UINT16 armv8_arch_core_events[] =
 {
 #define WPERF_ARMV8_ARCH_EVENTS(n,a,b,c,d) b,
@@ -70,8 +46,7 @@ static UINT16 armv8_arch_core_events[] =
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
-extern LOCK_STATUS   current_status;
-
+BOOLEAN check_cores_in_pmu_ctl_hdr_p(const struct pmu_ctl_hdr* ctl_req);
 
 // must sync with enum pmu_ctl_action
 static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
@@ -86,16 +61,16 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     }
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "IOCTL: assign %d events (%s)\n",
-        core_event_num, core_event_num > numFreeGPC ? "multiplexing" : "no-multiplexing"));
+        core_event_num, core_event_num > queueContext->devExt->numFreeGPC ? "multiplexing" : "no-multiplexing"));
 
     for (UINT32 i = core_base; i < core_end; i++)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &queueContext->devExt->core_info[i];
         core->events_num = core_event_num + numFPC;
-        UINT32 init_num = core_event_num <= numFreeGPC ? core_event_num : numFreeGPC;
-        struct pmu_event_pseudo* events = &core->events[0];
+        UINT32 init_num = core_event_num <= queueContext->devExt->numFreeGPC ? core_event_num : queueContext->devExt->numFreeGPC;
+        pmu_event_pseudo* events = &core->events[0];
 
-        RtlSecureZeroMemory(&events[numFPC], sizeof(struct pmu_event_pseudo) * (MAX_MANAGED_CORE_EVENTS - numFPC));
+        RtlSecureZeroMemory(&events[numFPC], sizeof(pmu_event_pseudo) * (MAX_MANAGED_CORE_EVENTS - numFPC));
 
         // Don't clear event_idx and counter_idx, they are fixed.
         events[0].value = 0;
@@ -105,7 +80,7 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
 
         for (UINT32 j = 0; j < core_event_num; j++)
         {
-            struct pmu_event_kernel* event = (struct pmu_event_kernel*)&events[numFPC + j];
+            pmu_event_kernel* event = (pmu_event_kernel*)&events[numFPC + j];
 
             event->event_idx = core_events[j];
             event->filter_bits = filter_bits;
@@ -120,10 +95,11 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
     context->action = PMU_CTL_ASSIGN_EVENTS;
-    context->isDSU = false;
+    context->isDSU = FALSE;
     context->core_base = core_base;
     context->core_end = core_end;
     context->event_num = core_event_num;
+    context->devExt = queueContext->devExt;
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for action %d\n", context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
     WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
@@ -133,6 +109,7 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
 
 static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UINT32 core_end, UINT16 dsu_event_num, UINT16* dsu_events)
 {
+    
     if ((dsu_event_num + dsu_numFPC) > MAX_MANAGED_DSU_EVENTS)
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: assigned dsu_event_num %d > %d\n",
@@ -141,16 +118,16 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
     }
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "IOCTL: assign %d dsu_events (%s)\n",
-        dsu_event_num, dsu_event_num > dsu_numGPC ? "multiplexing" : "no-multiplexing"));
+        dsu_event_num, dsu_event_num > queueContext->devExt->dsu_numGPC ? "multiplexing" : "no-multiplexing"));
 
-    for (UINT32 i = core_base; i < core_end; i += dsu_sizeCluster)
+    for (UINT32 i = core_base; i < core_end; i += queueContext->devExt->dsu_sizeCluster)
     {
-        CoreInfo* core = &core_info[i];
+        CoreInfo* core = &queueContext->devExt->core_info[i];
         core->dsu_events_num = dsu_event_num + dsu_numFPC;
-        UINT32 init_num = dsu_event_num <= dsu_numGPC ? dsu_event_num : dsu_numGPC;
-        struct pmu_event_pseudo* events = &core->dsu_events[0];
+        UINT32 init_num = dsu_event_num <= queueContext->devExt->dsu_numGPC ? dsu_event_num : queueContext->devExt->dsu_numGPC;
+        pmu_event_pseudo* events = &core->dsu_events[0];
 
-        RtlSecureZeroMemory(&events[dsu_numFPC], sizeof(struct pmu_event_pseudo) * (MAX_MANAGED_DSU_EVENTS - dsu_numFPC));
+        RtlSecureZeroMemory(&events[dsu_numFPC], sizeof(pmu_event_pseudo) * (MAX_MANAGED_DSU_EVENTS - dsu_numFPC));
 
         events[0].event_idx = CYCLE_EVENT_IDX;
         events[0].counter_idx = CYCLE_COUNTER_IDX;
@@ -160,7 +137,7 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
 
         for (UINT32 j = 0; j < dsu_event_num; j++)
         {
-            struct pmu_event_kernel* event = (struct pmu_event_kernel*)&events[dsu_numFPC + j];
+            pmu_event_kernel* event = (pmu_event_kernel*)&events[dsu_numFPC + j];
 
             event->event_idx = dsu_events[j];
             event->enable_irq = 0;
@@ -174,10 +151,11 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
     PWORK_ITEM_CTXT context;
     context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
     context->action = PMU_CTL_ASSIGN_EVENTS;
-    context->isDSU = true;
+    context->isDSU = TRUE;
     context->core_base = core_base;
     context->core_end = core_end;
     context->event_num = dsu_event_num;
+    context->devExt = queueContext->devExt;
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for action %d\n", context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
     WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
@@ -209,6 +187,8 @@ NTSTATUS deviceControl(
     ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Function'
     queueContext->action = action;  // Save for later processing  
 
+    PDEVICE_EXTENSION devExt = queueContext->devExt;
+
     //
     //  Do some basic validation of the input puffer
     //
@@ -238,19 +218,19 @@ NTSTATUS deviceControl(
         if (in->flag == LOCK_GET_FORCE)
         {
             out = STS_LOCK_AQUIRED;
-            LONG oldval = InterlockedExchange(&current_status.pmu_held, 1);
+            LONG oldval = InterlockedExchange(&devExt->current_status.pmu_held, 1);
             if(oldval == 0)
-                get_pmu_resource();
+                get_pmu_resource(devExt);
 
-            SetMeBusyForce(IoCtlCode, file_object);
+            SetMeBusyForce(devExt, IoCtlCode, file_object);
         }
         else if (in->flag == LOCK_GET)
         {
-            if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
+            if (SetMeBusy(devExt, IoCtlCode, file_object)) // returns failure if the lock is already held by another process
             {
-                LONG oldval = InterlockedExchange(&current_status.pmu_held, 1);
+                LONG oldval = InterlockedExchange(&devExt->current_status.pmu_held, 1);
                 if (oldval == 0)
-                    get_pmu_resource();
+                    get_pmu_resource(devExt);
                 out = STS_LOCK_AQUIRED;
                 // Note: else STS_BUSY;
             }
@@ -283,12 +263,12 @@ NTSTATUS deviceControl(
 
         if (in->flag == LOCK_RELEASE)
         {
-            if (SetMeIdle(file_object)) // returns failure if this process doesnt own the lock 
+            if (SetMeIdle(devExt, file_object)) // returns failure if this process doesnt own the lock 
             {
                 out = STS_IDLE;         // All went well and we went IDLE
-                LONG oldval = InterlockedExchange(&current_status.pmu_held, 0);
+                LONG oldval = InterlockedExchange(&devExt->current_status.pmu_held, 0);
                 if (oldval == 1)
-                    free_pmu_resource();
+                    free_pmu_resource(devExt);
             }
             // Note: else out = STS_BUSY;     // This is illegal, as we are not IDLE
         }
@@ -310,7 +290,7 @@ NTSTATUS deviceControl(
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -350,14 +330,15 @@ NTSTATUS deviceControl(
 
         UINT32 core_idx = ctl_req->cores_idx.cores_no[0];
 
-        core_info[core_idx].sample_dropped = 0;
-        core_info[core_idx].sample_generated = 0;
-        core_info[core_idx].sample_idx = 0;
+        devExt->core_info[core_idx].sample_dropped = 0;
+        devExt->core_info[core_idx].sample_generated = 0;
+        devExt->core_info[core_idx].sample_idx = 0;
 
         PWORK_ITEM_CTXT context;
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
         context->action = PMU_CTL_SAMPLE_START;
         context->core_idx = core_idx;
+        context->devExt = devExt;
         WdfWorkItemEnqueue(queueContext->WorkItem);
         WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
@@ -370,7 +351,7 @@ NTSTATUS deviceControl(
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -414,12 +395,13 @@ NTSTATUS deviceControl(
         context = WdfObjectGet_WORK_ITEM_CTXT(queueContext->WorkItem);
         context->action = PMU_CTL_SAMPLE_STOP;
         context->core_idx = core_idx;
+        context->devExt = devExt;
         WdfWorkItemEnqueue(queueContext->WorkItem);
         WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
         struct PMUSampleSummary* out = (struct PMUSampleSummary*)pOutBuffer;
-        out->sample_generated = core_info[core_idx].sample_generated;
-        out->sample_dropped = core_info[core_idx].sample_dropped;
+        out->sample_generated = devExt->core_info[core_idx].sample_generated;
+        out->sample_dropped = devExt->core_info[core_idx].sample_dropped;
         *outputSize = sizeof(struct PMUSampleSummary);
 
         if (*outputSize > OutBufSize)
@@ -433,11 +415,11 @@ NTSTATUS deviceControl(
     {
         struct PMUCtlGetSampleHdr* ctl_req = (struct PMUCtlGetSampleHdr*)pInBuffer;
         UINT32 core_idx = ctl_req->core_idx;
-        CoreInfo* core = core_info + core_idx;
+        CoreInfo* core = devExt->core_info + core_idx;
         KIRQL oldIrql;
 
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -477,7 +459,7 @@ NTSTATUS deviceControl(
     case IOCTL_PMU_CTL_SAMPLE_SET_SRC:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -491,24 +473,24 @@ NTSTATUS deviceControl(
         int sample_src_num = (InBufSize - sizeof(PMUSampleSetSrcHdr)) / sizeof(SampleSrcDesc);
 
         // rough check
-        if (sample_src_num > (numFreeGPC + numFPC))
-            sample_src_num = numFreeGPC + numFPC;
+        if (sample_src_num > (devExt->numFreeGPC + numFPC))
+            sample_src_num = devExt->numFreeGPC + numFPC;
 
-        CoreInfo* core = core_info + core_idx;
+        CoreInfo* core = devExt->core_info + core_idx;
         int gpc_num = 0;
         for (int i = 0; i < sample_src_num; i++)
         {
             /* Here we greedly assign events to GPCs. We cannot have more events than GPCs as we don't have multiplex implemented
             * for sampling. We need to use counter_idx_map here as the gpc_num-nth available GPC might not be the one we expect it to be.
             */
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Setting sample src to event_src = %d interval = %d gpc = %d\n", sample_req->sources[i].event_src, sample_req->sources[i].interval, counter_idx_map[gpc_num]));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Setting sample src to event_src = %d interval = %d gpc = %d\n", sample_req->sources[i].event_src, sample_req->sources[i].interval, devExt->counter_idx_map[gpc_num]));
             SampleSrcDesc* src_desc = &sample_req->sources[i];
             UINT32 event_src = src_desc->event_src;
             UINT32 interval = src_desc->interval;
             if (event_src == CYCLE_EVENT_IDX)
                 core->sample_interval[31] = interval;
             else
-                core->sample_interval[counter_idx_map[gpc_num++]] = interval;
+                core->sample_interval[devExt->counter_idx_map[gpc_num++]] = interval;
         }
 
         PWORK_ITEM_CTXT context;
@@ -517,6 +499,7 @@ NTSTATUS deviceControl(
         context->core_idx = core_idx;
         context->sample_req = sample_req;
         context->sample_src_num = sample_src_num;
+        context->devExt = devExt;
         WdfWorkItemEnqueue(queueContext->WorkItem);
         WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
@@ -534,7 +517,7 @@ NTSTATUS deviceControl(
         int dmc_core_idx = ALL_CORE;
 
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -574,7 +557,7 @@ NTSTATUS deviceControl(
 
         VOID(*core_func)(VOID) = NULL;
         VOID(*dsu_func)(VOID) = NULL;
-        VOID(*dmc_func)(UINT8, UINT8, struct dmcs_desc*) = NULL;
+        VOID(*dmc_func)(UINT8, UINT8, dmcs_desc*) = NULL;
         ULONG funcsIdx = (action - PMU_CTL_ACTION_OFFSET);
         const ULONG funcsSize = (ULONG)(sizeof(core_ctl_funcs) / sizeof(core_ctl_funcs[0]));
         
@@ -598,6 +581,7 @@ NTSTATUS deviceControl(
         context->cores_count = cores_count;
         context->do_func = core_func;
         context->do_func2 = dsu_func;
+        context->devExt = devExt;
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! enqueuing for action %d\n", context->action));
         WdfWorkItemEnqueue(queueContext->WorkItem);
         WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
@@ -610,7 +594,7 @@ NTSTATUS deviceControl(
             if (dmc_idx == ALL_DMC_CHANNEL)
             {
                 dmc_ch_base = 0;
-                dmc_ch_end = dmc_array.dmc_num;
+                dmc_ch_end = devExt->dmc_array.dmc_num;
             }
             else
             {
@@ -618,7 +602,7 @@ NTSTATUS deviceControl(
                 dmc_ch_end = dmc_idx + 1;
             }
 
-            DmcChannelIterator(dmc_ch_base, dmc_ch_end, dmc_func, &dmc_array);
+            DmcChannelIterator(dmc_ch_base, dmc_ch_end, dmc_func, &devExt->dmc_array);
             // Use last core from all used.
             dmc_core_idx = ctl_req->cores_idx.cores_no[cores_count - 1];
         }
@@ -630,7 +614,7 @@ NTSTATUS deviceControl(
             for (auto k = 0; k < cores_count; k++)
             {
                 int i = ctl_req->cores_idx.cores_no[k];
-                CoreInfo* core = &core_info[i];
+                CoreInfo* core = &devExt->core_info[i];
                 if (core->timer_running)
                 {
                     KeCancelTimer(&core->timer);
@@ -645,17 +629,17 @@ NTSTATUS deviceControl(
 
                 if (ctl_flags & CTL_FLAG_CORE)
                 {
-                    UINT8 do_core_multiplex = !!(core->events_num > (UINT32)(numFreeGPC + numFPC));
+                    UINT8 do_core_multiplex = !!(core->events_num > (UINT32)(devExt->numFreeGPC + numFPC));
                     core->prof_core = do_core_multiplex ? PROF_MULTIPLEX : PROF_NORMAL;
                     do_multiplex |= do_core_multiplex;
                 }
 
                 if (ctl_flags & CTL_FLAG_DSU)
                 {
-                    UINT8 dsu_cluster_head = !(i & (dsu_sizeCluster - 1));
-                    if (cores_count != numCores || dsu_cluster_head)
+                    UINT8 dsu_cluster_head = !(i & (devExt->dsu_sizeCluster - 1));
+                    if (cores_count != devExt->numCores || dsu_cluster_head)
                     {
-                        UINT8 do_dsu_multiplex = !!(core->dsu_events_num > (UINT32)(dsu_numGPC + dsu_numFPC));
+                        UINT8 do_dsu_multiplex = !!(core->dsu_events_num > (UINT32)(devExt->dsu_numGPC + dsu_numFPC));
                         core->prof_dsu = do_dsu_multiplex ? PROF_MULTIPLEX : PROF_NORMAL;
                         do_multiplex |= do_dsu_multiplex;
                     }
@@ -699,7 +683,7 @@ NTSTATUS deviceControl(
             for (auto k = 0; k < cores_count; k++)
             {
                 int i = ctl_req->cores_idx.cores_no[k];
-                CoreInfo* core = &core_info[i];
+                CoreInfo* core = &devExt->core_info[i];
                 if (core->timer_running)
                 {
                     KeCancelTimer(&core->timer);
@@ -713,9 +697,9 @@ NTSTATUS deviceControl(
             for (auto k = 0; k < cores_count; k++)
             {
                 int i = ctl_req->cores_idx.cores_no[k];
-                CoreInfo* core = &core_info[i];
+                CoreInfo* core = &devExt->core_info[i];
                 core->timer_round = 0;
-                struct pmu_event_pseudo* events = &core->events[0];
+                pmu_event_pseudo* events = &core->events[0];
                 UINT32 events_num = core->events_num;
                 for (UINT32 j = 0; j < events_num; j++)
                 {
@@ -723,7 +707,7 @@ NTSTATUS deviceControl(
                     events[j].scheduled = 0;
                 }
 
-                struct pmu_event_pseudo* dsu_events = &core->dsu_events[0];
+                pmu_event_pseudo* dsu_events = &core->dsu_events[0];
                 UINT32 dsu_events_num = core->dsu_events_num;
                 for (UINT32 j = 0; j < dsu_events_num; j++)
                 {
@@ -735,16 +719,16 @@ NTSTATUS deviceControl(
             }
             LARGE_INTEGER li;
             li.QuadPart = 0;
-            KeWaitForSingleObject(&sync_reset_dpc, Executive, KernelMode, 0, &li); // wait for all dpcs to complete
-            KeClearEvent(&sync_reset_dpc);
-            cpunos = 0;
+            KeWaitForSingleObject(&devExt->sync_reset_dpc, Executive, KernelMode, 0, &li); // wait for all dpcs to complete
+            KeClearEvent(&devExt->sync_reset_dpc);
+            devExt->cpunos = 0;
 
             if (ctl_flags & CTL_FLAG_DMC)
             {
                 for (UINT8 ch_idx = dmc_ch_base; ch_idx < dmc_ch_end; ch_idx++)
                 {
-                    struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
-                    struct pmu_event_pseudo* events = dmc->clk_events;
+                    dmc_desc* dmc = devExt->dmc_array.dmcs + ch_idx;
+                    pmu_event_pseudo* events = dmc->clk_events;
                     UINT8 events_num = dmc->clk_events_num;
                     for (UINT8 j = 0; j < events_num; j++)
                     {
@@ -769,7 +753,7 @@ NTSTATUS deviceControl(
     case IOCTL_PMU_CTL_QUERY_HW_CFG:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -785,19 +769,19 @@ NTSTATUS deviceControl(
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: QUERY_HW_CFG\n"));
 
         struct hw_cfg* out = (struct hw_cfg*)pOutBuffer;
-        out->core_num = (UINT16)numCores;
+        out->core_num = (UINT16)devExt->numCores;
         out->fpc_num = numFPC;
-        out->gpc_num = numFreeGPC;
-        out->total_gpc_num = numGPC;
-        out->pmu_ver = (dfr0_value >> 8) & 0xf;
-        out->vendor_id = (midr_value >> 24) & 0xff;
-        out->variant_id = (midr_value >> 20) & 0xf;
-        out->arch_id = (midr_value >> 16) & 0xf;
-        out->rev_id = midr_value & 0xf;
-        out->part_id = (midr_value >> 4) & 0xfff;
-        out->midr_value = midr_value;
-        out->id_aa64dfr0_value = id_aa64dfr0_el1_value;
-        RtlCopyMemory(out->counter_idx_map, counter_idx_map, sizeof(counter_idx_map));
+        out->gpc_num = devExt->numFreeGPC;
+        out->total_gpc_num = devExt->numGPC;
+        out->pmu_ver = (devExt->dfr0_value >> 8) & 0xf;
+        out->vendor_id = (devExt->midr_value >> 24) & 0xff;
+        out->variant_id = (devExt->midr_value >> 20) & 0xf;
+        out->arch_id = (devExt->midr_value >> 16) & 0xf;
+        out->rev_id = devExt->midr_value & 0xf;
+        out->part_id = (devExt->midr_value >> 4) & 0xfff;
+        out->midr_value = devExt->midr_value;
+        out->id_aa64dfr0_value = devExt->id_aa64dfr0_el1_value;
+        RtlCopyMemory(out->counter_idx_map, devExt->counter_idx_map, sizeof(devExt->counter_idx_map));
 
         {   // Setup HW_CFG capability string for this driver:
             const wchar_t device_id_str[] =
@@ -823,7 +807,7 @@ NTSTATUS deviceControl(
     case IOCTL_PMU_CTL_QUERY_SUPP_EVENTS:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -852,7 +836,7 @@ NTSTATUS deviceControl(
         return_size = sizeof(struct evt_hdr);
         return_size += sizeof(armv8_arch_core_events);
 
-        if (dsu_numGPC)
+        if (devExt->dsu_numGPC)
         {
             hdr = (struct evt_hdr*)out;
             hdr->evt_class = EVT_DSU;
@@ -862,13 +846,13 @@ NTSTATUS deviceControl(
 
             for (UINT16 i = 0; i < 32; i++)
             {
-                if (dsu_evt_mask_lo & (1 << i))
+                if (devExt->dsu_evt_mask_lo & (1 << i))
                     out[dsu_evt_num++] = i;
             }
 
             for (UINT16 i = 0; i < 32; i++)
             {
-                if (dsu_evt_mask_hi & (1 << i))
+                if (devExt->dsu_evt_mask_hi & (1 << i))
                     out[dsu_evt_num++] = 32 + i;
             }
 
@@ -880,7 +864,7 @@ NTSTATUS deviceControl(
             out = out + dsu_evt_num;
         }
 
-        if (dmc_array.dmcs)
+        if (devExt->dmc_array.dmcs)
         {
             hdr = (struct evt_hdr*)out;
             hdr->evt_class = EVT_DMC_CLK;
@@ -923,7 +907,7 @@ NTSTATUS deviceControl(
     case IOCTL_PMU_CTL_QUERY_VERSION:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -970,7 +954,7 @@ NTSTATUS deviceControl(
     case IOCTL_PMU_CTL_ASSIGN_EVENTS:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -986,7 +970,7 @@ NTSTATUS deviceControl(
         if (core_idx == ALL_CORE)
         {
             core_base = 0;
-            core_end = numCores;
+            core_end = devExt->numCores;
         }
         else
         {
@@ -1024,7 +1008,7 @@ NTSTATUS deviceControl(
                 if (dmc_idx == ALL_DMC_CHANNEL)
                 {
                     ch_base = 0;
-                    ch_end = dmc_array.dmc_num;
+                    ch_end = devExt->dmc_array.dmc_num;
                 }
                 else
                 {
@@ -1034,12 +1018,12 @@ NTSTATUS deviceControl(
 
                 for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
                 {
-                    struct dmc_desc* dmc = dmc_array.dmcs + ch_idx;
+                    dmc_desc* dmc = devExt->dmc_array.dmcs + ch_idx;
                     dmc->clk_events_num = 0;
                     dmc->clkdiv2_events_num = 0;
-                    RtlSecureZeroMemory(dmc->clk_events, sizeof(struct pmu_event_pseudo) * MAX_MANAGED_DMC_CLK_EVENTS);
-                    RtlSecureZeroMemory(dmc->clkdiv2_events, sizeof(struct pmu_event_pseudo) * MAX_MANAGED_DMC_CLKDIV2_EVENTS);
-                    struct pmu_event_pseudo* to_events;
+                    RtlSecureZeroMemory(dmc->clk_events, sizeof(pmu_event_pseudo) * MAX_MANAGED_DMC_CLK_EVENTS);
+                    RtlSecureZeroMemory(dmc->clkdiv2_events, sizeof(pmu_event_pseudo) * MAX_MANAGED_DMC_CLKDIV2_EVENTS);
+                    pmu_event_pseudo* to_events;
                     UINT16 counter_adj;
 
                     if (evt_class == EVT_DMC_CLK)
@@ -1060,12 +1044,12 @@ NTSTATUS deviceControl(
 
                     for (UINT16 i = 0; i < evt_num; i++)
                     {
-                        struct pmu_event_pseudo* to_event = to_events + i;
+                        pmu_event_pseudo* to_event = to_events + i;
                         to_event->event_idx = raw_evts[i];
                         // clk event counters start after clkdiv2 counters
                         to_event->counter_idx = counter_adj + i;
                         to_event->value = 0;
-                        DmcEnableEvent(ch_idx, counter_adj + i, raw_evts[i], &dmc_array);
+                        DmcEnableEvent(ch_idx, counter_adj + i, raw_evts[i], &devExt->dmc_array);
                     }
                 }
             }
@@ -1079,7 +1063,7 @@ NTSTATUS deviceControl(
     case IOCTL_PMU_CTL_READ_COUNTING:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1115,7 +1099,7 @@ NTSTATUS deviceControl(
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (core_idx == ALL_CORE)
-            outputSizeExpect = sizeof(ReadOut) * numCores;
+            outputSizeExpect = sizeof(ReadOut) * devExt->numCores;
         else
             outputSizeExpect = sizeof(ReadOut);
 
@@ -1123,7 +1107,7 @@ NTSTATUS deviceControl(
         if (core_idx == ALL_CORE)
         {
             core_base = 0;
-            core_end = numCores;
+            core_end = devExt->numCores;
         }
         else
         {
@@ -1134,18 +1118,18 @@ NTSTATUS deviceControl(
         outputSizeReturned = 0;
         for (UINT32 i = core_base; i < core_end; i++)
         {
-            CoreInfo* core = &core_info[i];
+            CoreInfo* core = &devExt->core_info[i];
             ReadOut* out = (ReadOut*)((UINT8*)pOutBuffer + sizeof(ReadOut) * (i - core_base));
             UINT32 events_num = core->events_num;
             out->evt_num = events_num;
             out->round = core->timer_round;
 
             struct pmu_event_usr* out_events = &out->evts[0];
-            struct pmu_event_pseudo* events = core->events;
+            pmu_event_pseudo* events = core->events;
 
             for (UINT32 j = 0; j < events_num; j++)
             {
-                struct pmu_event_pseudo* event = events + j;
+                pmu_event_pseudo* event = events + j;
                 struct pmu_event_usr* out_event = out_events + j;
                 out_event->event_idx = event->event_idx;
                 out_event->filter_bits = event->filter_bits;
@@ -1167,7 +1151,7 @@ NTSTATUS deviceControl(
     case IOCTL_DSU_CTL_INIT:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1182,19 +1166,19 @@ NTSTATUS deviceControl(
             break;
         }
 
-        dsu_numCluster = ctl_req->cluster_num;
-        dsu_sizeCluster = ctl_req->cluster_size;
+        devExt->dsu_numCluster = ctl_req->cluster_num;
+        devExt->dsu_sizeCluster = ctl_req->cluster_size;
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "IOCTL: DSU_CTL_INIT\n"));
 
-        DSUProbePMU(&dsu_numGPC, &dsu_evt_mask_lo, &dsu_evt_mask_hi);
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "dsu pmu num %d\n", dsu_numGPC));
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "dsu pmu event mask 0x%x, 0x%x\n", dsu_evt_mask_lo, dsu_evt_mask_hi));
+        DSUProbePMU(&devExt->dsu_numGPC, &devExt->dsu_evt_mask_lo, &devExt->dsu_evt_mask_hi);
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "dsu pmu num %d\n", devExt->dsu_numGPC));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "dsu pmu event mask 0x%x, 0x%x\n", devExt->dsu_evt_mask_lo, devExt->dsu_evt_mask_hi));
 
         struct dsu_cfg* out = (struct dsu_cfg*)pOutBuffer;
 
         out->fpc_num = dsu_numFPC;
-        out->gpc_num = dsu_numGPC;
+        out->gpc_num = devExt->dsu_numGPC;
 
         *outputSize = sizeof(struct dsu_cfg);
         if (*outputSize > OutBufSize)
@@ -1207,7 +1191,7 @@ NTSTATUS deviceControl(
     case IOCTL_DSU_CTL_READ_COUNTING:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1251,7 +1235,7 @@ NTSTATUS deviceControl(
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (core_idx == ALL_CORE)
-            outputSizeExpect = sizeof(DSUReadOut) * (numCores / dsu_sizeCluster);
+            outputSizeExpect = sizeof(DSUReadOut) * (devExt->numCores / devExt->dsu_sizeCluster);
         else
             outputSizeExpect = sizeof(DSUReadOut);
 
@@ -1259,7 +1243,7 @@ NTSTATUS deviceControl(
         if (core_idx == ALL_CORE)
         {
             core_base = 0;
-            core_end = numCores;
+            core_end = devExt->numCores;
         }
         else
         {
@@ -1269,20 +1253,20 @@ NTSTATUS deviceControl(
 
         outputSizeReturned = 0;
 
-        for (UINT32 i = core_base; i < core_end; i += dsu_sizeCluster)
+        for (UINT32 i = core_base; i < core_end; i += devExt->dsu_sizeCluster)
         {
-            CoreInfo* core = &core_info[i];
-            DSUReadOut* out = (DSUReadOut*)((UINT8*)pOutBuffer + sizeof(DSUReadOut) * ((i - core_base) / dsu_sizeCluster));
+            CoreInfo* core = &devExt->core_info[i];
+            DSUReadOut* out = (DSUReadOut*)((UINT8*)pOutBuffer + sizeof(DSUReadOut) * ((i - core_base) / devExt->dsu_sizeCluster));
             UINT32 events_num = core->dsu_events_num;
             out->evt_num = events_num;
             out->round = core->timer_round;
 
             struct pmu_event_usr* out_events = &out->evts[0];
-            struct pmu_event_pseudo* events = core->dsu_events;
+            pmu_event_pseudo* events = core->dsu_events;
 
             for (UINT32 j = 0; j < events_num; j++)
             {
-                struct pmu_event_pseudo* event = events + j;
+                pmu_event_pseudo* event = events + j;
                 struct pmu_event_usr* out_event = out_events + j;
                 out_event->event_idx = event->event_idx;
                 out_event->scheduled = event->scheduled;
@@ -1303,7 +1287,7 @@ NTSTATUS deviceControl(
     case IOCTL_DMC_CTL_INIT:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1312,8 +1296,8 @@ NTSTATUS deviceControl(
         struct dmc_ctl_hdr* ctl_req = (struct dmc_ctl_hdr*)pInBuffer;
         ULONG expected_size;
 
-        dmc_array.dmc_num = ctl_req->dmc_num;
-        expected_size = sizeof(struct dmc_ctl_hdr) + dmc_array.dmc_num * sizeof(UINT64) * 2;
+        devExt->dmc_array.dmc_num = ctl_req->dmc_num;
+        expected_size = sizeof(struct dmc_ctl_hdr) + devExt->dmc_array.dmc_num * sizeof(UINT64) * 2;
 
         if (InBufSize != expected_size)
         {
@@ -1322,32 +1306,32 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if (!dmc_array.dmcs)
+        if (!devExt->dmc_array.dmcs)
         {
-            dmc_array.dmcs = (struct dmc_desc*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(struct dmc_desc) * ctl_req->dmc_num, 'DMCR');
-            if (!dmc_array.dmcs)
+            devExt->dmc_array.dmcs = (dmc_desc*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(dmc_desc) * ctl_req->dmc_num, 'DMCR');
+            if (!devExt->dmc_array.dmcs)
             {
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "DMC_CTL_INIT: allocate dmcs failed\n"));
                 status = STATUS_INVALID_PARAMETER;
                 break;
             }
 
-            for (UINT8 i = 0; i < dmc_array.dmc_num; i++)
+            for (UINT8 i = 0; i < devExt->dmc_array.dmc_num; i++)
             {
                 UINT64 iomem_len = ctl_req->addr[2 * i + 1] - ctl_req->addr[2 * i] + 1;
                 PHYSICAL_ADDRESS phy_addr;
                 phy_addr.QuadPart = ctl_req->addr[2 * i];
-                dmc_array.dmcs[i].iomem_start = (UINT64)MmMapIoSpace(phy_addr, iomem_len, MmNonCached);
-                if (!dmc_array.dmcs[i].iomem_start)
+                devExt->dmc_array.dmcs[i].iomem_start = (UINT64)MmMapIoSpace(phy_addr, iomem_len, MmNonCached);
+                if (!devExt->dmc_array.dmcs[i].iomem_start)
                 {
-                    ExFreePool(dmc_array.dmcs);
+                    ExFreePool(devExt->dmc_array.dmcs);
                     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: MmMapIoSpace failed\n"));
                     status = STATUS_INVALID_PARAMETER;
                     break;
                 }
-                dmc_array.dmcs[i].iomem_len = iomem_len;
-                dmc_array.dmcs[i].clk_events_num = 0;
-                dmc_array.dmcs[i].clkdiv2_events_num = 0;
+                devExt->dmc_array.dmcs[i].iomem_len = iomem_len;
+                devExt->dmc_array.dmcs[i].clk_events_num = 0;
+                devExt->dmc_array.dmcs[i].clkdiv2_events_num = 0;
             }
             if (status != STATUS_SUCCESS)
                 break;
@@ -1371,7 +1355,7 @@ NTSTATUS deviceControl(
     case IOCTL_DMC_CTL_READ_COUNTING:
     {
         // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        if (!AmILocking(devExt, IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1397,7 +1381,7 @@ NTSTATUS deviceControl(
             break;
         }
 
-        if (dmc_idx != ALL_DMC_CHANNEL && dmc_idx >= dmc_array.dmc_num)
+        if (dmc_idx != ALL_DMC_CHANNEL && dmc_idx >= devExt->dmc_array.dmc_num)
         {
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid dmc_idx %d for DMC_CTL_READ_COUNTING\n", dmc_idx));
             status = STATUS_INVALID_PARAMETER;
@@ -1407,7 +1391,7 @@ NTSTATUS deviceControl(
         ULONG outputSizeExpect, outputSizeReturned;
 
         if (dmc_idx == ALL_DMC_CHANNEL)
-            outputSizeExpect = sizeof(DMCReadOut) * dmc_array.dmc_num;
+            outputSizeExpect = sizeof(DMCReadOut) * devExt->dmc_array.dmc_num;
         else
             outputSizeExpect = sizeof(DMCReadOut);
 
@@ -1416,7 +1400,7 @@ NTSTATUS deviceControl(
         if (dmc_idx == ALL_DMC_CHANNEL)
         {
             dmc_ch_base = 0;
-            dmc_ch_end = dmc_array.dmc_num;
+            dmc_ch_end = devExt->dmc_array.dmc_num;
         }
         else
         {
@@ -1428,7 +1412,7 @@ NTSTATUS deviceControl(
 
         for (UINT8 i = dmc_ch_base; i < dmc_ch_end; i++)
         {
-            struct dmc_desc* dmc = dmc_array.dmcs + i;
+            dmc_desc* dmc = devExt->dmc_array.dmcs + i;
             DMCReadOut* out = (DMCReadOut*)((UINT8*)pOutBuffer + sizeof(DMCReadOut) * (i - dmc_ch_base));
             UINT8 clk_events_num = dmc->clk_events_num;
             UINT8 clkdiv2_events_num = dmc->clkdiv2_events_num;
@@ -1436,10 +1420,10 @@ NTSTATUS deviceControl(
             out->clkdiv2_events_num = clkdiv2_events_num;
 
             struct pmu_event_usr* to_events = out->clk_events;
-            struct pmu_event_pseudo* from_events = dmc->clk_events;
+            pmu_event_pseudo* from_events = dmc->clk_events;
             for (UINT8 j = 0; j < clk_events_num; j++)
             {
-                struct pmu_event_pseudo* from_event = from_events + j;
+                pmu_event_pseudo* from_event = from_events + j;
                 struct pmu_event_usr* to_event = to_events + j;
                 to_event->event_idx = from_event->event_idx;
                 to_event->scheduled = from_event->scheduled;
@@ -1450,7 +1434,7 @@ NTSTATUS deviceControl(
             from_events = dmc->clkdiv2_events;
             for (UINT8 j = 0; j < clkdiv2_events_num; j++)
             {
-                struct pmu_event_pseudo* from_event = from_events + j;
+                pmu_event_pseudo* from_event = from_events + j;
                 struct pmu_event_usr* to_event = to_events + j;
                 to_event->event_idx = from_event->event_idx;
                 to_event->scheduled = from_event->scheduled;

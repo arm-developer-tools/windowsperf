@@ -141,12 +141,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.h" />
-    <ClInclude Include="coreinfo.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="dmc.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="dsu.h" />
-    <ClInclude Include="pmu.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="spe.h" />
     <ClInclude Include="sysregs.h" />

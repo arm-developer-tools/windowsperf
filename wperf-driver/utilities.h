@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -29,10 +30,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-VOID update_last_fixed_counter(UINT64 core_idx);
 PCHAR DbgStatusStr(NTSTATUS status);
 PCHAR GetIoctlStr(ULONG ioctl);
-VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN AmILocking(ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN SetMeIdle(WDFFILEOBJECT file_object);
+VOID SetMeBusyForce(PDEVICE_EXTENSION dev_ext,  ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeBusy(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN AmILocking(PDEVICE_EXTENSION dev_ext, ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN SetMeIdle(PDEVICE_EXTENSION dev_ext, WDFFILEOBJECT file_object);

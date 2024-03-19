@@ -29,21 +29,23 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "driver.h"
-#include "wperf-common/iorequest.h"
 #if defined ENABLE_TRACING
 #include "queue.tmh"
 #endif
-#include "device.h"
+#include "..\wperf-common\inline.h"
+
+VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
 #endif
 
-VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
+
 
 NTSTATUS
 WindowsPerfQueueInitialize(
-    WDFDEVICE Device
+    WDFDEVICE Device,
+    PDEVICE_EXTENSION devExt
     )
 /*++
 
@@ -80,7 +82,7 @@ Return Value:
     PQUEUE_CONTEXT queueContext;
     WDF_IO_QUEUE_CONFIG    queueConfig;
     WDF_OBJECT_ATTRIBUTES  queueAttributes;
-    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
+
 
     PAGED_CODE();
 
@@ -91,7 +93,7 @@ Return Value:
     //
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(
          &queueConfig,
-        WdfIoQueueDispatchSequential
+        WdfIoQueueDispatchParallel
         );
 
     queueConfig.EvtIoDeviceControl = WindowsPerfEvtDeviceControl;
@@ -122,8 +124,12 @@ Return Value:
         return status;
     }
 
-    // Get our Driver Context memory from the returned Queue handle
-    queueContext = QueueGetContext(queue);
+    queueContext = GetQueueContext(queue);
+    queueContext->devExt = devExt;
+
+    // store a reference to the queue context in our device extension
+    devExt->queContext = queueContext;
+
 
     queueContext->inBuffer = NULL;
     queueContext->outBuffer = NULL;
@@ -141,7 +147,8 @@ Return Value:
     NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->WorkItem);
     if (!NT_SUCCESS(wiStatus))
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
+        return status;
     }
 
     PWORK_ITEM_CTXT workItemCtxt;
@@ -149,11 +156,11 @@ Return Value:
     wiStatus = WdfObjectAllocateContext(queueContext->WorkItem, &workItemAttributes, &workItemCtxt);
     if (!NT_SUCCESS(wiStatus))
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
+        return status;
     }
 
-    // store a reference to the queue context in our device extension
-    pDevExt->pQueContext = queueContext;
+    workItemCtxt->devExt = devExt;
 
     return status;
 }
@@ -170,7 +177,7 @@ WindowsPerfEvtDeviceControl(
     NTSTATUS Status;
     WDFMEMORY memory;
     size_t bufsize = 0;
-    PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
+    PQUEUE_CONTEXT queueContext = GetQueueContext(Queue);
     WDFFILEOBJECT  file_object = WdfRequestGetFileObject(Request);
     WDFDEVICE        device = WdfFileObjectGetDevice(file_object);
     PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(device);
@@ -370,7 +377,7 @@ Return Value:
 
 --*/
 {
-    PQUEUE_CONTEXT queueContext = QueueGetContext(Object);
+    PQUEUE_CONTEXT queueContext = GetQueueContext(Object);
     queueContext->inBuffer = NULL;
     queueContext->outBuffer = NULL;
 
@@ -405,7 +412,7 @@ Return Value:
 
 --*/
 {
-    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfRequestGetIoQueue(Request));
+    PQUEUE_CONTEXT queueContext = GetQueueContext(WdfRequestGetIoQueue(Request));
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WindowsPerfEvtRequestCancel called on Request 0x%p\n",  Request));
 

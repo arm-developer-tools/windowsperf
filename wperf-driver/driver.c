@@ -29,7 +29,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "driver.h"
-#include "device.h"
 #if defined ENABLE_TRACING
 #include "driver.tmh"
 #endif

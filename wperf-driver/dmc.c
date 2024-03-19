@@ -28,10 +28,12 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <ntddk.h>
-#include "dmc.h"
+#include "driver.h"
+#if defined ENABLE_TRACING
+#include "dmc.tmh"
+#endif
 
-VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array)
+VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx,  dmcs_desc *dmc_array)
 {
     UINT64 op_base = dmc_array->dmcs[ch_idx].iomem_start;
 
@@ -44,7 +46,7 @@ VOID DmcCounterStart(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_arra
     __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
 }
 
-VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array)
+VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx, dmcs_desc *dmc_array)
 {
     UINT64 op_base = dmc_array->dmcs[ch_idx].iomem_start;
 
@@ -57,7 +59,7 @@ VOID DmcCounterStop(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array
     __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
 }
 
-VOID DmcCounterReset(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_array)
+VOID DmcCounterReset(UINT8 ch_idx, UINT8 counter_idx, dmcs_desc *dmc_array)
 {
     UINT64 op_base = dmc_array->dmcs[ch_idx].iomem_start;
 
@@ -66,7 +68,7 @@ VOID DmcCounterReset(UINT8 ch_idx, UINT8 counter_idx, struct dmcs_desc *dmc_arra
     __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_VAL_OFFSET), value);
 }
 
-UINT64 DmcCounterRead(UINT8 ch_idx, UINT16 counter_idx, struct dmcs_desc *dmc_array)
+UINT64 DmcCounterRead(UINT8 ch_idx, UINT16 counter_idx, dmcs_desc *dmc_array)
 {
     UINT64 op_base = dmc_array->dmcs[ch_idx].iomem_start;
 
@@ -76,11 +78,11 @@ UINT64 DmcCounterRead(UINT8 ch_idx, UINT16 counter_idx, struct dmcs_desc *dmc_ar
     return (UINT64)((UINT32)value);
 }
 
-VOID DmcChannelIterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8, struct dmcs_desc*), struct dmcs_desc *dmc_array)
+VOID DmcChannelIterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8, dmcs_desc*), dmcs_desc *dmc_array)
 {
     for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
     {
-        struct dmc_desc* dmc = dmc_array->dmcs + ch_idx;
+        dmc_desc* dmc = dmc_array->dmcs + ch_idx;
 
         for (UINT8 counter_idx = 0; counter_idx < dmc->clk_events_num; counter_idx++)
             do_func(ch_idx, DMC_CLKDIV2_NUMGPC + counter_idx, dmc_array);
@@ -89,7 +91,7 @@ VOID DmcChannelIterator(UINT8 ch_base, UINT8 ch_end, VOID(*do_func)(UINT8, UINT8
     }
 }
 
-VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx, struct dmcs_desc *dmc_array)
+VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx, dmcs_desc *dmc_array)
 {
     UINT64 op_base = dmc_array->dmcs[ch_idx].iomem_start;
 
@@ -103,7 +105,7 @@ VOID DmcEnableEvent(UINT8 ch_idx, UINT32 counter_idx, UINT16 event_idx, struct d
     __iso_volatile_store32((volatile __int32*)(op_base + DMC_COUNTER_BASE(counter_idx) + DMC_COUNTER_CTL_OFFSET), value);
 }
 
-VOID UpdateDmcCounting(UINT8 dmc_ch, struct dmcs_desc *dmc_array)
+VOID UpdateDmcCounting(UINT8 dmc_ch, dmcs_desc *dmc_array)
 {
     UINT8 ch_base, ch_end;
 
@@ -122,8 +124,8 @@ VOID UpdateDmcCounting(UINT8 dmc_ch, struct dmcs_desc *dmc_array)
 
     for (UINT8 ch_idx = ch_base; ch_idx < ch_end; ch_idx++)
     {
-        struct dmc_desc* dmc = dmc_array->dmcs + ch_idx;
-        struct pmu_event_pseudo* events = dmc->clk_events;
+        pdmc_desc dmc = dmc_array->dmcs + ch_idx;
+        ppmu_event_pseudo events = dmc->clk_events;
         for (UINT8 i = 0; i < dmc->clk_events_num; i++)
         {
             events[i].value += DmcCounterRead(ch_idx, DMC_CLKDIV2_EVT_NUM + i, dmc_array);

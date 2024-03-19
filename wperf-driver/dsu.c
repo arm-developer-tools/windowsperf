@@ -28,7 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "dsu.h"
+#include "driver.h"
 
 static inline VOID
 DSUWritePMCR(UINT32 val)
@@ -60,7 +60,7 @@ DSUCounterEnable(INT counter)
 }
 
 UINT64
-DSUEventGetCounting(struct pmu_event_kernel* event)
+DSUEventGetCounting( pmu_event_kernel* event)
 {
     if (event->counter_idx == CYCLE_COUNTER_IDX)
         return DSUReadPMCCNTR();
@@ -92,8 +92,10 @@ DSUCounterReset(VOID)
 }
 
 VOID
-DSUEventEnable(struct pmu_event_kernel* event)
+DSUEventEnable(PDEVICE_EXTENSION devExt,  pmu_event_kernel* event)
 {
+
+    UNREFERENCED_PARAMETER(devExt);
     DSUCounterDisable(event->counter_idx);
 
     if (event->event_idx != CYCLE_EVENT_IDX)
@@ -114,13 +116,13 @@ DSUProbePMU(OUT UINT8 *dsu_numGPC, OUT UINT32 *dsu_evt_mask_lo, OUT UINT32 *dsu_
  DSUUpdateDSUCounting(IN CoreInfo* core)
 {
     UINT32 events_num = core->dsu_events_num;
-    struct pmu_event_pseudo* events = core->dsu_events;
+    pmu_event_pseudo* events = core->dsu_events;
 
     DSUCounterStop();
 
     for (UINT32 i = 0; i < events_num; i++)
     {
-        events[i].value += DSUEventGetCounting((struct pmu_event_kernel*)&events[i]);
+        events[i].value += DSUEventGetCounting(( pmu_event_kernel*)&events[i]);
         events[i].scheduled += 1;
     }
 

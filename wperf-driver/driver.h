@@ -1,3 +1,4 @@
+#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -28,12 +29,21 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define INITGUID
-
 #include <ntddk.h>
 #include <wdf.h>
-#include <limits.h>
+#include <initguid.h>
+#include "..\wperf-common\iorequest.h"
+#include "..\wperf-common\macros.h"
+#include "..\wperf-common\public.h"
+#include "..\wperf-common\gitver.h"
+#include "device.h"
 #include "queue.h"
+#include "utilities.h"
+#include "dmc.h"
+#include "core.h"
+#include "sysregs.h"
+#include "dsu.h"
+
 #if defined ENABLE_TRACING
 #include "trace.h"
 #endif
@@ -41,8 +51,6 @@
 //
 // Device
 //
-#define NT_DEVICE_NAME		L"\\Device\\WPERFDRIVER"
-#define DOS_DEVICE_NAME		L"\\DosDevices\\WPERFDRIVER"
 
 
 //
@@ -52,14 +60,7 @@ DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_DEVICE_ADD WindowsPerfEvtDeviceAdd;
 EVT_WDF_DRIVER_UNLOAD WindowsPerfEvtWdfDriverUnload;
 
-typedef struct _LOCK_STATUS
-{
-	enum status_flag status;
-	ULONG ioctl;
-	KSPIN_LOCK sts_lock;
-	WDFFILEOBJECT  file_object;
-	LONG pmu_held;
-} LOCK_STATUS;
+
 
 //
 // Retrieve framework version string
@@ -70,10 +71,24 @@ WindowsPerfPrintDriverVersion(
 
 NTSTATUS deviceControl(
     _In_        WDFFILEOBJECT  file_object,
-    _In_        ULONG   IoControlCode, 
+    _In_        ULONG   IoControlCode,
     _In_        PVOID   pInBuffer,
     _In_        ULONG   InBufSize,
     _In_opt_    PVOID   pOutBuffer,
     _In_        ULONG   OutBufSize,
     _Out_       PULONG  outputSize,
     _Inout_     PQUEUE_CONTEXT queueContext);
+
+VOID multiplex_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID overflow_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2);
+
+VOID event_enable(PDEVICE_EXTENSION devExt, ppmu_event_kernel evt);
+
+VOID free_pmu_resource(PDEVICE_EXTENSION devExt);
+
+NTSTATUS get_pmu_resource(PDEVICE_EXTENSION devExt);

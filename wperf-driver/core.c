@@ -28,13 +28,10 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <ntddk.h>
-#include "trace.h"
-#include "core.h"
+#include "driver.h"
 #if defined ENABLE_TRACING
 #include "core.tmh"
 #endif
-#include "sysregs.h"
 
 static UINT8 has_long_event_support = 0;
 

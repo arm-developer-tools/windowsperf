@@ -46,22 +46,17 @@
 // and would contain per queue information.
 //
 typedef struct _QUEUE_CONTEXT {
-
-    // Here we allocate a buffer from a test write so it can be read back
+    PDEVICE_EXTENSION devExt;
     PVOID       inBuffer;
     PVOID       outBuffer;
-
     WDFWORKITEM WorkItem;
-
-    // Virtual I/O
     enum pmu_ctl_action action;     // Current action
-
     WDFREQUEST  CurrentRequest;
     NTSTATUS    CurrentStatus;
-
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, QueueGetContext)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext)
+
 
 typedef struct WORK_ITEM_CTXT_
 {
@@ -77,13 +72,15 @@ typedef struct WORK_ITEM_CTXT_
     //struct pmu_event_pseudo* events;
     VOID(*do_func)(VOID);
     VOID(*do_func2)(VOID);
+    PDEVICE_EXTENSION devExt;
 } WORK_ITEM_CTXT, *PWORK_ITEM_CTXT;
 
 WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
 
 NTSTATUS
 WindowsPerfQueueInitialize(
-    WDFDEVICE hDevice
+    WDFDEVICE hDevice,
+    PDEVICE_EXTENSION devExt
     );
 
 EVT_WDF_IO_QUEUE_CONTEXT_DESTROY_CALLBACK WindowsPerfEvtIoQueueContextDestroy;
@@ -92,7 +89,7 @@ EVT_WDF_IO_QUEUE_CONTEXT_DESTROY_CALLBACK WindowsPerfEvtIoQueueContextDestroy;
 // Events from the IoQueue object
 //
 EVT_WDF_REQUEST_CANCEL WindowsPerfEvtRequestCancel;
-EVT_WDF_IO_QUEUE_IO_READ WindowsPerfEvtIoRead;
-EVT_WDF_IO_QUEUE_IO_WRITE WindowsPerfEvtIoWrite;
+//EVT_WDF_IO_QUEUE_IO_READ WindowsPerfEvtIoRead;
+//EVT_WDF_IO_QUEUE_IO_WRITE WindowsPerfEvtIoWrite;
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL WindowsPerfEvtDeviceControl;
-EVT_WDF_TIMER WindowsPerfEvtTimerFunc;
+//EVT_WDF_TIMER WindowsPerfEvtTimerFunc;
