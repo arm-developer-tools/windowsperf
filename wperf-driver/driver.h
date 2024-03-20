@@ -44,7 +44,6 @@
 #define NT_DEVICE_NAME		L"\\Device\\WPERFDRIVER"
 #define DOS_DEVICE_NAME		L"\\DosDevices\\WPERFDRIVER"
 
-
 //
 // WDFDRIVER Events
 //

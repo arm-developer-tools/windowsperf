@@ -28,8 +28,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-
 #include "driver.h"
 #include "device.h"
 #if defined ENABLE_TRACING
@@ -41,8 +39,6 @@
 #include "core.h"
 #include "coreinfo.h"
 #include "sysregs.h"
-
-
 
 extern struct dmcs_desc dmc_array;
 extern UINT8 dsu_numGPC;
@@ -90,7 +86,6 @@ static UINT64 get_fixed_counter_value(UINT64 core_idx)
     last_fpc_read[core_idx] = curr;
     return delta;
 }
-
 
 static UINT64 event_get_counting(struct pmu_event_kernel* event, UINT64 core_idx)
 {
@@ -289,7 +284,6 @@ VOID reset_dpc(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 
 VOID arm64pmc_enable_default(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID sys_arg2)
 {
-
     UNREFERENCED_PARAMETER(dpc);
     UNREFERENCED_PARAMETER(ctx);
     UNREFERENCED_PARAMETER(sys_arg1);

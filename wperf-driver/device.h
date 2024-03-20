@@ -30,6 +30,7 @@
 
 #include "wperf-common\public.h"
 #include "queue.h"
+
 //
 // The device context performs the same job as
 // a WDM device extension in the driver frameworks

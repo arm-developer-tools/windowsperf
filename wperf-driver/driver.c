@@ -53,7 +53,6 @@ WindowsPerfEvtWdfDriverUnload(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
 #endif
 
-
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<====> WindowsPerfEvtWdfDriverUnload\n"));
 
     //
@@ -89,12 +88,10 @@ DriverEntry(
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
 
-#if defined ENABLE_TRACING
+#if defined(ENABLE_TRACING)
     WPP_INIT_TRACING(DriverObject, RegistryPath);
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 #endif
-    
-
 
     // Initialize the driver config structure
     WDF_DRIVER_CONFIG_INIT(&config, WindowsPerfEvtDeviceAdd);
@@ -113,11 +110,11 @@ DriverEntry(
         return status;
     }
 
-#if DBG || ENABLE_TRACING
+#if defined(_DEBUG) || defined(ENABLE_TRACING)
     WindowsPerfPrintDriverVersion();
 #endif
     
-#if defined ENABLE_TRACING
+#if defined(ENABLE_TRACING)
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 #endif
 
@@ -144,13 +141,12 @@ WindowsPerfEvtDeviceAdd(
 
     PAGED_CODE();
 
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "Enter EvtDeviceAdd\n"));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Enter EvtDeviceAdd\n"));
 
     status = WindowsPerfDeviceCreate(DeviceInit);
 
     return status;
 }
-
 
 /// <summary>
 /// This routine shows how to retrieve framework version string and

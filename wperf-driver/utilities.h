@@ -28,11 +28,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 VOID update_last_fixed_counter(UINT64 core_idx);
-PCHAR DbgStatusStr(NTSTATUS status);
-PCHAR GetIoctlStr(ULONG ioctl);
-VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN AmILocking(ULONG ioctl, WDFFILEOBJECT file_object);
-BOOLEAN SetMeIdle(WDFFILEOBJECT file_object);
+VOID AcquireLockForce(ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN AcquireLock(ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN IsLockOwner(ULONG ioctl, WDFFILEOBJECT file_object);
+BOOLEAN ReleaseLock(WDFFILEOBJECT file_object);

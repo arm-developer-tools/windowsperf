@@ -40,10 +40,8 @@
 #include "wperf-common\gitver.h"
 #include "wperf-common\inline.h"
 
-
 static VOID(*dsu_ctl_funcs[3])(VOID) = { DSUCounterStart, DSUCounterStop, DSUCounterReset };
 static VOID(*dmc_ctl_funcs[3])(UINT8, UINT8, struct dmcs_desc*) = { DmcCounterStart, DmcCounterStop, DmcCounterReset };
-
 
 extern struct dmcs_desc dmc_array;
 extern UINT8 dsu_numGPC;
@@ -70,8 +68,7 @@ static UINT16 armv8_arch_core_events[] =
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
-extern LOCK_STATUS   current_status;
-
+extern LOCK_STATUS current_status;
 
 // must sync with enum pmu_ctl_action
 static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
@@ -124,7 +121,7 @@ static NTSTATUS evt_assign_core(PQUEUE_CONTEXT queueContext, UINT32 core_base, U
     context->core_base = core_base;
     context->core_end = core_end;
     context->event_num = core_event_num;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for action %d\n", context->action));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%s enqueuing for action %d\n", __FUNCTION__, context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
     WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
@@ -178,9 +175,9 @@ static NTSTATUS evt_assign_dsu(PQUEUE_CONTEXT queueContext, UINT32 core_base, UI
     context->core_base = core_base;
     context->core_end = core_end;
     context->event_num = dsu_event_num;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! enqueuing for action %d\n", context->action));
+    KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%s enqueuing for action %d\n", __FUNCTION__, context->action));
     WdfWorkItemEnqueue(queueContext->WorkItem);
-    WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
+    WdfWorkItemFlush(queueContext->WorkItem); // Wait for `WdfWorkItemEnqueue` to finish
 
     return STATUS_SUCCESS;
 }
@@ -206,7 +203,7 @@ NTSTATUS deviceControl(
     NTSTATUS status = STATUS_SUCCESS;
     *outputSize = 0;
 
-    ULONG action = (IoCtlCode >> 2) & 0xFFF;   // 12 bits are the 'Function'
+    ULONG action = (IoCtlCode >> 2) & 0xFFF; // 12 bits are the 'Function'
     queueContext->action = action;  // Save for later processing  
 
     //
@@ -256,11 +253,11 @@ NTSTATUS deviceControl(
             InterlockedExchange(&current_status.pmu_held, 1);
 
             out = STS_LOCK_AQUIRED;
-            SetMeBusyForce(IoCtlCode, file_object);
+            AcquireLockForce(IoCtlCode, file_object);
         }
         else if (in->flag == LOCK_GET)
         {
-            if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
+            if (AcquireLock(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
             {
                 if (current_status.pmu_held == 0)
                 {
@@ -269,13 +266,13 @@ NTSTATUS deviceControl(
                     {
                         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE sending STS_INSUFFICIENT_RESOURCES"));
                         out = STS_INSUFFICIENT_RESOURCES;
-                        SetMeIdle(file_object); // Release the lock as we can't use it since there are no resources
+                        ReleaseLock(file_object); // Release the lock as we can't use it since there are no resources
                         goto clean_lock_acquire;
                     }
                     else if (st != STATUS_SUCCESS) {
                         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE sending STS_UNKNOWN_ERROR %x", st));
                         out = STS_UNKNOWN_ERROR;
-                        SetMeIdle(file_object); // Release the lock as there was an unknown error
+                        ReleaseLock(file_object); // Release the lock as there was an unknown error
                         goto clean_lock_acquire;
                     }
                 }
@@ -298,7 +295,6 @@ clean_lock_acquire:
         *outputSize = sizeof(enum status_flag);
         break;
     }
-
     case IOCTL_PMU_CTL_LOCK_RELEASE:
     {
         if (InBufSize != sizeof(struct lock_request))
@@ -315,9 +311,9 @@ clean_lock_acquire:
 
         if (in->flag == LOCK_RELEASE)
         {
-            if (SetMeIdle(file_object)) // returns failure if this process doesnt own the lock 
+            if (ReleaseLock(file_object)) // returns failure if this process doesnt own the lock 
             {
-                out = STS_IDLE;         // All went well and we went IDLE
+                out = STS_IDLE; // All went well and we went IDLE
                 LONG oldval = InterlockedExchange(&current_status.pmu_held, 0);
                 if (oldval == 1)
                     free_pmu_resource();
@@ -335,14 +331,13 @@ clean_lock_acquire:
         *outputSize = sizeof(enum status_flag);
         break;
     }
-
     case IOCTL_PMU_CTL_SAMPLE_START:
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -363,13 +358,13 @@ clean_lock_acquire:
             break;
         }
 
-		if (!CTRL_FLAG_VALID(ctl_req->flags))
-		{
-			KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
-				ctl_req->flags, action));
-			status = STATUS_INVALID_PARAMETER;
-			break;
-		}
+        if (!CTRL_FLAG_VALID(ctl_req->flags))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: invalid flags  0x%X for action %d\n",
+                ctl_req->flags, action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
         if (!check_cores_in_pmu_ctl_hdr_p(ctl_req))
         {
@@ -401,8 +396,8 @@ clean_lock_acquire:
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;
         size_t cores_count = ctl_req->cores_idx.cores_count;
 
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -468,8 +463,8 @@ clean_lock_acquire:
         CoreInfo* core = core_info + core_idx;
         KIRQL oldIrql;
 
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -508,8 +503,8 @@ clean_lock_acquire:
     }
     case IOCTL_PMU_CTL_SAMPLE_SET_SRC:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -565,8 +560,8 @@ clean_lock_acquire:
         size_t cores_count = ctl_req->cores_idx.cores_count;
         int dmc_core_idx = ALL_CORE;
 
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -609,13 +604,13 @@ clean_lock_acquire:
         VOID(*dmc_func)(UINT8, UINT8, struct dmcs_desc*) = NULL;
         ULONG funcsIdx = (action - PMU_CTL_ACTION_OFFSET);
         const ULONG funcsSize = (ULONG)(sizeof(core_ctl_funcs) / sizeof(core_ctl_funcs[0]));
-        
-		if (funcsIdx >= funcsSize)
-		{
-			KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_WARNING_LEVEL, "IOCTL: invalid action %d\n", action));
-			status = STATUS_INVALID_PARAMETER;
-			break;
-		}
+
+        if (funcsIdx >= funcsSize)
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_WARNING_LEVEL, "IOCTL: invalid action %d\n", action));
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
 
         if (ctl_flags & CTL_FLAG_CORE)
             core_func = core_ctl_funcs[funcsIdx];
@@ -630,7 +625,9 @@ clean_lock_acquire:
         context->cores_count = cores_count;
         context->do_func = core_func;
         context->do_func2 = dsu_func;
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! enqueuing for action %d\n", context->action));
+
+        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%s %d enqueuing for action %d\n", __FUNCTION__, __LINE__, context->action));
+
         WdfWorkItemEnqueue(queueContext->WorkItem);
         WdfWorkItemFlush(queueContext->WorkItem);       // Wait for `WdfWorkItemEnqueue` to finish
 
@@ -657,7 +654,6 @@ clean_lock_acquire:
 
         if (action == PMU_CTL_START)
         {
-
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_START cores_count %lld\n", cores_count));
             for (auto k = 0; k < cores_count; k++)
             {
@@ -705,7 +701,7 @@ clean_lock_acquire:
                 KeInitializeTimer(&core->timer);
                 core->timer_running = 1;
 
-                const LONGLONG ns100 = -10000;  // negative, the expiration time is relative to the current system time
+                const LONGLONG ns100 = -10000; // negative, the expiration time is relative to the current system time
                 LARGE_INTEGER DueTime;
                 LONG Period = PMU_CTL_START_PERIOD;
 
@@ -716,9 +712,9 @@ clean_lock_acquire:
                 DueTime.QuadPart = do_multiplex ? (Period * ns100) : (2 * (LONGLONG)Period * ns100);
                 Period = do_multiplex ? Period : (2 * Period);
 
-                KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! ctl_req->period = %d\n", ctl_req->period));
-                KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! count.period = %d\n", Period));
-                KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%!FUNC! %!LINE! DueTime.QuadPart = %lld\n", DueTime.QuadPart));
+                KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%s %d ctl_req->period = %d\n", __FUNCTION__, __LINE__, ctl_req->period));
+                KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%s %d count.period = %d\n", __FUNCTION__, __LINE__, Period));
+                KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "%s %d DueTime.QuadPart = %lld\n", __FUNCTION__, __LINE__, DueTime.QuadPart));
 
                 PRKDPC dpc = do_multiplex ? &core->dpc_multiplex : &core->dpc_overflow;
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_START calling set timer multiplex %s for loop k  %d core idx %lld\n", do_multiplex? "TRUE":"FALSE", k, core->idx));
@@ -762,8 +758,8 @@ clean_lock_acquire:
                     dsu_events[j].value = 0;
                     dsu_events[j].scheduled = 0;
                 }
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_RESET calling insert dpc  loop k is %d core index is %lld\n", k, core->idx));
-                KeInsertQueueDpc(&core->dpc_reset, (VOID*)cores_count, NULL);  // cores_count has been validated so the DPC will always be called prior to the code below waiting on its completion
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: action PMU_CTL_RESET calling insert dpc loop k is %d core index is %lld\n", k, core->idx));
+                KeInsertQueueDpc(&core->dpc_reset, (VOID*)cores_count, NULL); // cores_count has been validated so the DPC will always be called prior to the code below waiting on its completion
             }
             LARGE_INTEGER li;
             li.QuadPart = 0;
@@ -800,8 +796,8 @@ clean_lock_acquire:
     }
     case IOCTL_PMU_CTL_QUERY_HW_CFG:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -854,8 +850,8 @@ clean_lock_acquire:
     }
     case IOCTL_PMU_CTL_QUERY_SUPP_EVENTS:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -954,8 +950,8 @@ clean_lock_acquire:
     }
     case IOCTL_PMU_CTL_QUERY_VERSION:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1001,8 +997,8 @@ clean_lock_acquire:
     }
     case IOCTL_PMU_CTL_ASSIGN_EVENTS:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1110,8 +1106,8 @@ clean_lock_acquire:
     }
     case IOCTL_PMU_CTL_READ_COUNTING:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1198,8 +1194,8 @@ clean_lock_acquire:
     }
     case IOCTL_DSU_CTL_INIT:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1238,8 +1234,8 @@ clean_lock_acquire:
     }
     case IOCTL_DSU_CTL_READ_COUNTING:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1334,8 +1330,8 @@ clean_lock_acquire:
     }
     case IOCTL_DMC_CTL_INIT:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;
@@ -1402,8 +1398,8 @@ clean_lock_acquire:
     }
     case IOCTL_DMC_CTL_READ_COUNTING:
     {
-        // does our process own the lock?
-        if (!AmILocking(IoCtlCode, file_object))
+        // Check if current file_object is the owner of the lock
+        if (!IsLockOwner(IoCtlCode, file_object))
         {
             status = STATUS_INVALID_DEVICE_STATE;
             break;

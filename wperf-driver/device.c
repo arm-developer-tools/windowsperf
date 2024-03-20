@@ -40,23 +40,16 @@
 #include "coreinfo.h"
 #include "sysregs.h"
 
-
 //
 // Device events
 //
 EVT_WDF_DEVICE_SELF_MANAGED_IO_INIT WindowsPerfEvtDeviceSelfManagedIoStart;
 EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND WindowsPerfEvtDeviceSelfManagedIoSuspend;
 
-
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfDeviceCreate)
 #pragma alloc_text (PAGE, WindowsPerfEvtDeviceSelfManagedIoSuspend)
 #endif
-
-//
-// Port Begin
-//
-
 
 struct dmcs_desc dmc_array = { 0 };
 
@@ -77,6 +70,7 @@ UINT64 id_aa64dfr0_el1_value = 0;
 HANDLE pmc_resource_handle = NULL;
 UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 CoreInfo* core_info = NULL;
+
 // Use this array to calculate the value for fixed counters via a delta approach as we are no longer resetting it.
 // See comment on CoreCounterReset() for an explanation.
 UINT64* last_fpc_read = NULL;
@@ -91,12 +85,9 @@ enum
 #undef WPERF_ARMV8_ARCH_EVENTS
 };
 
-
-
-
 //////////////////////////////////////////////////////////////////
 //
-//    I S R  functions
+//    ISR functions
 //
 //
 
@@ -177,7 +168,7 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 ////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-//   D E V I C E   Related functions
+//   DEVICE Related functions
 //
 //
 
@@ -220,15 +211,13 @@ struct pmu_event_kernel default_events[AARCH64_MAX_HWC_SUPP + numFPC] =
 
 VOID free_pmu_resource(VOID)
 {
-
     for (ULONG i = 0; i < numCores; i++)
     {
         CoreInfo* core = &core_info[i];
-        //if (core->timer_running)
-        {
-            KeCancelTimer(&core->timer);
-            core->timer_running = 0;
-        }
+
+        KeCancelTimer(&core->timer);
+        core->timer_running = 0;
+
         KeRemoveQueueDpc(&core->dpc_queue);
         KeRemoveQueueDpc(&core->dpc_reset);
         KeRemoveQueueDpc(&core->dpc_multiplex);
@@ -250,13 +239,7 @@ VOID free_pmu_resource(VOID)
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "HalFreeHardwareCounters: success\n"));
         }
     }
-
-    // Uninstall PMI isr
-  //  PMIHANDLER isr = NULL;
-  //  if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
-  //      KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
 }
-
 
 NTSTATUS get_pmu_resource(VOID)
 {
@@ -296,7 +279,7 @@ NTSTATUS get_pmu_resource(VOID)
 
     counter_idx_map[CYCLE_COUNTER_IDX] = CYCLE_COUNTER_IDX;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(ENABLE_TRACING)
     for (UINT8 i = 0; i < numGPC; i++)
     {
         i %= AARCH64_MAX_HWC_SUPP;
@@ -355,9 +338,6 @@ NTSTATUS get_pmu_resource(VOID)
         }
     }
 
-
-    
-
     for (ULONG i = 0; i < numCores; i++)
     {
         CoreInfo* core = &core_info[i];
@@ -387,51 +367,48 @@ NTSTATUS get_pmu_resource(VOID)
     return STATUS_SUCCESS;
 }
 
-
 static void FileCreate(
-	WDFDEVICE Device,
-	WDFREQUEST Request,
-	WDFFILEOBJECT FileObject
+    WDFDEVICE Device,
+    WDFREQUEST Request,
+    WDFFILEOBJECT FileObject
 )
 {
-    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(FileObject);
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCreate\n"));
-    pDevExt->InUse++;
-	WdfRequestComplete(Request, STATUS_SUCCESS);
-	return;
-}
+    UNREFERENCED_PARAMETER(FileObject);
 
+    PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCreate\n"));
+
+    pDevExt->InUse++;
+    WdfRequestComplete(Request, STATUS_SUCCESS);
+}
 
 static void FileClose(
-	WDFFILEOBJECT FileObject
+    WDFFILEOBJECT FileObject
 )
 {
-    WDFDEVICE               device = WdfFileObjectGetDevice(FileObject);
+    WDFDEVICE device = WdfFileObjectGetDevice(FileObject);
     PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(device);
+
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> FileCose\n"));
+    
     pDevExt->InUse--;
 }
-
-
-//
-// Port End
-//
-
 
 NTSTATUS WindowsPerfDeviceQueryRemove(
     WDFDEVICE Device
 )
 {
     PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
-    KEVENT						evt;
-    LARGE_INTEGER		li;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> WindowsPerfDeviceQueryRemove \n"));
-    li.QuadPart = -1 * 100000;   // units of 100 nanoseconds  100 x 10^-9  so 10 ms
+    KEVENT             evt;
+    LARGE_INTEGER      li;
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "%s \n", __FUNCTION__));
+
+    li.QuadPart = ((LONGLONG) -1) * 100000; // units of 100 nanoseconds 100 x 10^-9 so 10 ms
     KeInitializeEvent(&evt, NotificationEvent, FALSE);
     pDevExt->AskedToRemove = 1;
-    running = 0;  // ideally we should pass a device extension in the context to the dpcs 
+    running = 0; // ideally we should pass a device extension in the context to the dpcs 
 
     // stall the unload request untill all file handles are closed
     while (pDevExt->InUse)
@@ -456,10 +433,8 @@ NTSTATUS WindowsPerfDeviceQueryRemove(
     /// clear the work item
     WdfWorkItemFlush(pDevExt->pQueContext->WorkItem);
 
-       
     return STATUS_SUCCESS;
 }
-
 
 void WindowsPerfDeviceIOCleanup(
      WDFDEVICE Device
@@ -468,8 +443,11 @@ void WindowsPerfDeviceIOCleanup(
     PDEVICE_EXTENSION  pDevExt = GetDeviceExtension(Device);
     pDevExt->AskedToRemove = 1;
     running = 0;
-    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "<====> WindowsPerfDeviceIOCleanup\n"));
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "%s\n", __FUNCTION__));
+
     free_pmu_resource();
+
     if (core_info)
         ExFreePoolWithTag(core_info, 'CORE');
 
@@ -488,9 +466,8 @@ void WindowsPerfDeviceIOCleanup(
     // Uninstall PMI isr
     PMIHANDLER isr = NULL;
     if (HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr) != STATUS_SUCCESS)
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "uninstalling sampling isr failed \n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Uninstalling sampling ISR failed \n"));
 }
-
 
 /// <summary>
 /// Worker routine called to create a device and its software resources.
@@ -505,13 +482,12 @@ WindowsPerfDeviceCreate(
     PWDFDEVICE_INIT DeviceInit
 )
 {
-    WDF_OBJECT_ATTRIBUTES   deviceAttributes;
+    WDF_OBJECT_ATTRIBUTES deviceAttributes;
     PDEVICE_EXTENSION pDevExt;
-    WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
+    WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
     WDFDEVICE device;
     NTSTATUS status;
     WDF_FILEOBJECT_CONFIG FileObjectConfig;
-    
 
     PAGED_CODE();
 
@@ -523,9 +499,8 @@ WindowsPerfDeviceCreate(
     //
     pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = WindowsPerfEvtDeviceSelfManagedIoStart;
     pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = WindowsPerfEvtDeviceSelfManagedIoSuspend;
-    pnpPowerCallbacks.EvtDeviceQueryRemove = WindowsPerfDeviceQueryRemove;   // IRP_MN_QUERY_REMOVE_DEVICE
+    pnpPowerCallbacks.EvtDeviceQueryRemove = WindowsPerfDeviceQueryRemove; // IRP_MN_QUERY_REMOVE_DEVICE
     pnpPowerCallbacks.EvtDeviceSelfManagedIoCleanup = WindowsPerfDeviceIOCleanup; // IRP_MN_REMOVE_DEVICE
-
 
     //
     // Function used for both Init and Restart Callbacks
@@ -540,7 +515,6 @@ WindowsPerfDeviceCreate(
     // later in SotwareInit.
     //
     WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
-
 
     // Register for file object creation, we dont need callbacks to file open and close etc
     WDF_FILEOBJECT_CONFIG_INIT(&FileObjectConfig, FileCreate, FileClose, WDF_NO_EVENT_CALLBACK);
@@ -578,13 +552,8 @@ WindowsPerfDeviceCreate(
             // Initialize the I/O Package and any Queues
             //
             status = WindowsPerfQueueInitialize(device);
-
         }
     }
-
-    //
-    // Port Begin
-    //
 
     dfr0_value = _ReadStatusReg(ID_DFR0_EL1);
     int pmu_ver = (dfr0_value >> 8) & 0xf;
@@ -599,7 +568,7 @@ WindowsPerfDeviceCreate(
 
     midr_value = _ReadStatusReg(MIDR_EL1);
 
-#if defined(DBG) || defined(ENABLE_TRACING)
+#if defined(_DEBUG) || defined(ENABLE_TRACING)
     UINT8 implementer = (midr_value >> 24) & 0xff;
     UINT8 variant = (midr_value >> 20) & 0xf;
     UINT8 arch_num = (midr_value >> 16) & 0xf;
@@ -650,7 +619,6 @@ WindowsPerfDeviceCreate(
     numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
 
-
     core_info = (CoreInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(CoreInfo) * numCores, 'CORE');
     if (core_info == NULL)
     {
@@ -658,7 +626,6 @@ WindowsPerfDeviceCreate(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
-
 
     last_fpc_read = (UINT64*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT64) * numCores, 'LAST');
     if (!last_fpc_read)
@@ -706,9 +673,7 @@ WindowsPerfDeviceCreate(
         KeSetImportanceDpc(dpc_reset, HighImportance);
     }
 
-
     KeInitializeEvent(&sync_reset_dpc, NotificationEvent, FALSE);
-
 
     PMIHANDLER isr = arm64_pmi_ISR;
     status = HalSetSystemInformation(HalProfileSourceInterruptHandler, sizeof(PMIHANDLER), (PVOID)&isr);

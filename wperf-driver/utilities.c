@@ -46,10 +46,10 @@ void update_last_fixed_counter(UINT64 core_idx)
 }
 extern LOCK_STATUS   current_status;
 
-PCHAR DbgStatusStr(NTSTATUS status)
+static PCHAR DbgStatusStr(NTSTATUS status)
 {
-	switch (status) 
-	{
+    switch (status) 
+    {
     // Note: values are used where the Win98 DDK doesn't define a name
     case STATUS_SUCCESS:                    return "STATUS_SUCCESS";                    // 0x00000000
     case STATUS_TIMEOUT:                    return "STATUS_TIMEOUT";                    // 0x00000102
@@ -73,13 +73,13 @@ PCHAR DbgStatusStr(NTSTATUS status)
     case STATUS_CANCELLED:                  return "STATUS_CANCELLED";                  // 0xC0000120
     case STATUS_POWER_STATE_INVALID:        return "STATUS_POWER_STATE_INVALID";        // 0xC00002D3
     default:                                return "unhandled status value";
-	}
+    }
 }
 
-PCHAR GetIoctlStr(ULONG ioctl)
+static PCHAR GetIoctlStr(ULONG ioctl)
 {
-	switch (ioctl)
-	{
+    switch (ioctl)
+    {
     // Note: values are used where the Win98 DDK doesn't define a name
     case IOCTL_PMU_CTL_START:               return "IOCTL_PMU_CTL_START";
     case IOCTL_PMU_CTL_STOP:                return "IOCTL_PMU_CTL_STOP";
@@ -100,10 +100,10 @@ PCHAR GetIoctlStr(ULONG ioctl)
     case IOCTL_PMU_CTL_LOCK_ACQUIRE:        return "IOCTL_PMU_CTL_LOCK_ACQUIRE";
     case IOCTL_PMU_CTL_LOCK_RELEASE:        return "IOCTL_PMU_CTL_LOCK_RELEASE";
     default:                                return "unknown IOCTL!";
-	}
+    }
 }
 
-VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT  file_object) // always suceeds
+VOID AcquireLockForce(ULONG ioctl, WDFFILEOBJECT file_object) // always suceeds
 {
     KIRQL oldirql;
 
@@ -114,7 +114,7 @@ VOID SetMeBusyForce(ULONG ioctl, WDFFILEOBJECT  file_object) // always suceeds
     KeReleaseSpinLock(&current_status.sts_lock, oldirql);
 }
 
-BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if the lock is held by another process
+BOOLEAN AcquireLock(ULONG ioctl, WDFFILEOBJECT file_object) // returns failure if the lock is held by another process
 {
     BOOLEAN ret = FALSE;
     KIRQL oldirql;
@@ -124,7 +124,8 @@ BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if
         &&
         (current_status.status == STS_BUSY) )
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "SetMeBusy : %s : device is busy with file object %p with ioctl %s active\n",
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s : %s : device is busy with file object %p with ioctl %s active\n",
+            __FUNCTION__,
             GetIoctlStr(ioctl),
             current_status.file_object,
             GetIoctlStr(current_status.ioctl)));
@@ -142,38 +143,41 @@ BOOLEAN SetMeBusy(ULONG ioctl, WDFFILEOBJECT  file_object) // returns failure if
     return ret;
 }
 
-BOOLEAN AmILocking(ULONG ioctl, WDFFILEOBJECT  file_object)// returns TRUE if file objects match
+// IsLockOwner returns TRUE if file objects match
+BOOLEAN IsLockOwner(ULONG ioctl, WDFFILEOBJECT file_object)
 {
     BOOLEAN  ret = FALSE;
     KIRQL oldirql;
 
-#if!defined DBG
-    UNREFERENCED_PARAMETER(ioctl);
-#endif
-
     KeAcquireSpinLock(&current_status.sts_lock, &oldirql);
+
     if (file_object == current_status.file_object) // if we hold the lock, return TRUE, and also update the active ioctl
     {
-        ret = TRUE;  
+        ret = TRUE;
         current_status.ioctl = ioctl;
     }
     else
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "AmILocking : %s : device is busy with file object %p with ioctl %s active\n", 
-                    GetIoctlStr(ioctl), 
-                    current_status.file_object, 
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s : %s : device is busy with file object %p with ioctl %s active\n",
+                    __FUNCTION__,
+                    GetIoctlStr(ioctl),
+                    current_status.file_object,
                     GetIoctlStr(current_status.ioctl)));
     }
+
     KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+
     return ret;
 }
 
-BOOLEAN SetMeIdle(WDFFILEOBJECT  file_object)// returns failure if the lock is not held by this process
+// AcquireLock returns failure if the lock is not held by this process
+BOOLEAN ReleaseLock(WDFFILEOBJECT file_object)
 {
     KIRQL oldirql;
     BOOLEAN ret = FALSE;
 
     KeAcquireSpinLock(&current_status.sts_lock, &oldirql);
+
     if (file_object == current_status.file_object)
     {
         current_status.status = STS_IDLE;
@@ -183,11 +187,12 @@ BOOLEAN SetMeIdle(WDFFILEOBJECT  file_object)// returns failure if the lock is n
     }
     else
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "SetMeIdle : lock is held by process %p,  not this one, %p\n",
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "%s : lock is held by process %p, not this one, %p\n",
+            __FUNCTION__,
             current_status.file_object,
             file_object));
-        ret = FALSE;
     }
     KeReleaseSpinLock(&current_status.sts_lock, oldirql);
+
     return ret;
 }
