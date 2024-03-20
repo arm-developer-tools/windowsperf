@@ -277,6 +277,12 @@ bool user_request::is_force_lock(const wstr_vec& raw_args)
     return is_cli_option_in_args(raw_args, std::wstring(L"--force-lock"));
 }
 
+bool user_request::is_help(const wstr_vec& raw_args)
+{
+    return is_cli_option_in_args(raw_args, std::wstring(L"--help"))
+        || is_cli_option_in_args(raw_args, std::wstring(L"-h"));
+}
+
 void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<std::wstring, metric_desc>& builtin_metrics,
     const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,

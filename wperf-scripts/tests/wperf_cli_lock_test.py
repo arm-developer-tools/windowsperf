@@ -56,7 +56,7 @@ def test_wperf_locking_locked():
 
     process = subprocess.Popen(["wperf", "stat",  "-m",  "imix",  "-c",  "1",  "--timeout",  "3"], text=True)
     time.sleep(.2)
-    process2 = subprocess.run(["wperf", "--help"], text=True, capture_output=True)
+    process2 = subprocess.run(["wperf", "--version"], text=True, capture_output=True)
     s =  process2.stderr
 
     while True:
@@ -71,7 +71,7 @@ def test_wperf_locking_locked():
     assert 'warning: other WindowsPerf process acquired the wperf-driver.' in s, "test_wperf_locking_locked failed, process #2"
 
     # Test that we are unlocked after test is finished
-    process3 = subprocess.run(["wperf", "--help"], capture_output=True, text=True)
+    process3 = subprocess.run(["wperf", "--version"], capture_output=True, text=True)
     s = process3.stderr
 
     assert 'warning: other WindowsPerf process acquired the wperf-driver.' not in s, "test_wperf_locking_unlocked failed, process #3"
@@ -88,7 +88,7 @@ def test_wperf_locking_locked_after_n_times():
     #
     for n in range(5):
         time.sleep(.5)
-        process2 = subprocess.run(["wperf", "--help"], text=True, capture_output=True)
+        process2 = subprocess.run(["wperf", "--version"], text=True, capture_output=True)
         s =  process2.stderr
         assert 'warning: other WindowsPerf process acquired the wperf-driver.' in s, f"test_wperf_locking_locked_after_n_times failed after {n} tries, process #2"
 
@@ -104,7 +104,7 @@ def test_wperf_locking_locked_after_n_times():
     process.kill()
 
     # Test that we are unlocked after test is finished
-    process3 = subprocess.run(["wperf", "--help"], capture_output=True, text=True)
+    process3 = subprocess.run(["wperf", "--version"], capture_output=True, text=True)
     s = process3.stderr
     assert 'warning: other WindowsPerf process acquired the wperf-driver.' not in s, "test_wperf_locking_unlocked failed, process #3"
 
@@ -122,13 +122,13 @@ def test_wperf_locking_locked_after_n_times_and_force():
     #
     for n in range(5):
         time.sleep(.5)
-        process2 = subprocess.run(["wperf", "--help"], text=True, capture_output=True)
+        process2 = subprocess.run(["wperf", "--version"], text=True, capture_output=True)
         s =  process2.stderr
         assert 'warning: other WindowsPerf process acquired the wperf-driver.' in s, f"test_wperf_locking_locked_after_n_times failed after {n} tries, process #2"
 
     time.sleep(.5)
     # Test that we are unlocked after test is finished
-    process3 = subprocess.run(["wperf", "--help", "--force-lock"], capture_output=True, text=True)
+    process3 = subprocess.run(["wperf", "--version", "--force-lock"], capture_output=True, text=True)
     s = process3.stderr
     assert 'warning: other WindowsPerf process acquired the wperf-driver.' not in s, "test_wperf_locking_unlocked failed, process #3"
 
@@ -156,7 +156,7 @@ def test_wperf_locking_force():
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, text=True)
     time.sleep(.2)
-    process2 = subprocess.run(["wperf", "--help", "--force-lock"], text=True, capture_output=True)
+    process2 = subprocess.run(["wperf", "--version", "--force-lock"], text=True, capture_output=True)
 
     while True:
         retcode = process.poll()
@@ -185,12 +185,12 @@ def test_wperf_locking_force_n_times():
     #
     for n in range(5):
         time.sleep(.5)
-        process2 = subprocess.run(["wperf", "--help", "--force-lock"], text=True, capture_output=True)
+        process2 = subprocess.run(["wperf", "--version", "--force-lock"], text=True, capture_output=True)
         s = process2.stderr
         assert 'warning: other WindowsPerf process acquired the wperf-driver.' not in s, "test_wperf_locking_unlocked failed, process #3"
 
     time.sleep(.5)
-    process2 = subprocess.run(["wperf", "--help"], text=True, capture_output=True)
+    process2 = subprocess.run(["wperf", "--version"], text=True, capture_output=True)
     s = process2.stderr
     assert 'warning: other WindowsPerf process acquired the wperf-driver.' not in s, "test_wperf_locking_unlocked failed, process #3"
 

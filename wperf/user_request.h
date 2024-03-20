@@ -68,6 +68,7 @@ public:
     static void print_help_usage();
     static bool is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt);    // Return true if `opt` is in CLI options
     static bool is_force_lock(const wstr_vec& raw_args);    // Return true if `--force-lock` is in CLI options
+    static bool is_help(const wstr_vec& raw_args);          // Return true if `--help` is in CLI options
 
     bool do_list;
     bool do_count;

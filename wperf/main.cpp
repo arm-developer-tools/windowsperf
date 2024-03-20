@@ -88,10 +88,25 @@ wmain(
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
 
+    //* Handle CLI options before we initialize PMU device(s)
     for (int i = 1; i < argc; i++)
         raw_args.push_back(argv[i]);
 
     pmu_device.do_force_lock = user_request::is_force_lock(raw_args);
+
+    if (raw_args.size() == 1 && user_request::is_help(raw_args))
+    {
+        user_request::print_help();
+        goto clean_exit;
+    }
+
+    if (raw_args.empty())
+    {
+        user_request::print_help_header();
+        user_request::print_help_prompt();
+        goto clean_exit;
+    }
+    //* Handle CLI options before we initialize PMU device(s)
 
     try {
         pmu_device.init();
