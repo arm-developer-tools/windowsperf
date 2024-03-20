@@ -237,20 +237,51 @@ NTSTATUS deviceControl(
 
         if (in->flag == LOCK_GET_FORCE)
         {
-            out = STS_LOCK_AQUIRED;
-            LONG oldval = InterlockedExchange(&current_status.pmu_held, 1);
-            if(oldval == 0)
-                get_pmu_resource();
+            if (current_status.pmu_held == 0)
+            {
+                NTSTATUS st = get_pmu_resource();
+                if (st == STATUS_INSUFFICIENT_RESOURCES)
+                {
+                    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE sending STS_INSUFFICIENT_RESOURCES"));
+                    out = STS_INSUFFICIENT_RESOURCES;
+                    goto clean_lock_acquire;
+                }
+                else if (st != STATUS_SUCCESS) {
+                    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE sending STS_UNKNOWN_ERROR %x", st));
+                    out = STS_UNKNOWN_ERROR;
+                    goto clean_lock_acquire;
+                }
+            }
 
+            InterlockedExchange(&current_status.pmu_held, 1);
+
+            out = STS_LOCK_AQUIRED;
             SetMeBusyForce(IoCtlCode, file_object);
         }
         else if (in->flag == LOCK_GET)
         {
             if (SetMeBusy(IoCtlCode, file_object)) // returns failure if the lock is already held by another process
             {
-                LONG oldval = InterlockedExchange(&current_status.pmu_held, 1);
-                if (oldval == 0)
-                    get_pmu_resource();
+                if (current_status.pmu_held == 0)
+                {
+                    NTSTATUS st = get_pmu_resource();
+                    if (st == STATUS_INSUFFICIENT_RESOURCES)
+                    {
+                        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE sending STS_INSUFFICIENT_RESOURCES"));
+                        out = STS_INSUFFICIENT_RESOURCES;
+                        SetMeIdle(file_object); // Release the lock as we can't use it since there are no resources
+                        goto clean_lock_acquire;
+                    }
+                    else if (st != STATUS_SUCCESS) {
+                        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_LOCK_ACQUIRE sending STS_UNKNOWN_ERROR %x", st));
+                        out = STS_UNKNOWN_ERROR;
+                        SetMeIdle(file_object); // Release the lock as there was an unknown error
+                        goto clean_lock_acquire;
+                    }
+                }
+
+                InterlockedExchange(&current_status.pmu_held, 1);
+
                 out = STS_LOCK_AQUIRED;
                 // Note: else STS_BUSY;
             }
@@ -262,6 +293,7 @@ NTSTATUS deviceControl(
             break;
         }
 
+clean_lock_acquire:
         *((enum status_flag*)pOutBuffer) = out;
         *outputSize = sizeof(enum status_flag);
         break;

@@ -591,8 +591,14 @@ void  pmu_device::lock(bool force_lock)
        the driver will set status `STATUS_INVALID_DEVICE_STATE ` internally and
        user-space will receive `ERROR_BAD_COMMAND` (22).
     */
-    if (sts_flag != STS_LOCK_AQUIRED)
+    if (sts_flag == STS_BUSY)
         throw locked_exception("PMU_CTL_LOCK_ACQUIRE already locked");
+
+    if (sts_flag == STS_INSUFFICIENT_RESOURCES)
+        throw lock_insufficient_resources_exception("PMU_CTL_LOCK_ACQUIRE insufficient resources");
+
+    if (sts_flag == STS_UNKNOWN_ERROR)
+        throw lock_unknown_exception("PMU_CTL_LOCK_ACQUIRE unknown error");
 
     lock_successful = true;
 }

@@ -47,11 +47,13 @@ enum evt_class
     EVT_CLASS_NUM,
 };
 
-enum status_flag            // Status of the driver lock
+enum status_flag                // Status of the driver lock
 {
-    STS_IDLE,               // When no process has the driver locked aka "the default state".
-    STS_BUSY,               // When another process already has the driver lock.
-    STS_LOCK_AQUIRED,       // When the calling process has successfully acquired the driver lock.
+    STS_IDLE,                   // When no process has the driver locked aka "the default state".
+    STS_BUSY,                   // When another process already has the driver lock.
+    STS_LOCK_AQUIRED,           // When the calling process has successfully acquired the driver lock.
+    STS_INSUFFICIENT_RESOURCES, // When the driver was unable to allocate any GPU.
+    STS_UNKNOWN_ERROR,          // Catch all for other unknown errors.
 };
 
 struct evt_hdr

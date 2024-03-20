@@ -61,3 +61,15 @@ class lock_denied_exception : public wperf_exception
 public:
     lock_denied_exception(const char* msg) : wperf_exception(msg) {}
 };
+
+class lock_insufficient_resources_exception : public wperf_exception
+{
+public:
+    lock_insufficient_resources_exception(const char* msg) : wperf_exception(msg) {}
+};
+
+class lock_unknown_exception : public wperf_exception
+{
+public:
+    lock_unknown_exception(const char* msg) : wperf_exception(msg) {}
+};

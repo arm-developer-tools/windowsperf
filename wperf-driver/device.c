@@ -260,7 +260,7 @@ VOID free_pmu_resource(VOID)
 
 NTSTATUS get_pmu_resource(VOID)
 {
-    NTSTATUS status;
+    NTSTATUS status = STATUS_SUCCESS;
     
     UINT32 pmcr = CorePmcrGet();
     numGPC = (pmcr >> ARMV8_PMCR_N_SHIFT) & ARMV8_PMCR_N_MASK;
@@ -384,7 +384,7 @@ NTSTATUS get_pmu_resource(VOID)
         KeInsertQueueDpc(&core->dpc_reset, (VOID*)numCores, NULL);
     }
 
-    return status;
+    return STATUS_SUCCESS;
 }
 
 
