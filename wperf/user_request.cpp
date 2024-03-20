@@ -279,6 +279,7 @@ bool user_request::is_force_lock(const wstr_vec& raw_args)
 
 void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<std::wstring, metric_desc>& builtin_metrics,
+    const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
     std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
 {
     std::map<enum evt_class, std::deque<struct evt_noted>> events;
@@ -289,7 +290,7 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
     cores_idx.resize(pmu_cfg.core_num);
     std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
 
-    parse_raw_args(raw_args, pmu_cfg, events, groups, builtin_metrics, extra_events);
+    parse_raw_args(raw_args, pmu_cfg, events, groups, builtin_metrics, groups_of_metrics, extra_events);
 
     // Deduce image name and PDB file name from PE file name
     if (sample_pe_file.size())
@@ -340,6 +341,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     std::map<enum evt_class, std::deque<struct evt_noted>>& events,
     std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
     std::map<std::wstring, metric_desc>& builtin_metrics,
+    const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
     std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
 {   
     bool waiting_events = false;
@@ -477,12 +479,29 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (waiting_metrics)
         {
+            std::vector<std::wstring> list_of_defined_metrics;
             std::wistringstream metric_stream(a);
-            std::wstring metric;
+            std::wstring metric_token;
 
-            while (std::getline(metric_stream, metric, L','))
+            while (std::getline(metric_stream, metric_token, L','))
             {
-                if (metrics.find(metric) == metrics.end())
+                if (groups_of_metrics.count(metric_token) > 0)
+                {
+                    // Expand group of metrics with its metrics
+                    const std::vector<std::wstring>& m = groups_of_metrics.at(metric_token);
+                    std::copy(m.begin(), m.end(), std::back_inserter(list_of_defined_metrics));
+                }
+                else
+                {
+                    // Add metric to the list
+                    list_of_defined_metrics.push_back(metric_token);
+                }
+            }
+
+            for (const auto &metric : list_of_defined_metrics)
+            {
+                if (metrics.find(metric) == metrics.end() &&
+                    groups_of_metrics.count(metric) == 0)
                 {
                     m_out.GetErrorOutputStream() << L"metric '" << metric << "' not supported" << std::endl;
                     if (metrics.size())

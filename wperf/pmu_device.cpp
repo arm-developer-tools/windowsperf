@@ -70,11 +70,13 @@ std::map<std::wstring, struct product_configuration> pmu_device::m_product_confi
 #define WPERF_TS_METRICS(...)
 #define WPERF_TS_PRODUCT_CONFIGURATION(A,B,C,D,E,F,G,H,I,J) {std::wstring(L##A),{std::wstring(L##B),C,D,E,F,G,H,std::wstring(L##I),std::wstring(L##J)}},
 #define WPERF_TS_ALIAS(...)
+#define WPERF_TS_GROUPS_METRICS(...)
 #include "wperf-common/telemetry-solution-data.def"
 #undef WPERF_TS_EVENTS
 #undef WPERF_TS_METRICS
 #undef WPERF_TS_PRODUCT_CONFIGURATION
 #undef WPERF_TS_ALIAS
+#undef WPERF_TS_GROUPS_METRICS
 };
 
 std::map<std::wstring, std::wstring> pmu_device::m_product_alias =
@@ -83,11 +85,13 @@ std::map<std::wstring, std::wstring> pmu_device::m_product_alias =
 #define WPERF_TS_METRICS(...)
 #define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #define WPERF_TS_ALIAS(A,B) {L##A,L##B},
+#define WPERF_TS_GROUPS_METRICS(...)
 #include "wperf-common/telemetry-solution-data.def"
 #undef WPERF_TS_EVENTS
 #undef WPERF_TS_METRICS
 #undef WPERF_TS_PRODUCT_CONFIGURATION
 #undef WPERF_TS_ALIAS
+#undef WPERF_TS_GROUPS_METRICS
 };
 
 
@@ -102,6 +106,7 @@ pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), dsu_clust
     memset(fpc_nums, 0, sizeof fpc_nums);
 
     init_ts_metrics();
+    init_ts_groups_metrics();
     init_ts_events();
     init_arm_events();
 }
@@ -112,11 +117,28 @@ void pmu_device::init_ts_metrics()
 #       define WPERF_TS_METRICS(A,B,C,D,E,F,G) m_product_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D),std::wstring(L##E),std::wstring(L##F),std::wstring(L##G) };
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
+#       define WPERF_TS_GROUPS_METRICS(...)
 #       include "wperf-common/telemetry-solution-data.def"
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
 #       undef WPERF_TS_ALIAS
+#       undef WPERF_TS_GROUPS_METRICS
+}
+
+void pmu_device::init_ts_groups_metrics()
+{   // Initialize Telemetry Solution groups of metrics from each product
+#       define WPERF_TS_EVENTS(...)
+#       define WPERF_TS_METRICS(...)
+#       define WPERF_TS_PRODUCT_CONFIGURATION(...)
+#       define WPERF_TS_ALIAS(...)
+#       define WPERF_TS_GROUPS_METRICS(A,B,C,D) m_product_groups_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D) };
+#       include "wperf-common/telemetry-solution-data.def"
+#       undef WPERF_TS_EVENTS
+#       undef WPERF_TS_METRICS
+#       undef WPERF_TS_PRODUCT_CONFIGURATION
+#       undef WPERF_TS_ALIAS
+#       undef WPERF_TS_GROUPS_METRICS
 }
 
 void pmu_device::init_ts_events()
@@ -125,11 +147,13 @@ void pmu_device::init_ts_events()
 #       define WPERF_TS_METRICS(...)
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
+#       define WPERF_TS_GROUPS_METRICS(...)
 #       include "wperf-common/telemetry-solution-data.def"
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
 #       undef WPERF_TS_ALIAS
+#       undef WPERF_TS_GROUPS_METRICS
 }
 
 void pmu_device::init_arm_events()
@@ -310,7 +334,7 @@ void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
 
     m_product_name = m_PRODUCT_ARMV8A;
 
-    // Add metrcs based on detected Telemetry Solution product
+    // Add metrics based on detected Telemetry Solution product
     for (auto const& [prod_name, prod_conf] : m_product_configuration)
         if (hw_cfg.vendor_id == prod_conf.implementer && hw_cfg.part_id == prod_conf.part_num)
             if (m_product_metrics.count(prod_name))
@@ -371,6 +395,24 @@ std::wstring pmu_device::get_all_aliases_str()
     }
 
     return result;
+}
+
+// Get all names of available groups for a detected product
+std::map <std::wstring, std::vector<std::wstring>> pmu_device::get_product_groups_metrics_names()
+{
+    std::map <std::wstring, std::vector<std::wstring>> ret;
+
+    if (m_product_groups_metrics.count(m_product_name) > 0)
+    {
+        for (auto& [key, val] : m_product_groups_metrics[m_product_name])
+        {
+            std::vector<std::wstring> metrics;
+            TokenizeWideStringOfStrings(val.metrics_raw, L',', metrics);
+            ret[key] = metrics;
+        }
+    }
+
+    return ret;
 }
 
 std::vector<std::wstring> pmu_device::get_product_names()
@@ -2043,6 +2085,25 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
     }
 }
 
+void pmu_device::do_list_prep_groups_metrics(_Out_ std::vector<std::wstring>& col_group,
+    _Out_ std::vector<std::wstring>& col_metrics,
+    _Out_ std::vector<std::wstring>& col_desc)
+{
+    // Function will "refill" parameters
+    col_group.clear();
+    col_metrics.clear();
+    col_desc.clear();
+
+    if (m_product_groups_metrics.count(m_product_name))
+    {
+        for (const auto& [key, value] : m_product_groups_metrics[m_product_name]) {
+            col_group.push_back(value.name);
+            col_metrics.push_back(value.metrics_raw);
+            col_desc.push_back(value.title);
+        }
+    }
+}
+
 void pmu_device::do_list_prep_metrics(_Out_ std::vector<std::wstring>& col_metric,
     _Out_ std::vector<std::wstring>& col_events,
     _Out_ std::vector<std::wstring>& col_formula,
@@ -2138,6 +2199,35 @@ void pmu_device::do_list(const std::map<std::wstring, metric_desc>& metrics)
 
         m_globalListJSON.isVerbose = do_verbose;
         m_globalListJSON.m_Metrics = table;
+        m_out.Print(table);
+    }
+
+    // Print supported groups of metrics
+    m_out.GetOutputStream() << std::endl
+        << L"List of supported groups of metrics (to be used in -m)"
+        << std::endl << std::endl;
+
+    std::vector<std::wstring> col_group, col_group_metrics, col_group_desc;
+    do_list_prep_groups_metrics(col_group, col_group_metrics, col_group_desc);
+
+    if (do_verbose)
+    {
+        TableOutput<GroupsOfMetricOutputTraitsL<true>, GlobalCharType> table(m_outputType);
+        table.PresetHeaders();
+        table.Insert(col_group, col_group_metrics, col_group_desc);
+
+        m_globalListJSON.isVerbose = do_verbose;
+        m_globalListJSON.m_GroupsOfMetrics = table;
+        m_out.Print(table);
+    }
+    else
+    {
+        TableOutput<GroupsOfMetricOutputTraitsL<false>, GlobalCharType> table(m_outputType);
+        table.PresetHeaders();
+        table.Insert(col_group, col_group_metrics);
+
+        m_globalListJSON.isVerbose = do_verbose;
+        m_globalListJSON.m_GroupsOfMetrics = table;
         m_out.Print(table);
     }
 

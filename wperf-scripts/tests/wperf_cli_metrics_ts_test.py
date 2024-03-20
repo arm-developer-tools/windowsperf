@@ -46,6 +46,7 @@ import pytest
 from common import run_command
 from common import wperf_metric_events, wperf_metric_events_list
 from common import wperf_metric_is_available
+from common import wperf_group_of_metrics_is_available, wperf_group_metrics_list
 from common import get_product_name, get_make_CPU_name
 from fixtures import fixture_is_enough_GPCs
 
@@ -91,7 +92,6 @@ if not _product_name.startswith("neoverse-"):
     ("scalar_fp_percentage"),
     ("simd_percentage"),
     ("store_percentage"),
-
 ]
 )
 def test_metrics_telemetry_solution_metrics(metric):
@@ -202,3 +202,48 @@ def test_metrics_telemetry_solution_metrics_json(metric):
     assert len(json_output['core']['ts_metric']['Telemetry_Solution_Metrics']) == 1
     assert 'metric_name' in json_output['core']['ts_metric']['Telemetry_Solution_Metrics'][0]
     assert metric in json_output['core']['ts_metric']['Telemetry_Solution_Metrics'][0]['metric_name']
+
+@pytest.mark.parametrize("group",
+[
+    ("Cycle_Accounting"),
+    ("General"),
+    ("MPKI"),
+    ("Miss_Ratio"),
+    ("Branch_Effectiveness"),
+    ("ITLB_Effectiveness"),
+    ("DTLB_Effectiveness"),
+    ("L1I_Cache_Effectiveness"),
+    ("L1D_Cache_Effectiveness"),
+    ("L2_Cache_Effectiveness" ),
+    ("LL_Cache_Effectiveness"),
+    ("Operation_Mix")
+]
+)
+def test_metrics_telemetry_solution_groups_of_metrics(group):
+    """ Run known TS group of metrics and check if defined metrics & events are present """
+    if not wperf_group_of_metrics_is_available(group):
+        pytest.skip(f"unsupported group of metrics: {group}")
+
+    #
+    # Assert that metric has events
+    # Group of metrics is a list of metrics under one name.
+    # We need to list all metrics in the group and check
+    #
+    list_of_metrics_in_group = wperf_group_metrics_list(group)
+    for metric in list_of_metrics_in_group:
+        # Make sure metric in the group is supported
+        assert wperf_metric_is_available(metric), f"unknown metric '{metric}' in group {group}"
+
+        # Make sure metric specified in group has events
+        events = wperf_metric_events(metric)
+        assert events is not None, f"metric '{metric}' in group '{group}' has no events!"
+
+        # Assert that metric has enough free GPC to run
+        events_cnt = len(wperf_metric_events_list(metric))
+        if not fixture_is_enough_GPCs(events_cnt):
+            pytest.xfail(f"this test requires at least {events_cnt} GPCs, metric '{metric}' in group '{group}'")
+
+    cmd = 'wperf stat -m ' + group + ' -c 0 sleep 1'
+    stdout, _ = run_command(cmd.split())
+
+    assert b'Telemetry Solution Metrics:' in stdout, f"in {cmd}"

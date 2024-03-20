@@ -98,7 +98,6 @@ def wperf_metric_is_available(metric):
             return True
     return False
 
-
 def wperf_metric_events(metric):
     """ Return string with list of events for given `metric` """
     json_output = wperf_list()
@@ -113,6 +112,30 @@ def wperf_metric_events_list(metric):
     for metrics in json_output["Predefined_Metrics"]:
         if metric == metrics["Metric"]:
             return metrics["Events"].strip("{}").split(",") # Make result a list
+    return None
+
+def wperf_group_of_metrics_is_available(group):
+    """ Check if given `metric` is available """
+    json_output = wperf_list()
+    for groups in json_output["Predefined_Groups_of_Metrics"]:
+        if group == groups["Group"]:
+            return True
+    return False
+
+def wperf_group_metrics(group):
+    """ Return string with list of metrics for given `group` of metrics """
+    json_output = wperf_list()
+    for groups in json_output["Predefined_Groups_of_Metrics"]:
+        if group == groups["Group"]:
+            return groups["Metrics"]
+    return None
+
+def wperf_group_metrics_list(group):
+    """ Return list of strings of metrics for given `group` of metrics """
+    json_output = wperf_list()
+    for groups in json_output["Predefined_Groups_of_Metrics"]:
+        if group == groups["Group"]:
+            return groups["Metrics"].strip("{}").split(",") # Make result a list
     return None
 
 def get_result_from_test_results(j, Test_Name):

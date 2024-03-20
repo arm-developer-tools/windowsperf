@@ -99,6 +99,13 @@ struct product_metric
     std::wstring title;             // Metric title / short description
 };
 
+struct product_group_metrics
+{
+    std::wstring name;              // :^)
+    std::wstring metrics_raw;       // Raw string of metrics, comma separated e.g. "l2_cache_mpki,l2_cache_miss_ratio"
+    std::wstring title;             // Metric title / short description
+};
+
 
 class pmu_device
 {
@@ -113,6 +120,7 @@ public:
 
     HANDLE init_device();
     void init_ts_metrics();
+    void init_ts_groups_metrics();
     void init_ts_events();
     void init_arm_events();
     void init_armv8_events();
@@ -185,6 +193,9 @@ public:
         _Out_ std::vector<std::wstring>& col_events, _Out_ std::vector<std::wstring>& col_formula,
         _Out_ std::vector<std::wstring>& col_unit, _Out_ std::vector<std::wstring>& col_desc,
         _In_ const std::map<std::wstring, metric_desc>& metrics);  // part of do_list()
+    void pmu_device::do_list_prep_groups_metrics(_Out_ std::vector<std::wstring>& col_group,
+        _Out_ std::vector<std::wstring>& col_metricss,
+        _Out_ std::vector<std::wstring>& col_desc);     // part of do_list()
     void do_test(uint32_t enable_bits, std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events);
     void do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_name, _Out_ std::vector<std::wstring>& col_test_result,
         _In_ uint32_t enable_bits, _In_ std::map<enum evt_class, std::vector<struct evt_noted>>& ioctl_events); // part of do_test()
@@ -221,11 +232,13 @@ public:
     static std::map<std::wstring, std::wstring> m_product_alias;
     std::map<std::wstring, std::map<std::wstring, struct product_event>> m_product_events;       // [product] -> [event_name -> product_event]
     std::map<std::wstring, std::map<std::wstring, struct product_metric>> m_product_metrics;     // [product] -> [metrics_name -> product_metric]
+    std::map<std::wstring, std::map<std::wstring, struct product_group_metrics>> m_product_groups_metrics;     // [product] -> [metrics_group_name -> product_metric_group]
     std::wstring m_product_name;     // Product name used to index Telemetry Solution data structures
     std::wstring get_product_name_ext();                // Human friendly currently selected product string
     std::wstring get_all_product_name_str();            // Human friendly list of available products comma separated string
     std::wstring get_all_aliases_str();                 // Human friendly list of available alias -> product comma separated string
     std::vector<std::wstring> get_product_names();      // Get all product names
+    std::map <std::wstring, std::vector<std::wstring>> get_product_groups_metrics_names();      // Get all groups of metrics names
 
     const std::wstring m_PRODUCT_ARMV8A = L"armv8-a";
     const std::wstring m_PRODUCT_ARMV9A = L"armv9-a";

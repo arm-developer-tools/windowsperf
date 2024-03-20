@@ -136,6 +136,30 @@ def ts_parse_metrics(j, name):
         values = ','.join(values)
         ts_print_define(DEFINE, values)
 
+def ts_parse_groups_metrics(j, name):
+    DEFINE = "WPERF_TS_GROUPS_METRICS"
+    metrics = j["groups"]["metrics"]
+
+    metric_name_max_len = 0
+    for metric in metrics:
+        if len(metric) > metric_name_max_len:
+            metric_name_max_len = len(metric)
+    metric_name_max_len += 4
+
+    events_name_max_len = 0
+    for metric in metrics:
+        if len(','.join(metrics[metric]["metrics"]).lower()) > events_name_max_len:
+            events_name_max_len = len(','.join(metrics[metric]["metrics"]).lower())
+    events_name_max_len += 4
+
+    for metric in metrics:
+        values = [ts_quote(name),
+                  ts_align(ts_quote(metric), metric_name_max_len),
+                  ts_align(ts_quote(','.join(metrics[metric]["metrics"]).lower()), events_name_max_len),
+                  ts_quote(metrics[metric]["title"])]
+        values = ','.join(values)
+        ts_print_define(DEFINE, values)
+
 
 def ts_parse_events(j, name):
     """ Parse 'events'  section of CPU description. """
@@ -196,6 +220,11 @@ def ts_parse_cpu_json(j, name):
     if j is not None:
         ts_print_as_comment ('Metrics for: ' + name)
         ts_parse_metrics(j, name)
+        print()
+
+    if j is not None:
+        ts_print_as_comment ('Metric Groups for: ' + name)
+        ts_parse_groups_metrics(j, name)
         print()
 
 def main(argv):

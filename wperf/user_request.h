@@ -45,11 +45,14 @@ public:
 
     void init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
         std::map<std::wstring, metric_desc>& builtin_metrics,
+        const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
         std::map<enum evt_class, std::vector<struct extra_event>>& extra_events);
+
     void parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
         std::map<enum evt_class, std::deque<struct evt_noted>>& events,
         std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
         std::map<std::wstring, metric_desc>& builtin_metrics,
+        const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
         std::map<enum evt_class, std::vector<struct extra_event>>& extra_events);
 
     bool has_events();

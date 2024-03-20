@@ -29,6 +29,19 @@
                     "Metric": { "type": "string" }
                 }
             }
+        },
+        "Predefined_Groups_of_Metrics" : {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "required": [ "Group", "Metrics"],
+                "additionalProperties": false,
+                "properties": {
+                    "Group": { "type": "string" },
+                    "Metrics": { "type": "string" }
+                }
+            }
         }
     }
 }

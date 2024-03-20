@@ -82,6 +82,19 @@ struct MetricOutputTraits : public TableOutputTraits<CharType>
     inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Metrics");
 };
 
+template <typename CharType, bool isVerbose = false >
+struct GroupsOfMetricOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType, StringType> columns;
+    inline const static int size = std::conditional_t<isVerbose, Integer<3>, Integer<2>>::value;
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("Group"),
+            LITERALCONSTANTS_GET("Metrics"),
+            LITERALCONSTANTS_GET("Description"));
+    inline const static CharType* key = LITERALCONSTANTS_GET("Predefined Groups of Metrics");
+};
+
 template <typename CharType, bool isMultiplexed = true>
 struct PerformanceCounterOutputTraits : public TableOutputTraits<CharType>
 {
@@ -551,8 +564,12 @@ struct WPerfListJSON
     using MetricOutputTraitsTO = TableOutput<MetricOutputTraits<CharType, false>, CharType>;
     using VerboseMetricOutputTraitsTO = TableOutput<MetricOutputTraits<CharType, true>, CharType>;
 
+    using GroupsOfMetricOutputTraitsTO = TableOutput<GroupsOfMetricOutputTraits<CharType, false>, CharType>;
+    using VerboseGroupsOfMetricOutputTraitsTO = TableOutput<GroupsOfMetricOutputTraits<CharType, true>, CharType>;
+
     std::variant<PredefinedEventsOutputTraitsTO, VerbosePredefinedEventsOutputTraitsTO> m_Events;
     std::variant<MetricOutputTraitsTO, VerboseMetricOutputTraitsTO> m_Metrics;
+    std::variant<GroupsOfMetricOutputTraitsTO, VerboseGroupsOfMetricOutputTraitsTO> m_GroupsOfMetrics;
     bool isVerbose = false;
 
     StringStream Print()
@@ -567,7 +584,11 @@ struct WPerfListJSON
         std::visit([](auto&& arg) {
             arg.m_tableJSON.m_isEmbedded = true;
             }, m_Metrics);
-        
+
+        std::visit([](auto&& arg) {
+            arg.m_tableJSON.m_isEmbedded = true;
+            }, m_GroupsOfMetrics);
+
         os << LiteralConstants<CharType>::m_cbracket_open << std::endl;
 
         std::visit([&os, &jsonType](auto&& arg) {
@@ -575,8 +596,12 @@ struct WPerfListJSON
             }, m_Events);
 
         std::visit([&os, &jsonType](auto&& arg) {
-            os << arg.Print(jsonType).str() << std::endl;
+            os << arg.Print(jsonType).str() << LiteralConstants<CharType>::m_comma << std::endl;
             }, m_Metrics);
+
+        std::visit([&os, &jsonType](auto&& arg) {
+            os << arg.Print(jsonType).str() << std::endl;
+            }, m_GroupsOfMetrics);
 
         os << LiteralConstants<CharType>::m_cbracket_close;
         return os;
@@ -968,6 +993,9 @@ using DisassemblyOutputTraitsL = DisassemblyOutputTraits<GlobalCharType>;
 
 template <bool isVerbose>
 using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType, isVerbose>;
+
+template <bool isVerbose>
+using GroupsOfMetricOutputTraitsL = GroupsOfMetricOutputTraits<GlobalCharType, isVerbose>;
 
 using DetectOutputTraitsL = DetectOutputTraits<GlobalCharType>;
 using VersionOutputTraitsL = VersionOutputTraits<GlobalCharType>;
