@@ -32,7 +32,6 @@
 #include <sysinfoapi.h>
 
 #include "wperf.h"
-#include "debug.h"
 #include "wperf-common\public.h"
 #include "wperf-common\macros.h"
 #include "wperf-common\iorequest.h"

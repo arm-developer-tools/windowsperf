@@ -41,7 +41,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <devpkey.h>
 
 #include "wperf.h"
-#include "debug.h"
+#include "output.h"
 #include "wperf-common\public.h"
 
 #pragma comment (lib, "cfgmgr32.lib")
@@ -70,20 +70,20 @@ GetDevicePath(
                 NULL,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
-        WindowsPerfDbgPrint("Error: 0x%x retrieving device interface list size.\n", cr);
+        m_out.GetErrorOutputStream() << L"error: " << std::hex << cr << L" retrieving device interface list size." << std::endl;
         goto clean0;
     }
 
     if (deviceInterfaceListLength <= 1) {
         bRet = FALSE;
-        WindowsPerfDbgPrint("Error: No active device interfaces found.\n"
-                            "       Is the driver loaded? You can get the latest driver from https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases");
+        m_out.GetErrorOutputStream() << L"error: No active device interfaces found." << std::endl
+            << L"Is the driver loaded? You can get the latest driver from https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases" << std::endl;
         goto clean0;
     }
 
     deviceInterfaceList = (PWSTR)malloc(deviceInterfaceListLength * sizeof(WCHAR));
     if (deviceInterfaceList == NULL) {
-        WindowsPerfDbgPrint("Error: Allocating memory for device interface list.\n");
+        m_out.GetErrorOutputStream() << L"error: Allocating memory for device interface list." << std::endl;
         goto clean0;
     }
     ZeroMemory(deviceInterfaceList, deviceInterfaceListLength * sizeof(WCHAR));
@@ -95,20 +95,20 @@ GetDevicePath(
                 deviceInterfaceListLength,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
-        WindowsPerfDbgPrint("Error: 0x%x retrieving device interface list.\n", cr);
+        m_out.GetErrorOutputStream() << L"error: " << std::hex << cr << L" retrieving device interface list." << std::endl;
         goto clean0;
     }
 
     nextInterface = deviceInterfaceList + wcslen(deviceInterfaceList) + 1;
     if (*nextInterface != UNICODE_NULL) {
-        WindowsPerfDbgPrint("Warning: More than one device interface instance found. \n"
-                            "         Selecting first matching device.\n\n");
+        m_out.GetErrorOutputStream() << L"warning: More than one device interface instance found." << std::endl
+            << "Selecting first matching device." << std::endl;
     }
 
     hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
     if (FAILED(hr)) {
         bRet = FALSE;
-        WindowsPerfDbgPrint("Error: StringCchCopy failed with HRESULT 0x%x", hr);
+        m_out.GetErrorOutputStream() << L"error: StringCchCopy failed with HRESULT=" << std::hex << hr << std::endl;
         goto clean0;
     }
 

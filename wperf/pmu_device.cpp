@@ -2815,8 +2815,6 @@ std::wstring pmu_device::get_pmu_version_name(UINT64 id_aa64dfr0_el1_value)
     return pmu_str;
 }
 
-// Use this function to print to wcerr runtime warnings in verbose mode.
-// Do not use this function for debug. Instead use WindowsPerfDbgPrint().
 void pmu_device::warning(const std::wstring wrn)
 {
     if (do_verbose)
@@ -2901,8 +2899,6 @@ const wchar_t* pmu_device::pmu_events_get_evt_desc(uint16_t index, enum evt_clas
     return L"---";
 }
 
-#include "debug.h"
-
 #pragma warning(push)
 #pragma warning(disable:4100)
 BOOL pmu_device::DeviceAsyncIoControl(
@@ -2923,7 +2919,7 @@ BOOL pmu_device::DeviceAsyncIoControl(
         if (last_error == ERROR_BAD_COMMAND)
             throw lock_denied_exception("Received ERROR_BAD_COMMAND, driver status: STATUS_INVALID_DEVICE_STATE");
 
-        WindowsPerfDbgPrint("Error: DeviceIoControl failed: GetLastError=0x%x\n", last_error);
+        m_out.GetErrorOutputStream() << L"error: DeviceIoControl failed: GetLastError=" << std::hex << last_error << std::endl;
         return FALSE;
     }
     return TRUE;

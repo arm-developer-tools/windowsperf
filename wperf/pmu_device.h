@@ -295,7 +295,6 @@ private:
     bool detect_armh_dma();
     
     // Use this function to print to wcerr runtime warnings in verbose mode.
-    // Do not use this function for debug. Instead use WindowsPerfDbgPrint().
     void warning(const std::wstring wrn);
 
     HANDLE m_device_handle;
