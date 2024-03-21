@@ -50,6 +50,9 @@ SYNOPSIS:
     wperf test [--json] [OPTIONS]
         Configuration information about driver and application.
 
+    wperf detect [--json] [OPTIONS]
+        List installed WindowsPerf-like Kernel Drivers (match GUID).
+
 OPTIONS:
     -h, --help
         Run wperf help command.
