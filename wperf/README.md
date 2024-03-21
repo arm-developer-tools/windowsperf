@@ -14,7 +14,7 @@ You can build `wperf` project from command line:
 
 ```
 >wperf --help
-WindowsPerf ver. 3.2.2 (c8fe5040/Release) WOA profiling with performance counters.
+WindowsPerf ver. 3.5.0 (19c2b723/Release) WOA profiling with performance counters.
 Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
 
 NAME:
@@ -24,30 +24,30 @@ SYNOPSIS:
     wperf [--version] [--help] [OPTIONS]
 
     wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
-               [--output] [--config]
+               [--output] [--config] [--force-lock]
     wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json]
                [--output] [--config] -- COMMAND [ARGS]
         Counting mode, for obtaining aggregate counts of occurrences of special
         events.
 
     wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
-                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
+                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
                  [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble]
         Sampling mode, for determining the frequencies of event occurrences
         produced by program locations at the function, basic block, and/or
         instruction levels.
 
     wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
-                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long]
+                 [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
                  [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
         Same as sample but also automatically spawns the process and pins it to
         the core specified by `-c`. Process name is defined by COMMAND. User can
         pass verbatim arguments to the process with [ARGS].
 
-    wperf list [-v] [--json]
+    wperf list [-v] [--json] [--force-lock]
         List supported events and metrics. Enable verbose mode for more details.
 
-    wperf test [--json [OPTIONS]
+    wperf test [--json] [OPTIONS]
         Configuration information about driver and application.
 
 OPTIONS:
@@ -121,6 +121,10 @@ OPTIONS:
         Set the waiting time, in milliseconds, before reading process data after
         spawning it with `record`.
 
+    --force-lock
+        Force driver to give lock to current `wperf` process, use when you want
+        to interrupt currently executing `wperf` session or to recover from the lock.
+
     -c
         Specify comma separated list of CPU cores to count on, or one CPU to
         sample on.
@@ -185,11 +189,46 @@ EXAMPLES:
     parameters to increase sampling "resolution".
 ```
 
+# WindowsPerf Driver lock/unlock feature
+
+When `wperf` communicates with WindowsPerf Kernel Driver, driver acquires lock and will deny access of other instances of `wperf` to access the driver and its resources.
+This prevents others from interfering with current `wperf` run and protects you from interference with your count.
+
+When other `wperf` process "locked" access to the driver you will see below warning:
+
+```
+>wperf --version
+warning: other WindowsPerf process acquired the wperf-driver.
+Operation canceled!
+```
+
+You can force the lock (and kick-out other `wperf` process from accessing Kernel Driver) with `--force-lock` command line option:
+
+```
+>wperf --version --force-lock
+        Component     Version  GitVer
+        =========     =======  ======
+        wperf         3.3.0    fb7f8c66
+        wperf-driver  3.3.0    fb8d521c
+```
+
+Process that was forced out and lost the lock will fail with below warning:
+
+```
+>wperf stat -m imix -c 1
+...
+warning: other WindowsPerf process hijacked (forced lock) the wperf-driver, see --force-lock.
+Operation terminated, your data was lost!
+```
+
+> :warning: Use `--force-lock` to recover from `wperf` crash that could cause lock. You can issue simple `wperf --version --force-lock` command to recover.
+
 # WindowsPerf auxiliary command line options
 
-## List available PMU events with `list`
+## List available PMU events, metrics and groups of metrics with `list`
+
 ```
-> wperf list
+>wperf list
 List of pre-defined events (to be used in -e):
 
 Alias Name                    Raw Index   Event Type
@@ -208,35 +247,101 @@ cid_write_retired             0xb         hardware core event
 pc_write_retired              0xc         hardware core event
 br_immed_retired              0xd         hardware core event
 ...
+
+List of supported metrics (to be used in -m)
+
+        Metric                      Events
+        ======                      ======
+        backend_stalled_cycles      {cpu_cycles,stall_backend}
+        branch_misprediction_ratio  {br_mis_pred_retired,br_retired}
+        branch_mpki                 {br_mis_pred_retired,inst_retired}
+        branch_percentage           {br_immed_spec,br_indirect_spec,inst_spec}
+        crypto_percentage           {crypto_spec,inst_spec}
+        dcache                      {l1d_cache,l1d_cache_refill,l2d_cache,l2d_cache_refill,inst_retired}
+        ddr_bw                      /dmc_clkdiv2/rdwr
+        dtlb                        {l1d_tlb,l1d_tlb_refill,l2d_tlb,l2d_tlb_refill,inst_retired}
+        dtlb_mpki                   {dtlb_walk,inst_retired}
+        dtlb_walk_ratio             {dtlb_walk,l1d_tlb}
+        frontend_stalled_cycles     {cpu_cycles,stall_frontend}
+...
+        l1i_cache_mpki              {inst_retired,l1i_cache_refill}
+        l1i_tlb_miss_ratio          {l1i_tlb,l1i_tlb_refill}
+        l1i_tlb_mpki                {inst_retired,l1i_tlb_refill}
+        l2_cache_miss_ratio         {l2d_cache,l2d_cache_refill}
+        l2_cache_mpki               {inst_retired,l2d_cache_refill}
+        l2_tlb_miss_ratio           {l2d_tlb,l2d_tlb_refill}
+        l2_tlb_mpki                 {inst_retired,l2d_tlb_refill}
+        l3_cache                    /dsu/l3d_cache,/dsu/l3d_cache_refill
+        ll_cache_read_hit_ratio     {ll_cache_miss_rd,ll_cache_rd}
+        ll_cache_read_miss_ratio    {ll_cache_miss_rd,ll_cache_rd}
+        ll_cache_read_mpki          {inst_retired,ll_cache_miss_rd}
+        load_percentage             {inst_spec,ld_spec}
+        scalar_fp_percentage        {inst_spec,vfp_spec}
+        simd_percentage             {ase_spec,inst_spec}
+        store_percentage            {inst_spec,st_spec}
+...
+
+List of supported groups of metrics (to be used in -m)
+
+        Group                    Metrics
+        =====                    =======
+        Branch_Effectiveness     branch_mpki,branch_misprediction_ratio
+        Cycle_Accounting         frontend_stalled_cycles,backend_stalled_cycles
+        DTLB_Effectiveness       dtlb_mpki,l1d_tlb_mpki,l2_tlb_mpki,dtlb_walk_ratio,l1d_tlb_miss_ratio,l2_tlb_miss_ratio
+        General                  ipc
+        ITLB_Effectiveness       itlb_mpki,l1i_tlb_mpki,l2_tlb_mpki,itlb_walk_ratio,l1i_tlb_miss_ratio,l2_tlb_miss_ratio
+        L1D_Cache_Effectiveness  l1d_cache_mpki,l1d_cache_miss_ratio
+        L1I_Cache_Effectiveness  l1i_cache_mpki,l1i_cache_miss_ratio
+        L2_Cache_Effectiveness   l2_cache_mpki,l2_cache_miss_ratio
+        LL_Cache_Effectiveness   ll_cache_read_mpki,ll_cache_read_miss_ratio,ll_cache_read_hit_ratio
+        MPKI                     branch_mpki,itlb_mpki,l1i_tlb_mpki,dtlb_mpki,l1d_tlb_mpki,l2_tlb_mpki,l1i_cache_mpki,l1d_cache_mpki,l2_cache_mpki,ll_cache_read_mpki
+        Miss_Ratio               branch_misprediction_ratio,itlb_walk_ratio,dtlb_walk_ratio,l1i_tlb_miss_ratio,l1d_tlb_miss_ratio,l2_tlb_miss_ratio,l1i_cache_miss_ratio,l1d_cache_miss_ratio,l2_cache_miss_ratio,ll_cache_read_miss_ratio
+        Operation_Mix            load_percentage,store_percentage,integer_dp_percentage,simd_percentage,scalar_fp_percentage,branch_percentage,crypto_percentage
+
 ```
 
 ## Obtain information about `WindowsPerf` configuration with `test`
 
 ```
-> wperf test
+>wperf test
         Test Name                                           Result
         =========                                           ======
         request.ioctl_events [EVT_CORE]                     False
         request.ioctl_events [EVT_DSU]                      False
         request.ioctl_events [EVT_DMC_CLK/EVT_DMC_CLKDIV2]  False
         pmu_device.vendor_name                              Arm Limited
-        pmu_device.events_query(events) [EVT_CORE]          79
+        pmu_device.product_name                             neoverse-n1
+        pmu_device.product_name(extended)                   Neoverse N1 (neoverse-n1), armv8.1, pmu_v3
+        pmu_device.product []                               armv8-a,armv9-a,neoverse-n1,neoverse-n2,neoverse-n2-r0p0,neoverse-n2-r0p1,neoverse-n2-r0p3,neoverse-v1
+        pmu_device.m_product_alias                          (neoverse-n2-r0p0:neoverse-n2),(neoverse-n2-r0p1:neoverse-n2)
+        pmu_device.events_query(events) [EVT_CORE]          110
         pmu_device.events_query(events) [EVT_DSU]           9
         pmu_device.events_query(events) [EVT_DMC_CLK]       3
         pmu_device.events_query(events) [EVT_DMC_CLKDIV2]   26
+        pmu_device.sampling.INTERVAL_DEFAULT                0x4000000
+        pmu_device.version_name                             FEAT_PMUv3p1
         PMU_CTL_QUERY_HW_CFG [arch_id]                      0x000f
         PMU_CTL_QUERY_HW_CFG [core_num]                     0x0050
         PMU_CTL_QUERY_HW_CFG [fpc_num]                      0x0001
         PMU_CTL_QUERY_HW_CFG [gpc_num]                      0x0006
+        PMU_CTL_QUERY_HW_CFG [total_gpc_num]                0x0006
         PMU_CTL_QUERY_HW_CFG [part_id]                      0x0d0c
         PMU_CTL_QUERY_HW_CFG [pmu_ver]                      0x0004
         PMU_CTL_QUERY_HW_CFG [rev_id]                       0x0001
         PMU_CTL_QUERY_HW_CFG [variant_id]                   0x0003
         PMU_CTL_QUERY_HW_CFG [vendor_id]                    0x0041
+        PMU_CTL_QUERY_HW_CFG [midr_value]                   0x000000000000413fd0c1
+        PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]            0x00000000000110305408
+        PMU_CTL_QUERY_HW_CFG [counter_idx_map]              0,1,2,3,4,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,31
+        PMU_CTL_QUERY_HW_CFG [device_id_str]                core.stat=core;core.sample=core;dsu.stat=dsu;dmc.stat=dmc_clk,dmc_clkdiv2
         gpc_nums[EVT_CORE]                                  6
         gpc_nums[EVT_DSU]                                   6
         gpc_nums[EVT_DMC_CLK]                               2
         gpc_nums[EVT_DMC_CLKDIV2]                           8
+        fpc_nums[EVT_CORE]                                  1
+        fpc_nums[EVT_DSU]                                   1
+        fpc_nums[EVT_DMC_CLK]                               0
+        fpc_nums[EVT_DMC_CLKDIV2]                           0
         ioctl_events[EVT_CORE].index
         ioctl_events[EVT_CORE].note
         ioctl_events[EVT_DSU].index
@@ -245,51 +350,68 @@ br_immed_retired              0xd         hardware core event
         ioctl_events[EVT_DMC_CLK].note
         ioctl_events[EVT_DMC_CLKDIV2].index
         ioctl_events[EVT_DMC_CLKDIV2].note
+        config.count.period                                 100
+        config.count.period_max                             100
+        config.count.period_min                             10
+        spe_device.version_name                             FEAT_SPE
+```
+
+## Enumerate devices with WindowsPerf Kernel Driver GUID
+
+```
+>wperf detect
+        Device Instance ID                                           Hardware IDs
+        ==================                                           ============
+        \\?\ROOT#SYSTEM#0001#{f8047fdd-7083-4c2e-90ef-c0c73f1045fd}  Root\WPERFDRIVER
 ```
 
 # Counting model
 
 ## Counting core 0 (Ctrl-C to stop counting)
 ```
-> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0
-counting core 0...done
-Performance counter stats for core 0, no multiplexing, kernel mode excluded:
+>wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0
+counting ...
 
-       counter value event name       event idx
-       ============= ==========       =========
-            77166198 cycle            fixed
-           115949155 inst_spec        0x1b
-               94917 vfp_spec         0x75
-              811426 ase_spec         0x74
-            58864530 dp_spec          0x73
-            20454268 ld_spec          0x70
-            10034711 st_spec          0x71
+Performance counter stats for core 0, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
-               1.746 seconds time elapsed
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+           46,009,833  cycle       fixed      e
+           67,113,005  inst_spec   0x1b       e
+              167,775  vfp_spec    0x75       e
+            1,944,625  ase_spec    0x74       e
+           31,513,052  dp_spec     0x73       e
+           12,580,829  ld_spec     0x70       e
+            8,639,941  st_spec     0x71       e
+
+               3.823 seconds time elapsed
 ```
 
 ## Counting core 0 for 1 second
 ```
-> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 sleep 1
-counting core 0...done
-Performance counter stats for core 0, no multiplexing, kernel mode excluded:
+>wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 sleep 1
+counting ... done
 
-       counter value event name       event idx
-       ============= ==========       =========
-            74735309 cycle            fixed
-           140081548 inst_spec        0x1b
-              171192 vfp_spec         0x75
-             8184936 ase_spec         0x74
-            74158397 dp_spec          0x73
-            20907507 ld_spec          0x70
-            13349062 st_spec          0x71
+Performance counter stats for core 0, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
-               1.093 seconds time elapsed
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+           13,612,036  cycle       fixed      e
+           16,652,937  inst_spec   0x1b       e
+               80,106  vfp_spec    0x75       e
+              774,828  ase_spec    0x74       e
+            7,632,994  dp_spec     0x73       e
+            3,200,780  ld_spec     0x70       e
+            1,792,766  st_spec     0x71       e
+
+               1.122 seconds time elapsed
 ```
 
 ## Specify up to 127 events, they will get multiplexed automatically, for example:
 ```
-> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0 sleep 1
+>wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0 sleep 1
 counting core 0...done
 Performance counter stats for core 0, multiplexed, kernel mode excluded:
 
@@ -310,47 +432,47 @@ Performance counter stats for core 0, multiplexed, kernel mode excluded:
 
 ## Count using event group
 ```
-> wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
-counting core 0...done
+>wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
+counting ... done
 
-Performance counter stats for core 0, multiplexed, kernel mode included, on Arm Limited core implementation:
+Performance counter stats for core 0, multiplexed, kernel mode excluded, on Arm Limited core implementation:
 note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
-       counter value event name       event idx event note   multiplexed scaled value
-       ============= ==========       ========= ============ ========== ============
-             5540244 cycle            fixed     e              10/10    5540244
-             3680561 inst_spec        0x1b      g0              5/10    7361122
-               22790 vfp_spec         0x75      g0              5/10    45580
-              492283 ase_spec         0x74      g0              5/10    984566
-             1689775 dp_spec          0x73      g0              5/10    3379550
-              540477 ld_spec          0x70      g0              5/10    1080954
-              327594 st_spec          0x71      g0              5/10    655188
-              261660 br_immed_spec    0x78      e               5/10    523320
-                   0 crypto_spec      0x77      e               5/10    0
+        counter value  event name     event idx  event note  multiplexed  scaled value
+        =============  ==========     =========  ==========  ===========  ============
+           19,724,652  cycle          fixed      e                 10/10    19,724,652
+           26,213,576  inst_spec      0x1b       g0                 5/10    52,427,152
+               46,559  vfp_spec       0x75       g0                 5/10        93,118
+              816,117  ase_spec       0x74       g0                 5/10     1,632,234
+           12,511,546  dp_spec        0x73       g0                 5/10    25,023,092
+            4,697,973  ld_spec        0x70       g0                 5/10     9,395,946
+            3,492,198  st_spec        0x71       g0                 5/10     6,984,396
+              439,463  br_immed_spec  0x78       e                  5/10       878,926
+                    0  crypto_spec    0x77       e                  5/10             0
 
-               1.092 seconds time elapsed
+               1.091 seconds time elapsed
 ```
 
 ## Count using pre-defined metrics, metric could be used together with -e, no restriction
 ```
-> wperf stat -m imix -e l1i_cache -c 0 sleep 1
-counting core 0...done
+>wperf stat -m imix -e l1i_cache -c 0 sleep 1
+counting ... done
 
-Performance counter stats for core 0, multiplexed, kernel mode included, on Arm Limited core implementation:
+Performance counter stats for core 0, multiplexed, kernel mode excluded, on Arm Limited core implementation:
 note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
-       counter value event name       event idx event note   multiplexed scaled value
-       ============= ==========       ========= ============ ========== ============
-            17251969 cycle            fixed     e              11/11    17251969
-            10807986 inst_spec        0x1b      g0,imix         6/11    19814641
-             4504151 dp_spec          0x73      g0,imix         6/11    8257610
-              204434 vfp_spec         0x75      g0,imix         6/11    374795
-              613224 ase_spec         0x74      g0,imix         6/11    1124244
-             2251789 ld_spec          0x70      g0,imix         6/11    4128279
-             1076690 st_spec          0x71      g0,imix         6/11    1973931
-             1795012 l1i_cache        0x14      e               5/11    3949026
+        counter value  event name  event idx  event note  multiplexed  scaled value
+        =============  ==========  =========  ==========  ===========  ============
+           11,851,602  cycle       fixed      e                 10/10    11,851,602
+           10,467,162  inst_spec   0x1b       g0,imix            5/10    20,934,324
+            4,740,558  dp_spec     0x73       g0,imix            5/10     9,481,116
+               33,819  vfp_spec    0x75       g0,imix            5/10        67,638
+              739,099  ase_spec    0x74       g0,imix            5/10     1,478,198
+            1,973,970  ld_spec     0x70       g0,imix            5/10     3,947,940
+            1,077,824  st_spec     0x71       g0,imix            5/10     2,155,648
+            1,408,408  l1i_cache   0x14       e                  5/10     2,816,816
 
-               1.106 seconds time elapsed
+               1.097 seconds time elapsed
 ```
 
 You can create your own metrics and enable them via custom configuration file. Provide customized config file which describes metrics with `-C <filename>` command line option.
@@ -363,7 +485,7 @@ customizedmetric:{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}
 
 Use command line options `-C <filename>` to select metrics configuration file and option `-m` to use new metric, see:
 ```
-> wperf stat -C customized_config -m customizedmetric -c 0 sleep 1
+>wperf stat -C customized_config -m customizedmetric -c 0 sleep 1
 counting ... done
 
 Performance counter stats for core 0, no multiplexing, kernel mode included, on Arm Limited core implementation:
@@ -381,6 +503,52 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
                 1.17 seconds time elapsed
 ```
 
+## Count using pre-defined groups of metrics
+
+For some CPUs (e.g. `neoverse-n1`) Arm Telemetry Solution team defined metrics, and groups of metrics you can use to simplify your analysis.
+
+```
+>wperf stat -m Operation_Mix -c 7 --timeout 3 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+counting ... done
+
+Performance counter stats for core 7, multiplexed, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name        event idx  event note                multiplexed    scaled value
+        =============  ==========        =========  ==========                ===========    ============
+        6,592,321,176  cycle             fixed      e                               33/33   6,592,321,176
+        4,734,051,866  inst_spec         0x1b       g0,load_percentage              11/33  14,202,155,598
+        1,787,545,156  ld_spec           0x70       g0,load_percentage              11/33   5,362,635,468
+        4,734,051,866  inst_spec         0x1b       g1,store_percentage             11/33  14,202,155,598
+          665,908,289  st_spec           0x71       g1,store_percentage             11/33   1,997,724,867
+        1,809,734,797  dp_spec           0x73       g2,integer_dp_percentage        11/33   5,429,204,391
+        4,734,051,866  inst_spec         0x1b       g2,integer_dp_percentage        11/33  14,202,155,598
+              872,144  ase_spec          0x74       g3,simd_percentage              11/33       2,616,432
+        4,173,505,464  inst_spec         0x1b       g3,simd_percentage              11/33  12,520,516,392
+        4,173,505,464  inst_spec         0x1b       g4,scalar_fp_percentage         11/33  12,520,516,392
+                    0  vfp_spec          0x75       g4,scalar_fp_percentage         11/33               0
+          373,516,721  br_immed_spec     0x78       g5,branch_percentage            11/33   1,120,550,163
+           28,900,861  br_indirect_spec  0x7a       g5,branch_percentage            11/33      86,702,583
+        4,141,998,024  inst_spec         0x1b       g5,branch_percentage            11/33  12,425,994,072
+                    0  crypto_spec       0x77       g6,crypto_percentage            11/33               0
+        4,141,998,024  inst_spec         0x1b       g6,crypto_percentage            11/33  12,425,994,072
+
+Telemetry Solution Metrics:
+        core  product_name  metric_name             value  unit
+        ====  ============  ===========             =====  ====
+           7  neoverse-n1   branch_percentage       9.716  percent of operations
+           7  neoverse-n1   crypto_percentage       0.000  percent of operations
+           7  neoverse-n1   integer_dp_percentage  38.228  percent of operations
+           7  neoverse-n1   load_percentage        37.759  percent of operations
+           7  neoverse-n1   scalar_fp_percentage    0.000  percent of operations
+           7  neoverse-n1   simd_percentage         0.021  percent of operations
+           7  neoverse-n1   store_percentage       14.066  percent of operations
+
+               3.303 seconds time elapsed
+```
+
+See how CPython computation of `10^10^100` is `integer_dp_percentage` and `load_percentage` bound.
+
 ## Count on multiple cores simultaneously with -c
 
 In below example we specify events with `-e` and schedule counting on cores 0, 1, 6 and 7. This is done with `-c 0,1,6,7 ` command line option.
@@ -392,80 +560,80 @@ Note: when you specify more than one core overall summary will be also printed. 
 >wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0,1,6,7 sleep 1
 counting ... done
 
-Performance counter stats for core 0, multiplexed, kernel mode included, on Arm Limited core implementation:
+Performance counter stats for core 0, multiplexed, kernel mode excluded, on Arm Limited core implementation:
 note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
         counter value  event name     event idx  event note  multiplexed  scaled value
         =============  ==========     =========  ==========  ===========  ============
-            459768620  cycle          fixed      e                 11/11     459768620
-             20149697  inst_spec      0x1b       e                  9/11      24627407
-            345630022  vfp_spec       0x75       e                  9/11     422436693
-            129948697  ase_spec       0x74       e                  8/11     178679458
-             61383968  dp_spec        0x73       e                  8/11      84402956
-            183535105  ld_spec        0x70       e                  8/11     252360769
-               811588  st_spec        0x71       e                  8/11       1115933
-                58576  br_immed_spec  0x78       e                  8/11         80542
-                  266  crypto_spec    0x77       e                  8/11           365
+            9,570,473  cycle          fixed      e                 10/10     9,570,473
+           10,267,263  inst_spec      0x1b       e                  8/10    12,834,078
+               44,365  vfp_spec       0x75       e                  8/10        55,456
+              599,660  ase_spec       0x74       e                  8/10       749,575
+            5,084,557  dp_spec        0x73       e                  8/10     6,355,696
+            1,800,692  ld_spec        0x70       e                  7/10     2,572,417
+              960,444  st_spec        0x71       e                  7/10     1,372,062
+              707,208  br_immed_spec  0x78       e                  7/10     1,010,297
+                    0  crypto_spec    0x77       e                  7/10             0
 
-Performance counter stats for core 1, multiplexed, kernel mode included, on Arm Limited core implementation:
+Performance counter stats for core 1, multiplexed, kernel mode excluded, on Arm Limited core implementation:
 note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
         counter value  event name     event idx  event note  multiplexed  scaled value
         =============  ==========     =========  ==========  ===========  ============
-            562807691  cycle          fixed      e                 11/11     562807691
-           1107009142  inst_spec      0x1b       e                  9/11    1353011173
-               155230  vfp_spec       0x75       e                  9/11        189725
-             11943376  ase_spec       0x74       e                  8/11      16422142
-            497478218  dp_spec        0x73       e                  8/11     684032549
-            175669868  ld_spec        0x70       e                  8/11     241546068
-             75332147  st_spec        0x71       e                  8/11     103581702
-                42596  br_immed_spec  0x78       e                  8/11         58569
-                    0  crypto_spec    0x77       e                  8/11             0
+           10,094,676  cycle          fixed      e                 10/10    10,094,676
+           16,079,022  inst_spec      0x1b       e                  8/10    20,098,777
+               41,049  vfp_spec       0x75       e                  8/10        51,311
+              760,031  ase_spec       0x74       e                  8/10       950,038
+            7,681,186  dp_spec        0x73       e                  8/10     9,601,482
+            2,609,380  ld_spec        0x70       e                  7/10     3,727,685
+            2,218,466  st_spec        0x71       e                  7/10     3,169,237
+              312,946  br_immed_spec  0x78       e                  7/10       447,065
+                    0  crypto_spec    0x77       e                  7/10             0
 
-Performance counter stats for core 6, multiplexed, kernel mode included, on Arm Limited core implementation:
+Performance counter stats for core 6, multiplexed, kernel mode excluded, on Arm Limited core implementation:
 note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
         counter value  event name     event idx  event note  multiplexed  scaled value
         =============  ==========     =========  ==========  ===========  ============
-              1368553  cycle          fixed      e                 11/11       1368553
-               211413  inst_spec      0x1b       e                  9/11        258393
-                    0  vfp_spec       0x75       e                  9/11             0
-              1424127  ase_spec       0x74       e                  8/11       1958174
-              1424127  dp_spec        0x73       e                  8/11       1958174
-              1424127  ld_spec        0x70       e                  8/11       1958174
-              1424127  st_spec        0x71       e                  8/11       1958174
-                    0  br_immed_spec  0x78       e                  8/11             0
-                    0  crypto_spec    0x77       e                  8/11             0
+                    0  cycle          fixed      e                 10/10             0
+                    0  inst_spec      0x1b       e                  8/10             0
+                    0  vfp_spec       0x75       e                  8/10             0
+                    0  ase_spec       0x74       e                  8/10             0
+                    0  dp_spec        0x73       e                  8/10             0
+                    0  ld_spec        0x70       e                  7/10             0
+                    0  st_spec        0x71       e                  7/10             0
+                    0  br_immed_spec  0x78       e                  7/10             0
+                    0  crypto_spec    0x77       e                  7/10             0
 
-Performance counter stats for core 7, multiplexed, kernel mode included, on Arm Limited core implementation:
+Performance counter stats for core 7, multiplexed, kernel mode excluded, on Arm Limited core implementation:
 note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
 
         counter value  event name     event idx  event note  multiplexed  scaled value
         =============  ==========     =========  ==========  ===========  ============
-                    0  cycle          fixed      e                 11/11             0
-                    0  inst_spec      0x1b       e                  9/11             0
-                    0  vfp_spec       0x75       e                  9/11             0
-                    0  ase_spec       0x74       e                  8/11             0
-                    0  dp_spec        0x73       e                  8/11             0
-                    0  ld_spec        0x70       e                  8/11             0
-                    0  st_spec        0x71       e                  8/11             0
-                    0  br_immed_spec  0x78       e                  8/11             0
-                    0  crypto_spec    0x77       e                  8/11             0
+                    0  cycle          fixed      e                 10/10             0
+                    0  inst_spec      0x1b       e                  8/10             0
+                    0  vfp_spec       0x75       e                  8/10             0
+                    0  ase_spec       0x74       e                  8/10             0
+                    0  dp_spec        0x73       e                  8/10             0
+                    0  ld_spec        0x70       e                  7/10             0
+                    0  st_spec        0x71       e                  7/10             0
+                    0  br_immed_spec  0x78       e                  7/10             0
+                    0  crypto_spec    0x77       e                  7/10             0
 
 System-wide Overall:
         counter value  event name     event idx  event note  scaled value
         =============  ==========     =========  ==========  ============
-           1023944864  cycle          fixed      e             1023944864
-           1127370252  inst_spec      0x001b     e             1377896973
-            345785252  vfp_spec       0x0075     e              422626418
-            143316200  ase_spec       0x0074     e              197059774
-            560286313  dp_spec        0x0073     e              770393679
-            360629100  ld_spec        0x0070     e              495865011
-             77567862  st_spec        0x0071     e              106655809
-               101172  br_immed_spec  0x0078     e                 139111
-                  266  crypto_spec    0x0077     e                    365
+           19,665,149  cycle          fixed      e             19,665,149
+           26,346,285  inst_spec      0x001b     e             32,932,855
+               85,414  vfp_spec       0x0075     e                106,767
+            1,359,691  ase_spec       0x0074     e              1,699,613
+           12,765,743  dp_spec        0x0073     e             15,957,178
+            4,410,072  ld_spec        0x0070     e              6,300,102
+            3,178,910  st_spec        0x0071     e              4,541,299
+            1,020,154  br_immed_spec  0x0078     e              1,457,362
+                    0  crypto_spec    0x0077     e                      0
 
-               1.134 seconds time elapsed
+                1.09 seconds time elapsed
 ```
 
 ## Timeline (count multiple times between intervals)
@@ -805,15 +973,15 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
         counter value  event name  event idx  event note
         =============  ==========  =========  ==========
-          23859193503  cycle       fixed      e
-           8877337489  inst_spec   0x1b       g0,imix
-            712165071  dp_spec     0x73       g0,imix
-           3464962917  vfp_spec    0x75       g0,imix
-              6647740  ase_spec    0x74       g0,imix
-           9116947967  ld_spec     0x70       g0,imix
-             13268033  st_spec     0x71       g0,imix
+           41,806,794  cycle       fixed      e
+           46,965,926  inst_spec   0x1b       g0,imix
+           21,251,194  dp_spec     0x73       g0,imix
+               76,479  vfp_spec    0x75       g0,imix
+            6,078,472  ase_spec    0x74       g0,imix
+            7,450,823  ld_spec     0x70       g0,imix
+            4,309,117  st_spec     0x71       g0,imix
 
-                3.31 seconds time elapsed
+               3.302 seconds time elapsed
 ```
 
 #### Sampling for `ld_spec` event which, by looking at counting is dominant (at least for `imix` metrics)
