@@ -143,7 +143,7 @@ struct JSONObjectTraits
     typedef std::decay_t<decltype(std::get<N>(Traits::columns))> Type;
 
     JSONObject<Type, false, false, CharType> m_property;
-    Type m_value;
+    Type m_value{};
     JSONObjectTraits<CharType, Traits, N - 1> previous;
 
     Type get_t()
