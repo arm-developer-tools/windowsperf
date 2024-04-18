@@ -8,7 +8,9 @@ WindowsPerf is (`Linux perf` inspired) Windows on Arm performance profiling tool
 
 WindowsPerf can instrument Arm CPU performance counters. As of now, it can collect:
 * Core PMU counters for all or specified CPU core.
-* unCore PMU counters, now system cache (DSU-520) and DRAM (DMC-620) are supported.
+* unCore PMU counters,
+* system cache (DSU-520) and
+* DRAM (DMC-620) are supported.
 
 Currently we support:
 * **counting model**, for obtaining aggregate counts of occurrences of special events, and
@@ -20,9 +22,17 @@ Currently we support:
 
 You can find example usage of [counting model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#counting-model) and [sampling model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#sampling-model) in `wperf` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/README.md).
 
+## WindowsPerf Installation
+
+You can find latest WindowsPerf installation instructions in [INSTALL.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/INSTALL.md?ref_type=heads).
+
 ## WindowsPerf Releases
 
 You can find all binary releases of WindowsPerf (`wperf-driver` and `wperf` application) [here](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases).
+
+## Contributing
+
+When contributing to this repository, please first read [CONTRIBUTING.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/CONTRIBUTING.md) file for more details regarding how to contribute to this project.
 
 ## WindowsPerf Modules
 
@@ -39,10 +49,6 @@ Other directories contain:
   * Note: [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf) application communicates with [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver) via IOCTRL buffer. Proprietary binary protocol is used to exchange data, commands and status between two.
 * [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts) contains various scripts including testing scripts.
 * [wperf-devgen](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-devgen) is our own simple implementation of tool which can install or remove [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver).
-
-## Contributing
-
-When contributing to this repository, please first read [CONTRIBUTING.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/CONTRIBUTING.md) file for more details regarding how to contribute to this project.
 
 ## Project resources
 
