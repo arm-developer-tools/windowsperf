@@ -47,6 +47,10 @@
 #include <cfgmgr32.h>
 #include <devpkey.h>
 
+#if defined(ENABLE_ETW_TRACING_APP)
+#include "wperf-etw.h"
+#endif
+
 
 std::map<uint8_t, wchar_t*> pmu_device::arm64_vendor_names =
 {
@@ -1166,6 +1170,17 @@ void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
                 continue;
 
             struct pmu_event_usr* evt = &evts[j];
+            
+#if defined(ENABLE_ETW_TRACING_APP)
+            if(evt->event_idx == CYCLE_EVENT_IDX)
+            {
+                EventWriteReadGPC(NULL, i, pmu_events_get_event_name((uint16_t)evt->event_idx), evt->event_idx, L"e", evt->value);
+            }
+            else {
+                EventWriteReadGPC(NULL, i, pmu_events_get_event_name((uint16_t)evt->event_idx), evt->event_idx, events[j - 1].note.c_str(), evt->value);
+            }
+
+#endif
 
             if (multiplexing)
             {

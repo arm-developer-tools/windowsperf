@@ -33,6 +33,9 @@
 #if defined ENABLE_TRACING
 #include "driver.tmh"
 #endif
+#if defined(ENABLE_ETW_TRACING)
+#include "wperf-driver-etw.h"
+#endif
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -51,6 +54,10 @@ WindowsPerfEvtWdfDriverUnload(
 
 #if defined ENABLE_TRACING
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");   
+#endif
+
+#if defined(ENABLE_ETW_TRACING)
+    EventUnregisterWindowsPerf_Driver();
 #endif
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "<====> WindowsPerfEvtWdfDriverUnload\n"));
@@ -91,6 +98,10 @@ DriverEntry(
 #if defined(ENABLE_TRACING)
     WPP_INIT_TRACING(DriverObject, RegistryPath);
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+#endif
+
+#if defined(ENABLE_ETW_TRACING)
+    EventRegisterWindowsPerf_Driver();
 #endif
 
     // Initialize the driver config structure

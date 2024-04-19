@@ -109,7 +109,32 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
   </ImportGroup>
-  <ItemGroup Label="WrappedTaskItems" />
+  <ItemGroup Label="WrappedTaskItems">
+    <MessageCompile Include="wperf-etw-manifest.xml">
+      <GenerateKernelModeLoggingMacros>true</GenerateKernelModeLoggingMacros>
+      <HeaderFilePath>.\$(IntDir)</HeaderFilePath>
+      <GeneratedHeaderPath>true</GeneratedHeaderPath>
+      <WinmetaPath>"$(SDK_INC_PATH)\winmeta.xml"</WinmetaPath>
+      <RCFilePath>.\$(IntDir)</RCFilePath>
+      <GeneratedRCAndMessagesPath>true</GeneratedRCAndMessagesPath>
+      <GeneratedFilesBaseName>wperf-driver-etw</GeneratedFilesBaseName>
+      <UseBaseNameOfInput>true</UseBaseNameOfInput>
+      <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)</HeaderFilePath>
+      <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)</RCFilePath>
+      <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)</HeaderFilePath>
+      <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)</RCFilePath>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">false</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">false</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</DeploymentContent>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">wperf-etw</GeneratedFilesBaseName>
+    </MessageCompile>
+  </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>wperf</TargetName>
   </PropertyGroup>
@@ -141,7 +166,7 @@
     </ResourceCompile>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -163,7 +188,7 @@
     </ResourceCompile>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -187,7 +212,7 @@
     </ResourceCompile>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
     </ClCompile>
@@ -209,7 +234,7 @@
     </ResourceCompile>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -235,7 +260,7 @@
     </ResourceCompile>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
     </ClCompile>
@@ -258,7 +283,7 @@
     </ResourceCompile>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -306,6 +331,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Exclude="@(ClInclude)" Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="wperf-etw.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
