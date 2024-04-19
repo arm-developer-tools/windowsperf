@@ -2,7 +2,9 @@
 
 ## Prerequisites
 
-Native Windows On Arm hardware is required. Please note that virtual machines (VMs) will not work.
+Native Windows On Arm hardware is required for WindowsPerf to install and operate correctly.
+
+> :warning: Please note that WindowsPerf will not work correctly (or you may not be able to install the Kernel driver) on VMs (virtual machines).
 
 ## Steps
 
@@ -39,3 +41,14 @@ Example:
 ```
 >wperf-devgen uninstall
 ```
+
+# Known installation issues
+
+## wperf-devgen.exe - Application Error
+
+If you see error:
+
+> :warning: "The application was unable to start correctly (0xc000007b). Click OK to close this application."
+
+when you issue e.g. `wperf-devgen.exe` command please refer to [A Windows Error 0xC000007B](https://answers.microsoft.com/en-us/windows/forum/all/a-windows-error-0xc000007b/c25fbcb7-1162-487f-bd81-6d8314a52891) article.
+Usually errors like these are due to missing `vcredist` files. We suggest downloading the updated ones from Microsoft's page, for example [Latest Microsoft Visual C++ Redistributable Version](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version).
