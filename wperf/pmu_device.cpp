@@ -1410,8 +1410,11 @@ void pmu_device::print_core_metrics(std::vector<struct evt_noted>& events)
 
     if (col_core.size())
     {
-        m_out.GetOutputStream() << std::endl;
-        m_out.GetOutputStream() << L"Telemetry Solution Metrics:" << std::endl;
+        if (!timeline_mode) // Print when we are not in timeline
+        {
+            m_out.GetOutputStream() << std::endl;
+            m_out.GetOutputStream() << L"Telemetry Solution Metrics:" << std::endl;
+        }
 
         TableOutput<TelemetrySolutionMetricOutputTraitsL, GlobalCharType> table(m_outputType);
         table.PresetHeaders();

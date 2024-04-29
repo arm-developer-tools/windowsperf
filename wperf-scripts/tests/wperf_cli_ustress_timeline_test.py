@@ -81,6 +81,8 @@ def test_wperf_timeline_ts_metrics(I, C, N, METRICS):
     cmd = f'wperf stat -m {METRICS} -t -i {I} -n {N} -c {C} sleep 1 -v'
     stdout, _ = run_command(cmd.split())
 
+    assert b"Telemetry Solution Metrics" not in stdout
+
     COLS = int()    # How many columns are in this timeline (events + metrics)
 
     EVENTS = []
