@@ -81,10 +81,11 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 - [Arm Neoverse N1 Core Telemetry Specification](https://developer.arm.com/documentation/108070/0100/?lang=en).
 - [Arm Neoverse V1 Core Telemetry Specification](https://developer.arm.com/documentation/109216/0100/?lang=en).
 - [Arm Neoverse N2 Core Telemetry Specification](https://developer.arm.com/documentation/109215/0200/?lang=en).
+- [Arm Statistical Profiling Extension: Performance Analysis Methodology White Paper](https://developer.arm.com/documentation/109429/latest/) documentation.
+- [Arm Neoverse V1 – Top-down Methodology for Performance Analysis & Telemetry Specification](https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/arm-neoverse-v1-top-down-methodology) blog (with white paper).
 
 ## Other
 
-- [Arm Statistical Profiling Extension: Performance Analysis Methodology White Paper](https://developer.arm.com/documentation/109429/latest/) documentation.
 - [ARM64 Intrinsics](https://learn.microsoft.com/en-us/cpp/intrinsics/arm64-intrinsics?view=msvc-170) documentation.
 - [Building and Loading a WDF Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/building-and-loading-a-kmdf-driver) documentation.
 - [Write a Universal Windows driver (KMDF) based on a template](https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/writing-a-kmdf-driver-based-on-a-template) documentation.
