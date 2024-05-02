@@ -114,5 +114,46 @@ namespace wperftest
 			wstr_vec raw_args = { L"wperf", L"stat", L"-m", L"imix", L"-c", L"1", L"--force-lock" };
 			Assert::IsTrue(user_request::is_force_lock(raw_args));
 		}
+
+		TEST_METHOD(test_user_request_check_timeout_arg)
+		{
+			std::unordered_map<std::wstring, double> unit_map = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400} };
+			
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"1"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"2s"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"3m"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"4ms"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"5h"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"6d"), unit_map));
+
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"0"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L""), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L" "), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L"-10"), unit_map));
+
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"10.01ms"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"199.99m"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"2.50h"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"2d"), unit_map));
+			Assert::IsTrue(user_request::check_timeout_arg(std::wstring(L"2000s"), unit_map));
+
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L"3.2222s"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L".5"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L".d"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L".0002d"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L"2.2!d"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L"2d30m"), unit_map));
+			Assert::IsFalse(user_request::check_timeout_arg(std::wstring(L"timeout=20seconds"), unit_map));
+		}
+
+		TEST_METHOD(test_convert_timeout_arg_to_seconds)
+		{
+			Assert::AreEqual(0.1, user_request::convert_timeout_arg_to_seconds(std::wstring(L"100ms"), std::wstring(L"--timeout")));
+			Assert::AreEqual(120.0, user_request::convert_timeout_arg_to_seconds(std::wstring(L"2m"), std::wstring(L"--timeout")));
+			Assert::AreEqual(199.99, user_request::convert_timeout_arg_to_seconds(std::wstring(L"199.99"), std::wstring(L"--timeout")));
+			Assert::AreEqual(9000.0, user_request::convert_timeout_arg_to_seconds(std::wstring(L"2.50h"), std::wstring(L"--timeout")));
+			Assert::AreEqual(172800.0, user_request::convert_timeout_arg_to_seconds(std::wstring(L"2d"), std::wstring(L"--timeout")));
+			Assert::AreEqual(2000.0, user_request::convert_timeout_arg_to_seconds(std::wstring(L"2000s"), std::wstring(L"--timeout")));
+		}
 	};
 }

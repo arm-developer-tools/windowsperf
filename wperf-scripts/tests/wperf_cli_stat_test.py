@@ -325,3 +325,36 @@ def test_wperf_stat_process_spawn_args():
     assert b"pe_file 'wperf.exe', args 'wperf.exe --help'" in stdout
     for col in [b"counter value", b"event name", b"event idx", b"event note"]:
         assert col in stdout
+
+@pytest.mark.parametrize("duration,expected_result",
+[
+    ("700ms", 0.7),
+    ("0.1s", 0.1),
+    ("1s", 1),
+]
+)
+def test_wperf_stat_timeout_flag(duration, expected_result):
+    cmd = f'wperf stat -m imix -c 0 -t -i 1 --timeout {duration} -n 1 --json' #'sleep' assumed to work if --timeout tests pass
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+
+    assert "count_duration" in json_output
+    assert json_output["count_duration"] == expected_result
+
+
+@pytest.mark.parametrize("duration",
+[
+    ("0.001ms"),
+    ("qwerty"),
+    ("2d30m"),
+]
+)
+def test_wperf_stat_timeout_flag_throws(duration):
+    cmd = f'wperf stat -m imix -c 0 --timeout {duration} --json'
+    _,stderr = run_command(cmd.split())
+
+    expected_error = f"input: \"{duration}\" to argument '--timeout' is invalid".encode()
+
+    assert expected_error in stderr

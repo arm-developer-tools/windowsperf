@@ -34,6 +34,8 @@
 #include "wperf/utils.h"
 
 #include <iostream>
+#include <string>
+#include <unordered_map>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -414,6 +416,16 @@ namespace wperftest
 			Assert::IsFalse(ReplaceTokenInString(filename, "{baz}", "text is here"));
 			Assert::IsFalse(ReplaceTokenInString(filename, "{TIMESTAMP}", "text is here"));
 			Assert::IsFalse(ReplaceTokenInString(filename, "{CLASS}", "text is here"));
+		}
+
+		TEST_METHOD(test_ConvertTimeUnitToSeconds)
+		{
+			const std::unordered_map<std::wstring, double> unitMap = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400}};
+
+			Assert::AreEqual(ConvertNumberWithUnit(double(0.311), std::wstring(L"ms"), unitMap), double(0.000311));
+			Assert::AreEqual(ConvertNumberWithUnit(double(10.24), std::wstring(L"s"), unitMap), double(10.24));
+			Assert::AreEqual(ConvertNumberWithUnit(double(60), std::wstring(L"d"), unitMap), double(5184000));
+			Assert::AreEqual(ConvertNumberWithUnit(double(2.5), std::wstring(L"h"), unitMap), double(9000));
 		}
 	};
 }

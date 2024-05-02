@@ -33,6 +33,8 @@
 #include <sstream>
 #include <cwctype>
 #include <array>
+#include <unordered_map>
+#include <regex>
 #include <assert.h>
 #include "user_request.h"
 #include "exception.h"
@@ -373,6 +375,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
     bool sample_pe_file_given = false;
 
+    std::wstring waiting_duration_arg;
     std::wstring output_filename;
 
     if (raw_args.empty())
@@ -627,14 +630,14 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (waiting_duration)
         {
-            count_duration = _wtof(a.c_str());
+            count_duration = convert_timeout_arg_to_seconds(a, waiting_duration_arg);
             waiting_duration = false;
             continue;
         }
 
         if (waiting_interval)
         {
-            count_interval = _wtof(a.c_str());
+            count_interval = convert_timeout_arg_to_seconds(a, waiting_duration_arg);
             waiting_interval = false;
             continue;
         }
@@ -747,6 +750,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--timeout" || a == L"sleep")
         {
             waiting_duration = true;
+            waiting_duration_arg = a;
             continue;
         }
 
@@ -798,6 +802,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (a == L"-i")
         {
+            waiting_duration_arg = a;
             waiting_interval = true;
             continue;
         }
@@ -1048,4 +1053,80 @@ std::wstring user_request::trim(const std::wstring& str,
     const auto len = pos_end - pos_begin + 1;
 
     return str.substr(pos_begin, len);
+}
+
+
+bool user_request::check_timeout_arg(std::wstring number_and_suffix, std::unordered_map<std::wstring, double>& unit_map)
+{
+    std::wstring accept_units;
+
+    for (const auto& pair : unit_map)
+    {
+        if (!accept_units.empty()) {
+            accept_units += L"|";
+        }
+        accept_units += pair.first;
+    }
+
+    std::wstring regex_string = L"^(0|([1-9][0-9]*))(\\.[0-9]{1,2})?(" + accept_units + L")?$";
+    std::wregex r(regex_string);
+
+    std::wsmatch match;
+    if (std::regex_search(number_and_suffix, match, r)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}
+
+double user_request::convert_timeout_arg_to_seconds(std::wstring number_and_suffix, std::wstring& cmd_arg)
+{
+    std::unordered_map<std::wstring, double> unit_map = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400} };
+
+    bool valid_input = check_timeout_arg(number_and_suffix, unit_map);
+
+    if (!valid_input) {
+        m_out.GetErrorOutputStream() << L"input: \"" << number_and_suffix << L"\" to argument '" << cmd_arg <<  "' is invalid" << std::endl;
+        throw fatal_exception("ERROR_TIMEOUT_COMPONENT");
+    }
+    //logic to split number and suffix
+    int i = 0;
+    for (; i < number_and_suffix.size(); i++)
+    {
+        if (!std::isdigit(number_and_suffix[i]) && (number_and_suffix[i] != L'.')) {
+            break;
+        }
+    }
+
+    std::wstring number_wstring = number_and_suffix.substr(0, i);
+
+    double number;
+    try {
+        number = std::stod(number_wstring);
+    }
+    catch (...) {
+        m_out.GetErrorOutputStream() << L"input: \"" << number_and_suffix << L"\" to argument '" << cmd_arg << "' is invalid" << std::endl;
+        throw fatal_exception("ERROR_TIMEOUT_COMPONENT");
+    }
+
+    std::wstring suffix = number_and_suffix.substr(i);
+
+    //default to seconds if unit is not provided
+    if (suffix.empty()) {
+        return number;
+    }
+
+    //check if the unit exists in the map
+    auto it = unit_map.find(suffix);
+    if (it == unit_map.end())
+    {
+        m_out.GetErrorOutputStream() << L"input unit \"" << suffix << L"\" not recognised as unit in argument '" << cmd_arg << "'" << std::endl;
+        throw fatal_exception("ERROR_TIMEOUT_COMPONENT");
+    }
+    //Note: This exception should never be reached, as it should be caught in the regex construction of check_timeout_arg
+    //However, if the unit map/regex construction is changeed in the future, this serves as a good safety net
+
+    return ConvertNumberWithUnit(number, suffix, unit_map);
 }
