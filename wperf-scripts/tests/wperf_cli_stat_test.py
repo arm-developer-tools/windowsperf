@@ -358,3 +358,35 @@ def test_wperf_stat_timeout_flag_throws(duration):
     expected_error = f"input: \"{duration}\" to argument '--timeout' is invalid".encode()
 
     assert expected_error in stderr
+
+@pytest.mark.parametrize("duration,expected_result",
+[
+    ("100ms", 0.1),
+    ("0.01m", 0.6),
+    ("0.50s", 0.5),
+]
+)
+def test_wperf_stat_i_flag(duration, expected_result):
+    cmd = f'wperf stat -m imix -c 0 -t -i {duration} --timeout 1 -n 1 --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+
+    assert "count_interval" in json_output
+    assert json_output["count_interval"] == expected_result
+
+@pytest.mark.parametrize("duration",
+[
+    (b"."),
+    (b"1!s"),
+    (b".2m"),
+]
+)
+def test_wperf_stat_i_flag_throws(duration):
+    cmd = f'wperf stat -m imix -c 0 -t -i {duration} --timeout 1 -n 1 --json'
+    _,stderr = run_command(cmd.split())
+
+    expected_error = f"input: \"{duration}\" to argument '-i' is invalid".encode()
+
+    assert expected_error in stderr
