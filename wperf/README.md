@@ -84,8 +84,12 @@ OPTIONS:
         Note: see list of available metric names using `list` command.
 
     --timeout
-        Specify counting or sampling duration in seconds, accuracy is 0.1 sec.
-        If not specified, press Ctrl+C to interrupt counting or sampling.
+        Specify counting or sampling duration. If not specified, press 
+        Ctrl+C to interrupt counting or sampling. Input may be suffixed by 
+        one (or none) of the following units, with up to 2 decimal 
+        points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds, 
+        minutes, hours, days). If no unit is provided, the default unit
+        is seconds. Accuracy is 0.1 sec. 
 
     -t
         Enable timeline mode (count multiple times with specified interval).
@@ -93,7 +97,11 @@ OPTIONS:
         counts.
 
     -i
-        Specify counting interval in seconds, `0` seconds is allowed.
+        Specify counting interval. `0` seconds is allowed. Input may be 
+        suffixed with one (or none) of the following units, with up to 
+        2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds, 
+        seconds, minutes, hours, days). If no unit is provided, the default 
+        unit is seconds.
 
     -n
         Number of consecutive counts in timeline mode (disabled by default).
@@ -172,14 +180,14 @@ EXAMPLES:
     Count events `inst_spec`, `vfp_spec`, `ase_spec` and `ld_spec` on core #0
     for 3 seconds.
 
-    > wperf stat -m imix -e l1i_cache -c 7 --timeout 10.5
+    > wperf stat -m imix -e l1i_cache -c 7 --timeout 1500ms
     Count metric `imix` (metric events will be grouped) and additional event
-    `l1i_cache` on core #7 for 10.5 seconds.
+    `l1i_cache` on core #7 for 1.5 seconds (1500 milliseconds).
 
-    > wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
+    > wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 0.1m
     Count in timeline mode (output counting to CSV file) metric `imix` 3 times
     on core #1 with 2 second intervals (delays between counts). Each count
-    will last 5 seconds.
+    will last 6 seconds (0.1 minutes).
 
     > wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1
     Sample event `ld_spec` with frequency `100000` already running process
@@ -552,6 +560,41 @@ Telemetry Solution Metrics:
 
 See how CPython computation of `10^10^100` is `integer_dp_percentage` and `load_percentage` bound.
 
+## Available units for --timeout, sleep & -i
+
+Options `--timeout`, `sleep` and `-i` can be used with a number along with one, or none, of the supported units: `ms` (milliseconds), `s` (seconds), `m` (minutes), `h` (hours), `d` (days).
+
+The following restrictions apply:
+* The default unit `seconds` is used if no unit is provided as input. 
+* Units may not be used in conjuction with one another: `--timeout 1m30s` is not accepted.
+* Decimals may be up to 2 decimal places, and must be preceeded by a single `0`: `.001h` is not accepted.
+* Padded `0`s are not permitted: `01h` is not accepted.
+
+See the following for examples of correct usage:
+
+```
+>wperf stat -c 0 -e ld_spec --timeout 10
+
+>wperf stat -c 0 -e ld_spec --timeout 1.00h 
+
+>wperf stat -c 0 -e ld_spec sleep 750ms 
+
+>wperf stat -c 0 -e ld_spec sleep 5m
+```
+
+represent a duration of `10`, `3600`, `0.75` & `300` seconds respecitvely.
+
+Similarly:
+```
+> wperf stat -m imix -c 0 -t -i 36 --timeout 1 -n 1
+
+> wperf stat -m imix -c 0 -t -i 3600.00ms --timeout 1 -n 1
+
+> wperf stat -m imix -c 0 -t -i 0.01h --timeout 1 -n 1
+```
+
+all represent a counting interval of `36` seconds.
+
 ## Count on multiple cores simultaneously with -c
 
 In below example we specify events with `-e` and schedule counting on cores 0, 1, 6 and 7. This is done with `-c 0,1,6,7 ` command line option.
@@ -662,7 +705,7 @@ counts on core 0.
 
 ## Timeline (count multiple times between intervals)
 
-Timeline feature allow users to perform continuous counting (defined with `--timeout <SEC>` command line option) between intervals (defined with `-i <SEC>`) for `N` times (defined with `-n <N>`). For example command:
+Timeline feature allow users to perform continuous counting (defined with `--timeout <DURATION>` command line option) between intervals (defined with `-i <DURATION>`) for `N` times (defined with `-n <N>`). For example command:
 
 ```
 >wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5

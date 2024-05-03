@@ -114,8 +114,12 @@ OPTIONS:
         Note: see list of available metric names using `list` command.
 
     --timeout
-        Specify counting or sampling duration in seconds, accuracy is 0.1 sec.
-        If not specified, press Ctrl+C to interrupt counting or sampling.
+        Specify counting or sampling duration. If not specified, press 
+        Ctrl+C to interrupt counting or sampling. Input may be suffixed by 
+        one (or none) of the following units, with up to 2 decimal 
+        points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds, 
+        minutes, hours, days). If no unit is provided, the default unit
+        is seconds. Accuracy is 0.1 sec. 
 
     -t
         Enable timeline mode (count multiple times with specified interval).
@@ -123,7 +127,11 @@ OPTIONS:
         counts.
 
     -i
-        Specify counting interval in seconds, `0` seconds is allowed.
+        Specify counting interval. `0` seconds is allowed. Input may be 
+        suffixed with one (or none) of the following units, with up to 
+        2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds, 
+        seconds, minutes, hours, days). If no unit is provided, the default 
+        unit is seconds.
 
     -n
         Number of consecutive counts in timeline mode (disabled by default).
