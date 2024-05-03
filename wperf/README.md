@@ -128,7 +128,7 @@ OPTIONS:
         Force driver to give lock to current `wperf` process, use when you want
         to interrupt currently executing `wperf` session or to recover from the lock.
 
-    -c
+    -c, --cpu
         Specify comma separated list of CPU cores to count on, or one CPU to
         sample on.
 
@@ -638,6 +638,27 @@ System-wide Overall:
 
                 1.09 seconds time elapsed
 ```
+
+### Using alias `--cpu`
+
+The alias for `-c`, `--cpu` can be used in the same way. For example, 
+
+```
+> wperf stat -e inst_spec --cpu 0 sleep 1
+counting ... done
+
+Performance counter stats for core 0, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+        1,226,336,052  cycle       fixed      e
+        1,896,822,215  inst_spec   0x1b       e
+
+               1.119 seconds time elapsed
+```
+
+counts on core 0.
 
 ## Timeline (count multiple times between intervals)
 

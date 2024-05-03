@@ -158,7 +158,7 @@ OPTIONS:
         Force driver to give lock to current `wperf` process, use when you want
         to interrupt currently executing `wperf` session or to recover from the lock.
 
-    -c
+    -c, --cpu
         Specify comma separated list of CPU cores to count on, or one CPU to
         sample on.
 
@@ -807,7 +807,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"-c")
+        if (a == L"-c" || a == L"--cpu")
         {
             waiting_core_idx = true;
             continue;
