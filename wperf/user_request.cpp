@@ -1064,7 +1064,7 @@ std::wstring user_request::trim(const std::wstring& str,
 }
 
 
-bool user_request::check_timeout_arg(std::wstring number_and_suffix, std::unordered_map<std::wstring, double>& unit_map)
+bool user_request::check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map)
 {
     std::wstring accept_units;
 
@@ -1089,7 +1089,7 @@ bool user_request::check_timeout_arg(std::wstring number_and_suffix, std::unorde
 
 }
 
-double user_request::convert_timeout_arg_to_seconds(std::wstring number_and_suffix, std::wstring& cmd_arg)
+double user_request::convert_timeout_arg_to_seconds(std::wstring number_and_suffix, const std::wstring& cmd_arg)
 {
     std::unordered_map<std::wstring, double> unit_map = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400} };
 
