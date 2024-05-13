@@ -42,8 +42,6 @@
 #include "wperf-common/public.h"
 #include "wperf/config.h"
 
-static std::array<std::wstring, 9> arguments = { L"-image_name", L"-pe_file", L"-pdb_file", L"-sample-display_row", L"-sample-display-long", L"-dmc", L"-verbose", L"-version", L"-json" };
-
 void user_request::print_help_usage()
 {
     const wchar_t* wsHelp = LR"(
@@ -872,21 +870,6 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             do_test = true;
             continue;
         }
-        
-        if ([&a](auto&& vec) constexpr {
-            for (const auto& elem : vec)
-            {
-                if (a == elem)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }(arguments))
-        {
-            m_out.GetErrorOutputStream() << L"Single dash '-' options no longer supported please use '-" << a << "'" << std::endl;
-            throw fatal_exception("ERROR_OPTION_DASH");
-        }      
 
         /* This will finish command line argument parsing. After "--" we will see process to spawn in form of:
         *
