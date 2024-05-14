@@ -137,8 +137,8 @@ OPTIONS:
         to interrupt currently executing `wperf` session or to recover from the lock.
 
     -c, --cpu
-        Specify comma separated list of CPU cores to count on, or one CPU to
-        sample on.
+        Specify comma separated list of CPU cores, and or ranges of CPU cores, to count
+        on, or one CPU to sample on.
 
     -k
         Count kernel mode as well (disabled by default).
@@ -680,6 +680,75 @@ System-wide Overall:
                     0  crypto_spec    0x0077     e                      0
 
                 1.09 seconds time elapsed
+```
+
+### Specify a range of cores
+
+Ranges are specified as `[core_number]-[core_number]`, and can be specified alongisde singular cores. For example,
+
+```
+> wperf stat -m imix -c 0,3-5 --timeout 1 --json
+counting ... done
+
+Performance counter stats for core 0, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+          237,651,684  cycle       fixed      e
+          166,415,456  inst_spec   0x1b       g0,imix
+           74,655,597  dp_spec     0x73       g0,imix
+              657,789  vfp_spec    0x75       g0,imix
+              149,333  ase_spec    0x74       g0,imix
+           38,158,577  ld_spec     0x70       g0,imix
+
+Performance counter stats for core 3, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+           81,321,835  cycle       fixed      e
+           83,260,473  inst_spec   0x1b       g0,imix
+           38,963,288  dp_spec     0x73       g0,imix
+              106,695  vfp_spec    0x75       g0,imix
+              114,980  ase_spec    0x74       g0,imix
+           18,559,855  ld_spec     0x70       g0,imix
+
+Performance counter stats for core 4, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+            1,181,079  cycle       fixed      e
+              355,685  inst_spec   0x1b       g0,imix
+              146,025  dp_spec     0x73       g0,imix
+                  702  vfp_spec    0x75       g0,imix
+                1,637  ase_spec    0x74       g0,imix
+               85,716  ld_spec     0x70       g0,imix
+
+Performance counter stats for core 5, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+            1,595,874  cycle       fixed      e
+            1,560,082  inst_spec   0x1b       g0,imix
+              725,657  dp_spec     0x73       g0,imix
+                7,114  vfp_spec    0x75       g0,imix
+                  386  ase_spec    0x74       g0,imix
+              383,499  ld_spec     0x70       g0,imix
+
+System-wide Overall:
+        counter value  event name  event idx  event note
+        =============  ==========  =========  ==========
+          321,750,472  cycle       fixed      e
+          251,591,696  inst_spec   0x001b     g0,imix
+          114,490,567  dp_spec     0x0073     g0,imix
+              772,300  vfp_spec    0x0075     g0,imix
+              266,336  ase_spec    0x0074     g0,imix
+           57,187,647  ld_spec     0x0070     g0,imix
+
+               1.087 seconds time elapsed
 ```
 
 ### Using alias `--cpu`

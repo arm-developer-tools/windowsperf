@@ -165,8 +165,8 @@ OPTIONS:
         to interrupt currently executing `wperf` session or to recover from the lock.
 
     -c, --cpu
-        Specify comma separated list of CPU cores to count on, or one CPU to
-        sample on.
+        Specify comma separated list of CPU cores, and or ranges of CPU cores, to count
+        on, or one CPU to sample on.
 
     -k
         Count kernel mode as well (disabled by default).
@@ -592,7 +592,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         {
             if (TokenizeWideStringOfInts(a.c_str(), L',', cores_idx) == false)
             {
-                m_out.GetErrorOutputStream() << L"option -c format not supported, use comma separated list of integers"
+                m_out.GetErrorOutputStream() << L"option -c format not supported, use comma separated list of integers, or range of integers"
                     << std::endl;
                 throw fatal_exception("ERROR_CORES");
             }

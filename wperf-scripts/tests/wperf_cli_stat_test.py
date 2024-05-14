@@ -390,3 +390,27 @@ def test_wperf_stat_i_flag_throws(duration):
     expected_error = f"input: \"{duration}\" to argument '-i' is invalid".encode()
 
     assert expected_error in stderr
+
+
+@pytest.mark.parametrize("cores,expected_cores",
+[
+    ("1,2,3", {1,2,3}),
+    ("1-3", {1,2,3}),
+    ("1,2,3,4-7", {1,2,3,4,5,6,7}),
+    ("0-0,3-1", {0,1,2,3}),
+    ("2-5,0-1,4", {0,1,2,3,4,5}),
+]
+)
+def test_wperf_stat_cores_exist(cores, expected_cores):
+    cmd = f'wperf stat -m imix -c {cores} --timeout 1 --json'
+    print(cmd)
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+    
+    assert "core" in json_output
+    assert "cores" in json_output["core"]
+
+    for result_core in json_output["core"]["cores"]:
+        assert result_core["core_number"] in expected_cores

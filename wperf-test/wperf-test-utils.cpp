@@ -36,6 +36,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <numeric>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -193,6 +194,13 @@ namespace wperftest
 			}
 		}
 
+		std::vector<uint8_t> generateSequence(const uint8_t& start, const uint8_t& end)
+		{
+			std::vector<uint8_t> sequence(end - start + 1);
+			std::iota(sequence.begin(),sequence.end(),start);
+			return sequence;
+		}
+
 		TEST_METHOD(test_TokenizeWideStringOfStrings)
 		{
 			tokenizeWideStringOfStrings_test_helper(L"a b c", { L"a", L"b", L"c" }, L' ');
@@ -258,6 +266,77 @@ namespace wperftest
 			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,1,2,3,5,8,13,21,34,55,89,144,233", L',', Output));
 			Assert::AreEqual(Output.size(), (size_t)14);
 			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233});
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_range)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,2-4", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)5);
+			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 2, 3, 4});
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts_overlap)
+		{
+			std::vector<uint32_t> Output;
+			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,2,3,4,2-4", L',', Output));
+			Assert::AreEqual(Output.size(), (size_t)8);
+			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 2, 3, 4, 2, 3, 4});
+		}
+
+		void tokenizeWideStringofIntRange_test_helper(const std::wstring& input, const std::vector<uint32_t>& expectedOutput, bool expectedResult)
+		{
+			std::vector<uint32_t> Output;
+			bool result = TokenizeWideStringofIntRange(input, L'-', Output);
+
+			Assert::AreEqual(result, expectedResult);
+			Assert::AreEqual(Output.size(), expectedOutput.size());
+			Assert::IsTrue(Output == expectedOutput);
+		}
+
+		/*Call the following tests with tokenizeWideStringofIntRange_test_helper(wstring testInput, std::vector<uint32_t> expectedOutput, bool expectedResult) */
+		TEST_METHOD(test_TokenizeWideStringofIntRange_pass)
+		{
+			tokenizeWideStringofIntRange_test_helper(L"0-3", { 0, 1, 2, 3 }, true);
+			tokenizeWideStringofIntRange_test_helper(L"0-0", { 0 }, true);
+			tokenizeWideStringofIntRange_test_helper(L"4-0", { 0, 1, 2, 3, 4 }, true);
+			tokenizeWideStringofIntRange_test_helper(L"9-2", { 2, 3, 4, 5, 6, 7, 8, 9}, true);
+		}
+
+		TEST_METHOD(test_TokenizeWideStringofIntRange_long)
+		{
+			std::vector<uint32_t> expectedResult(21);
+			std::iota(expectedResult.begin(), expectedResult.end(), 0);
+			tokenizeWideStringofIntRange_test_helper(L"0-20", expectedResult, true);
+		}
+
+		TEST_METHOD(test_TokenizeWideStringofIntRange_long2)
+		{
+			std::vector<uint32_t> expectedResult(101);
+			std::iota(expectedResult.begin(), expectedResult.end(), 100);
+
+			tokenizeWideStringofIntRange_test_helper(L"100-200", expectedResult, true);
+			tokenizeWideStringofIntRange_test_helper(L"200-100", expectedResult, true);
+		}
+
+		TEST_METHOD(test_TokenizeWideStringofIntRange_long3)
+		{
+			std::vector<uint32_t> expectedResult(256);
+			std::iota(expectedResult.begin(), expectedResult.end(), 0);
+
+			tokenizeWideStringofIntRange_test_helper(L"0-255", expectedResult, true);
+			tokenizeWideStringofIntRange_test_helper(L"255-0", expectedResult, true);
+		}
+
+		TEST_METHOD(test_TokenizeWideStringofIntRange_fail)
+		{
+			tokenizeWideStringofIntRange_test_helper(L"0--3", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"36- 3", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"0 -300", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"-22222-3", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"-0--3", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"-0 - 300", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"hello-Tokenizer", {}, false);
 		}
 
 		TEST_METHOD(test_ReplaceFileExtension)
