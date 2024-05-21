@@ -982,7 +982,6 @@ wmain(
                                     {
                                         std::wstringstream addr_stream;
                                         std::vector<DisassembledInstruction> lineAsm{ 0 };
-                                        assert(a.module->mod_baseOfDll);
                                         uint64_t base = a.module == NULL ? image_base : a.module->mod_baseOfDll;
                                         std::wstring& target = a.module == NULL ? request.sample_pe_file : a.module->mod_path;
                                         addr_stream << std::hex << addr;

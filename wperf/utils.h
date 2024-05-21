@@ -148,7 +148,7 @@ bool TokenizeWideStringOfInts(_In_ std::wstring Input, _In_  const wchar_t Delim
 /// <param name="Output">Output Vector</param>
 /// <returns></returns>
 template<typename T>
-bool TokenizeWideStringofIntRange(_In_ std::wstring Range, _In_ wchar_t Separator, _Out_ std::vector<T>& Output) {
+_Success_(return) bool TokenizeWideStringofIntRange(_In_ std::wstring Range, _In_ wchar_t Separator, _Out_ std::vector<T>& Output) {
 
     auto dash_pos = Range.find(Separator);
 
