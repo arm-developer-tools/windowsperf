@@ -178,7 +178,23 @@ public:
                         std::wstring::size_type cut_length = line_split[0].length() + line_split[1].length() + 2;
                         std::wstring dasm = line.substr(cut_length, line.length() - cut_length);
                         std::wstring dasm_clean = TrimWideString(dasm);
-                        source.push_back(DisassembledInstruction{ address & 0xFFFFFF, insn, dasm_clean });
+                        std::vector<std::wstring> dasm_split;
+                        
+                        TokenizeWideStringOfStrings(dasm_clean, '\t', dasm_split);
+                        std::wstringstream dasmstream;
+
+                        if (dasm_split.size() >= 2)
+                        {
+                            dasmstream << std::setw(5) << std::left << dasm_split[0] << " ";
+                            for (auto i = 1ull; i < dasm_split.size(); i++)
+                            {
+                                dasmstream << dasm_split[i] << (i + 1 < dasm_split.size() ? " " : "");
+                            }
+                        }
+                        else
+                            dasmstream << std::left << dasm_split[0];
+
+                        source.push_back(DisassembledInstruction{ address & 0xFFFFFF, insn, dasmstream.str() });
                     }
                     catch (const std::exception&)
                     {
