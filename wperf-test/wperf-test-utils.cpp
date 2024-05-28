@@ -194,13 +194,6 @@ namespace wperftest
 			}
 		}
 
-		std::vector<uint8_t> generateSequence(const uint8_t& start, const uint8_t& end)
-		{
-			std::vector<uint8_t> sequence(end - start + 1);
-			std::iota(sequence.begin(),sequence.end(),start);
-			return sequence;
-		}
-
 		TEST_METHOD(test_TokenizeWideStringOfStrings)
 		{
 			tokenizeWideStringOfStrings_test_helper(L"a b c", { L"a", L"b", L"c" }, L' ');
@@ -217,24 +210,50 @@ namespace wperftest
 		
 		}
 
-		TEST_METHOD(test_TokenizeWideStringOfInts_error)
+
+		std::vector<uint32_t> generateSequence(const uint32_t& start, const uint32_t& end)
 		{
-			std::vector<uint32_t> Output;
-			Assert::IsFalse(TokenizeWideStringOfInts(L"a", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0a", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0,a", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0,1,2a", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0, 1, 2", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0 , 1,2", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0,1,2 ", L',', Output));
-			Assert::IsFalse(TokenizeWideStringOfInts(L"0,-1,2", L',', Output));
+			std::vector<uint32_t> sequence(end - start + 1);
+			std::iota(sequence.begin(), sequence.end(), start);
+			return sequence;
 		}
 
-		TEST_METHOD(test_TokenizeWideStringOfInts_empty)
+
+		void tokenizeWideStringofInts_test_helper(const std::wstring& input, const std::vector<uint32_t>& expectedOutput, bool expectedResult)
 		{
 			std::vector<uint32_t> Output;
-			Assert::IsTrue(TokenizeWideStringOfInts(L"", L',', Output));
-			Assert::AreEqual(Output.size(), (size_t)0);
+			bool result = TokenizeWideStringOfInts(input, L',', Output);
+
+			Assert::AreEqual(result, expectedResult);
+			if (expectedResult) {
+				Assert::AreEqual(Output.size(), expectedOutput.size());
+				Assert::IsTrue(Output == expectedOutput);
+			}
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfInts)
+		{
+			// Test unexpected inputs
+			tokenizeWideStringofInts_test_helper(L"a", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0a", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0,a", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0,1,2a", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0, 1, 2", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0 , 1,2", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0,1,2 ", {}, false);
+			tokenizeWideStringofInts_test_helper(L"0,-1,2", {}, false);
+
+			// Test correct cases
+			tokenizeWideStringofInts_test_helper(L"", {}, true);
+			tokenizeWideStringofInts_test_helper(L"0", generateSequence(0, 0), true);
+			tokenizeWideStringofInts_test_helper(L"0,1,2", generateSequence(0, 2), true);
+			tokenizeWideStringofInts_test_helper(L"5-10,11-15,16-20", generateSequence(5, 20), true);
+			tokenizeWideStringofInts_test_helper(L"30-20", generateSequence(20, 30), true);
+			tokenizeWideStringofInts_test_helper(L"0,1,1,2,3,5,8,13,21,34,55,89,144,233", { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233 }, true);
+			tokenizeWideStringofInts_test_helper(L"0-4,4-1,0,0-1,2-4", { 0, 1, 2, 3, 4, 1, 2, 3, 4, 0, 0, 1, 2, 3, 4 }, true);
+			tokenizeWideStringofInts_test_helper(L"1,2,3,4,5-24,25", generateSequence(1, 25), true);
+			tokenizeWideStringofInts_test_helper(L"0,1-1,2,3-5,8,21-13", { 0, 1, 2, 3, 4, 5, 8,13, 14, 15, 16, 17, 18, 19, 20, 21 }, true);
+			tokenizeWideStringofInts_test_helper(L"3,14-17,99-101,7,27-23,999-1001", { 3,14,15,16,17,99,100,101,7,23,24,25,26,27,999,1000,1001 }, true);
 		}
 
 		TEST_METHOD(test_TokenizeWideStringOfInts_clear_output)
@@ -244,45 +263,7 @@ namespace wperftest
 			Assert::AreEqual(Output.size(), (size_t)0);
 		}
 
-		TEST_METHOD(test_TokenizeWideStringOfInts_0)
-		{
-			std::vector<uint32_t> Output;
-			Assert::IsTrue(TokenizeWideStringOfInts(L"0", L',', Output));
-			Assert::AreEqual(Output.size(), (size_t)1);
-			Assert::IsTrue(Output == std::vector<uint32_t>{0});
-		}
 
-		TEST_METHOD(test_TokenizeWideStringOfInts_012)
-		{
-			std::vector<uint32_t> Output;
-			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,2", L',', Output));
-			Assert::AreEqual(Output.size(), (size_t)3);
-			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 2});
-		}
-
-		TEST_METHOD(test_TokenizeWideStringOfInts_fibb)
-		{
-			std::vector<uint32_t> Output;
-			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,1,2,3,5,8,13,21,34,55,89,144,233", L',', Output));
-			Assert::AreEqual(Output.size(), (size_t)14);
-			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233});
-		}
-
-		TEST_METHOD(test_TokenizeWideStringOfInts_range)
-		{
-			std::vector<uint32_t> Output;
-			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,2-4", L',', Output));
-			Assert::AreEqual(Output.size(), (size_t)5);
-			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 2, 3, 4});
-		}
-
-		TEST_METHOD(test_TokenizeWideStringOfInts_overlap)
-		{
-			std::vector<uint32_t> Output;
-			Assert::IsTrue(TokenizeWideStringOfInts(L"0,1,2,3,4,2-4", L',', Output));
-			Assert::AreEqual(Output.size(), (size_t)8);
-			Assert::IsTrue(Output == std::vector<uint32_t>{0, 1, 2, 3, 4, 2, 3, 4});
-		}
 
 		void tokenizeWideStringofIntRange_test_helper(const std::wstring& input, const std::vector<uint32_t>& expectedOutput, bool expectedResult)
 		{
@@ -295,47 +276,27 @@ namespace wperftest
 		}
 
 		/*Call the following tests with tokenizeWideStringofIntRange_test_helper(wstring testInput, std::vector<uint32_t> expectedOutput, bool expectedResult) */
-		TEST_METHOD(test_TokenizeWideStringofIntRange_pass)
+		TEST_METHOD(test_TokenizeWideStringofIntRange)
 		{
-			tokenizeWideStringofIntRange_test_helper(L"0-3", { 0, 1, 2, 3 }, true);
-			tokenizeWideStringofIntRange_test_helper(L"0-0", { 0 }, true);
-			tokenizeWideStringofIntRange_test_helper(L"4-0", { 0, 1, 2, 3, 4 }, true);
-			tokenizeWideStringofIntRange_test_helper(L"9-2", { 2, 3, 4, 5, 6, 7, 8, 9}, true);
-		}
+			// Test basic usage
+			tokenizeWideStringofIntRange_test_helper(L"0-3", generateSequence(0,3), true);
+			tokenizeWideStringofIntRange_test_helper(L"0-0", generateSequence(0,0), true);
+			tokenizeWideStringofIntRange_test_helper(L"4-0", generateSequence(0,4), true);
+			tokenizeWideStringofIntRange_test_helper(L"9-2", generateSequence(2,9), true);
 
-		TEST_METHOD(test_TokenizeWideStringofIntRange_long)
-		{
-			std::vector<uint32_t> expectedResult(21);
-			std::iota(expectedResult.begin(), expectedResult.end(), 0);
-			tokenizeWideStringofIntRange_test_helper(L"0-20", expectedResult, true);
-		}
+			// Test longer ranges
+			tokenizeWideStringofIntRange_test_helper(L"0-255", generateSequence(0, 255), true);
+			tokenizeWideStringofIntRange_test_helper(L"57-13", generateSequence(13,57), true);
+			tokenizeWideStringofIntRange_test_helper(L"941-28", generateSequence(28, 941), true);
+			tokenizeWideStringofIntRange_test_helper(L"966-999", generateSequence(966, 999), true);
 
-		TEST_METHOD(test_TokenizeWideStringofIntRange_long2)
-		{
-			std::vector<uint32_t> expectedResult(101);
-			std::iota(expectedResult.begin(), expectedResult.end(), 100);
-
-			tokenizeWideStringofIntRange_test_helper(L"100-200", expectedResult, true);
-			tokenizeWideStringofIntRange_test_helper(L"200-100", expectedResult, true);
-		}
-
-		TEST_METHOD(test_TokenizeWideStringofIntRange_long3)
-		{
-			std::vector<uint32_t> expectedResult(256);
-			std::iota(expectedResult.begin(), expectedResult.end(), 0);
-
-			tokenizeWideStringofIntRange_test_helper(L"0-255", expectedResult, true);
-			tokenizeWideStringofIntRange_test_helper(L"255-0", expectedResult, true);
-		}
-
-		TEST_METHOD(test_TokenizeWideStringofIntRange_fail)
-		{
+			//Test bad input
 			tokenizeWideStringofIntRange_test_helper(L"0--3", {}, false);
 			tokenizeWideStringofIntRange_test_helper(L"36- 3", {}, false);
-			tokenizeWideStringofIntRange_test_helper(L"0 -300", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"9 -342", {}, false);
 			tokenizeWideStringofIntRange_test_helper(L"-22222-3", {}, false);
-			tokenizeWideStringofIntRange_test_helper(L"-0--3", {}, false);
-			tokenizeWideStringofIntRange_test_helper(L"-0 - 300", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"-68--6", {}, false);
+			tokenizeWideStringofIntRange_test_helper(L"-391 - 01", {}, false);
 			tokenizeWideStringofIntRange_test_helper(L"hello-Tokenizer", {}, false);
 		}
 

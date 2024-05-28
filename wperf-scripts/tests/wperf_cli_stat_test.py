@@ -411,6 +411,7 @@ def test_wperf_stat_cores_exist(cores, expected_cores):
     
     assert "core" in json_output
     assert "cores" in json_output["core"]
+    assert len(json_output["core"]["cores"]) == len(expected_cores)
 
     for result_core in json_output["core"]["cores"]:
         assert result_core["core_number"] in expected_cores
