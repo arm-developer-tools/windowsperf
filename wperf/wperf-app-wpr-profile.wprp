@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WindowsPerformanceRecorder Version="1.0" Author="Linaro">
+    <Profiles>
+        <SystemCollector Id="SystemCollector_Wpr" Name="WprTest_SystemLogger">
+          <BufferSize Value="1024"/>
+          <Buffers Value="32"/>
+        </SystemCollector> 	
+        <EventCollector Id="LinaroEventCollectorID" Name="LinaroEventCollectorName">
+            <BufferSize Value="256"/>  <!-- Optional. Default value is 128-->
+            <Buffers Value="64"/>      <!-- Optional. Default value is 64 -->
+        </EventCollector>
+        <SystemProvider Id="SystemProvider_Base" Base="">
+          <Keywords>
+            <Keyword Value="ProcessThread"/>
+            <Keyword Value="Loader"/>
+          </Keywords>
+        </SystemProvider>		
+        <EventProvider Id="WperfProviderID" Name="WindowsPerf App" Stack="false" NonPagedMemory="true">
+        </EventProvider>
+        <Profile Id="TraceBus.Verbose.File" Name="TraceBus" DetailLevel="Verbose" LoggingMode="File" Description="WindowsPerf App ETW Profile">
+            <Collectors>
+                <SystemCollectorId Value="SystemCollector_Wpr" >
+                  <SystemProviderId Value="SystemProvider_Base"></SystemProviderId>
+                </SystemCollectorId>
+                <EventCollectorId Value="LinaroEventCollectorID">
+                    <EventProviders>
+                        <EventProviderId Value="WperfProviderID"/>
+                    </EventProviders>
+                </EventCollectorId>
+            </Collectors>
+        </Profile>
+    </Profiles>
+</WindowsPerformanceRecorder>

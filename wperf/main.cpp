@@ -30,6 +30,9 @@
 
 #include <Windows.h>
 #include <sysinfoapi.h>
+#if defined(ENABLE_ETW_TRACING_APP)
+#include "wperf-etw.h"
+#endif
 
 #include "wperf.h"
 #include "wperf-common\public.h"
@@ -147,6 +150,10 @@ wmain(
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
+
+#if defined(ENABLE_ETW_TRACING_APP)
+    EventRegisterWindowsPerf_App();
+#endif
 
     try
     {
@@ -1132,6 +1139,10 @@ wmain(
     }
 
 clean_exit:
+#if defined(ENABLE_ETW_TRACING_APP)
+    EventUnregisterWindowsPerf_App();
+#endif
+
     if(spawned_process)
     {
         TerminateProcess(pi.hProcess, 0);

@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<instrumentationManifest
+    xmlns="http://schemas.microsoft.com/win/2004/08/events"
+    xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://schemas.microsoft.com/win/2004/08/events eventman.xsd"
+    >
+  <instrumentation>
+    <events>
+      <provider
+          guid="{6AFCCF81-3A0C-411E-A4AA-C4CF02EB840D}"
+          messageFileName="wperf.exe"
+          name="WindowsPerf App"
+          resourceFileName="wperf.exe"
+          symbol="ControlGuid"
+          >
+      <keywords>
+          <keyword name="Read" symbol="READ_KEYWORD" mask="0x1" />
+          <keyword name="Write" symbol="WRITE_KEYWORD" mask="0x2" />
+          <keyword name="Local" symbol="LOCAL_KEYWORD" mask="0x4" />
+          <keyword name="Remote" symbol="REMOTE_KEYWORD" mask="0x8" />
+      </keywords>
+        <channels>
+          <channel
+            chid="WPERFDRIVER"
+            name="Wperf_Driver/Analytic"
+            type="Analytic"
+            enabled="true"
+          />
+        </channels>
+
+        <templates>
+          <template tid="tid_read_gpc">
+            <data 
+              inType="win:UInt64"
+              name="Core"
+              outType="xs:unsignedLong"
+              />
+            <data 
+              inType="win:UnicodeString"
+              name="Event"
+              outType="xs:string"
+              />
+            <data 
+              inType="win:UInt32"
+              name="EventIdx"
+              outType="xs:unsignedInt"
+              />
+            <data 
+              inType="win:UnicodeString"
+              name="EventNote"
+              outType="xs:string"
+              />
+            <data 
+              inType="win:UInt64"
+              name="Value"
+              outType="xs:unsignedLong"
+              />
+          </template>
+        </templates>
+        <tasks>
+            <task name="Counting"
+                  symbol="TASK_COUNTING"
+                  value="1"
+                  message="$(string.Task.Counting)"/>
+        </tasks>
+        <events>
+          <event
+            level="win:LogAlways"
+            message="$(string.ReadGPC.EventMessage)"
+            opcode="win:Info"
+            symbol="ReadGPC"
+            channel="WPERFDRIVER"
+            template="tid_read_gpc"
+            keywords="Read Local"
+            task="Counting"
+            value="1"
+            />
+        </events>
+      </provider>
+    </events>
+  </instrumentation>
+  <localization xmlns="http://schemas.microsoft.com/win/2004/08/events">
+    <resources culture="en-US">
+      <stringTable>
+        <string
+          id="Task.Counting"
+          value="Counting Task"
+          />
+        <string
+          id="ReadGPC.EventMessage"
+          value="ReadGPC"
+          />
+      </stringTable>
+    </resources>
+  </localization>
+</instrumentationManifest>

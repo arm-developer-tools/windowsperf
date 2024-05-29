@@ -39,6 +39,9 @@
 #include "core.h"
 #include "coreinfo.h"
 #include "sysregs.h"
+#if defined(ENABLE_ETW_TRACING)
+#include "wperf-driver-etw.h"
+#endif
 
 extern struct dmcs_desc dmc_array;
 extern UINT8 dsu_numGPC;
@@ -107,8 +110,11 @@ static VOID update_core_counting(CoreInfo* core)
 
     for (UINT32 i = 0; i < events_num; i++)
     {
-        events[i].value += event_get_counting((struct pmu_event_kernel*)&events[i], core->idx);
+        events[i].value += event_get_counting((struct pmu_event_kernel*)&events[i], core->idx);       
         events[i].scheduled += 1;
+#if defined(ENABLE_ETW_TRACING)
+        EventWriteReadGPC(NULL, core->idx, events[i].event_idx, events[i].counter_idx, events[i].value);
+#endif
     }
 
     update_last_fixed_counter(core->idx);

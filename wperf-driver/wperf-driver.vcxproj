@@ -49,6 +49,25 @@
   </ImportGroup>
   <ItemGroup Label="WrappedTaskItems">
     <ResourceCompile Include="Resource.rc" />
+    <MessageCompile Include="wperf-driver-etw-manifest.xml">
+      <GenerateKernelModeLoggingMacros>true</GenerateKernelModeLoggingMacros>
+      <HeaderFilePath>.\$(IntDir)</HeaderFilePath>
+      <GeneratedHeaderPath>true</GeneratedHeaderPath>
+      <WinmetaPath>"$(SDK_INC_PATH)\winmeta.xml"</WinmetaPath>
+      <RCFilePath>.\$(IntDir)</RCFilePath>
+      <GeneratedRCAndMessagesPath>true</GeneratedRCAndMessagesPath>
+      <GeneratedFilesBaseName>wperf-driver-etw</GeneratedFilesBaseName>
+      <UseBaseNameOfInput>true</UseBaseNameOfInput>
+      <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)</HeaderFilePath>
+      <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)</RCFilePath>
+      <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)</HeaderFilePath>
+      <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)</RCFilePath>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">false</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">false</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</DeploymentContent>
+    </MessageCompile>
+    <ResourceCompile Include="wperf-driver-etw.rc" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <TargetName>wperf-driver</TargetName>
@@ -88,10 +107,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ResourceCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir);$(IntDir)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir);$(IntDir)</AdditionalIncludeDirectories>
       <ExceptionHandling>
       </ExceptionHandling>
       <Optimization>Disabled</Optimization>
@@ -100,7 +119,7 @@
       </WppGenerateUsingTemplateFile>
       <WppScanConfigurationData>trace.h</WppScanConfigurationData>
       <WppRecorderEnabled>false</WppRecorderEnabled>
-      <PreprocessorDefinitions>_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ENABLE_TRACING;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Midl>

@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<instrumentationManifest
+    xmlns="http://schemas.microsoft.com/win/2004/08/events"
+    xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://schemas.microsoft.com/win/2004/08/events eventman.xsd"
+    >
+  <instrumentation>
+    <events>
+      <provider
+          guid="{9b15b4b5-6979-4ba7-9b26-00c630a4d7b3}"
+          messageFileName="%SystemDrive%\Windows\System32\drivers\wperf-driver.sys"
+          name="WindowsPerf Driver"
+          resourceFileName="%SystemDrive%\Windows\System32\drivers\wperf-driver.sys"
+          symbol="DriverControlGuid"
+          >
+        <channels>
+          <importChannel
+              chid="SYSTEM"
+              name="System"
+              />
+        </channels>
+        <templates>
+          <template tid="tid_read_gpc">
+            <data 
+              inType="win:UInt64"
+              name="Core"
+              outType="xs:unsignedLong"
+              />
+            <data 
+              inType="win:UInt32"
+              name="Event"
+              outType="xs:unsignedInt"
+              />
+            <data 
+              inType="win:UInt32"
+              name="GPCIdx"
+              outType="xs:unsignedInt"
+              />
+            <data 
+              inType="win:UInt64"
+              name="Value"
+              outType="xs:unsignedLong"
+              />
+          </template>
+        </templates>
+        <events>
+          <event
+            channel="SYSTEM"
+            level="win:Informational"
+            message="$(string.ReadGPC.EventMessage)"
+            opcode="win:Info"
+            symbol="ReadGPC"
+            template="tid_read_gpc"
+            value="1"
+            />
+        </events>
+      </provider>
+    </events>
+  </instrumentation>
+  <localization xmlns="http://schemas.microsoft.com/win/2004/08/events">
+    <resources culture="en-US">
+      <stringTable>
+        <string
+          id="ReadGPC.EventMessage"
+          value="ReadGPC"
+          />
+      </stringTable>
+    </resources>
+  </localization>
+</instrumentationManifest>
