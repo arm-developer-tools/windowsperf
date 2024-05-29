@@ -129,7 +129,7 @@ OPTIONS:
         suffixed with one (or none) of the following units, with up to 
         2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds, 
         seconds, minutes, hours, days). If no unit is provided, the default 
-        unit is seconds.
+        unit is seconds (60s by default).
 
     -n
         Number of consecutive counts in timeline mode (disabled by default).
