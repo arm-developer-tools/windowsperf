@@ -22,6 +22,14 @@ Currently we support:
 
 You can find example usage of [counting model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#counting-model) and [sampling model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#sampling-model) in `wperf` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/README.md).
 
+### Arm Telemetry Solution integration
+
+The integration of WindowsPerf and [Arm Telemetry Solution](https://developer.arm.com/documentation/109542/0100/About-Arm-CPU-Telemetry-Solution) is a significant advancement in performance analysis on Windows On Arm. This integration is primarily based on PMU (Performance Monitoring Unit) events, which provide a detailed insight into the system’s performance. One of the standout features of the WindowsPerf Tool is the implementation of the [Arm Topdown Methodology](https://developer.arm.com/documentation/109542/0100/Arm-Topdown-methodology) for μarch (microarchitecture) performance analysis. This methodology is tailored for each Arm CPU μarch. It involves the use of PMU events, metrics, and groups of metrics to provide a comprehensive analysis of the system’s performance. Furthermore, the WindowsPerf Tool is capable of [platform μarchitecture detection](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main), including Neoverse-N1, V1, and N2 CPUs.
+
+The Arm Telemetry Solution also includes a [topdown-tool](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/topdown_tool) that leverages the WindowsPerf as a backend for Windows On Arm. This tool applies the top-down methodology to break down CPU performance into different hierarchical levels, providing a detailed and systematic approach to performance analysis.
+
+The `topdown-tool` uses the WindowsPerf to access the PMU events and metrics on Windows On Arm, enabling it to gather and analyze performance data directly from the hardware. This integration allows the `topdown-tool` to provide a comprehensive view of the system’s performance, from high-level metrics to low-level, detailed μarch events.
+
 ## WindowsPerf Installation
 
 You can find latest WindowsPerf installation instructions in [INSTALL.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/INSTALL.md?ref_type=heads).
