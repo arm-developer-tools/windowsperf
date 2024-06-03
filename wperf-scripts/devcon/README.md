@@ -2,6 +2,10 @@
 
 [[_TOC_]]
 
+:warning: This script is a helper script for those who prefer to use `devcon` tool from Windows Driver Kit (WDK), see this [article](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/devcon#where-can-i-download-devcon).
+
+:grey_exclamation: Please use `wperf-devgen.exe` distributed with latest WindowsPerf releases to install `wperf-driver`.
+
 ## Description
 
 PowerShell helper script `wperf-devcon.ps1`. Manipulate `wperf-driver` installation, removal and check driver installation status.
