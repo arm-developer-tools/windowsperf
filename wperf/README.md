@@ -157,7 +157,7 @@ OPTIONS:
     --json
         Define output type as JSON.
 
-    --output
+    --output, -o
         Specify JSON output file name.
 
     --config
@@ -881,7 +881,7 @@ timeline file: 'timeline--7--core.csv'
 ```
 
 ```
->wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output {timestamp}.{core}.{class}.csv
+>wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v -o {timestamp}.{core}.{class}.csv
 timeline file: '2023_09_21_12_23_58.7.core.csv'
 ```
 

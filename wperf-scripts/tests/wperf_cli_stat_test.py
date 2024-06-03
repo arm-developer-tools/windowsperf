@@ -241,6 +241,19 @@ def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_pat
             assert is_json(json_obj)
     except:
         assert 0
+        
+def test_wperf_stat_output_alias():
+    """ Test `wperf stat` -o option by checkoug json validity """
+    file_path = 'test.json'
+    cmd = f'wperf stat -e inst_spec,vfp_spec -c 0 -o {file_path} sleep 1'
+
+    _, _ = run_command(cmd)
+    try:
+        with open(file_path) as f:
+            json_obj = f.read()
+            assert is_json(json_obj)
+    except:
+        assert False, f"-o not supported!, cmd={cmd}"
 
 @pytest.mark.parametrize("flag,core",
 [

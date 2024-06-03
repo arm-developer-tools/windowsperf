@@ -185,7 +185,7 @@ OPTIONS:
     --json
         Define output type as JSON.
 
-    --output
+    --output, -o
         Specify JSON output file name.
 
     --config
@@ -760,7 +760,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
-        if (a == L"--output")
+        if (a == L"--output" || a == L"-o")
         {
             waiting_output_filename = true;
             continue;
