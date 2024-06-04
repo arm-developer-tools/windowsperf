@@ -32,7 +32,7 @@
 # Makefile (GNU Make 3.81)
 #
 
-.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib package
+.PHONY: all clean docs test wperf wperf-driver wperf-test wperf-lib package regenerate
 
 #
 # *** INTRODUCTION ***
@@ -125,6 +125,15 @@ wperf-lib:
 	devenv windowsperf.sln /Rebuild "$(make_config)|${make_arch}" /Project wperf-lib\wperf-lib.vcxproj 2>&1
 
 test: wperf-test wperf-test-run
+
+#
+# Regenerate .def files
+#
+regenerate:
+# Regenerate Telemetry-Solution .def file (Add LICENSE and add meta-data)
+	sed -e 's#^#\/\/ #' LICENSE > wperf-common/telemetry-solution-data.def
+	sed -i 's#[[:space:]]*$$##' wperf-common/telemetry-solution-data.def
+	python wperf-scripts/telemetry_events_update.py >> wperf-common/telemetry-solution-data.def
 
 #
 # Simple mechanism to "flat" package build artifacts in one directory
