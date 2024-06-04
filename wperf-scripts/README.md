@@ -45,6 +45,29 @@ Script fetches Telemetry Solution CPU's PMU related information from [Telemetry 
 
 Note: for simplicity we now hard-code CPUs available in above repository. In the future we will add enumeration functionality!
 
+### Usage
+Print to terminal:
+```
+> python telemetry_events_update.py 
+```
+
+To manually pipe into a desitnation file
+
 ```
 >python telemetry_events_update.py > ..\wperf-common\telemetry-solution-data.def
 ```
+
+`-o` flag, path of desired output file (file will be made or overwritten). If not specified, outputs to stdout. `--output` is an alias.
+```
+> python telemetry_events_update.py -o ..\wperf-common\telemetry-solution-data.def
+```
+
+`--url` and `--file` flags, controls input type which can either be: `url` or `file`. If neither are specified, the default input is 'url'. URL path and local file path are both hardcoded within the script itself.
+
+```
+> python telemetry_events_update.py --url
+> python telemetry_events_update.py --file
+> python telemetry_events_update.py --file --output ./test.def
+```
+
+

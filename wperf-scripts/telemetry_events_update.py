@@ -30,13 +30,17 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 """
-This script prompts a user to merge the PMU events stored in:
+This script prompts a user to merge the PMU events stored in either:
 
     https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/data/pmu/cpu
 
+or in a local directory
 """
 
+import sys
+import os
 import argparse
 import json
 import shunting_yard as sy
@@ -44,7 +48,7 @@ import requests
 from requests.compat import urljoin
 
 URL = "https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/raw/main/data/pmu/cpu/"
-
+FILE_PATH = r"tests\telemetry-solution\data\pmu\cpu" # local PATH to telemetry solution data folder (e.g. containing 'neoverse' folder)
 # For example
 # https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/raw/main/data/pmu/cpu/neoverse/neoverse-n1.json
 
@@ -57,6 +61,9 @@ PMU_CPU_MAPPING = {
                   "neoverse-v1.json"]
 }
 
+input_mode = "url"          # default input is presumed to be URL, unless specified otherwise
+output_file = sys.stdout    # default output is presumed stdout, unless specified otherwise
+
 def ts_quote(s):
     return '"' + s + '"'
 
@@ -65,13 +72,13 @@ def ts_align(s, size):
 
 def ts_print_as_comment(s):
     """ Print C style of comment string"""
-    print ('// ' + s)
+    print ('// ' + s, file=output_file)
 
 def ts_print_define(name, values):
     """ Print C style define like string:
         NAME(values)
     """
-    print (name.upper() + '(' + values + ')')
+    print (name.upper() + '(' + values + ')', file=output_file)
 
 def ts_download_json(url, name):
     """ Download JSON file locally, return None if file is not JSON """
@@ -89,8 +96,28 @@ def ts_download_json(url, name):
 
         values = ','.join(values)
         ts_print_define(DEFINE, values)
-        print ()
+        print (file=output_file)
         return None
+    return j
+
+def ts_load_json(filepath, name):
+    """ Load JSON file locally, return None if file is not JSON """
+    DEFINE = "WPERF_TS_ALIAS"
+
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            j = json.load(f)
+    except json.decoder.JSONDecodeError:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            alias = f.read().split('.')[0]
+        values = [ts_quote(name),
+                  ts_quote(alias)]
+
+        values = ','.join(values)
+        ts_print_define(DEFINE, values)
+        print (file=output_file)
+        return None
+
     return j
 
 def ts_parse_metrics(j, name):
@@ -137,6 +164,7 @@ def ts_parse_metrics(j, name):
         ts_print_define(DEFINE, values)
 
 def ts_parse_groups_metrics(j, name):
+    """ Parse 'group metrics'  section of CPU description. """
     DEFINE = "WPERF_TS_GROUPS_METRICS"
     metrics = j["groups"]["metrics"]
 
@@ -210,44 +238,69 @@ def ts_parse_cpu_json(j, name):
     if j is not None:
         ts_print_as_comment ('Product configuration for: ' + name)
         ts_parse_product_configuration(j, name)
-        print()
+        print(file=output_file)
 
     if j is not None:
         ts_print_as_comment ('Events for: ' + name)
         ts_parse_events(j, name)
-        print()
+        print(file=output_file)
 
     if j is not None:
         ts_print_as_comment ('Metrics for: ' + name)
         ts_parse_metrics(j, name)
-        print()
+        print(file=output_file)
 
     if j is not None:
         ts_print_as_comment ('Metric Groups for: ' + name)
         ts_parse_groups_metrics(j, name)
-        print()
+        print(file=output_file)
 
 def main(argv):
     """the entry for arch events update"""
 
-    for family in PMU_CPU_MAPPING:
-        url_family = urljoin(URL, family + '/')
-        for cpu_json in PMU_CPU_MAPPING[family]:
-            name = cpu_json.split('.')[0]   # name of the cpu via JSON filename
-            url = urljoin(url_family, cpu_json)
-            ts_print_as_comment (url)
-            j = ts_download_json(url, name)
-            ts_parse_cpu_json(j, name)
+    if input_mode == "file":
+        for family in PMU_CPU_MAPPING: # e.g neoverse
+            file_family = os.path.join(FILE_PATH, family) # join the FILE_PATH with the family
+            for cpu_json in PMU_CPU_MAPPING[family]:
+                name = cpu_json.split('.')[0]   # name of the cpu via JSON filename e.g neoverse-n2
+                filepath = os.path.join(file_family, cpu_json)  # assuming the json files are in a directory named after the family
+                ts_print_as_comment (filepath)
+                j = ts_load_json(filepath, name)
+                ts_parse_cpu_json(j, name)
+    elif input_mode == "url":
+        for family in PMU_CPU_MAPPING:
+            url_family = urljoin(URL, family + '/')
+            for cpu_json in PMU_CPU_MAPPING[family]:
+                name = cpu_json.split('.')[0]   # name of the cpu via JSON filename
+                url = urljoin(url_family, cpu_json)
+                ts_print_as_comment (url)
+                j = ts_download_json(url, name)
+                ts_parse_cpu_json(j, name)
+    else:
+        raise Exception("unrecognised parameters with arg '-i', expected 'url' or'file'")
 
 
 if __name__ == "__main__":
-    """ Process events from online sources of Telemetry Solution team. """
+    """ Process events from online sources from Telemetry Solution team, or from local JSON files. """
 
     parser = argparse.ArgumentParser(description="update the cpu's pmu events file!")
-    parser.add_argument("-l","--list_cpu", action = "store_true", help="list all cpus in " + URL)
+    parser.add_argument("-l","--list_cpu", action = "store_true", help="list all cpus in local directory")
     parser.add_argument("-c","--cpu", type=str,help="cpu type that to update")
     parser.add_argument("-o","--output", type=str,help="pmu events file for wperf")
     parser.add_argument("--license", type=str,help="license file added to the script header")
+    parser.add_argument("--url", action = "store_true",help="selects URL as input source (on by default!)")
+    parser.add_argument("--file", action = "store_true",help="selects file as input source")
     args = parser.parse_args()
 
-    main(args)
+    if args.output:
+        output_file = open(args.output, 'w', encoding='utf-8')    # open output file if one is provided, else stdout
+
+    if args.url and args.file:
+        raise Exception("'--url' and '--file' boolean flags must be used mutually exclusively")
+    input_mode = "file" if args.file else "url"
+
+    try:
+        main(args)
+    finally:
+        if output_file is not sys.stdout:
+            output_file.close()
