@@ -84,6 +84,7 @@ public:
     bool do_test;
     bool do_annotate;
     bool do_disassembly;
+    bool do_man;
     bool do_detect = false;
     bool do_force_lock = false;     // Force lock acquire of the driver
     bool do_export_perf_data;
@@ -95,11 +96,12 @@ public:
     double count_interval;
     int count_timeline;
     uint32_t record_spawn_delay = 1000;
+    std::wstring man_query_args;
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
     std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
-    std::wstring timeline_output_file;
+    std::wstring timeline_output_file; 
     uint32_t sample_display_row;
     bool sample_display_short;
     std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;

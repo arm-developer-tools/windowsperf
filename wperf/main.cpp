@@ -183,6 +183,11 @@ wmain(
         user_request::print_help();
         goto clean_exit;
     }
+    if (request.do_man)
+    {
+        //man_entry_function(pmu_device.m_product_name, request.man_query_args)
+        goto clean_exit;
+    }
 
     uint32_t enable_bits = 0;
     try
