@@ -120,6 +120,7 @@ wmain(
     catch (const locked_exception&)
     {
         m_out.GetErrorOutputStream() << L"warning: other WindowsPerf process acquired the wperf-driver." << std::endl;
+        m_out.GetErrorOutputStream() << L"note: use --force-lock to force driver to give lock to current `wperf` process." << std::endl;
         m_out.GetErrorOutputStream() << L"Operation canceled!" << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
