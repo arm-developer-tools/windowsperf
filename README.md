@@ -76,6 +76,10 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 - [WindowsPerf release 2.4.0 introduces the first stable version of sampling model support](https://www.linaro.org/blog/windowsperf-release-2-4-0-introduces-the-first-stable-version-of-sampling-model-support/) blog post.
 - [Announcing WindowsPerf: Open-source performance analysis tool for Windows on Arm](https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/announcing-windowsperf) blog post.
 
+### Linaro Connect (Madrid) 2024:
+- [Enhancements in WindowsPerf](https://resources.linaro.org/zh/resource/fMJbSCfrn29fvxTbXopnGA)
+- [Boost your workload and platform performance on Windows on Arm with WindowsPerf](https://resources.linaro.org/zh/resource/kiYEWhaFDFpEGVQD7XuvXa)
+
 ## Arm Learning Path
 
 - [Perf for Windows on Arm (WindowsPerf)](https://learn.arm.com/install-guides/wperf/).
