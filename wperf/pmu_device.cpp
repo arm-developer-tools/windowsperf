@@ -2447,6 +2447,13 @@ void pmu_device::do_test_prep_tests(_Out_ std::vector<std::wstring>& col_test_na
     // SPE information
     col_test_name.push_back(L"spe_device.version_name");
     col_test_result.push_back(spe_device::get_spe_version_name(hw_cfg.id_aa64dfr0_value));
+    if (spe_device::is_spe_supported(hw_cfg.id_aa64dfr0_value))
+    {
+        col_test_name.push_back(L"spe_device.pmbidr_el1_value");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.pmbidr_el1_value, 20));
+        col_test_name.push_back(L"spe_device.pmsidr_el1_value");
+        col_test_result.push_back(IntToHexWideString(hw_cfg.pmsidr_el1_value, 20));
+    }
 }
 
 void pmu_device::do_test(uint32_t enable_bits,

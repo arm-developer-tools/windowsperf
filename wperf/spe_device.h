@@ -44,4 +44,5 @@ public:
     // Helper functions
 
     static std::wstring get_spe_version_name(UINT64 id_aa64dfr0_el1_value);
+    static bool spe_device::is_spe_supported(UINT64 id_aa64dfr0_el1_value);
 };

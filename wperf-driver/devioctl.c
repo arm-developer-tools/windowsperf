@@ -57,6 +57,8 @@ extern UINT8 numFreeGPC;
 extern UINT64 dfr0_value;
 extern UINT64 midr_value;
 extern UINT64 id_aa64dfr0_el1_value;
+extern UINT64 pmbidr_el1_value;
+extern UINT64 pmsidr_el1_value;
 extern HANDLE pmc_resource_handle;
 extern CoreInfo* core_info;
 extern KEVENT sync_reset_dpc;
@@ -825,6 +827,8 @@ clean_lock_acquire:
         out->part_id = (midr_value >> 4) & 0xfff;
         out->midr_value = midr_value;
         out->id_aa64dfr0_value = id_aa64dfr0_el1_value;
+        out->pmbidr_el1_value = pmbidr_el1_value;
+        out->pmsidr_el1_value = pmsidr_el1_value;
         RtlCopyMemory(out->counter_idx_map, counter_idx_map, sizeof(counter_idx_map));
 
         {   // Setup HW_CFG capability string for this driver:

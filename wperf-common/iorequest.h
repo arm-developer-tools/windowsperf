@@ -78,6 +78,8 @@ struct hw_cfg
     UINT64  id_aa64dfr0_value;
     UINT8   counter_idx_map[AARCH64_MAX_HWC_SUPP + 1]; // We cannot correctly infer this from user mode.
     wchar_t device_id_str[MAX_DEVICE_ID_STR_SIZE];      // Driver devices and their capabilities
+    UINT64  pmbidr_el1_value;                           // FEAT_SPE only
+    UINT64  pmsidr_el1_value;                           // FEAT_SPE only
 };
 
 struct version_info

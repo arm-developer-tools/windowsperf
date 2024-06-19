@@ -55,3 +55,9 @@ std::wstring spe_device::get_spe_version_name(UINT64 id_aa64dfr0_el1_value)
     }
     return spe_str;
 }
+
+bool spe_device::is_spe_supported(UINT64 id_aa64dfr0_el1_value)
+{
+    UINT8 aa64_pms_ver = ID_AA64DFR0_EL1_PMSVer(id_aa64dfr0_el1_value);
+    return aa64_pms_ver >= 0b001;
+}

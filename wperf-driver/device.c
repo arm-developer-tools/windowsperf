@@ -67,6 +67,8 @@ UINT8 numFreeGPC = 0;
 UINT64 dfr0_value = 0;
 UINT64 midr_value = 0;
 UINT64 id_aa64dfr0_el1_value = 0;
+UINT64 pmbidr_el1_value = 0;    // FEAT_SPE onlu, PMBIDR_EL1, Profiling Buffer ID Register
+UINT64 pmsidr_el1_value = 0;    // FEAT_SPE onlu, PMSIDR_EL1, Sampling Profiling ID Register
 HANDLE pmc_resource_handle = NULL;
 UINT8 counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
 CoreInfo* core_info = NULL;
@@ -599,6 +601,14 @@ WindowsPerfDeviceCreate(
         case 0b100: spe_str = "FEAT_SPEv1p3"; break;
         }
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: %s\n", spe_str));
+
+        if (aa64_pms_ver >= 0b001)
+        {
+            pmbidr_el1_value = _ReadStatusReg(PMBIDR_EL1);
+            pmsidr_el1_value = _ReadStatusReg(PMSIDR_EL1);
+        }
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: PMBIDR_EL1 0x%llX\n", pmbidr_el1_value));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: PMSIDR_EL1 0x%llX\n", pmsidr_el1_value));
     }
 
     {   // Print PMU feature version

@@ -121,3 +121,18 @@
 #define PMEVCNTR29_EL0				ARM64_SYSREG(1, 3, 14, 11, 5)
 #define PMEVCNTR30_EL0				ARM64_SYSREG(1, 3, 14, 11, 6)
 
+// SPE Registers from https://developer.arm.com/documentation/100616/0400/debug-registers/spe-registers/spe-register-summary?lang=en
+// 																	 Op0	Op1	CRn	CRm	Op2	Name			Type	Reset			Description
+#define PMSCR_EL1					ARM64_SYSREG(3, 0, 9, 9,	0) //3		0	c9	c9	0	PMSCR_EL1		RW		UNK				Statistical Profiling Control Register EL1
+#define PMSCR_EL2					ARM64_SYSREG(3, 4, 9, 9,	0) //3		4	c9	c9	0	PMSCR_EL2		RW		UNK				Statistical Profiling Control Register EL2
+#define PMSCR_EL12					ARM64_SYSREG(3, 5, 9, 9,	0) //3		5	c9	c9	0	PMSCR_EL12		RW		UNK				Alias of the PMSCR_EL1 register, available in EL2
+#define PMSICR_EL1					ARM64_SYSREG(3, 0, 9, 9,	2) //3		0	c9	c9	2	PMSICR_EL1		RW		UNK				Sampling Interval Counter Register
+#define PMSIRR_EL1					ARM64_SYSREG(3, 0, 9, 9,	3) //3		0	c9	c9	3	PMSIRR_EL1		RW		UNK				Sampling Interval Reload Register
+#define PMSEVFR_EL1					ARM64_SYSREG(3, 0, 9, 9,	5) //3		0	c9	c9	5	PMSEVFR_EL1		RW		UNK				Sampling Event Filter Register
+#define PMSLATFR_EL1				ARM64_SYSREG(3, 0, 9, 9,	6) //3		0	c9	c9	6	PMSLATFR_EL1	RW		UNK				Sampling Latency Filter Register
+#define PMBPTR_EL1					ARM64_SYSREG(3, 0, 9, 10,	1) //3		0	c9	c10	1	PMBPTR_EL1		RW		UNK				Profiling Buffer Write Pointer Register
+#define PMBLIMITR_EL1				ARM64_SYSREG(3, 0, 9, 10,	0) //3		0	c9	c10	0	PMBLIMITR_EL1	RW		00000000		Profiling Buffer Limit Address Register
+#define PMBSR_EL1					ARM64_SYSREG(3, 0, 9, 10,	3) //3		0	c9	c10	3	PMBSR_EL1		RW		UNK				Profiling Buffer Status / syndrome Register
+#define PMSFCR_EL1					ARM64_SYSREG(3, 0, 9, 9,	4) //3		0	c9	c9	4	PMSFCR_EL1		RW		UNK	Sampling	Filter Control Register
+#define PMBIDR_EL1					ARM64_SYSREG(3, 0, 9, 10,	7) //3		0	c9	c10	7	PMBIDR_EL1		RO		00000026		Profiling Buffer ID Register
+#define PMSIDR_EL1					ARM64_SYSREG(3, 0, 9, 9,	7) //3		0	c9	c9	7	PMSIDR_EL1		RO		00026497		Sampling Profiling ID Register
