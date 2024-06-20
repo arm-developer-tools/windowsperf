@@ -40,6 +40,9 @@ inline constexpr uint32_t PARSE_INTERVAL_DEFAULT = 0x4000000;
 
 void parse_events_extra(std::wstring events_str, std::map<enum evt_class, std::vector<struct extra_event>>& events);
 
+bool parse_events_str_for_feat_spe(std::wstring events_str,
+    std::map<std::wstring, bool>& flags);
+
 void parse_events_str_for_sample(std::wstring events_str,
     std::vector<struct evt_sample_src>& ioctl_events_sample,
     std::map<uint32_t, uint32_t>& sampling_inverval);

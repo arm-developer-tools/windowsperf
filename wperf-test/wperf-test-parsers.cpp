@@ -43,6 +43,167 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace wperftest
 {
+	TEST_CLASS(wperftest_parsers_events_feat_spe)
+	{
+	public:
+
+		TEST_METHOD(parse_events_str_for_feat_spe_incorrect_input)
+		{
+			std::map<std::wstring, bool> flags;
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_0/"), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_0"), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_/"), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_sp"), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_"), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"_"), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L" "), flags));
+			Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L""), flags));
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_incorrect_input_throw)
+		{
+			auto wrapper_filter_eq_2 = [=]() {
+				std::map<std::wstring, bool> flags;
+				Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_0/branch_filter=2/"), flags));
+				};
+			Assert::ExpectException<fatal_exception>(wrapper_filter_eq_2);
+
+			auto wrapper_filter_name_empty = [=]() {
+				std::map<std::wstring, bool> flags;
+				Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_0/=1/"), flags));
+				};
+			Assert::ExpectException<fatal_exception>(wrapper_filter_name_empty);
+
+			auto wrapper_filter_just_eq = [=]() {
+				std::map<std::wstring, bool> flags;
+				Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_0/=/"), flags));
+				};
+			Assert::ExpectException<fatal_exception>(wrapper_filter_just_eq);
+
+			auto wrapper_filter_eq_letter = [=]() {
+				std::map<std::wstring, bool> flags;
+				Assert::IsFalse(parse_events_str_for_feat_spe(std::wstring(L"arm_spe_0/jitter=x/"), flags));
+				};
+			Assert::ExpectException<fatal_exception>(wrapper_filter_eq_letter);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_branch_filter_1)
+		{
+			std::wstring events_str = L"arm_spe_0/branch_filter=1/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 1);
+			Assert::IsTrue(flags.count(L"branch_filter"));
+			Assert::IsTrue(flags[L"branch_filter"] == true);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_branch_filter_0)
+		{
+			std::wstring events_str = L"arm_spe_0/branch_filter=0/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 1);
+			Assert::IsTrue(flags.count(L"branch_filter"));
+			Assert::IsTrue(flags[L"branch_filter"] == false);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_10)
+		{
+			std::wstring events_str = L"arm_spe_0/branch_filter=1,jitter=0/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 2);
+			Assert::IsTrue(flags.count(L"branch_filter"));
+			Assert::IsTrue(flags.count(L"jitter"));
+			Assert::IsTrue(flags[L"branch_filter"] == true);
+			Assert::IsTrue(flags[L"jitter"] == false);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_01)
+		{
+			std::wstring events_str = L"arm_spe_0/branch_filter=0,jitter=1/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 2);
+			Assert::IsTrue(flags.count(L"branch_filter"));
+			Assert::IsTrue(flags.count(L"jitter"));
+			Assert::IsTrue(flags[L"branch_filter"] == false);
+			Assert::IsTrue(flags[L"jitter"] == true);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_11)
+		{
+			std::wstring events_str = L"arm_spe_0/branch_filter=1,jitter=1/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 2);
+			Assert::IsTrue(flags.count(L"branch_filter"));
+			Assert::IsTrue(flags.count(L"jitter"));
+			Assert::IsTrue(flags[L"branch_filter"] == true);
+			Assert::IsTrue(flags[L"jitter"] == true);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_00)
+		{
+			std::wstring events_str = L"arm_spe_0/branch_filter=0,jitter=0/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 2);
+			Assert::IsTrue(flags.count(L"branch_filter"));
+			Assert::IsTrue(flags.count(L"jitter"));
+			Assert::IsTrue(flags[L"branch_filter"] == false);
+			Assert::IsTrue(flags[L"jitter"] == false);
+		}
+
+		/* Example usage could include:
+
+		PMSFCR_EL1.FT enables filtering by operation type. When enabled PMSFCR_EL1.{ST, LD, B} define the
+		collected types:
+		* ST enables collection of store sampled operations, including all atomic operations.
+		* LD enables collection of load sampled operations, including atomic operations that return a value to 
+		  register.
+		* B enables collection of branch sampled operations, including direct and indirect branches and exception
+		  returns.		
+		*/
+
+		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_010)
+		{
+			std::wstring events_str = L"arm_spe_0/ld=0,st=1,b=0/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 3);
+			Assert::IsTrue(flags.count(L"ld"));
+			Assert::IsTrue(flags.count(L"st"));
+			Assert::IsTrue(flags.count(L"b"));
+			Assert::IsTrue(flags[L"ld"] == false);
+			Assert::IsTrue(flags[L"st"] == true);
+			Assert::IsTrue(flags[L"b"] == false);
+		}
+	};
+
+	/****************************************************************************/
+
 	TEST_CLASS(wperftest_parsers_events_sampling)
 	{
 	public:

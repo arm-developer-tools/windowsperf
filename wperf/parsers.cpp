@@ -168,6 +168,57 @@ void parse_events_extra(std::wstring events_str, std::map<enum evt_class, std::v
     }
 }
 
+/*
+    Example string to parse:
+    $ perf record -e arm_spe_0/branch_filter=1,jitter=1/ -- workload
+    $ perf record -e arm_spe/branch_filter=1,jitter=1/ -- workload
+    $ perf record -e spe/branch_filter=1,jitter=1/ -- workload
+*/
+bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstring, bool>& flags)
+{
+    // Detect arm_spe_0/*/      - where '*'
+    if (events_str.size() >= std::wstring(L"arm_spe_0//").size()
+        && events_str.rfind(L"arm_spe_0/", 0) == 0
+        && events_str.back() == L'/')
+    {
+        std::wstring filters_str(events_str.begin() + std::wstring(L"arm_spe_0/").size(), events_str.end() - 1);    // Get '*'
+        std::wistringstream filter_stream(filters_str);
+        std::wstring filter;
+
+        // "branch_filter=1,jitter=1"
+        while (std::getline(filter_stream, filter, L','))
+        {
+            auto pos = filter.find(L'=');
+            if (pos == std::string::npos)
+            {
+                m_out.GetErrorOutputStream() << L"incorrect SPE filter: " << L"'" << filter << L"' in " << filters_str << std::endl;
+                throw fatal_exception("ERROR_SPE_FILTER");
+            }
+
+            std::wstring filter_name(filter.begin(), filter.begin() + pos);
+            std::wstring filter_value(filter.begin() + pos + 1, filter.end());
+
+            if (filter_name.empty())
+            {
+                m_out.GetErrorOutputStream() << L"incorrect SPE filter name: " << L"'" << filter << L"'" << std::endl;
+                throw fatal_exception("ERROR_SPE_FILTER_NAME");
+            }
+
+            if (filter_value != L"0" && filter_value != L"1")
+            {
+                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << L"'" << filter << L"'. 0 or 1 allowed" << std::endl;
+                throw fatal_exception("ERROR_SPE_FILTER_VALUE");
+            }
+
+            flags[filter_name] = true ? filter_value == L"1" : false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt_sample_src> &ioctl_events_sample,
     std::map<uint32_t, uint32_t>& sampling_inverval)
 {
