@@ -775,7 +775,9 @@ wmain(
                             for (auto& b : mmd.sym_info)
                                 for (const auto& c : value.sec_info)
                                     {
-                                        assert(b.sec_idx);
+                                        if (!b.sec_idx) // We may not be able to decode all symbols at this time, so we skip
+                                            continue;
+
                                         if (c.idx == (b.sec_idx - 1))
                                         {
                                             sec_base = (UINT64)mmd.handle + c.offset;
