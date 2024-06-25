@@ -241,7 +241,7 @@ def test_wperf_stat_json_file_output_valid(events, cores, metric, sleep, tmp_pat
             assert is_json(json_obj)
     except:
         assert 0
-        
+
 def test_wperf_stat_output_alias():
     """ Test `wperf stat` -o option by checkoug json validity """
     file_path = 'test.json'
@@ -268,7 +268,7 @@ def test_wperf_stat_K_flag(flag,core):
     stdout, _ = run_command(cmd.split())
 
     ## "included," vs "excluded,"
-    if (flag):
+    if flag:
         kernel_mode_str = b"included"
     else:
         kernel_mode_str = b"excluded"
@@ -314,15 +314,15 @@ def test_wperf_stat_process_spawn_args():
     # deduced image name 'wperf.exe'
     # deduced image PDB file 'wperf.pdb'
     # pe_file 'wperf.exe', args '--help'
-    # 
+    #
     # events to be counted:
     #      6              core events: 0x001b 0x0073 0x0075 0x0074 0x0070 0x0071
     # wperf.exe pid is 7124
     # counting ... done
-    # 
+    #
     # Performance counter stats for core 1, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
     # note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
-    # 
+    #
     #         counter value  event name  event idx  event note
     #         =============  ==========  =========  ==========
     #                     0  cycle       fixed      e
@@ -421,7 +421,7 @@ def test_wperf_stat_cores_exist(cores, expected_cores):
     json_output = json.loads(stdout)
 
     assert is_json(stdout)
-    
+
     assert "core" in json_output
     assert "cores" in json_output["core"]
     assert len(json_output["core"]["cores"]) == len(expected_cores)

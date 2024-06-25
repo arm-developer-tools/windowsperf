@@ -45,6 +45,7 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
     """ Test `wperf` JSON output against scheme """
     test_path = os.path.dirname(request.path)
     file_path = tmp_path / 'test.json'
+    cmd_type = ""
     if "version" in scheme_name:
         cmd_type = "--version"
     elif "list" in scheme_name:
@@ -71,6 +72,7 @@ def test_wperf_json_stdout_schema(request, tmp_path, scheme_name):
     """ Test `wperf` JSON output against scheme """
     test_path = os.path.dirname(request.path)
     file_path = tmp_path / 'test.json'
+    cmd_type = ""
     if "version" in scheme_name:
         cmd_type = "--version"
     elif "list" in scheme_name:

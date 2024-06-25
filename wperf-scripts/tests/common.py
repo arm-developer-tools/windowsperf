@@ -181,4 +181,3 @@ def get_CPUs_supported_by_ustress(ts_ustress_header):
         pass
 
     return cpus
-
