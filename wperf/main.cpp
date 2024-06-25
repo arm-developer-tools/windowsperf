@@ -166,6 +166,8 @@ wmain(
             pmu_events::extra_events);
         pmu_device.do_verbose = request.do_verbose;
         pmu_device.timeline_output_file = request.timeline_output_file;
+        pmu_device.m_sampling_with_spe = request.m_sampling_with_spe;
+        pmu_device.m_sampling_flags = request.m_sampling_flags;
     }
     catch (std::exception&)
     {
@@ -428,6 +430,16 @@ wmain(
         }
         else if (request.do_sample || request.do_record)
         {
+            if (request.do_verbose)
+            {
+                m_out.GetOutputStream() << "sampling type: ";
+                if (request.m_sampling_with_spe == true)
+                    m_out.GetOutputStream() << "hardware sampling (" << pmu_device.get_spe_version_name() << L")";
+                else
+                    m_out.GetOutputStream() << "software sampling";
+                m_out.GetOutputStream() << std::endl << std::endl;
+            }
+
             if (request.do_disassembly)
             {
                 if (!disassembler.CheckCommand())

@@ -46,6 +46,68 @@ namespace wperftest
 	{
 	public:
 
+		TEST_METHOD(test_WStringJoin_corner_empty_vect)
+		{
+			{
+				std::vector<std::wstring> vect = {  };
+				Assert::AreEqual(WStringJoin(vect, L""), std::wstring(L""));
+			}
+
+			{
+				std::vector<std::wstring> vect = {  };
+				Assert::AreEqual(WStringJoin(vect, L","), std::wstring(L""));
+			}
+		}
+
+		TEST_METHOD(test_WStringJoin_corner_empty_sep)
+		{
+			{
+				std::vector<std::wstring> vect = { L"abc", L"DEF" };
+				Assert::AreEqual(WStringJoin(vect, L""), std::wstring(L"abcDEF"));
+			}
+
+			{
+				std::vector<std::wstring> vect = { L"", L"b", L"", L"c", L"d" };
+				Assert::AreEqual(WStringJoin(vect, L""), std::wstring(L"bcd"));
+			}
+		}
+
+		TEST_METHOD(test_WStringJoin_corner_vect_1)
+		{
+			{
+				std::vector<std::wstring> vect = { L"abc" };
+				Assert::AreEqual(WStringJoin(vect, L""), std::wstring(L"abc"));
+			}
+
+			{
+				std::vector<std::wstring> vect = { L"DEF" };
+				Assert::AreEqual(WStringJoin(vect, L","), std::wstring(L"DEF"));
+			}
+
+			{
+				std::vector<std::wstring> vect = { L"ghi" };
+				Assert::AreEqual(WStringJoin(vect, L"    "), std::wstring(L"ghi"));
+			}
+		}
+
+		TEST_METHOD(test_WStringJoin_comma)
+		{
+			{
+				std::vector<std::wstring> vect = { L"a", L"b" };
+				Assert::AreEqual(WStringJoin(vect, L", "), std::wstring(L"a, b"));
+			}
+
+			{
+				std::vector<std::wstring> vect = { L"a", L"b", L"b", L"c", L"d" };
+				Assert::AreEqual(WStringJoin(vect, L";"), std::wstring(L"a;b;b;c;d"));
+			}
+
+			{
+				std::vector<std::wstring> vect = { L"load_filter", L"store_filter", L"branch_filter", L"ld", L"st", L"b" };
+				Assert::AreEqual(WStringJoin(vect, L","), std::wstring(L"load_filter,store_filter,branch_filter,ld,st,b"));
+			}
+		}
+
 		TEST_METHOD(test_TrimWideString)
 		{
 			Assert::AreEqual(std::wstring(L"abc"), TrimWideString(L"    abc"));

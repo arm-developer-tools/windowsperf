@@ -212,17 +212,18 @@ void pmu_device::init()
 
 void pmu_device::core_init()
 {
-    struct hw_cfg hw_cfg;
-    query_hw_cfg(hw_cfg);
+    query_hw_cfg(m_hw_cfg);
 
-    assert(hw_cfg.core_num <= UCHAR_MAX);
-    core_num = (UINT8)hw_cfg.core_num;
-    fpc_nums[EVT_CORE] = hw_cfg.fpc_num;
-    uint8_t gpc_num = hw_cfg.gpc_num;
+    m_has_spe = spe_device::is_spe_supported(m_hw_cfg.id_aa64dfr0_value);
+
+    assert(m_hw_cfg.core_num <= UCHAR_MAX);
+    core_num = (UINT8)m_hw_cfg.core_num;
+    fpc_nums[EVT_CORE] = m_hw_cfg.fpc_num;
+    uint8_t gpc_num = m_hw_cfg.gpc_num;
     gpc_nums[EVT_CORE] = gpc_num;
-    pmu_ver = hw_cfg.pmu_ver;
-    total_gpc_num = hw_cfg.total_gpc_num;
-    memcpy(counter_idx_map, hw_cfg.counter_idx_map, sizeof(hw_cfg.counter_idx_map));
+    pmu_ver = m_hw_cfg.pmu_ver;
+    total_gpc_num = m_hw_cfg.total_gpc_num;
+    memcpy(counter_idx_map, m_hw_cfg.counter_idx_map, sizeof(m_hw_cfg.counter_idx_map));
     /* Since we allocate events to GPCs greedily, in a situation where all GPCs are
     * available the n-th event is assigned to the n-th GPC. When not all GPCs are available howerver,
     * we need the `counter_idx_map` to translate to the real GPC number.
@@ -232,15 +233,20 @@ void pmu_device::core_init()
     */
     for (uint8_t i = 0; i < gpc_num; i++)
     {
-        counter_idx_unmap[hw_cfg.counter_idx_map[i]] = i; // f^-1(f(x)) = x
+        counter_idx_unmap[m_hw_cfg.counter_idx_map[i]] = i; // f^-1(f(x)) = x
     }
     counter_idx_unmap[AARCH64_MAX_HWC_SUPP] = AARCH64_MAX_HWC_SUPP;
 
-    vendor_name = get_vendor_name(hw_cfg.vendor_id);
+    vendor_name = get_vendor_name(m_hw_cfg.vendor_id);
     core_outs = std::make_unique<ReadOut[]>(core_num);
     memset(core_outs.get(), 0, sizeof(ReadOut) * core_num);
 
-    hw_cfg_detected(hw_cfg);
+    hw_cfg_detected(m_hw_cfg);
+}
+
+std::wstring pmu_device::get_spe_version_name()
+{
+    return spe_device::get_spe_version_name(m_hw_cfg.id_aa64dfr0_value);
 }
 
 void pmu_device::dsu_init()
@@ -2101,6 +2107,15 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
             col_desc.push_back(L"<extra event>");
         }
     }
+
+    // SPE "event"
+    if (spe_device::is_spe_supported(m_hw_cfg.id_aa64dfr0_value))
+    {
+        col_alias_name.push_back(L"arm_spe_0//");
+        col_raw_index.push_back(L"");
+        col_event_type.push_back(L"[Kernel PMU event]");
+        col_desc.push_back(get_spe_version_name());
+    }
 }
 
 void pmu_device::do_list_prep_groups_metrics(_Out_ std::vector<std::wstring>& col_group,
@@ -2857,6 +2872,7 @@ void pmu_device::get_pmu_device_cfg(struct pmu_device_cfg& cfg)
     cfg.dmc_num = dmc_num;
     cfg.has_dsu = m_has_dsu;
     cfg.has_dmc = m_has_dmc;
+    cfg.has_spe = m_has_spe;
     cfg.total_gpc_num = total_gpc_num;
 }
 

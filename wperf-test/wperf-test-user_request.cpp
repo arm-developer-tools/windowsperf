@@ -35,22 +35,6 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-/*
-bool user_request::is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt)
-{
-	// We will search only before double-dash is present as after "--" WindowsPerf CLI options end!
-	auto last_iter = std::find_if(raw_args.begin(), raw_args.end(),
-		[](const auto& arg) { return arg == std::wstring(L"--"); });
-	return std::count_if(raw_args.begin(), last_iter,
-		[opt](const auto& arg) { return arg == opt; });
-}
-
-bool user_request::is_force_lock(const wstr_vec& raw_args)
-{
-	return is_cli_option_in_args(raw_args, std::wstring(L"--force-lock"));
-}
-*/
-
 namespace wperftest
 {
 	TEST_CLASS(wperftest_user_request)

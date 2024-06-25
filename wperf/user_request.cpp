@@ -459,20 +459,45 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         {
             if (do_sample || do_record)
             {
-                parse_events_str_for_sample(a, ioctl_events_sample, sampling_inverval);
-                // After events are parsed check if we can fulfil this request as sampling does not have multiplexing
-                if (ioctl_events_sample.size() > pmu_cfg.total_gpc_num)
+                m_sampling_flags.clear();   // Prepare to collect SPE filters
+                if (parse_events_str_for_feat_spe(a, m_sampling_flags))   // Check if we are sampling with SPE
                 {
-                    m_out.GetErrorOutputStream() << L"number of events requested exceeds the number of hardware PMU counters("
-                        << pmu_cfg.total_gpc_num << ")" << std::endl;
-                    throw fatal_exception("ERROR_EVENTS_SIZE");
-                }
+                    if (pmu_cfg.has_spe == false)
+                    {
+                        m_out.GetErrorOutputStream() << L"SPE is not supported by your hardware: " << a << std::endl;
+                        throw fatal_exception("ERROR_SPE_NOT_SUPP");
+                    }
 
-                if (ioctl_events_sample.size() > pmu_cfg.gpc_nums[EVT_CORE])
+                    m_sampling_with_spe = true;
+                    std::vector<std::wstring> filter_names = {L"load_filter", L"store_filter", L"branch_filter", L"ld", L"st", L"b"};
+
+                    for (const auto& [key, value] : m_sampling_flags)
+                    {
+                        if (std::any_of(filter_names.begin(), filter_names.end(),
+                            [&key](std::wstring s) { return s == key; }) == false)
+                        {
+                            m_out.GetErrorOutputStream() << L"SPE filter unknown, use: " << WStringJoin(filter_names, L", ") << std::endl;
+                            throw fatal_exception("ERROR_SPE_FILTER_ERR");
+                        }
+                    }
+                }
+                else    // Software sampling (no SPE)
                 {
-                    m_out.GetErrorOutputStream() << L"number of events requested exceeds the number of free hardware PMU counters("
-                        << pmu_cfg.gpc_nums[EVT_CORE] << ") out of a total of (" << pmu_cfg.total_gpc_num << ")" << std::endl;
-                    throw fatal_exception("ERROR_EVENTS_SIZE");
+                    parse_events_str_for_sample(a, ioctl_events_sample, sampling_inverval);
+                    // After events are parsed check if we can fulfil this request as sampling does not have multiplexing
+                    if (ioctl_events_sample.size() > pmu_cfg.total_gpc_num)
+                    {
+                        m_out.GetErrorOutputStream() << L"number of events requested exceeds the number of hardware PMU counters("
+                            << pmu_cfg.total_gpc_num << ")" << std::endl;
+                        throw fatal_exception("ERROR_EVENTS_SIZE");
+                    }
+
+                    if (ioctl_events_sample.size() > pmu_cfg.gpc_nums[EVT_CORE])
+                    {
+                        m_out.GetErrorOutputStream() << L"number of events requested exceeds the number of free hardware PMU counters("
+                            << pmu_cfg.gpc_nums[EVT_CORE] << ") out of a total of (" << pmu_cfg.total_gpc_num << ")" << std::endl;
+                        throw fatal_exception("ERROR_EVENTS_SIZE");
+                    }
                 }
             }
             else

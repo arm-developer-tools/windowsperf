@@ -35,6 +35,7 @@
 #include <vector>
 #include <cwctype>
 #include <unordered_map>
+#include <numeric>
 #include "utils.h"
 
 /// <summary>
@@ -155,6 +156,23 @@ std::wstring WStringToLower(const std::wstring& str)
     result.resize(str.size());
     std::transform(str.begin(), str.end(), result.begin(), towlower);
     return result;
+}
+
+/// <summary>
+/// Join WSTRINGs frm input vector
+/// </summary>
+/// <param name="str">Joined with SEP WSTRING</param>
+std::wstring WStringJoin(const std::vector<std::wstring>& input, std::wstring sep)
+{
+    std::wstring first = input.size() ? input[0] : std::wstring();
+
+    if (input.size() <= 1)
+        return first;
+
+    return std::accumulate(input.begin() + 1, input.end(), first,
+        [&sep](const std::wstring& a, const std::wstring& b) -> std::wstring {
+            return a + sep + b;
+        });
 }
 
 /// <summary>

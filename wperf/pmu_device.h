@@ -60,6 +60,7 @@ struct pmu_device_cfg
     uint32_t dmc_num;
     bool has_dsu;
     bool has_dmc;
+    bool has_spe;                       // FEAT_SPE is available in HW
     uint8_t total_gpc_num;
 };
 
@@ -214,6 +215,7 @@ public:
     std::map<std::wstring, metric_desc> builtin_metrics;
     bool m_has_dsu = false;
     bool m_has_dmc = false;
+    bool m_has_spe = false;
     uint32_t dsu_cluster_num;
     uint32_t dsu_cluster_size;
     uint32_t dmc_num;
@@ -221,6 +223,11 @@ public:
     uint8_t counter_idx_map[AARCH64_MAX_HWC_SUPP + 1];
     std::map<uint8_t, uint8_t> counter_idx_unmap;
     bool do_verbose;
+
+    // SPE
+    bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
+    std::map<std::wstring, bool> m_sampling_flags;      // SPE: sampling flags
+    std::wstring get_spe_version_name();                // SPE: get SPE feature exact version based on HW detection
 
     uint8_t gpc_nums[EVT_CLASS_NUM];
     uint8_t fpc_nums[EVT_CLASS_NUM];
@@ -247,6 +254,7 @@ public:
     std::vector<uint8_t> get_cores_idx() { return cores_idx; };
 
     void query_hw_cfg(struct hw_cfg& out);
+    struct hw_cfg m_hw_cfg;
 
     const wchar_t* get_vendor_name(uint8_t vendor_id);
     static std::wstring get_pmu_version_name(UINT64 id_aa64dfr0_el1_value);

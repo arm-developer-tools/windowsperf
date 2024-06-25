@@ -45,6 +45,7 @@ std::wstring DoubleToWideString(double Value, int Precision = 2);
 std::wstring DoubleToWideStringExt(double Value, int Precision, int Width);
 std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext);
 std::wstring WStringToLower(const std::wstring& str);
+std::wstring WStringJoin(const std::vector<std::wstring>& input, std::wstring sep);
 bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringComparision(const std::wstring& str1, const std::wstring& str2);
