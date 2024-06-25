@@ -10,6 +10,10 @@ You can build `wperf` project from command line:
 > devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf\wperf.vcxproj
 ```
 
+## Inject ETW trace from wperf
+
+New macro, `ENABLE_ETW_TRACING_APP` is used to control ETW output inside the `wperf`.
+
 # Usage of wperf
 
 ```

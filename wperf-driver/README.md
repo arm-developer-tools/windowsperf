@@ -22,6 +22,10 @@ Debugging Tools for Windows supports kernel debugging over a USB cable using EEM
 
 Enable Kernel Driver tracing with project specific `ENABLE_TRACING` macro. In order to use it just set it at the VS `wperf-driver` project `Properties` -> `C/C++` -> `Preprocessor` -> `Preprocessor Definitions`.
 
+## Inject ETW trace from wperf-driver
+
+New macro, `ENABLE_ETW_TRACING` is used to control ETW output inside the `wperf-driver`.
+
 # Kernel Driver Installation
 
 Kernel drivers can be installed and removed on ARM64 machines with DevCon command.
