@@ -16,7 +16,7 @@ WindowsPerf must be tested natively on WOA hardware with installed `wperf-driver
 - Tests must be executed on ARM64 Windows On Arm machine.
 - [wperf-driver](../../wperf-driver/README.md) must be installed on the system.
 - [wperf](../../wperf/README.md) application must be present in the same directory as tests or be on system environment PATH.
-- To test if `wperf` JSON output is valid test directory must contain `schemes/` sub-directory.
+- To test if `wperf` JSON output is valid test directory must contain `schemas/` sub-directory.
   - Note: if `schemas` directory is missing JSON output tests will fail (and not skipped).
 - Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` submodule is pulled with git.
   - How to pull submodule: On init run the following command: `git submodule update --init --recursive` from within the git repo directory, this will pull all latest including submodules. Or you can clone submodules directly using `git clone --recurse-submodules`.
