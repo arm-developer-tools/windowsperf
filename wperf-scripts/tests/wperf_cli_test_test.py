@@ -32,10 +32,9 @@
 
 
 """Module is testing `wperf test` features."""
-import json
 import re
 from common import run_command, is_json, check_if_file_exists
-from common import get_result_from_test_results, wperf_test_get_key_val
+from common import get_result_from_test_results, wperf_test_get_key_val, wperf_test_no_params
 from common import arm64_vendor_names
 
 ### Test cases
@@ -66,13 +65,10 @@ def test_wperf_test_json_file_output_valid(tmp_path):
         assert 0
 
 def test_wperf_test_counter_idx_map():
-    cmd = 'wperf test --json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-
-    gpc_num = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [gpc_num]")
+    """ Test `gpc_num` and `counter_idx_map` relation.  """
+    gpc_num = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "gpc_num")
     gpc_num = int(gpc_num, 16)
-    counter_idx_map = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [counter_idx_map]")
+    counter_idx_map = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "counter_idx_map")
 
     l = counter_idx_map.split(",")
     all_gpcs = set([int(v) for v in l[:gpc_num]])
@@ -82,53 +78,35 @@ def test_wperf_test_counter_idx_map():
 
 def test_wperf_test_MIDR_reg():
     """ Test if MIDR register is exposed with `wperf test`. """
-    cmd = 'wperf test --json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-
-    midr_value = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [midr_value]")
+    midr_value = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "midr_value")
     assert len(midr_value) > 0
     assert midr_value.startswith("0x")
     assert int(midr_value, 16) != 0x00
 
 def test_wperf_test_MIDR_vendor_id():
     """ Test if MIDR register field `vendor_id` value is correct. """
-    cmd = 'wperf test --json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-
-    vendor_id = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [vendor_id]")
-
+    vendor_id = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "vendor_id")
     assert int(vendor_id, 16) in arm64_vendor_names.keys()
 
 def test_wperf_test_ID_AA64DFR0_EL1_reg():
     """ Test if ID_AA64DFR0_EL1 register is exposed with `wperf test`. """
-    cmd = 'wperf test --json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-
-    aa64dfr0_value = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]")
+    aa64dfr0_value = wperf_test_get_key_val("PMU_CTL_QUERY_HW_CFG", "id_aa64dfr0_value")
     assert len(aa64dfr0_value) > 0, f"ID_AA64DFR0_EL1={aa64dfr0_value}"
     assert aa64dfr0_value.startswith("0x"), f"ID_AA64DFR0_EL1={aa64dfr0_value}"
     assert int(aa64dfr0_value, 16) != 0x00, f"ID_AA64DFR0_EL1={aa64dfr0_value}"
 
 def test_wperf_test_INTERVAL_DEFAULT():
     """ Test if PARSE_INTERVAL_DEFAULT const is exposed with `wperf test`. """
-    cmd = 'wperf test --json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-
+    json_output = wperf_test_no_params()
     PARSE_INTERVAL_DEFAULT = get_result_from_test_results(json_output, "pmu_device.sampling.INTERVAL_DEFAULT")
     assert len(PARSE_INTERVAL_DEFAULT) > 0, f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
     assert PARSE_INTERVAL_DEFAULT.startswith("0x"), f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
     assert int(PARSE_INTERVAL_DEFAULT, 16) != 0x00, f"ID_AA64DFR0_EL1={PARSE_INTERVAL_DEFAULT}"
 
 def test_wperf_test_pmu_version_name():
-    cmd = 'wperf test --json'
-    stdout, _ = run_command(cmd.split())
-    json_output = json.loads(stdout)
-
-    pmu_version_name = get_result_from_test_results(json_output, "PMU_CTL_QUERY_HW_CFG [id_aa64dfr0_value]")
+    """ Check if PMU name format is correct. """
+    json_output = wperf_test_no_params()
+    pmu_version_name = get_result_from_test_results(json_output, "pmu_device.version_name")
     if pmu_version_name.startswith("FEAT_"):
         assert pmu_version_name.startswith("FEAT_PMUv")
 
