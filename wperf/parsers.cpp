@@ -239,7 +239,23 @@ void parse_events_str_for_sample(std::wstring events_str, std::vector<struct evt
         else
         {
             str1 = event.substr(0, delim_pos);
-            interval = std::stoi(event.substr(delim_pos + 1, std::string::npos), NULL, 0);
+            std::wstring interval_str(event.substr(delim_pos + 1, std::string::npos));
+            try
+            {
+                interval = std::stoul(interval_str, NULL, 0);
+            }
+            catch (std::invalid_argument const& ex)
+            {
+                m_out.GetErrorOutputStream() << L"event interval: " << interval_str << L" is invalid!" << std::endl;
+                m_out.GetErrorOutputStream() << L"note: " << ex.what() << std::endl;
+                throw fatal_exception("ERROR_EVENT_SAMPLE_INTERVAL");
+            }
+            catch (std::out_of_range const& ex)
+            {
+                m_out.GetErrorOutputStream() << L"event interval: " << interval_str << L" is out of range!" << std::endl;
+                m_out.GetErrorOutputStream() << L"note: " << ex.what() << std::endl;
+                throw fatal_exception("ERROR_EVENT_SAMPLE_INTERVAL");
+            }
         }
 
         if (std::iswdigit(str1[0]))

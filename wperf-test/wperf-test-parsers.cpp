@@ -303,6 +303,90 @@ namespace wperftest
 			Assert::IsTrue(ioctl_events_sample[2].index == uint32_t(CYCLE_EVT_IDX));	// cpu_cycles
 			Assert::IsTrue(ioctl_events_sample[2].interval == uint32_t(1234321));
 		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_interval_ok_max)
+		{
+			// 0xFFFFFFFF: 4294967295
+			std::vector<struct evt_sample_src> ioctl_events_sample;
+			std::map<uint32_t, uint32_t> sampling_interval;
+			parse_events_str_for_sample(L"ld_spec:4294967295", ioctl_events_sample, sampling_interval);
+
+			Assert::IsTrue(ioctl_events_sample.size() == 1);
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0070));
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(0xFFFFFFFF));
+		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_interval_ok_max_hex)
+		{
+			// prefix 0x or 0X indicates hexadecimal value if base==0
+			std::vector<struct evt_sample_src> ioctl_events_sample;
+			std::map<uint32_t, uint32_t> sampling_interval;
+			parse_events_str_for_sample(L"ld_spec:0xFFFFFFFF", ioctl_events_sample, sampling_interval);
+
+			Assert::IsTrue(ioctl_events_sample.size() == 1);
+			Assert::IsTrue(ioctl_events_sample[0].index == uint32_t(0x0070));
+			Assert::IsTrue(ioctl_events_sample[0].interval == uint32_t(0xFFFFFFFF));
+		}
+
+		TEST_METHOD(test_parse_events_str_for_sample_interval_invalid_argument)
+		{
+			// std::invalid_argument
+			{
+				auto wrapper_sample_interval = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"ld_spec:bum!", ioctl_events_sample, sampling_interval);
+					};
+				Assert::ExpectException<fatal_exception>(wrapper_sample_interval);
+			}
+
+			{
+				auto wrapper_sample_interval = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"ld_spec:number", ioctl_events_sample, sampling_interval);
+					};
+				Assert::ExpectException<fatal_exception>(wrapper_sample_interval);
+			}
+
+			{
+				auto wrapper_sample_interval = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"ld_spec:_123456", ioctl_events_sample, sampling_interval);
+					};
+				Assert::ExpectException<fatal_exception>(wrapper_sample_interval);
+			}
+
+			// std::out_of_range
+			{
+				auto wrapper_sample_interval = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"ld_spec:10000000000", ioctl_events_sample, sampling_interval);
+					};
+				Assert::ExpectException<fatal_exception>(wrapper_sample_interval);
+			}
+
+			{
+				// 0xFFFFFFFF + 1
+				auto wrapper_sample_interval = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"ld_spec:4294967296", ioctl_events_sample, sampling_interval);
+					};
+				Assert::ExpectException<fatal_exception>(wrapper_sample_interval);
+			}
+
+			{
+				auto wrapper_sample_interval = [=]() {
+					std::vector<struct evt_sample_src> ioctl_events_sample;
+					std::map<uint32_t, uint32_t> sampling_interval;
+					parse_events_str_for_sample(L"ld_spec:0x1FFFFFFFF", ioctl_events_sample, sampling_interval);
+					};
+				Assert::ExpectException<fatal_exception>(wrapper_sample_interval);
+			}
+		}
 	};
 
 	/****************************************************************************/
