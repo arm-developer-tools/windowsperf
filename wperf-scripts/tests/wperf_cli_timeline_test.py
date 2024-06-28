@@ -258,8 +258,8 @@ def test_wperf_timeline_json(C, I, N, SLEEP):
 def test_wperf_timeline_json_output(C, I, N, SLEEP):
     """ Test timeline (core X) file format output.  """
     file_path = "timeline_json_%d.json" % os.getpid()
-    cmd = f"wperf stat -m imix -c {C} --json --output {file_path} -t -i {I} -n {N} --timeout {SLEEP}"
-    _, _ = run_command(cmd.split())
+    cmd = ['wperf', 'stat', '-m', 'imix', '-c', str(C), '--json', '--output', str(file_path), '-t', '-i', str(I), '-n', str(N), '--timeout', str(SLEEP)]
+    _, _ = run_command(cmd)
 
     try:
         with open(file_path) as f:

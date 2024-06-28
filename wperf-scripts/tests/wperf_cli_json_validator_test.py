@@ -56,8 +56,8 @@ def test_wperf_json_schema(request, tmp_path, scheme_name):
         cmd_type = "detect"
     elif "stat" in scheme_name:
         cmd_type = "stat -e cpu_cycles sleep 1"
-    cmd = f'wperf {cmd_type} --output {file_path}'
-    _, _ = run_command(cmd.split())
+    cmd = f'wperf {cmd_type} --output'
+    _, _ = run_command(cmd.split() + [str(file_path)])
 
     with open(str(file_path)) as json_file:
         json_output = json.loads(json_file.read())
@@ -99,8 +99,8 @@ def test_wperf_timeline_json_schema(request, tmp_path):
     test_path = os.path.dirname(request.path)
     file_path = tmp_path / 'test.json'
 
-    cmd = f'wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json --output {file_path}'
-    _, _ = run_command(cmd.split())
+    cmd = "wperf stat -m imix -t -i 1 -n 2 --timeout 1 --json --output"
+    _, _ = run_command(cmd.split() + [str(file_path)])
 
     json_output = {}
 

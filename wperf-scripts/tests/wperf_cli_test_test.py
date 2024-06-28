@@ -48,15 +48,15 @@ def test_wperf_test_json():
 def test_wperf_test_json_file_output_exists(tmp_path):
     """ Test `wperf test` JSON output to file"""
     file_path = tmp_path / 'test.json'
-    cmd = 'wperf test --output ' + str(file_path)
-    _, _ = run_command(cmd.split())
+    cmd = ['wperf', 'test', '--output', str(file_path)]
+    _, _ = run_command(cmd)
     assert check_if_file_exists(str(file_path))
 
 def test_wperf_test_json_file_output_valid(tmp_path):
     """ Test `wperf test` JSON output to file validity """
     file_path = tmp_path / 'test.json'
-    cmd = 'wperf test --output ' + str(file_path)
-    _, _ = run_command(cmd.split())
+    cmd = ['wperf', 'test', '--output', str(file_path)]
+    _, _ = run_command(cmd)
     try:
         with open(file_path) as f:
             json_obj = f.read()
