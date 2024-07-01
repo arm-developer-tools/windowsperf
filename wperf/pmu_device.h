@@ -40,6 +40,7 @@
 
 #include "events.h"
 #include "metric.h"
+#include "spe_device.h"
 #include "wperf-common/iorequest.h"
 
 
@@ -119,6 +120,16 @@ public:
     void dsu_init();
     void dmc_init();
 
+    // SPE
+    void spe_init();
+    void spe_start();
+    void spe_stop();
+    bool spe_get();
+
+    size_t m_spe_size_to_copy;
+    std::vector<UINT8> m_spe_buffer;
+    // SPE
+    
     HANDLE init_device();
     void init_ts_metrics();
     void init_ts_groups_metrics();

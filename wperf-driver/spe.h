@@ -32,3 +32,64 @@
 //
 // Arm Statistical Profiling Extensions (SPE)
 //
+#define SPE_MEMORY_BUFFER_SIZE (4096*10)
+#define SPE_TIMER_PERIOD        500
+#define SPE_BUFFER_THRESHOLD    256
+
+typedef struct spe_info_
+{
+    KTIMER      timer;
+    KDPC        dpc_overflow;
+    ULONG       idx;
+
+    BOOLEAN     profiling_running;
+    BOOLEAN     timer_running;
+} SpeInfo;
+
+#define SPE_IOCTL                                                                                                       \
+    case IOCTL_PMU_CTL_SPE_GET_SIZE:                                                                                    \
+    {                                                                                                                   \
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;                                                   \
+        spe_get_size(&queueContext->SpeWorkItem, ctl_req->cores_idx.cores_no[0]);                                       \
+        *((size_t*)pOutBuffer) = spe_bytesToCopy;                                                                       \
+        *outputSize = sizeof(spe_bytesToCopy);                                                                          \
+        break;                                                                                                          \
+    }                                                                                                                   \
+    case IOCTL_PMU_CTL_SPE_GET_BUFFER:                                                                                  \
+    {                                                                                                                   \
+        struct spe_ctl_hdr* ctl_req = (struct spe_ctl_hdr*)pInBuffer;                                                   \
+        spe_get_buffer(&queueContext->SpeWorkItem, ctl_req->cores_idx.cores_no[0], pOutBuffer, ctl_req->buffer_size);   \
+        *outputSize = sizeof(char)*(ULONG)spe_bytesToCopy;                                                              \
+        spe_bytesToCopy = 0;                                                                                            \
+        break;                                                                                                          \
+    }                                                                                                                   \
+    case IOCTL_PMU_CTL_SPE_INIT:                                                                                        \
+    {                                                                                                                   \
+        spe_init(&queueContext->SpeWorkItem);                                                                           \
+        *outputSize = 0;                                                                                                \
+        break;                                                                                                          \
+    }                                                                                                                   \
+    case IOCTL_PMU_CTL_SPE_START:                                                                                       \
+    {                                                                                                                   \
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;                                                   \
+        spe_start(&queueContext->SpeWorkItem, ctl_req->cores_idx.cores_no[0]);                                          \
+        *outputSize = 0;                                                                                                \
+        break;                                                                                                          \
+    }                                                                                                                   \
+    case IOCTL_PMU_CTL_SPE_STOP:                                                                                        \
+    {                                                                                                                   \
+        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;                                                   \
+        spe_stop(&queueContext->SpeWorkItem, ctl_req->cores_idx.cores_no[0]);                                           \
+        *outputSize = 0;                                                                                                \
+        break;                                                                                                          \
+    }
+
+void spe_get_size(WDFWORKITEM* workItem, UINT32 core_idx);
+void spe_get_buffer(WDFWORKITEM* workItem, UINT32 core_idx, PVOID target, UINT64 size);
+void spe_init(WDFWORKITEM* workItem);
+void spe_start(WDFWORKITEM* workItem, UINT32 core_idx);
+void spe_stop(WDFWORKITEM* workItem, UINT32 core_idx);
+void spe_destroy();
+
+NTSTATUS spe_setup(ULONG numCores);
+void spe_destroy();

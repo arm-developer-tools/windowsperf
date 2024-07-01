@@ -33,7 +33,6 @@
 #include <assert.h>
 #include "wperf-common/gitver.h"
 #include "pmu_device.h"
-#include "spe_device.h"
 #include "exception.h"
 #include "events.h"
 #include "output.h"
@@ -208,6 +207,93 @@ void pmu_device::init()
     m_device_handle = init_device();
     drvconfig::init();
     lock(do_force_lock);
+}
+
+void pmu_device::spe_init()
+{
+    if (!m_has_spe) return;
+
+    struct pmu_ctl_hdr ctl { 0 };
+    DWORD res_len = 0;
+
+    ctl.cores_idx.cores_count = 1;
+    ctl.flags = CTL_FLAG_SPE;
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_INIT, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    if (!status)
+        throw fatal_exception("PMU_CTL_SPE_INIT failed");
+}
+
+bool pmu_device::spe_get()
+{
+    if (!m_has_spe) return false;
+
+    // Get size
+    {
+        struct pmu_ctl_hdr ctl { 0 };
+        DWORD res_len = 0;
+
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = cores_idx[0];
+        ctl.flags = CTL_FLAG_SPE;
+
+        BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_GET_SIZE, &ctl, sizeof(struct pmu_ctl_hdr), &m_spe_size_to_copy, sizeof(m_spe_size_to_copy), &res_len);
+        if (!status)
+            throw fatal_exception("PMU_CTL_SPE_GET_SIZE failed");
+    }
+
+    // Get the buffer
+    {
+        struct spe_ctl_hdr ctl { 0 };
+        DWORD res_len = 0;
+
+        ctl.cores_idx.cores_count = 1;
+        ctl.cores_idx.cores_no[0] = cores_idx[0];
+        ctl.buffer_size = m_spe_size_to_copy;
+
+        size_t last_size = m_spe_buffer.size();
+        m_spe_buffer.resize(m_spe_buffer.size() + m_spe_size_to_copy);
+
+        BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_GET_BUFFER, &ctl, sizeof(struct spe_ctl_hdr), m_spe_buffer.data() + last_size, sizeof(unsigned char) * (DWORD)m_spe_size_to_copy, &res_len);
+        if (!status)
+            throw fatal_exception("PMU_CTL_SPE_GET_BUFFER failed");
+    }
+
+    return m_spe_size_to_copy > 0;
+}
+
+void pmu_device::spe_start()
+{
+    if (!m_has_spe) return;
+
+    struct pmu_ctl_hdr ctl { 0 };
+    DWORD res_len = 0;
+
+    ctl.cores_idx.cores_count = 1;
+    ctl.cores_idx.cores_no[0] = cores_idx[0];
+    ctl.flags = CTL_FLAG_SPE;
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_START, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    if (!status)
+        throw fatal_exception("PMU_CTL_SPE_START failed");
+        
+    m_spe_size_to_copy = 0;
+}
+
+void pmu_device::spe_stop()
+{
+    if (!m_has_spe) return;
+
+    struct pmu_ctl_hdr ctl { 0 };
+    DWORD res_len;
+
+    ctl.cores_idx.cores_count = 1;
+    ctl.cores_idx.cores_no[0] = cores_idx[0];
+    ctl.flags = CTL_FLAG_SPE;
+
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_STOP, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    if (!status)
+        throw fatal_exception("PMU_CTL_SPE_STOP failed");
 }
 
 void pmu_device::core_init()

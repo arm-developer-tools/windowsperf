@@ -34,12 +34,14 @@
 #include "queue.tmh"
 #endif
 #include "device.h"
+#include "spe.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, WindowsPerfQueueInitialize)
 #endif
 
 VOID EvtWorkItemFunc(WDFWORKITEM WorkItem);
+VOID SPEWorkItemFunc(WDFWORKITEM WorkItem);
 
 NTSTATUS
 WindowsPerfQueueInitialize(
@@ -130,26 +132,52 @@ Return Value:
     queueContext->CurrentRequest = NULL;
     queueContext->CurrentStatus = STATUS_INVALID_DEVICE_REQUEST;
 
-    WDF_WORKITEM_CONFIG workItemConfig;
-    WDF_OBJECT_ATTRIBUTES workItemAttributes;
+    { // Initialize generic WorkItem
+        WDF_WORKITEM_CONFIG workItemConfig;
+        WDF_OBJECT_ATTRIBUTES workItemAttributes;
 
-    WDF_WORKITEM_CONFIG_INIT(&workItemConfig, EvtWorkItemFunc);
-    workItemConfig.AutomaticSerialization = FALSE;
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&workItemAttributes, WORK_ITEM_CTXT);
-    workItemAttributes.ParentObject = queue;
+        WDF_WORKITEM_CONFIG_INIT(&workItemConfig, EvtWorkItemFunc);
+        workItemConfig.AutomaticSerialization = FALSE;
+        WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&workItemAttributes, WORK_ITEM_CTXT);
+        workItemAttributes.ParentObject = queue;
 
-    NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->WorkItem);
-    if (!NT_SUCCESS(wiStatus))
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
+        NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->WorkItem);
+        if (!NT_SUCCESS(wiStatus))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
+        }
+
+        PWORK_ITEM_CTXT workItemCtxt;
+        workItemAttributes.ParentObject = NULL;
+        wiStatus = WdfObjectAllocateContext(queueContext->WorkItem, &workItemAttributes, &workItemCtxt);
+        if (!NT_SUCCESS(wiStatus))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
+        }
     }
 
-    PWORK_ITEM_CTXT workItemCtxt;
-    workItemAttributes.ParentObject = NULL;
-    wiStatus = WdfObjectAllocateContext(queueContext->WorkItem, &workItemAttributes, &workItemCtxt);
-    if (!NT_SUCCESS(wiStatus))
-    {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID,  DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
+    { // Initialize SPE WorkItem
+        WDF_WORKITEM_CONFIG workItemConfig;
+        WDF_OBJECT_ATTRIBUTES workItemAttributes;
+
+        WDF_WORKITEM_CONFIG_INIT(&workItemConfig, SPEWorkItemFunc);
+        workItemConfig.AutomaticSerialization = FALSE;
+        WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&workItemAttributes, SPE_WORK_ITEM_CTXT);
+        workItemAttributes.ParentObject = queue;
+
+        NTSTATUS wiStatus = WdfWorkItemCreate(&workItemConfig, &workItemAttributes, &queueContext->SpeWorkItem);
+        if (!NT_SUCCESS(wiStatus))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WdfWorkItemCreate failed 0x%x\n", wiStatus));
+        }
+
+        PSPE_WORK_ITEM_CTXT workItemCtxt;
+        workItemAttributes.ParentObject = NULL;
+        wiStatus = WdfObjectAllocateContext(queueContext->SpeWorkItem, &workItemAttributes, &workItemCtxt);
+        if (!NT_SUCCESS(wiStatus))
+        {
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WdfObjectAllocateContext failed 0x%x\n", wiStatus));
+        }
     }
 
     // store a reference to the queue context in our device extension

@@ -37,6 +37,7 @@
 #include "dmc.h"
 #include "dsu.h"
 #include "core.h"
+#include "spe.h"
 #include "wperf-common\gitver.h"
 #include "wperf-common\inline.h"
 
@@ -71,6 +72,7 @@ static UINT16 armv8_arch_core_events[] =
 };
 
 extern LOCK_STATUS current_status;
+extern size_t spe_bytesToCopy;
 
 // must sync with enum pmu_ctl_action
 static VOID(*core_ctl_funcs[3])(VOID) = { CoreCounterStart, CoreCounterStop, CoreCounterReset };
@@ -208,6 +210,8 @@ NTSTATUS deviceControl(
     ULONG action = (IoCtlCode >> 2) & 0xFFF; // 12 bits are the 'Function'
     queueContext->action = action;  // Save for later processing  
 
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "IOCTL: action %d\n", action));
+
     //
     //  Do some basic validation of the input puffer
     //
@@ -333,6 +337,7 @@ clean_lock_acquire:
         *outputSize = sizeof(enum status_flag);
         break;
     }
+    SPE_IOCTL
     case IOCTL_PMU_CTL_SAMPLE_START:
     {
         struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;

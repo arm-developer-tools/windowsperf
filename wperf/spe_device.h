@@ -32,6 +32,9 @@
 #include <windows.h>
 #include <string>
 #include "wperf-common/macros.h"
+#include "wperf-common/iorequest.h"
+#include <vector>
+#include <map>
 
 class spe_device
 {
@@ -44,5 +47,6 @@ public:
     // Helper functions
 
     static std::wstring get_spe_version_name(UINT64 id_aa64dfr0_el1_value);
-    static bool spe_device::is_spe_supported(UINT64 id_aa64dfr0_el1_value);
+    static bool is_spe_supported(UINT64 id_aa64dfr0_el1_value);
+    static void get_samples(const std::vector<UINT8>& spe_buffer, std::vector<FrameChain>& raw_samples, std::map<UINT64, std::wstring>& spe_events);
 };

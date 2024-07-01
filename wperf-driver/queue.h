@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "wperf-common/iorequest.h"
+#include "spe.h"
 
 //
 // Set max write length for testing
@@ -52,6 +53,7 @@ typedef struct _QUEUE_CONTEXT {
     PVOID       outBuffer;
 
     WDFWORKITEM WorkItem;
+    WDFWORKITEM SpeWorkItem;
 
     // Virtual I/O
     enum pmu_ctl_action action;     // Current action
@@ -80,6 +82,15 @@ typedef struct WORK_ITEM_CTXT_
 } WORK_ITEM_CTXT, *PWORK_ITEM_CTXT;
 
 WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
+
+typedef struct SPE_WORK_ITEM_CTXT_
+{
+    UINT32  core_idx;
+    size_t cores_count;
+    enum pmu_ctl_action action;
+} SPE_WORK_ITEM_CTXT, * PSPE_WORK_ITEM_CTXT;
+
+WDF_DECLARE_CONTEXT_TYPE(SPE_WORK_ITEM_CTXT)
 
 NTSTATUS
 WindowsPerfQueueInitialize(

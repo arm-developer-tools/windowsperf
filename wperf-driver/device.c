@@ -122,7 +122,7 @@ VOID arm64_pmi_ISR(PKTRAP_FRAME pTrapFrame)
 
     if (!ov_flags)
         return;
-    
+
     core->sample_generated++;
 
     if (!KeTryToAcquireSpinLockAtDpcLevel(&core->SampleLock))
@@ -455,6 +455,8 @@ void WindowsPerfDeviceIOCleanup(
 
     if (last_fpc_read)
         ExFreePoolWithTag(last_fpc_read, 'LAST');
+    
+    spe_destroy();
 
     if (dmc_array.dmcs)
     {
@@ -636,6 +638,13 @@ WindowsPerfDeviceCreate(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     RtlSecureZeroMemory(core_info, sizeof(CoreInfo) * numCores);
+
+    { // Setup SPE
+
+        NTSTATUS st = spe_setup(numCores);
+        if (st != STATUS_SUCCESS)
+            return st;
+    }
 
     last_fpc_read = (UINT64*)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UINT64) * numCores, 'LAST');
     if (!last_fpc_read)

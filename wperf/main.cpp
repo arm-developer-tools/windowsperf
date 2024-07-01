@@ -116,6 +116,7 @@ wmain(
         pmu_device.core_init();
         pmu_device.dsu_init();
         pmu_device.dmc_init();
+        pmu_device.spe_init();
     }
     catch (const locked_exception&)
     {
@@ -686,7 +687,8 @@ wmain(
                     static_cast<int64_t>(request.count_duration * 10) : _I64_MAX;
                 int64_t t_count1 = sampling_duration_iter;
 
-                pmu_device.start_sample();
+                if (request.m_sampling_with_spe) pmu_device.spe_start();
+                else pmu_device.start_sample();
 
                 m_out.GetOutputStream() << L"sampling ...";
 
@@ -696,11 +698,19 @@ wmain(
                     Sleep(100);
 
                     if ((t_count1 % 10) == 0)
-                    {
-                        if (pmu_device.get_sample(raw_samples))
-                            m_out.GetOutputStream() << L".";
-                        else
-                            m_out.GetOutputStream() << L"e";
+                    {                        
+                        if(request.m_sampling_with_spe)
+                        {
+                            if (pmu_device.spe_get())
+                                m_out.GetOutputStream() << L".";
+                            else
+                                m_out.GetOutputStream() << L"e";
+                        } else {
+                            if (pmu_device.get_sample(raw_samples))
+                                m_out.GetOutputStream() << L".";
+                            else
+                                m_out.GetOutputStream() << L"e";
+                        }
                     }
 
                     if (GetExitCodeProcess(process_handle, &image_exit_code))
@@ -711,7 +721,13 @@ wmain(
 
                 m_out.GetOutputStream() << " done!" << std::endl;
 
-                pmu_device.stop_sample();
+                if(request.m_sampling_with_spe)
+                {
+                    pmu_device.spe_stop();
+                    pmu_device.spe_get();
+                } else {
+                    pmu_device.stop_sample();
+                }
 
                 if (request.do_verbose)
                     m_out.GetOutputStream() << "Sampling stopped, process pid=" << pid
@@ -725,7 +741,28 @@ wmain(
                 spawned_process = false;
             }
             CloseHandle(process_handle);
-            
+
+            std::map<UINT64, std::wstring> spe_event_map;
+
+            if(request.m_sampling_with_spe && pmu_device.m_has_spe)
+            {
+                std::ofstream spe_buffer_file("spe.data", std::ios::out | std::ios::binary | std::ios::trunc);
+                if(spe_buffer_file.is_open())
+                {
+                    spe_buffer_file.write(reinterpret_cast<char*>(pmu_device.m_spe_buffer.data()), pmu_device.m_spe_buffer.size() * sizeof(UINT8));
+                    if (spe_buffer_file.fail())
+                    {
+                        m_out.GetErrorOutputStream() << "Error trying to save SPE memory buffer to spe.data file!" << std::endl;
+                    }
+                    spe_buffer_file.close();
+                }
+                else {
+                    m_out.GetErrorOutputStream() << "Error trying to open spe.data file!" << std::endl;
+                }
+
+                spe_device::get_samples(pmu_device.m_spe_buffer, raw_samples, spe_event_map);
+            }
+
             std::vector<SampleDesc> resolved_samples;
 
             for (const auto& a : raw_samples)
@@ -807,15 +844,22 @@ wmain(
                 for(auto const& [mapped_counter_idx, counter_idx]: pmu_device.counter_idx_unmap)
                 {
                     // Check if this sample represents an overflow of this particular GPC
-                    if (!(a.ov_flags & (1i64 << (UINT64)mapped_counter_idx)))
-                        continue;
+                    if(!request.m_sampling_with_spe)
+                        if (!(a.ov_flags & (1i64 << (UINT64)mapped_counter_idx)))
+                            continue;
 
                     bool inserted = false;
                     uint32_t event_src;
-                    if (counter_idx == 31)
-                        event_src = CYCLE_EVT_IDX;
-                    else
-                        event_src = request.ioctl_events_sample[counter_idx].index;
+                    if(!request.m_sampling_with_spe)
+                    {
+                        if (counter_idx == 31)
+                            event_src = CYCLE_EVT_IDX;
+                        else
+                            event_src = request.ioctl_events_sample[counter_idx].index;
+                    } else {
+                        event_src = a.spe_event_idx;
+                    }
+
                     for (auto& c : resolved_samples)
                     {
                         if (c.desc.name == sd.desc.name && c.event_src == event_src)
@@ -917,10 +961,14 @@ wmain(
                         << IntToDecWideString(printed_sample_freq, 10)
                         << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
 
+
                     m_out.GetOutputStream()
-                        << L"======================== sample source: "
-                        << pmu_events::get_event_name(static_cast<uint16_t>(a.event_src)) << L", top "
-                        << std::dec << request.sample_display_row
+                        << L"======================== sample source: ";
+                    if(!request.m_sampling_with_spe)
+                        m_out.GetOutputStream() << pmu_events::get_event_name(static_cast<uint16_t>(a.event_src));
+                    else
+                        m_out.GetOutputStream() << spe_event_map[a.event_src];
+                    m_out.GetOutputStream() << L", top " << std::dec << request.sample_display_row
                         << L" hot functions ========================" << std::endl;
 
                     printed_sample_num = 0;
@@ -1120,7 +1168,11 @@ wmain(
             table.InsertExtra(L"interval", request.sampling_inverval[prev_evt_src]);
             table.InsertExtra(L"printed_sample_num", printed_sample_num);
             m_out.Print(table);
-            table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
+            if (!request.m_sampling_with_spe)
+                table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
+            else
+                table.m_event = GlobalStringType(spe_event_map[prev_evt_src]);
+
             TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
             pcs_table.PresetHeaders();
             pcs_table.Insert(col_pcs, col_pcs_count);
