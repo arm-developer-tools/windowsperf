@@ -55,3 +55,33 @@ def test_sample_cli_pe_file():
         pytest.skip(f"File {pe_file} already exists")
 
     assert b"PE file 'pythasdasdasdason.exe' doesn't exist" in stderr
+
+@pytest.mark.parametrize("interval",
+[
+    ("a"),
+    ("text"),
+    ("_123"),
+    ("x1"),
+    ("0xp"),
+    ("0xp123"),
+]
+)
+def test_sample_cli_event_interval_text(interval):
+    """ Test sampling event interval for parsing error. """
+    cmd = f"wperf sample -e ld_spec:{interval} --pe_file file.exe -c 1"
+    _, stderr = run_command(cmd)
+    assert b"event interval: %s is invalid!" % str.encode(str(interval)) in stderr, cmd
+
+@pytest.mark.parametrize("interval",
+[
+    (0x1FFFFFFFF),
+    (8589934590),   # 0xffffffff * 2
+]
+)
+def test_sample_cli_event_interval_overflow(interval):
+    """ Test sampling event interval for parsing error.
+        Max interval is: 0xFFFFFFFF.
+    """
+    cmd = f"wperf sample -e ld_spec:{interval} --pe_file file.exe -c 1"
+    _, stderr = run_command(cmd)
+    assert b"event interval: %s is out of range!" % str.encode(str(interval)) in stderr, cmd
