@@ -40,17 +40,12 @@
 
 SpeInfo* spe_info = NULL;
 static __declspec(align(64)) unsigned char SpeMemoryBuffer[SPE_MEMORY_BUFFER_SIZE];
-static __declspec(align(64)) unsigned char* SpeMemoryBufferLimit = 0;
+static __declspec(align(64)) unsigned char* SpeMemoryBufferLimit = NULL;
 static unsigned char* lastCopiedPtr = NULL;
 
 size_t spe_bytesToCopy = 0;
 
 static ULONG totalCores = 0;
-
-#define BIT(nr)                 (1ULL << (nr))
-#define PMSCR_EL1_E0SPE_E1SPE   0b11
-#define PMBLIMITR_EL1_E         1ull
-#define PMBSR_EL1_S             BIT(17)
 
 #define START_WORK_ON_CORE(CORE_IDX)                                    \
     GROUP_AFFINITY old_affinity, new_affinity;                          \
@@ -65,9 +60,9 @@ static ULONG totalCores = 0;
 
 #define STOP_WORK_ON_CORE()  KeRevertToUserGroupAffinityThread(&old_affinity);
 
-VOID SetSPECountRegister(UINT32 count1, UINT32 count2)
+VOID SetSPECountRegister(UINT32 count, UINT32 ecount)
 {
-    _WriteStatusReg(PMSICR_EL1, count1 | ((UINT64)count2 << 56)); // Set count register
+    _WriteStatusReg(PMSICR_EL1, count | ((UINT64)ecount << 56)); // Set count register
 }
 
 VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
@@ -171,7 +166,7 @@ NTSTATUS spe_setup(ULONG numCores)
     
     totalCores = numCores;
 
-    SpeMemoryBufferLimit = (unsigned char*)(((UINT64)SpeMemoryBuffer + 2 * SPE_MEMORY_BUFFER_SIZE) & (~0xfff));
+    SpeMemoryBufferLimit = (unsigned char*)(((UINT64)SpeMemoryBuffer + SPE_MEMORY_BUFFER_SIZE) & PMBLIMITR_EL1_LIMIT_MASK);
 
     for (ULONG i = 0; i < numCores; i++)
     {

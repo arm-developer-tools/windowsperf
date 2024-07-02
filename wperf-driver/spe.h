@@ -32,9 +32,15 @@
 //
 // Arm Statistical Profiling Extensions (SPE)
 //
-#define SPE_MEMORY_BUFFER_SIZE (4096*10)
-#define SPE_TIMER_PERIOD        500
-#define SPE_BUFFER_THRESHOLD    256
+#define BIT(nr)                             (1ULL << (nr))
+#define PMSCR_EL1_E0SPE_E1SPE               0b11
+#define PMBLIMITR_EL1_E                     1ULL
+#define PMBSR_EL1_S                         BIT(17)
+#define PMBLIMITR_EL1_LIMIT_MASK            (~((UINT64)0xFFF))  // PMBLIMITR.LIMIT, bits [63:12]
+
+#define SPE_MEMORY_BUFFER_SIZE              (PAGE_SIZE*128)     // PAGE_SIZE is defined in WDM.h
+#define SPE_TIMER_PERIOD                    500
+#define SPE_BUFFER_THRESHOLD                256
 
 typedef struct spe_info_
 {
