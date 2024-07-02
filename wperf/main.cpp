@@ -941,7 +941,10 @@ wmain(
                         table.InsertExtra(L"interval", request.sampling_inverval[prev_evt_src]);
                         table.InsertExtra(L"printed_sample_num", printed_sample_num);
                         m_out.Print(table);
-                        table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
+                        if (!request.m_sampling_with_spe)
+                            table.m_event = GlobalStringType(pmu_events::get_event_name(static_cast<uint16_t>(prev_evt_src)));
+                        else
+                            table.m_event = GlobalStringType(spe_event_map[prev_evt_src]);
                         TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
                         pcs_table.PresetHeaders();
                         pcs_table.Insert(col_pcs, col_pcs_count);
