@@ -343,6 +343,8 @@ namespace SPEParser
         std::wstring m_full_desc;
         UINT64 m_pc;
 
+        Record() : m_pc(0) {}
+
         void parse_record_data()
         {
             for (const auto& packet : m_packets)
