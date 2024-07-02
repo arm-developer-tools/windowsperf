@@ -98,6 +98,15 @@ def wperf_metric_is_available(metric):
             return True
     return False
 
+def wperf_event_is_available(alias_name):
+    """ Check by `Alias_Name` if given event is available. """
+    json_output = wperf_list()
+    for events in json_output["Predefined_Events"]:
+        for event in events:
+            if alias_name == events["Alias_Name"]:
+                return True
+    return False
+
 def wperf_metric_events(metric):
     """ Return string with list of events for given `metric` """
     json_output = wperf_list()
@@ -164,6 +173,11 @@ def get_product_name():
     """ Get `product_name` form `wperf test` command. """
     json_wperf_test = wperf_test_no_params()
     return get_result_from_test_results(json_wperf_test, "pmu_device.product_name")    # e.g. "armv8-a" or "neoverse-n1"
+
+def get_spe_version():
+    """ Get SPE `version_name` form `wperf test` command. """
+    json_wperf_test = wperf_test_no_params()
+    return get_result_from_test_results(json_wperf_test, "spe_device.version_name")    # e.g. "FEAT_SPE"
 
 def get_make_CPU_name(product_name):
     """ Get CPU name used in Makefile for ustress. """
