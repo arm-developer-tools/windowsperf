@@ -843,8 +843,6 @@ clean_lock_acquire:
                 WPERF_HW_CFG_CAPS_CORE_DSU L";"
                 WPERF_HW_CFG_CAPS_CORE_DMC;
 
-            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "*outputSize > OutBufSize\n"));
-
             RtlSecureZeroMemory(out->device_id_str, sizeof(out->device_id_str));
             RtlCopyMemory(out->device_id_str, device_id_str, sizeof(device_id_str));
         }
