@@ -306,6 +306,7 @@
     <ClCompile Include="disassembler.cpp" />
     <ClCompile Include="events.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="man.cpp" />
     <ClCompile Include="metric.cpp" />
     <ClCompile Include="output.cpp" />
     <ClCompile Include="padding.cpp" />

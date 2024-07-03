@@ -156,6 +156,16 @@ public:
 		return os;
 	}
 
+	OutputStream& GetManOutputStream(OutputStream& os, PrettyTable& pt)
+	{
+		// Clearing out the stream before proceding. No need to clear bits as none are used here.
+		pt.m_out_stream.str(LITERALCONSTANTS_GET(""));
+		// Calculating the output.
+		pt.PrintMan();
+		os << pt.m_out_stream.str();
+		return os;
+	}
+
 	/// <summary>
 	/// Define if you want to underline column headers with '='
 	/// </summary>
@@ -443,6 +453,98 @@ public:
 			for (auto j = 0; j < row_count; j++)
 			{
 				PrintRow(j + row_num, i, row_num, m_out_stream);
+				m_out_stream << std::flush << std::endl;
+			}
+			row_num += row_count;
+		}
+	}
+
+	void PrintManRow(size_t row_number, size_t item_number, size_t acc_row_number, std::wstringstream& out_stream)
+	{
+		size_t j = 0;	// Rows in column index
+		size_t item_relative_row_number = row_number - acc_row_number;
+
+		for (const auto& header : m_header)
+		{
+			if (j != 0) 
+			{
+				out_stream << std::endl << L"    ";
+			}
+
+			std::visit([&](auto&& arg)
+				{
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, StringType>)
+					{
+						if (item_relative_row_number == 0)
+						{
+							out_stream << arg;
+						}
+					}
+					else if constexpr (std::is_same_v<T, PrettyTable<CharType>>)
+					{
+						long long off = item_relative_row_number - 1 - (m_header_underline ? 1 : 0);
+						size_t curr_item_number = off < 0 ? 0 : off;
+						size_t row_size = arg.GetRowCount();
+						if (item_relative_row_number >= row_size)
+						{
+							out_stream << std::setw(m_columns_max_width[j]);
+							out_stream << StringType(m_columns_max_width[j], LiteralConstants<CharType>::m_space[0]);
+						}
+						else
+						{
+							// Properly map row_number/acc_row_number to this PrettyTable's row
+							size_t item_row_size = 0;
+							if (curr_item_number >= 0 && off == 0)
+							{
+								// Count headers and underline
+								item_row_size += 1ll + (m_header_underline ? 1ll : 0ll);
+								if (curr_item_number > 0)
+								{
+									item_row_size = m_rows_acc_count[curr_item_number];
+								}
+							}
+							else {
+								item_row_size = item_relative_row_number;
+							}
+
+							arg.PrintRow(item_relative_row_number, curr_item_number, item_row_size, out_stream, true);
+						}
+					}
+					else 
+					{
+						static_assert(std::_Always_false<T>, "Invalid type");
+					}
+				}, m_table[header][item_number]);
+
+			j++;
+		}
+	}
+
+	void PrintMan()
+	{
+		//Pre-calculate rows
+		size_t acc = 0;
+		for (size_t i = 0; i < m_table[m_header[0]].size(); i++)
+		{
+			size_t count = GetRowCount(i);
+			m_rows_count.push_back(count);
+			m_rows_acc_count.push_back(acc);
+			acc += count;
+		}
+
+		size_t row_num = 0;
+
+		m_out_stream << std::flush << std::endl;
+		row_num++;
+
+		size_t num_items = m_table[m_header[0]].size();
+		for (auto i = 0; i < num_items; i++)
+		{
+			size_t row_count = m_rows_count[i];
+			for (auto j = 0; j < row_count; j++)
+			{
+				PrintManRow(j + row_num, i, row_num, m_out_stream);
 				m_out_stream << std::flush << std::endl;
 			}
 			row_num += row_count;

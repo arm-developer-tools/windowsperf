@@ -45,6 +45,7 @@
 #include "process_api.h"
 #include "events.h"
 #include "pmu_device.h"
+#include "man.h"
 #include "user_request.h"
 #include "config.h"
 #include "perfdata.h"
@@ -189,8 +190,26 @@ wmain(
     }
     if (request.do_man)
     {
-        //man_entry_function(pmu_device.m_product_name, request.man_query_args)
+        std::vector<std::wstring> col1, col2;
+
+        wstr_vec man_query_args;
+        TokenizeWideStringOfStrings(request.man_query_args, L',', man_query_args);
+
+        try {
+            man(pmu_device, man_query_args, L'/', pmu_device.m_product_name, col1, col2);
+        }
+        catch(const fatal_exception&){
+            exit_code = EXIT_FAILURE;
+            goto clean_exit;
+        }
+
+        TableOutput<ManOutputTraitsL, GlobalCharType> table(MAN);
+        table.PresetHeaders();
+        table.Insert(col1, col2);
+        m_out.Print(table, true, TableType::MAN);
+
         goto clean_exit;
+
     }
 
     uint32_t enable_bits = 0;

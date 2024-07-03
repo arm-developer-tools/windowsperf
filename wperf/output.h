@@ -196,6 +196,18 @@ struct TestOutputTraits : public TableOutputTraits<CharType>
 };
 
 template <typename CharType>
+struct ManOutputTraits : public TableOutputTraits<CharType>
+{
+    typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
+    inline const static std::tuple<StringType, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*> headers =
+        std::make_tuple(LITERALCONSTANTS_GET("Field Type"),
+            LITERALCONSTANTS_GET("Result"));
+    inline const static int size = std::tuple_size_v<decltype(headers)>;
+    inline const static CharType* key = LITERALCONSTANTS_GET("Manual Results");
+};
+
+template <typename CharType>
 struct VersionOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
@@ -302,6 +314,7 @@ enum TableType
 {
     JSON,
     PRETTY,
+    MAN,
     ALL,
 };
 
@@ -433,6 +446,7 @@ public:
         {
         case JSON: strstream << m_tableJSON; break;
         case PRETTY: strstream << m_tablePretty; break;
+        case MAN: m_tablePretty.GetManOutputStream(strstream, m_tablePretty); break;
         }
         return strstream;
     }
@@ -895,10 +909,16 @@ struct OutputControl
     }
 
     template <typename T>
-    void Print(TableOutput<T, CharType>& table, bool printJson = false)
+    void Print(TableOutput<T, CharType>& table, bool printJson = false, TableType type = TableType::PRETTY)
     {
-        StringType s = table.Print(TableType::PRETTY).str();
-        GetOutputStream() << s;
+        if(type == TableType::MAN){
+            StringType s = table.Print(TableType::MAN).str();
+            GetOutputStream() << s;
+        }
+        else {
+            StringType s = table.Print(TableType::PRETTY).str();
+            GetOutputStream() << s;
+        }
         if ((m_outputType == TableType::JSON || m_outputType == TableType::ALL) && printJson)
         {
             StringType sj = table.Print(TableType::JSON).str();
@@ -990,7 +1010,7 @@ using PMUPerformanceCounterOutputTraitsL = PMUPerformanceCounterOutputTraits<Glo
 using DDRMetricOutputTraitsL = DDRMetricOutputTraits<GlobalCharType>;
 using TestOutputTraitsL = TestOutputTraits<GlobalCharType>;
 using DisassemblyOutputTraitsL = DisassemblyOutputTraits<GlobalCharType>;
-
+using ManOutputTraitsL = ManOutputTraits<GlobalCharType>;
 template <bool isVerbose>
 using MetricOutputTraitsL = MetricOutputTraits<GlobalCharType, isVerbose>;
 
