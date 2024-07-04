@@ -87,6 +87,12 @@ void man(pmu_device& pdev, std::vector<std::wstring>& args, const wchar_t& delim
 	std::wstring cur_cpu;
 	std::wstring requested_arg;
 
+	if (args.empty())
+	{
+		m_out.GetErrorOutputStream() << L"warning: no argument(s) specified, specify an event, metric, or group of metrics to obtain relevant, manual style, information." << std::endl;
+		throw fatal_exception("ERROR_REQUESTED_ARG");
+	}
+
 
 	for (auto &arg : args)
 	{
@@ -103,14 +109,14 @@ void man(pmu_device& pdev, std::vector<std::wstring>& args, const wchar_t& delim
 
 		if (!is_valid_cpu(pdev, cur_cpu)) 
 		{
-			m_out.GetErrorOutputStream() << "CPU name: \"" << cur_cpu << "\" not found!" << std::endl;
+			m_out.GetErrorOutputStream() << L"warning: CPU name: \"" << cur_cpu << "\" not found!" << std::endl;
 			throw fatal_exception("ERROR_CPU_NAME");
 		}
 
 		//find event,group or event_group for cur_cpu and print them
 		if (!find_in_product_data(pdev, cur_cpu, requested_arg))
 		{
-			m_out.GetErrorOutputStream() << "\"" << requested_arg << "\" not found! Ensure it is compatible with the specified CPU" << std::endl;
+			m_out.GetErrorOutputStream() << L"warning: \"" << requested_arg << L"\" not found! Ensure it is compatible with the specified CPU" << std::endl;
 			throw fatal_exception("ERROR_REQUESTED_ARG");
 		}
 	}
@@ -133,5 +139,4 @@ void man(pmu_device& pdev, std::vector<std::wstring>& args, const wchar_t& delim
 
 	col1 = _col1;
 	col2 = _col2;
-
 }

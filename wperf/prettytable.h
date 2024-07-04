@@ -535,7 +535,7 @@ public:
 
 		size_t row_num = 0;
 
-		m_out_stream << std::flush << std::endl;
+		m_out_stream << std::flush;
 		row_num++;
 
 		size_t num_items = m_table[m_header[0]].size();
