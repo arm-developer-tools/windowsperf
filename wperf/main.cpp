@@ -195,10 +195,19 @@ wmain(
         wstr_vec man_query_args;
         TokenizeWideStringOfStrings(request.man_query_args, L',', man_query_args);
 
-        try {
+        //restricts the number of args into man to one
+        if (!man_query_args.empty())
+        {
+            wstr_vec man_query_one_arg(1, man_query_args[0]);
+            man_query_args = man_query_one_arg;
+        }
+
+        try 
+        {
             man(pmu_device, man_query_args, L'/', pmu_device.m_product_name, col1, col2);
         }
-        catch(const fatal_exception&){
+        catch(const fatal_exception&)
+        {
             exit_code = EXIT_FAILURE;
             goto clean_exit;
         }
