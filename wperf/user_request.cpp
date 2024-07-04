@@ -81,6 +81,9 @@ SYNOPSIS:
     wperf detect [--json] [OPTIONS]
         List installed WindowsPerf-like Kernel Drivers (match GUID).
 
+    wperf man [--json]
+        Plain text information about one or more specified event(s), metric(s), and or group metric(s).
+
 OPTIONS:
     -h, --help
         Run wperf help command.

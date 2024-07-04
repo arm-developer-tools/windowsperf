@@ -57,6 +57,9 @@ SYNOPSIS:
     wperf detect [--json] [OPTIONS]
         List installed WindowsPerf-like Kernel Drivers (match GUID).
 
+    wperf man [--json]
+        Manual style information about one or more specified event(s), metric(s), and or group(s) of metrics.
+
 OPTIONS:
     -h, --help
         Run wperf help command.
@@ -313,6 +316,35 @@ List of supported groups of metrics (to be used in -m)
         Miss_Ratio               branch_misprediction_ratio,itlb_walk_ratio,dtlb_walk_ratio,l1i_tlb_miss_ratio,l1d_tlb_miss_ratio,l2_tlb_miss_ratio,l1i_cache_miss_ratio,l1d_cache_miss_ratio,l2_cache_miss_ratio,ll_cache_read_miss_ratio
         Operation_Mix            load_percentage,store_percentage,integer_dp_percentage,simd_percentage,scalar_fp_percentage,branch_percentage,crypto_percentage
 
+```
+
+## List PMU events, metrics and groups of metrics detailed information with `man`
+
+Obtain information about a specific set of PMU events, metrics and groups of metrics with `man` (in manual style).
+Use `wperf list [-v]` command to list all available events, metrics or groups of metrics first.
+
+```
+>wperf man ld_spec
+
+NAME
+    ld_spec
+DESCRIPTION
+    Operation speculatively executed
+```
+
+Note: To learn about events, metrics or groups of metrics available on other CPUs, prefix the option with the CPU name (default is detected CPU) followed by `/` and name.
+
+```
+>wperf man neoverse-v1/fp_fixed_ops_spec,neoverse-n1/ld_spec
+
+NAME
+    fp_fixed_ops_spec
+DESCRIPTION
+    Non-scalable floating-point element ALU operations speculatively execute
+NAME
+    ld_spec
+DESCRIPTION
+    Operation speculatively executed
 ```
 
 ## Obtain information about `WindowsPerf` configuration with `test`
