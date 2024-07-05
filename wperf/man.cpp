@@ -42,6 +42,8 @@ void print_event(pmu_device& pdev, const std::wstring& product_name, const std::
 
 	_col1.push_back(L"NAME");
 	_col2.push_back(event.name + L" - " + event.title);
+	_col1.push_back(L"DESCRIPTION");
+	_col2.push_back(event.description);
 }
 
 void print_groups_metric(pmu_device& pdev, const std::wstring& product_name, const std::wstring& requested_arg) 

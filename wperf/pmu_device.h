@@ -89,6 +89,7 @@ struct product_event
     std::wstring name;              // Event name
     uint16_t index{};                 // Event index
     std::wstring title;             // Event title / short description
+    std::wstring description;       // Event long description
 };
 
 struct product_metric

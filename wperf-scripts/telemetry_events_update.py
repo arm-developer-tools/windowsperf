@@ -66,7 +66,7 @@ input_mode = "url"          # default input is presumed to be URL, unless specif
 output_file = sys.stdout    # default output is presumed stdout, unless specified otherwise
 
 def ts_quote(s):
-    return '"' + s + '"'
+     return '"' + s.replace('\n', '\\n') + '"'
 
 def ts_align(s, size):
     return s + ' '*(size - len(s))
@@ -207,7 +207,8 @@ def ts_parse_events(j, name):
                   ts_align(event.upper(), event_name_max_len),
                   events[event]["code"],
                   ts_align(ts_quote(event.lower()), event_name_max_len),
-                  ts_quote(events[event]["title"])]
+                  ts_quote(events[event]["title"]),
+                  ts_quote(events[event]["description"])]
 
         values = ','.join(values)
         ts_print_define(DEFINE, values)

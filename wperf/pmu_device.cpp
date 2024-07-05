@@ -146,7 +146,7 @@ void pmu_device::init_ts_groups_metrics()
 
 void pmu_device::init_ts_events()
 {   // Initialize Telemetry Solution events for each product
-#       define WPERF_TS_EVENTS(A,B,C,D,E) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E) };
+#       define WPERF_TS_EVENTS(A,B,C,D,E,F) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E),std::wstring(L##F) };
 #       define WPERF_TS_METRICS(...)
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
