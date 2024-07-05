@@ -135,7 +135,7 @@ void pmu_device::init_ts_groups_metrics()
 #       define WPERF_TS_METRICS(...)
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
-#       define WPERF_TS_GROUPS_METRICS(A,B,C,D) m_product_groups_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D) };
+#       define WPERF_TS_GROUPS_METRICS(A,B,C,D,E) m_product_groups_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D), std::wstring(L##E) };
 #       include "wperf-common/telemetry-solution-data.def"
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS

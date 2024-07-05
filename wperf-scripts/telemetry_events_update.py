@@ -185,7 +185,8 @@ def ts_parse_groups_metrics(j, name):
         values = [ts_quote(name),
                   ts_align(ts_quote(metric), metric_name_max_len),
                   ts_align(ts_quote(','.join(metrics[metric]["metrics"]).lower()), events_name_max_len),
-                  ts_quote(metrics[metric]["title"])]
+                  ts_quote(metrics[metric]["title"]),
+                  ts_quote(metrics[metric]["description"])]
         values = ','.join(values)
         ts_print_define(DEFINE, values)
 

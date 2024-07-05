@@ -107,6 +107,7 @@ struct product_group_metrics
     std::wstring name;              // :^)
     std::wstring metrics_raw;       // Raw string of metrics, comma separated e.g. "l2_cache_mpki,l2_cache_miss_ratio"
     std::wstring title;             // Metric title / short description
+    std::wstring description;       // Metric Group Description
 };
 
 

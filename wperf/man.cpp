@@ -56,6 +56,8 @@ void print_groups_metric(pmu_device& pdev, const std::wstring& product_name, con
 
 	_col1.push_back(L"NAME");
 	_col2.push_back(group_metrics.name + L" - " + group_metrics.title);
+	_col1.push_back(L"DESCRIPTION");
+	_col2.push_back(group_metrics.description);
 	_col1.push_back(L"METRICS");
 	_col2.push_back(group_metrics.metrics_raw);
 }
