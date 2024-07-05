@@ -31,8 +31,12 @@ void print_metric(pmu_device& pdev, const std::wstring& product_name, const std:
 
 	_col1.push_back(L"NAME");
 	_col2.push_back(metric.name + L" - " + metric.title);
+	_col1.push_back(L"RAW EVENTS");
+	_col2.push_back(metric.events_raw);
 	_col1.push_back(L"FORMULA");
 	_col2.push_back(metric.metric_formula);
+	_col1.push_back(L"UNIT");
+	_col2.push_back(metric.metric_unit);
 }
 
 
