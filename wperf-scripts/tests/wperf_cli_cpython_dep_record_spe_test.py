@@ -42,9 +42,134 @@ from common_cpython import CPYTHON_EXE_DIR
 
 ### Test cases
 
+@pytest.mark.parametrize("SPE_FILTERS",
+[
+    ("x"),
+    ("_"),
+    ("asdasd"),
+    ("b"),                  # Should be e.g. `b=0` or `b=1`
+    ("ld"),                 # Should be e.g. `ld=0`
+    ("st"),                 # Should be e.g. `st=0`
+    ("load_filter"),        # Should be e.g. `load_filter=0`
+    ("store_filter"),       # Should be e.g. `store_filter=0`
+    ("branch_filter"),      # Should be e.g. `branch_filter=0`
+
+    ("load_filter=0,x"),
+    ("load_filter=0,_"),
+    ("load_filter=0,asdasd"),
+    ("load_filter=0,b"),                  # Should be e.g. `b=0` or `b=1`
+    ("load_filter=0,ld"),                 # Should be e.g. `ld=0`
+    ("load_filter=0,st"),                 # Should be e.g. `st=0`
+    ("load_filter=0,load_filter"),        # Should be e.g. `load_filter=0`
+    ("load_filter=0,store_filter"),       # Should be e.g. `store_filter=0`
+    ("load_filter=0,branch_filter"),      # Should be e.g. `branch_filter=0`
+]
+)
+def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
+    """ Test `wperf record` with SPE CLI not OK filters, we expect:
+
+    "incorrect SPE filter: '<SPE_FILTERS>' in <SPE_FILTERS>"
+
+    """
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    #
+    # Run for CPython payload but we should fail when we hit CLI parser errors
+    #
+    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    _, stderr = run_command(cmd)
+
+    assert b"incorrect SPE filter:" in stderr
+
+@pytest.mark.parametrize("SPE_FILTERS",
+[
+    ("=0"),
+    ("=1"),
+
+    ("load_filter=0,=0"),
+    ("load_filter=0,=1"),
+]
+)
+def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
+    """ Test `wperf record` with SPE CLI not OK filters, we expect:
+
+    "incorrect SPE filter name: '<SPE_FILTERS>' in <SPE_FILTERS>"
+
+    This error is for "empty" filter name.
+    """
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    #
+    # Run for CPython payload but we should fail when we hit CLI parser errors
+    #
+    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    _, stderr = run_command(cmd)
+
+    assert b"incorrect SPE filter name:" in stderr
+
+@pytest.mark.parametrize("SPE_FILTERS",
+[
+    ("load_filter="),
+    ("store_filter="),
+    ("branch_filter="),
+    ("ld="),
+    ("st="),
+    ("b="),
+    ("load_filter=3"),
+    ("load_filter=a"),
+    ("load_filter=one"),
+
+    ("load_filter=0,load_filter="),
+    ("load_filter=0,store_filter="),
+    ("load_filter=0,branch_filter="),
+    ("load_filter=0,ld="),
+    ("load_filter=0,st="),
+    ("load_filter=0,b="),
+    ("load_filter=0,load_filter=3"),
+    ("load_filter=0,load_filter=a"),
+    ("load_filter=0,load_filter=one"),    
+]
+)
+def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):
+    """ Test `wperf record` with SPE CLI not OK filters, we expect:
+
+    "incorrect SPE filter value: '<SPE_FILTERS>' in <SPE_FILTERS>"
+    """
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    #
+    # Run for CPython payload but we should fail when we hit CLI parser errors
+    #
+    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    _, stderr = run_command(cmd)
+
+    assert b"incorrect SPE filter value:" in stderr
+
 @pytest.mark.parametrize("EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG",
 [
-    ("arm_spe_0", "", "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("arm_spe_0", "",               "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("arm_spe_0", "load_filter=1",  "x_mul:python312_d.dll", 65, "10**10**100"),
 ]
 )
 def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG):
@@ -69,46 +194,48 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
         pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
 
     overheads = []  # Results of sampling of the symbol
-    #
-    # Run test N times and check for media sampling output
-    #
-    sleep(2)    # Cool-down the core
+    core_no = 3
+    for _ in range(3):
+        #
+        # Run test N times and check for media sampling output
+        #
+        sleep(2)    # Cool-down the core
 
-    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 3 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
-    stdout, _ = run_command(cmd)
+        cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c {core_no} --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+        stdout, _ = run_command(cmd)
+        core_no += 1
 
-    # Sanity checks
-    assert is_json(stdout), f"in {cmd}"
-    json_output = json.loads(stdout)
+        # Sanity checks
+        assert is_json(stdout), f"in {cmd}"
+        json_output = json.loads(stdout)
 
-    # Check sampling JSON output for expected functions
-    assert "sampling" in json_output
-    assert "events" in json_output["sampling"]
+        # Check sampling JSON output for expected functions
+        assert "sampling" in json_output
+        assert "events" in json_output["sampling"]
 
-    events = json_output["sampling"]["events"]  # List of dictionaries, for each event
-    assert len(events) >= 1  # We expect at least one record
+        events = json_output["sampling"]["events"]  # List of dictionaries, for each event
+        assert len(events) >= 1  # We expect at least one record
 
-    overheads = []
-    """
-    "events": [
-        {
-            "type": "BRANCH_OR_EXCEPTION-UNCONDITIONAL-DIRECT/retired",
-            "samples": [
-                {
-                    "overhead": 100,
-                    "count": 7,
-                    "symbol": "x_mul:python312_d.dll"
-                }
-            ],
-            "interval": 0,
-            "printed_sample_num": 1,
-            "annotate": []
-        },
-    """
-    for event in events:    # Gather all symbol overheads for all events for given symbol
-        for sample in event["samples"]:
-            if sample["symbol"] == HOT_SYMBOL:
-                overheads.append(int(sample["overhead"]))
+        """
+        "events": [
+            {
+                "type": "BRANCH_OR_EXCEPTION-UNCONDITIONAL-DIRECT/retired",
+                "samples": [
+                    {
+                        "overhead": 100,
+                        "count": 7,
+                        "symbol": "x_mul:python312_d.dll"
+                    }
+                ],
+                "interval": 0,
+                "printed_sample_num": 1,
+                "annotate": []
+            },
+        """
+        for event in events:    # Gather all symbol overheads for all events for given symbol
+            for sample in event["samples"]:
+                if sample["symbol"] == HOT_SYMBOL:
+                    overheads.append(int(sample["overhead"]))
 
     #
     # We want to see at least e.g. 70% of samples in e.g `x_mul`:
