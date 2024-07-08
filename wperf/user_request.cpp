@@ -251,6 +251,7 @@ void user_request::print_help_header()
 #else
         << L"Release"
 #endif
+        << ENABLE_FEAT_STR
         << L") WOA profiling with performance counters."
         << std::endl;
 

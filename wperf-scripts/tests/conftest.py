@@ -80,5 +80,6 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         component = w["Component"]
         version = w["Version"]
         gitver = w["GitVer"]
+        featurestring = w["FeatureString"]
         # Add section entry
-        terminalreporter.write(f"{component}: {version}.{gitver} {linesep}")
+        terminalreporter.write(f"{component}: {version}.{gitver}{featurestring} {linesep}")

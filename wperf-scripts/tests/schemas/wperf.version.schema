@@ -10,12 +10,13 @@
             "uniqueItems": true,
             "items": {
                 "type": "object",
-                "required": [ "Component", "Version", "GitVer" ],
+                "required": [ "Component", "Version", "GitVer", "FeatureString" ],
                 "additionalProperties": false,
                 "properties": {
                     "Component": { "type" : "string" },
                     "Version": { "type" : "string" },
-                    "GitVer": { "type" : "string" }
+                    "GitVer": { "type" : "string" },
+                    "FeatureString": { "type" : "string" }
                 }
             }
         }

@@ -32,6 +32,7 @@
 #include "wperf-common\macros.h"
 
 #define MAX_GITVER_SIZE 32
+#define MAX_FEATURESTRING_SIZE 128
 #define MAX_DEVICE_ID_STR_SIZE 128
 
 //
@@ -88,6 +89,7 @@ struct version_info
     UINT8 minor;
     UINT8 patch;
     WCHAR gitver[MAX_GITVER_SIZE];
+    WCHAR featurestring[MAX_FEATURESTRING_SIZE];
 };
 
 #define PMU_CTL_ACTION_OFFSET 0x900

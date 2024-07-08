@@ -50,6 +50,45 @@
 // See: https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define WPERF_XSTRING(s)  WPERF_STRING(s)
 #define WPERF_STRING(s)   #s
+//
+// Supporting macros used to create static WindowsPerf Feature string based on macros defined during compilation
+//
+// Use ENABLE_FEAT_STR macro to get Feature String
+// Use ENABLE_FEAT_SIZE macro to get Feature String size in bytes (including trailing '\0')
+//
+#define ENABLE_TRACING_FEAT                   "+trace"
+#define ENABLE_ETW_TRACING_FEAT               "+etw-drv"
+#define ENABLE_ETW_TRACING_APP_FEAT           "+etw-app"
+#define ENABLE_SPE_FEAT                       "+spe"
+
+// Generates WindowsPerf Features string, e.g. "+trace""+etw-drv""+etw-app"""
+#define FEAT_XSTRING(s)                       FEAT_STRING(s)
+#define FEAT_STRING(s)                        s
+
+#define ENABLE_FEAT_JOIN(_1, _2, _3, _4, _5)  FEAT_XSTRING(_1) ## FEAT_XSTRING(_2) ## FEAT_XSTRING(_3) ## FEAT_XSTRING(_4) ## FEAT_XSTRING(_5)
+#define ENABLE_FEAT_STR                       ENABLE_FEAT_JOIN(L"", ENABLE_TRACING_FEAT, ENABLE_ETW_TRACING_FEAT, ENABLE_ETW_TRACING_APP_FEAT, ENABLE_SPE_FEAT)
+#define ENABLE_FEAT_SIZE                      sizeof ENABLE_FEAT_STR
+
+/* Clear _FEAT defines to remove them from feature string*/
+#ifndef ENABLE_TRACING
+#undef ENABLE_TRACING_FEAT
+#define ENABLE_TRACING_FEAT ""
+#endif
+
+#ifndef ENABLE_ETW_TRACING
+#undef ENABLE_ETW_TRACING_FEAT
+#define ENABLE_ETW_TRACING_FEAT	""
+#endif
+
+#ifndef ENABLE_ETW_TRACING_APP
+#undef ENABLE_ETW_TRACING_APP_FEAT
+#define ENABLE_ETW_TRACING_APP_FEAT ""
+#endif
+
+#ifndef ENABLE_SPE
+#undef ENABLE_SPE_FEAT
+#define ENABLE_SPE_FEAT	""
+#endif
 
 //
 // Macros used to automatically update `wperf-driver/Resource.rc` macros such as:

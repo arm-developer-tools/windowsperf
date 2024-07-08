@@ -44,12 +44,22 @@ def test_wperf_cli_no_commands(record_property):
     """
     Output should be something like this:
 
+    ```
     WindowsPerf ver. 2.5.1 (4153c04e/Release) WOA profiling with performance counters.
     Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
     Use --help for help.
+    ```
+
+    or new output with FeatureString ("+etw-app")
+
+    ```
+    WindowsPerf ver. 3.7.0 (d88d19fa/Debug+etw-app) WOA profiling with performance counters.
+    Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
+    Use --help for help.
+    ```
     """
 
-    ver_str = re.findall(rb'WindowsPerf ver\. \d+\.\d+\.\d+ \(([0-9a-fA-F]+(-[a-zA-Z]+)?\/[ReleaseDebug]+)\)', stdout)
+    ver_str = re.findall(rb'WindowsPerf ver\. \d+\.\d+\.\d+ \(([0-9a-fA-F]+(-[a-zA-Z]+)?\/[ReleaseDebug]+[\-\+0-9a-z]*)\)', stdout)
     record_property("wperf_version_str", ver_str)
 
     assert len(ver_str) == 1    # ['WindowsPerf ver. 2.5.1 (4153c04e/Release)']

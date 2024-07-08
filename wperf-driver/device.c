@@ -628,6 +628,10 @@ WindowsPerfDeviceCreate(
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Performance Monitors Extension: %s\n", pmu_str));
     }
 
+    // Print Feature String based on defined macros
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "FeatureString:%ls\n", ENABLE_FEAT_STR));
+
+    // CPU cores `CoreInfo` structure init
     numCores = KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "%d cores detected\n", numCores));
 

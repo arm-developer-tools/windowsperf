@@ -55,12 +55,15 @@ def test_wperf_version_json(record_property):
         assert "Component" in w
         assert "Version" in w
         assert "GitVer" in w
+        assert "FeatureString" in w
 
         component = w["Component"]
         version = w["Version"]
         gitver = w["GitVer"]
+        featurestring = w["FeatureString"]
         record_property(f"{component}_version", version)
         record_property(f"{component}_gitver", gitver)
+        record_property(f"{component}_featurestring", featurestring)
 
 def test_wperf_version_json_file_output_exists(tmp_path):
     """ Test `wperf --version` JSON output to file"""
@@ -80,4 +83,3 @@ def test_wperf_version_json_file_output_valid(tmp_path):
             assert is_json(json_obj)
     except:
         assert 0
-

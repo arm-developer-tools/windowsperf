@@ -991,8 +991,14 @@ clean_lock_acquire:
         ver_info->major = MAJOR;
         ver_info->minor = MINOR;
         ver_info->patch = PATCH;
+
+        static_assert(sizeof(WPERF_GIT_VER_STR) < MAX_GITVER_SIZE, "struct version_info.gitver[] size too small");
         const wchar_t* gitver = WPERF_GIT_VER_STR;
         memcpy(ver_info->gitver, gitver, sizeof(WPERF_GIT_VER_STR));
+
+        static_assert(sizeof(ENABLE_FEAT_STR) < MAX_FEATURESTRING_SIZE, "struct version_info.featurestring[] size too small");
+        const wchar_t* featurestring = ENABLE_FEAT_STR;
+        memcpy(ver_info->featurestring, featurestring, sizeof(ENABLE_FEAT_STR));
 
         *outputSize = sizeof(struct version_info);
         if (*outputSize > OutBufSize)
