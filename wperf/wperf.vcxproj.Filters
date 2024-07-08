@@ -66,8 +66,71 @@
     <ClCompile Include="spe_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="man.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -130,5 +193,15 @@
     <None Include="*.def;*.bat;*.hpj;*.asmx">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <MessageCompile Include="wperf-etw-manifest.xml">
+      <Filter>Resource Files</Filter>
+    </MessageCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="wperf-etw.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

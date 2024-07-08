@@ -3,4 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <FrameWorkInteraction>FvOn</FrameWorkInteraction>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">
+    <FrameWorkInteraction>FvOn</FrameWorkInteraction>
+  </PropertyGroup>
 </Project>

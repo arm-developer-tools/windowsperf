@@ -1,6 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug+SPE|ARM64">
+      <Configuration>Debug+SPE</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug+SPE|Win32">
+      <Configuration>Debug+SPE</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug+SPE|x64">
+      <Configuration>Debug+SPE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|ARM64">
       <Configuration>Debug</Configuration>
       <Platform>ARM64</Platform>
@@ -53,6 +65,15 @@
     <ConfigurationType>Application</ConfigurationType>
     <Driver_SpectreMitigation>Spectre</Driver_SpectreMitigation>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|x64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>True</UseDebugLibraries>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <DriverType />
+    <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <ConfigurationType>Application</ConfigurationType>
+    <Driver_SpectreMitigation>Spectre</Driver_SpectreMitigation>
+  </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetVersion>Windows10</TargetVersion>
     <UseDebugLibraries>False</UseDebugLibraries>
@@ -78,7 +99,24 @@
     <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|Win32'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>True</UseDebugLibraries>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <DriverType />
+    <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>True</UseDebugLibraries>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <DriverType />
+    <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <ConfigurationType>Application</ConfigurationType>
+    <Driver_SpectreMitigation>Spectre</Driver_SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
     <UseDebugLibraries>True</UseDebugLibraries>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
@@ -97,6 +135,9 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
   </ImportGroup>
@@ -106,7 +147,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
   </ImportGroup>
   <ItemGroup Label="WrappedTaskItems">
@@ -120,18 +167,25 @@
       <GeneratedFilesBaseName>wperf-driver-etw</GeneratedFilesBaseName>
       <UseBaseNameOfInput>true</UseBaseNameOfInput>
       <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)</HeaderFilePath>
+      <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">$(IntDir)</HeaderFilePath>
       <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)</RCFilePath>
+      <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">$(IntDir)</RCFilePath>
       <HeaderFilePath Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)</HeaderFilePath>
       <RCFilePath Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)</RCFilePath>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</DeploymentContent>
       <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|Win32'">wperf-etw</GeneratedFilesBaseName>
       <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">wperf-etw</GeneratedFilesBaseName>
       <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">wperf-etw</GeneratedFilesBaseName>
       <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">wperf-etw</GeneratedFilesBaseName>
       <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">wperf-etw</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|x64'">wperf-etw</GeneratedFilesBaseName>
       <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">wperf-etw</GeneratedFilesBaseName>
     </MessageCompile>
   </ItemGroup>
@@ -139,6 +193,9 @@
     <TargetName>wperf</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>wperf</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|x64'">
     <TargetName>wperf</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -151,7 +208,15 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>wperf</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|Win32'">
+    <TargetName>wperf</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <TargetName>wperf</TargetName>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <ApiValidator_Enable>false</ApiValidator_Enable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">
     <TargetName>wperf</TargetName>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <ApiValidator_Enable>false</ApiValidator_Enable>
@@ -179,6 +244,30 @@
     </DriverSign>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies);mincore.lib</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+    </ResourceCompile>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+    </Midl>
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|x64'">
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies);mincore.lib</AdditionalDependencies>
     </Link>
@@ -272,6 +361,28 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|Win32'">
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies);mincore.lib</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+    </ResourceCompile>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
+      <ExceptionHandling>
+      </ExceptionHandling>
+    </ClCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+    </Midl>
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies);mincore.lib</AdditionalDependencies>
@@ -284,6 +395,36 @@
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP</PreprocessorDefinitions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+    </Midl>
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)wperf-scripts\vergen\gengitver.ps1 $(SolutionDir)wperf-common\gitver.def</Command>
+      <Message>Generate wperf-common\gitver.def (WPERF_GIT_VER_STR)</Message>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug+SPE|ARM64'">
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies);mincore.lib</AdditionalDependencies>
+      <LinkTimeCodeGeneration>
+      </LinkTimeCodeGeneration>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
+    </ResourceCompile>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(DDK_INC_PATH);$(SDK_INC_PATH);$(SolutionDir);$(VSInstallDir)DIA SDK\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE;ENABLE_ETW_TRACING_APP;ENABLE_SPE</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
