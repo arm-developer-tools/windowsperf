@@ -510,9 +510,11 @@ wmain(
 
             uint32_t stop_bits = CTL_FLAG_CORE;
 
-            pmu_device.stop(stop_bits);
-
-            pmu_device.set_sample_src(request.ioctl_events_sample, request.do_kernel);
+            if (!request.m_sampling_with_spe)
+            {
+                pmu_device.stop(stop_bits);
+                pmu_device.set_sample_src(request.ioctl_events_sample, request.do_kernel);
+            }
 
             if (request.do_export_perf_data)
             {
@@ -715,7 +717,7 @@ wmain(
                     static_cast<int64_t>(request.count_duration * 10) : _I64_MAX;
                 int64_t t_count1 = sampling_duration_iter;
 
-                if (request.m_sampling_with_spe) pmu_device.spe_start();
+                if (request.m_sampling_with_spe) pmu_device.spe_start(request.m_sampling_flags);
                 else pmu_device.start_sample();
 
                 m_out.GetOutputStream() << L"sampling ...";

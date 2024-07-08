@@ -124,7 +124,7 @@ public:
 
     // SPE
     void spe_init();
-    void spe_start();
+    void spe_start(const std::map<std::wstring, bool>& flags);
     void spe_stop();
     bool spe_get();
 

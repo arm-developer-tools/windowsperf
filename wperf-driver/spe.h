@@ -28,6 +28,7 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#include "wperf-common/iorequest.h"
 
 //
 // Arm Statistical Profiling Extensions (SPE)
@@ -36,6 +37,11 @@
 #define PMSCR_EL1_E0SPE_E1SPE               0b11
 #define PMBLIMITR_EL1_E                     1ULL
 #define PMBSR_EL1_S                         BIT(17)
+#define PMSFCR_EL1_ST                       BIT(18)
+#define PMSFCR_EL1_LD                       BIT(17)
+#define PMSFCR_EL1_B                        BIT(16)
+#define PMSFCR_EL1_FT                       BIT(1)
+#define PMSIRR_EL1_RND                      BIT(0)
 #define PMBLIMITR_EL1_LIMIT_MASK            (~((UINT64)0xFFF))  // PMBLIMITR.LIMIT, bits [63:12]
 
 #define SPE_MEMORY_BUFFER_SIZE              (PAGE_SIZE*128)     // PAGE_SIZE is defined in WDM.h
@@ -77,8 +83,8 @@ typedef struct spe_info_
     }                                                                                                                   \
     case IOCTL_PMU_CTL_SPE_START:                                                                                       \
     {                                                                                                                   \
-        struct pmu_ctl_hdr* ctl_req = (struct pmu_ctl_hdr*)pInBuffer;                                                   \
-        spe_start(&queueContext->SpeWorkItem, ctl_req->cores_idx.cores_no[0]);                                          \
+        struct spe_ctl_hdr* ctl_req = (struct spe_ctl_hdr*)pInBuffer;                                                   \
+        spe_start(&queueContext->SpeWorkItem, ctl_req);                                                                 \
         *outputSize = 0;                                                                                                \
         break;                                                                                                          \
     }                                                                                                                   \
@@ -93,7 +99,7 @@ typedef struct spe_info_
 void spe_get_size(WDFWORKITEM* workItem, UINT32 core_idx);
 void spe_get_buffer(WDFWORKITEM* workItem, UINT32 core_idx, PVOID target, UINT64 size);
 void spe_init(WDFWORKITEM* workItem);
-void spe_start(WDFWORKITEM* workItem, UINT32 core_idx);
+void spe_start(WDFWORKITEM* workItem, struct spe_ctl_hdr *req);
 void spe_stop(WDFWORKITEM* workItem, UINT32 core_idx);
 void spe_destroy();
 

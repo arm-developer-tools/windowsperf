@@ -262,16 +262,26 @@ bool pmu_device::spe_get()
     return m_spe_size_to_copy > 0;
 }
 
-void pmu_device::spe_start()
+void pmu_device::spe_start(const std::map<std::wstring, bool>& flags)
 {
     if (!m_has_spe) return;
 
-    struct pmu_ctl_hdr ctl { 0 };
+    struct spe_ctl_hdr ctl { 0 };
     DWORD res_len = 0;
 
     ctl.cores_idx.cores_count = 1;
     ctl.cores_idx.cores_no[0] = cores_idx[0];
-    ctl.flags = CTL_FLAG_SPE;
+    ctl.event_filter = 0;
+    UINT8 opfilter = 0;
+    for (const auto& [key, val] : flags)
+    {
+        if ((key == L"load_filter" || key == L"ld") && val)     opfilter |= SPE_OPERATON_FILTER_LD;
+        if ((key == L"store_filter" || key == L"st") && val)    opfilter |= SPE_OPERATON_FILTER_ST;
+        if ((key == L"branch_filter" || key == L"b") && val)    opfilter |= SPE_OPERATON_FILTER_B;
+    }
+    ctl.operation_filter = opfilter;
+    ctl.interval = 1024;
+    ctl.config_flags = 0;
 
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_START, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
     if (!status)

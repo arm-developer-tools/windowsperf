@@ -86,6 +86,10 @@ WDF_DECLARE_CONTEXT_TYPE(WORK_ITEM_CTXT)
 typedef struct SPE_WORK_ITEM_CTXT_
 {
     UINT32  core_idx;
+    UINT8  operation_filter;
+    UINT64  event_filter;
+    UINT64 config_flags;
+    UINT32 interval;
     size_t cores_count;
     enum pmu_ctl_action action;
 } SPE_WORK_ITEM_CTXT, * PSPE_WORK_ITEM_CTXT;

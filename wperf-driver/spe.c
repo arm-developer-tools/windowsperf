@@ -60,11 +60,6 @@ static ULONG totalCores = 0;
 
 #define STOP_WORK_ON_CORE()  KeRevertToUserGroupAffinityThread(&old_affinity);
 
-VOID SetSPECountRegister(UINT32 count, UINT32 ecount)
-{
-    _WriteStatusReg(PMSICR_EL1, count | ((UINT64)ecount << 56)); // Set count register
-}
-
 VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
 {
 	PSPE_WORK_ITEM_CTXT context;
@@ -79,14 +74,35 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             START_WORK_ON_CORE(context->core_idx);
             
             _WriteStatusReg(PMBPTR_EL1, (UINT64)SpeMemoryBuffer);
-            //PMBPTR_EL1[63:56] must equal PMBLIMITR_EL1.LIMIT[63:56]
-            _WriteStatusReg(PMBLIMITR_EL1, (UINT64)SpeMemoryBufferLimit | PMBLIMITR_EL1_E); // Enable PMBLIMITR_ELI1.E
+           
+            if(context->operation_filter)
+            {
+                _WriteStatusReg(PMSFCR_EL1, PMSFCR_EL1_FT | ((UINT64)context->operation_filter << 16));
+            }
+            else {
+                _WriteStatusReg(PMSFCR_EL1, 0);
+            }
 
-            _WriteStatusReg(PMSICR_EL1, 0); // Set count register
+            /*
+            * Writing to PMSIRR_EL1 and PMSICR_EL1 seems to be innefective for some reason.
+            * When PMSIRR_EL1 is written to its value just goes to 0 and PMSICR_EL1 seems to be unchanged.
+            * At least this is what can be seen in the logs.
+            * This looks like an unexpected behaviour as the documentation seems to imply that 
+            * PMSCIR_EL1 needs to be zeroed before sampling starts and PMSIRR_EL1.Interval needs to be set. 
+            _WriteStatusReg(PMSICR_EL1, 0);
+            if (context->config_flags & SPE_CTL_FLAG_RND)
+            {
+                _WriteStatusReg(PMSIRR_EL1, PMSIRR_EL1_RND | ((UINT64)context->interval << 8));
+            }
+            else {
+                _WriteStatusReg(PMSIRR_EL1, (UINT64)context->interval << 8);
+            }
+            */
 
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
+            //PMBPTR_EL1[63:56] must equal PMBLIMITR_EL1.LIMIT[63:56]
+            _WriteStatusReg(PMBLIMITR_EL1, (UINT64)SpeMemoryBufferLimit | PMBLIMITR_EL1_E); // Enable PMBLIMITR_ELI1.E
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) | PMSCR_EL1_E0SPE_E1SPE); // Enable PMSCR_EL1.{E0SPE,E1SPE}
-            SetSPECountRegister(1024, 1024);
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer 0x%llX\n", _ReadStatusReg(PMBPTR_EL1)));
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer limit address %llX\n", _ReadStatusReg(PMBLIMITR_EL1)));
@@ -95,6 +111,8 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: sampling profile ID register %llX\n", _ReadStatusReg(PMSIDR_EL1)));
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: PMSFCR_EL1 0x%llX\n", _ReadStatusReg(PMSFCR_EL1)));
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: PMSEVFR_EL1 0x%llX\n", _ReadStatusReg(PMSEVFR_EL1)));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: PMSICR_EL1 0x%llX\n", _ReadStatusReg(PMSICR_EL1)));
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: PMSIRR_EL1 0x%llX\n", _ReadStatusReg(PMSIRR_EL1)));
 
             STOP_WORK_ON_CORE();
             break;
@@ -103,6 +121,9 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
         {
             START_WORK_ON_CORE(context->core_idx);
             UINT64 currentBufferPtr = _ReadStatusReg(PMBPTR_EL1);
+
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: PMSICR_EL1 0x%llX\n", _ReadStatusReg(PMSICR_EL1)));
+
             STOP_WORK_ON_CORE();
 
             spe_bytesToCopy += (currentBufferPtr - (UINT64)lastCopiedPtr);
@@ -113,8 +134,9 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             START_WORK_ON_CORE(context->core_idx);
 
             _WriteStatusReg(PMBLIMITR_EL1, 0); // Disable PMBLIMITR_ELI1.E
-            _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) & (~PMSCR_EL1_E0SPE_E1SPE)); // Disable PMSCR_EL1.{E0SPE,E1SPE}
+
+            _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
             
             STOP_WORK_ON_CORE();
 
@@ -259,8 +281,10 @@ void spe_init(WDFWORKITEM* workItem)
 #endif
 }
 
-void spe_start(WDFWORKITEM* workItem, UINT32 core_idx)
+void spe_start(WDFWORKITEM* workItem, struct spe_ctl_hdr *req)
 {
+    UINT32 core_idx = req->cores_idx.cores_no[0];
+
 #ifdef ENABLE_SPE
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IOCTL: PMU_CTL_SPE_START core_idx %u\n", core_idx));
 
@@ -282,6 +306,10 @@ void spe_start(WDFWORKITEM* workItem, UINT32 core_idx)
     context = WdfObjectGet_SPE_WORK_ITEM_CTXT(*workItem);
     context->action = PMU_CTL_SPE_START;
     context->core_idx = core_idx;
+    context->event_filter = req->event_filter;
+    context->operation_filter = req->operation_filter;
+    context->config_flags = req->config_flags;
+    context->interval = req->interval;
     WdfWorkItemEnqueue(*workItem);
     WdfWorkItemFlush(*workItem);
 #else

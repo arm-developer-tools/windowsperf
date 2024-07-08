@@ -253,6 +253,14 @@ struct spe_ctl_hdr
 {
     struct pmu_ctl_cores_count_hdr cores_idx;
     UINT64 buffer_size;
+    UINT8 operation_filter;
+#define SPE_OPERATON_FILTER_B  0b001
+#define SPE_OPERATON_FILTER_LD 0b010
+#define SPE_OPERATON_FILTER_ST 0b100
+    UINT64 event_filter;
+    UINT64 config_flags;
+    UINT32 interval;
+#define SPE_CTL_FLAG_RND (0x1 << 0)
 };
 
 //
