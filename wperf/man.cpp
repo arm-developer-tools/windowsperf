@@ -1,5 +1,6 @@
 #include "man.h"
 #include "output.h"
+#include "utils.h"
 #include "exception.h"
 
 #include <string>
@@ -23,6 +24,14 @@ static std::vector<Item> requested_items;
 bool inline static is_valid_cpu(const pmu_device& pdev, std::wstring name)
 {
 	return pdev.m_product_configuration.count(name) > 0;
+}
+
+std::vector<std::wstring> static man_get_valid_cpu_list(const pmu_device& pdev)
+{
+	std::vector<std::wstring> result;
+	for (auto const& product : pdev.m_product_configuration)
+		result.push_back(product.first);
+	return result;
 }
 
 void print_metric(pmu_device& pdev, const std::wstring& product_name, const std::wstring& requested_metric) 
@@ -117,7 +126,9 @@ void man(pmu_device& pdev, std::vector<std::wstring>& args, const wchar_t& delim
 
 		if (!is_valid_cpu(pdev, cur_cpu)) 
 		{
-			m_out.GetErrorOutputStream() << L"warning: CPU name: \"" << cur_cpu << "\" not found!" << std::endl;
+			std::wstring avail_cpus = WStringJoin(man_get_valid_cpu_list(pdev), L", ");
+
+			m_out.GetErrorOutputStream() << L"warning: CPU name: \"" << cur_cpu << "\" not found, use " << avail_cpus << L"." << std::endl;
 			throw fatal_exception("ERROR_CPU_NAME");
 		}
 
