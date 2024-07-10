@@ -580,6 +580,64 @@ namespace wperftest
 			}
 		}
 
+		TEST_METHOD(test_TokenizeWideStringOfStringsDelim)
+		{
+			{
+				std::wstring input = L"a";
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(input, L'|', tokens);
+
+				Assert::IsTrue(tokens.size() == 1);
+			}
+
+			{
+				std::wstring input = L"";
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(input, L'|', tokens);
+
+				Assert::IsTrue(tokens.size() == 0);
+			}
+		}
+
+		TEST_METHOD(test_TokenizeWideStringOfStringsDelim_abc)
+		{
+			{
+				std::wstring input = L"x__#__y";
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(input, L'#', tokens);
+
+				Assert::IsTrue(tokens.size() == 2);
+				Assert::AreEqual(tokens[0], std::wstring(L"x__#"));
+				Assert::AreEqual(tokens[1], std::wstring(L"__y"));
+			}
+
+			{
+				std::wstring input = L"a_|_b_|_c";
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(input, L'|', tokens);
+
+				Assert::IsTrue(tokens.size() == 3);
+				Assert::AreEqual(tokens[0], std::wstring(L"a_|"));
+				Assert::AreEqual(tokens[1], std::wstring(L"_b_|"));
+				Assert::AreEqual(tokens[2], std::wstring(L"_c"));
+			}
+
+			{
+				std::wstring input = L"a,b,c,d,e,f,g";
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(input, L',', tokens);
+
+				Assert::IsTrue(tokens.size() == 7);
+				Assert::AreEqual(tokens[0], std::wstring(L"a,"));
+				Assert::AreEqual(tokens[1], std::wstring(L"b,"));
+				Assert::AreEqual(tokens[2], std::wstring(L"c,"));
+				Assert::AreEqual(tokens[3], std::wstring(L"d,"));
+				Assert::AreEqual(tokens[4], std::wstring(L"e,"));
+				Assert::AreEqual(tokens[5], std::wstring(L"f,"));
+				Assert::AreEqual(tokens[6], std::wstring(L"g"));
+			}
+		}
+
 		TEST_METHOD(test_ConvertTimeUnitToSeconds)
 		{
 			const std::unordered_map<std::wstring, double> unitMap = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400}};

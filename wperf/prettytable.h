@@ -475,7 +475,7 @@ public:
 						if (item_relative_row_number == 0)
 						{
 							std::vector<std::wstring> split_lines;
-							TokenizeWideStringOfStrings(arg, L'\n', split_lines, true);
+							TokenizeWideStringOfStringsDelim(arg, L'\n', split_lines);
 
 							std::vector<std::wstring> formatted_lines;
 
@@ -487,17 +487,14 @@ public:
 
 							for (auto& line : formatted_lines)
 							{
-								if (j != 0) // if not header
+								if (j != 0 && line != L"\n") // if not header and empty
 								{
-									out_stream << L'\n';
-
-									if (!line.empty())
-									{
-										out_stream << L"    ";
-									}
+									out_stream << L"    ";
 								}
 
 								out_stream << line;
+								
+								if (j == 0) out_stream << std::endl;
 							}
 						}
 					}
@@ -641,9 +638,12 @@ private:
 		while (pos < str.length())
 		{
 			size_t delim_pos = str.rfind(delim, pos);
+
 			if (delim_pos != std::wstring::npos && delim_pos > pos - n)
 			{
 				result.push_back(str.substr(0, delim_pos));
+				result.push_back(L"\n");
+
 				str = str.substr(delim_pos + delim.size());
 				pos = n;
 			}
@@ -652,6 +652,7 @@ private:
 				pos += n;
 			}
 		}
+
 		result.push_back(str);
 		return result;
 	}

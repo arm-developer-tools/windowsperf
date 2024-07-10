@@ -44,8 +44,7 @@
 /// <param name="str">Source string to get the tokens</param>
 /// <param name="delim">The delimiting character</param>
 /// <param name="tokens">The vector that is going to receive the tokens</param>
-/// <param name="includeDelim">Include DELIM at the end of the token</param>
-void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens, bool includeDelim)
+void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens)
 {
     using size_type = std::basic_string<wchar_t>::size_type;
     size_type pos = 0, last_pos = 0;
@@ -55,12 +54,28 @@ void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, 
         if (pos != last_pos)
         {
             std::wstring token = str.substr(last_pos, pos - last_pos);
-            if (includeDelim)
-            {
-                token += delim;
-            }
             tokens.push_back(token);
         }
+        last_pos = pos + 1;
+        pos = str.find(delim, last_pos);
+    }
+    if (last_pos < str.size())
+    {
+        tokens.push_back(str.substr(last_pos, str.size() - last_pos + 1));
+    }
+}
+
+void TokenizeWideStringOfStringsDelim(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens)
+{
+    using size_type = std::basic_string<wchar_t>::size_type;
+    size_type pos = 0, last_pos = 0;
+    pos = str.find(delim);
+    while (pos != std::basic_string<wchar_t>::npos)
+    {
+        std::wstring token = str.substr(last_pos, pos - last_pos);
+        token += delim;
+        tokens.push_back(token);
+
         last_pos = pos + 1;
         pos = str.find(delim, last_pos);
     }
