@@ -44,16 +44,22 @@
 /// <param name="str">Source string to get the tokens</param>
 /// <param name="delim">The delimiting character</param>
 /// <param name="tokens">The vector that is going to receive the tokens</param>
-void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens)
+/// <param name="includeDelim">Include DELIM at the end of the token</param>
+void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens, bool includeDelim)
 {
     using size_type = std::basic_string<wchar_t>::size_type;
     size_type pos = 0, last_pos = 0;
     pos = str.find(delim);
     while (pos != std::basic_string<wchar_t>::npos)
     {
-        if(pos != last_pos)
+        if (pos != last_pos)
         {
-            tokens.push_back(str.substr(last_pos, pos - last_pos));
+            std::wstring token = str.substr(last_pos, pos - last_pos);
+            if (includeDelim)
+            {
+                token += delim;
+            }
+            tokens.push_back(token);
         }
         last_pos = pos + 1;
         pos = str.find(delim, last_pos);
@@ -63,6 +69,7 @@ void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, 
         tokens.push_back(str.substr(last_pos, str.size() - last_pos + 1));
     }
 }
+
 
 std::string MultiByteFromWideString(const wchar_t* wstr)
 {
@@ -219,9 +226,9 @@ bool ReplaceTokenInString(std::string& input, const std::string old_token, const
 /// <summary>
 /// Convert time from one of [milliseconds, seconds, minutes, hours, days] to seconds
 /// </summary> 
-/// <param name="number"> Input number to be converted</param>
-/// <param name="unit"> Unit of input number</param>
-/// <param name="unitConversionMap"> Map of wstring unit to 
+/// <param name="number">Input number to be converted</param>
+/// <param name="unit">Unit of input number</param>
+/// <param name="unitConversionMap">Map of wstring unit multiplier</param>
 double ConvertNumberWithUnit(double number, std::wstring unit, const std::unordered_map<std::wstring, double>& unitConversionMap)
 {
     //takes a number and a unit, multiplies the number by a value to obtain number in desired units
@@ -230,4 +237,21 @@ double ConvertNumberWithUnit(double number, std::wstring unit, const std::unorde
     double result = number * multiplier;
 
     return result;
+}
+
+/// <summary>
+/// Replace all OLD_TOKEN occurances with NEW_TOKEN
+/// </summary>
+/// <param name="str">Input to be converted</param>
+/// <param name="old_token">What to replace</param>
+/// <param name="new_token">What to replace with</param>
+void ReplaceAllTokensInWString(std::wstring& str, const std::wstring& old_token, const std::wstring& new_token)
+{
+    size_t pos = 0;
+
+    while ((pos = str.find(old_token, pos)) != std::wstring::npos)
+    {
+        str.replace(pos, old_token.size(), new_token);
+        pos += new_token.size();
+    }
 }

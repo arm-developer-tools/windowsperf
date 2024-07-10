@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <variant>
 #include "outpututil.h"
+#include "utils.h"
 
 // minwindef.h define a macro called max making it impossible to use std::max without undefining the macro first
 #undef max
@@ -466,11 +467,6 @@ public:
 
 		for (const auto& header : m_header)
 		{
-			if (j != 0) 
-			{
-				out_stream << std::endl << L"    ";
-			}
-
 			std::visit([&](auto&& arg)
 				{
 					using T = std::decay_t<decltype(arg)>;
@@ -478,7 +474,31 @@ public:
 					{
 						if (item_relative_row_number == 0)
 						{
-							out_stream << arg;
+							std::vector<std::wstring> split_lines;
+							TokenizeWideStringOfStrings(arg, L'\n', split_lines, true);
+
+							std::vector<std::wstring> formatted_lines;
+
+							for(auto& line : split_lines)
+							{
+								std::vector<std::wstring> broken_line = formatString(line, L" ", 81);
+								formatted_lines.insert(formatted_lines.end(), broken_line.begin(), broken_line.end());
+							}
+
+							for (auto& line : formatted_lines)
+							{
+								if (j != 0) // if not header
+								{
+									out_stream << L'\n';
+
+									if (!line.empty())
+									{
+										out_stream << L"    ";
+									}
+								}
+
+								out_stream << line;
+							}
 						}
 					}
 					else if constexpr (std::is_same_v<T, PrettyTable<CharType>>)
@@ -613,6 +633,29 @@ private:
 
 		return std::visit([=](auto&& arg) -> size_t { return arg.length(); }, *max_len);
 	}
+
+	std::vector<std::wstring> formatString(std::wstring str, const std::wstring& delim, int n)
+	{
+		std::vector<std::wstring> result;
+		size_t pos = n;
+		while (pos < str.length())
+		{
+			size_t delim_pos = str.rfind(delim, pos);
+			if (delim_pos != std::wstring::npos && delim_pos > pos - n)
+			{
+				result.push_back(str.substr(0, delim_pos));
+				str = str.substr(delim_pos + delim.size());
+				pos = n;
+			}
+			else 
+			{
+				pos += n;
+			}
+		}
+		result.push_back(str);
+		return result;
+	}
+
 
 	// Consts
 	const size_t m_LEFT_MARGIN = 6;

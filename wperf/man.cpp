@@ -2,6 +2,7 @@
 #include "output.h"
 #include "utils.h"
 #include "exception.h"
+#include "utils.h"
 
 #include <string>
 #include <map>
@@ -40,8 +41,13 @@ void print_metric(pmu_device& pdev, const std::wstring& product_name, const std:
 
 	_col1.push_back(L"NAME");
 	_col2.push_back(metric.name + L" - " + metric.title);
+
+	std::wstring formatted_events = metric.events_raw;
+	ReplaceAllTokensInWString(formatted_events, L",", L", ");
+
 	_col1.push_back(L"RAW EVENTS");
-	_col2.push_back(metric.events_raw);
+	_col2.push_back(formatted_events);
+
 	_col1.push_back(L"FORMULA");
 	_col2.push_back(metric.metric_formula);
 	_col1.push_back(L"UNIT");
@@ -67,8 +73,12 @@ void print_groups_metric(pmu_device& pdev, const std::wstring& product_name, con
 	_col2.push_back(group_metrics.name + L" - " + group_metrics.title);
 	_col1.push_back(L"DESCRIPTION");
 	_col2.push_back(group_metrics.description);
+
+	std::wstring formatted_metrics = group_metrics.metrics_raw;
+	ReplaceAllTokensInWString(formatted_metrics, L",", L", ");
+
 	_col1.push_back(L"METRICS");
-	_col2.push_back(group_metrics.metrics_raw);
+	_col2.push_back(formatted_metrics);
 }
 
 bool find_in_product_data(pmu_device& pdev, const std::wstring& product_name, const std::wstring& requested_arg)

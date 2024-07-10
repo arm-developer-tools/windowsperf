@@ -477,6 +477,39 @@ namespace wperftest
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DMC_CLKDIV2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
 		}
 
+		TEST_METHOD(test_ReplaceAllTokensInWString)
+		{
+			{
+				std::wstring input = L"";
+				ReplaceAllTokensInWString(input, L"a", L"_");
+				Assert::AreEqual(input, std::wstring(L""));
+			}
+
+			{
+				std::wstring input = L"abc";
+				ReplaceAllTokensInWString(input, L"d", L"_");
+				Assert::AreEqual(input, std::wstring(L"abc"));
+			}
+
+			{
+				std::wstring input = L"aaa";
+				ReplaceAllTokensInWString(input, L"a", L"__");
+				Assert::AreEqual(input, std::wstring(L"______"));
+			}
+
+			{
+				std::wstring input = L"aba";
+				ReplaceAllTokensInWString(input, L"a", L"_");
+				Assert::AreEqual(input, std::wstring(L"_b_"));
+			}
+
+			{
+				std::wstring input = L"load_percentage,store_percentage,integer_dp_percentage,simd_percentage,scalar_fp_percentage,branch_percentage,crypto_percentage";
+				ReplaceAllTokensInWString(input, L",", L", ");
+				Assert::AreEqual(input, std::wstring(L"load_percentage, store_percentage, integer_dp_percentage, simd_percentage, scalar_fp_percentage, branch_percentage, crypto_percentage"));
+			}
+		}
+
 		TEST_METHOD(test_ReplaceTokenInWstring_ok)
 		{
 			std::string filename = "{aaa} {bbb} {ccc} {ddd} {eee}";

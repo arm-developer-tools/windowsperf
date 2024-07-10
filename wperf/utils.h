@@ -50,8 +50,9 @@ bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstring& prefix);
 bool CaseInsensitiveWStringComparision(const std::wstring& str1, const std::wstring& str2);
 bool ReplaceTokenInString(std::string& input, const std::string old_token, const std::string new_token);
-void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens);
+void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens, bool includeDelim = false);
 double ConvertNumberWithUnit(double number, std::wstring unit, const std::unordered_map<std::wstring, double>& unitConversionMap);
+void ReplaceAllTokensInWString(std::wstring& str, const std::wstring& old_token, const std::wstring& new_token);
 
 /// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"
