@@ -36,6 +36,7 @@
 #include <typeindex>
 #include <algorithm>
 #include "outpututil.h"
+#include "utils.h"
 
 /* 
 The JSON implementation bases itself on the JSON definition from JavaScript where it is defined as a dictionary with keys and values.
@@ -118,7 +119,22 @@ public:
                         os << LiteralConstants<CharType>::m_quotes;
                     }
 
-                    os << val;
+                    if constexpr (std::is_same_v<ValueType, StringType>)
+                    {
+                        // Escape new lines '\n' with '\\n'
+                        StringType val_no_n = ReplaceAllTokensInString(val,
+                            StringType(LiteralConstants<CharType>::m_newline),
+                            StringType(LiteralConstants<CharType>::m_newline_escaped));
+
+                        // Escape tabs '\t' with '\\t'
+                        StringType val_no_nt = ReplaceAllTokensInString(val_no_n,
+                            StringType(LiteralConstants<CharType>::m_tab),
+                            StringType(LiteralConstants<CharType>::m_tab_escaped));
+
+                        os << val_no_nt;    // No tabs and newlines in JSON string
+                    }
+                    else
+                        os << val;
 
                     if constexpr(std::is_same_v<ValueType, StringType> || std::is_same_v<ValueType, char> || std::is_same_v<ValueType, wchar_t>)
                     {

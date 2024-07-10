@@ -553,6 +553,33 @@ namespace wperftest
 			Assert::IsFalse(ReplaceTokenInString(filename, "{CLASS}", "text is here"));
 		}
 
+		TEST_METHOD(test_ReplaceAllTokensInString_wstring)
+		{
+			{
+				std::wstring input = L"\n";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"\n"), std::wstring(L"\\n"));
+				Assert::AreEqual(output, std::wstring(L"\\n"));
+			}
+
+			{
+				std::wstring input = L"\n\n";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"\n"), std::wstring(L"\\n"));
+				Assert::AreEqual(output, std::wstring(L"\\n\\n"));
+			}
+
+			{
+				std::wstring input = L"test string with new line at the end\n";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"\n"), std::wstring(L"\\n"));
+				Assert::AreEqual(output, std::wstring(L"test string with new line at the end\\n"));
+			}
+
+			{
+				std::wstring input = L"The following cache operations are not counted:\n\n1. Invalidations which do not result in data being transferred out of the L1 (such as evictions of clean data),\n2.";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"\n"), std::wstring(L"\\n"));
+				Assert::AreEqual(output, std::wstring(L"The following cache operations are not counted:\\n\\n1. Invalidations which do not result in data being transferred out of the L1 (such as evictions of clean data),\\n2."));
+			}
+		}
+
 		TEST_METHOD(test_ConvertTimeUnitToSeconds)
 		{
 			const std::unordered_map<std::wstring, double> unitMap = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400}};

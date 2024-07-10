@@ -204,3 +204,30 @@ std::wstring IntToDecWithCommas(T Value) {
     std::reverse(result.begin(), result.end());
     return result;
 }
+
+/// <summary>
+/// Replaces all occurances of OLD_TOKEN with NEW_TOKEN
+/// </summary>
+/// <param name="input">Input string with OLD_TOKEN to replace</param>
+/// <param name="old_token">Token to replace</param>
+/// <param name="new_token">Replaces all OLD_TOKEN in INPUT</param>
+/// <returns>How many tokens were replaces</returns>
+template<typename T>
+T ReplaceAllTokensInString(T input, const T old_token, const T new_token) {
+    static_assert(std::is_same<decltype(input), std::string>::value
+        || std::is_same<decltype(input), std::wstring>::value, "(W)String type required in input<T>");
+    static_assert(std::is_same<decltype(old_token), const std::string>::value
+        || std::is_same<decltype(old_token), const std::wstring>::value, "(W)String type required in old_token<T>");
+    static_assert(std::is_same<decltype(new_token), const std::string>::value
+        || std::is_same<decltype(new_token), const std::wstring>::value, "(W)String type required in new_token<T>");
+
+    auto pos = input.find(old_token);
+
+    while (pos != T::npos)
+    {
+        input.replace(pos, old_token.size(), new_token);
+        pos = input.find(old_token);
+    }
+
+    return input;
+}

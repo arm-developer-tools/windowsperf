@@ -1,6 +1,5 @@
 #include "man.h"
 #include "output.h"
-#include "utils.h"
 #include "exception.h"
 #include "utils.h"
 

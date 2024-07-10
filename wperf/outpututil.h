@@ -64,4 +64,8 @@ struct LiteralConstants
     inline constexpr static CharType* m_bracket_close = LITERALCONSTANTS_GET("]");
     inline constexpr static CharType* m_space = LITERALCONSTANTS_GET(" ");
     inline constexpr static CharType* m_equal = LITERALCONSTANTS_GET("=");
+    inline constexpr static CharType* m_tab = LITERALCONSTANTS_GET("\t");
+    inline constexpr static CharType* m_tab_escaped = LITERALCONSTANTS_GET("\\t");
+    inline constexpr static CharType* m_newline = LITERALCONSTANTS_GET("\n");
+    inline constexpr static CharType* m_newline_escaped = LITERALCONSTANTS_GET("\\n");
 };
