@@ -1,5 +1,4 @@
 {
-    "$id": "https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/raw/main/wperf-scripts/tests/schemas/",
     "title": "WindowsPerf timeline JSON output format",
     "description": "WindowsPerf outputs JSON format for timeline feature (counting)",
     "type": "object",
@@ -14,7 +13,7 @@
         "timeline": {
             "type": "array",
             "items": {
-                "$ref": "wperf.stat.schema"
+                "$ref": "file:schemas/wperf.stat.schema"
             }
         },
         "count_duration": {
