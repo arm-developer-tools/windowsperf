@@ -3,6 +3,7 @@
 #include "exception.h"
 #include "utils.h"
 
+#include <algorithm>
 #include <string>
 #include <map>
 #include <vector>
@@ -20,15 +21,16 @@ struct Item
 
 static std::vector<Item> requested_items;
 
-
 bool inline static is_valid_cpu(const pmu_device& pdev, std::wstring name)
 {
-	return pdev.m_product_configuration.count(name) > 0;
+	std::vector<std::wstring> arm_arch = { pdev.m_PRODUCT_ARMV8A, pdev.m_PRODUCT_ARMV9A };
+	return pdev.m_product_configuration.count(name) > 0 ||
+		std::count(arm_arch.begin(), arm_arch.end(), name);
 }
 
 std::vector<std::wstring> static man_get_valid_cpu_list(const pmu_device& pdev)
 {
-	std::vector<std::wstring> result;
+	std::vector<std::wstring> result = { pdev.m_PRODUCT_ARMV8A, pdev.m_PRODUCT_ARMV9A};
 	for (auto const& product : pdev.m_product_configuration)
 		result.push_back(product.first);
 	return result;
