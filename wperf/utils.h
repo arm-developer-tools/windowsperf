@@ -222,12 +222,13 @@ T ReplaceAllTokensInString(T input, const T old_token, const T new_token) {
     static_assert(std::is_same<decltype(new_token), const std::string>::value
         || std::is_same<decltype(new_token), const std::wstring>::value, "(W)String type required in new_token<T>");
 
-    auto pos = input.find(old_token);
 
-    while (pos != T::npos)
+    size_t pos = 0;
+
+    while ((pos = input.find(old_token, pos)) != T::npos)
     {
         input.replace(pos, old_token.size(), new_token);
-        pos = input.find(old_token);
+        pos += new_token.size();
     }
 
     return input;

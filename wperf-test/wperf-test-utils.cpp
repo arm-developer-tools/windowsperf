@@ -510,6 +510,33 @@ namespace wperftest
 			}
 		}
 
+		TEST_METHOD(test_ReplaceAllTokensInWString_complex)
+		{
+			{
+				std::wstring input = L"abcabc";
+				ReplaceAllTokensInWString(input, L"abc", L"cba");
+				Assert::AreEqual(input, std::wstring(L"cbacba"));
+			}
+
+			{
+				std::wstring input = L"!@#!@#";
+				ReplaceAllTokensInWString(input, L"!@#", L"#@!");
+				Assert::AreEqual(input, std::wstring(L"#@!#@!"));
+			}
+
+			{
+				std::wstring input = L"aaa";
+				ReplaceAllTokensInWString(input, L"a", L"aa");
+				Assert::AreEqual(input, std::wstring(L"aaaaaa"));
+			}
+
+			{
+				std::wstring input = L"WORD.WORD";
+				ReplaceAllTokensInWString(input, L"WORD.", L"WORD.WORD.");
+				Assert::AreEqual(input, std::wstring(L"WORD.WORD.WORD"));
+			}
+		}
+
 		TEST_METHOD(test_ReplaceTokenInWstring_ok)
 		{
 			std::string filename = "{aaa} {bbb} {ccc} {ddd} {eee}";
@@ -553,6 +580,78 @@ namespace wperftest
 			Assert::IsFalse(ReplaceTokenInString(filename, "{CLASS}", "text is here"));
 		}
 
+		TEST_METHOD(test_ReplaceAllTokensInString_string)
+		{
+			{
+				std::string input = "\n";
+				std::string output = ReplaceAllTokensInString(input, std::string("\n"), std::string("\\n"));
+				Assert::AreEqual(output, std::string("\\n"));
+			}
+
+			{
+				std::string input = "\n\n";
+				std::string output = ReplaceAllTokensInString(input, std::string("\n"), std::string("\\n"));
+				Assert::AreEqual(output, std::string("\\n\\n"));
+			}
+
+			{
+				std::string input = "test string with new line at the end\n";
+				std::string output = ReplaceAllTokensInString(input, std::string("\n"), std::string("\\n"));
+				Assert::AreEqual(output, std::string("test string with new line at the end\\n"));
+			}
+
+			{
+				std::string input = "The following cache operations are not counted:\n\n1. Invalidations which do not result in data being transferred out of the L1 (such as evictions of clean data),\n2.";
+				std::string output = ReplaceAllTokensInString(input, std::string("\n"), std::string("\\n"));
+				Assert::AreEqual(output, std::string("The following cache operations are not counted:\\n\\n1. Invalidations which do not result in data being transferred out of the L1 (such as evictions of clean data),\\n2."));
+			}
+		}
+
+		TEST_METHOD(test_ReplaceAllTokensInString_string_complex)
+		{
+			{
+				std::string input = "abcabc";
+				std::string output = ReplaceAllTokensInString(input, std::string("abc"), std::string("cba"));
+				Assert::AreEqual(output, std::string("cbacba"));
+			}
+
+			{
+				std::string input = "aaa";
+				std::string output = ReplaceAllTokensInString(input, std::string("a"), std::string("aa"));
+				Assert::AreEqual(output, std::string("aaaaaa"));
+			}
+
+			{
+				std::string input = ".......aaa";
+				std::string output = ReplaceAllTokensInString(input, std::string("a"), std::string("aa"));
+				Assert::AreEqual(output, std::string(".......aaaaaa"));
+			}
+
+			{
+				std::string input = "aaa.......";
+				std::string output = ReplaceAllTokensInString(input, std::string("a"), std::string("aa"));
+				Assert::AreEqual(output, std::string("aaaaaa......."));
+			}
+
+			{
+				std::string input = ".......aaa.......";
+				std::string output = ReplaceAllTokensInString(input, std::string("a"), std::string("aa"));
+				Assert::AreEqual(output, std::string(".......aaaaaa......."));
+			}
+
+			{
+				std::string input = ".......aaa.aaa.......";
+				std::string output = ReplaceAllTokensInString(input, std::string("a"), std::string("aa"));
+				Assert::AreEqual(output, std::string(".......aaaaaa.aaaaaa......."));
+			}
+
+			{
+				std::string input = "WORD.WORD";
+				std::string output = ReplaceAllTokensInString(input, std::string("WORD."), std::string("WORD.WORD."));
+				Assert::AreEqual(output, std::string("WORD.WORD.WORD"));
+			}
+		}
+
 		TEST_METHOD(test_ReplaceAllTokensInString_wstring)
 		{
 			{
@@ -577,6 +676,51 @@ namespace wperftest
 				std::wstring input = L"The following cache operations are not counted:\n\n1. Invalidations which do not result in data being transferred out of the L1 (such as evictions of clean data),\n2.";
 				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"\n"), std::wstring(L"\\n"));
 				Assert::AreEqual(output, std::wstring(L"The following cache operations are not counted:\\n\\n1. Invalidations which do not result in data being transferred out of the L1 (such as evictions of clean data),\\n2."));
+			}
+		}
+
+		TEST_METHOD(test_ReplaceAllTokensInString_wstring_complex)
+		{
+			{
+				std::wstring input = L"abcabc";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"abc"), std::wstring(L"cba"));
+				Assert::AreEqual(output, std::wstring(L"cbacba"));
+			}
+
+			{
+				std::wstring input = L"aaa";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"a"), std::wstring(L"aa"));
+				Assert::AreEqual(output, std::wstring(L"aaaaaa"));
+			}
+
+			{
+				std::wstring input = L".......aaa";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"a"), std::wstring(L"aa"));
+				Assert::AreEqual(output, std::wstring(L".......aaaaaa"));
+			}
+
+			{
+				std::wstring input = L"aaa.......";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"a"), std::wstring(L"aa"));
+				Assert::AreEqual(output, std::wstring(L"aaaaaa......."));
+			}
+
+			{
+				std::wstring input = L".......aaa.......";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"a"), std::wstring(L"aa"));
+				Assert::AreEqual(output, std::wstring(L".......aaaaaa......."));
+			}
+
+			{
+				std::wstring input = L".......aaa.aaa.......";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"a"), std::wstring(L"aa"));
+				Assert::AreEqual(output, std::wstring(L".......aaaaaa.aaaaaa......."));
+			}
+
+			{
+				std::wstring input = L"WORD.WORD";
+				std::wstring output = ReplaceAllTokensInString(input, std::wstring(L"WORD."), std::wstring(L"WORD.WORD."));
+				Assert::AreEqual(output, std::wstring(L"WORD.WORD.WORD"));
 			}
 		}
 
