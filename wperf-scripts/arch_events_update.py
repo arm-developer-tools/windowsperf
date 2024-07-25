@@ -85,7 +85,7 @@ class ArchEventsUpdate:
                     + (event['name'] + ',').ljust(50,' ')  \
                     + '0x' + (hex(int(event['code']))[2:]).rjust(4,'0') \
                     + ', \"' + (event['name'].lower() + '",').ljust(48, ' ')
-                    + '"' + event['description'].lower()
+                    + '"' + event['description']
                     + '\")\n')
         return line_output
 
@@ -121,8 +121,9 @@ class ArchEventsUpdate:
         try:
             request.urlretrieve(url_temp, target_file)
         except (socket.gaierror, urllib.error.URLError):
-            print("Some error happen! May be the network instability, \
-                  Please check it and try again!")
+            print("Some error happen! May be the network instability.",
+                  "Please check it and try again!")
+            print("URL:" + url_temp)
             sys.exit()
 
     def get_webfile(self,url_temp):
@@ -130,8 +131,9 @@ class ArchEventsUpdate:
         try:
             file_name = wget.download(url_temp,bar=None)
         except (socket.gaierror, urllib.error.URLError):
-            print("Some error happen! May be the network instability, \
-                  Please check it and try again!")
+            print("Some error happen! May be the network instability.",
+                  "Please check it and try again!")
+            print("URL:" + url_temp)
             sys.exit()
         return file_name
 
@@ -141,7 +143,7 @@ def main(argv):
     ArchEventsUpdate(argv)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="update the cpu's pmu events file!")
+    parser = argparse.ArgumentParser(description="Generate the PMU event list for .def files for given CPU")
     parser.add_argument("-l","--list_cpu", action = "store_true", help="list all cpus in " + URL)
     parser.add_argument("-c","--cpu", type=str,help="cpu type that to update")
     parser.add_argument("-o","--output", type=str,help="pmu events file for wperf")
@@ -149,5 +151,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.list_cpu is False and args.cpu is None:
         parser.print_help()
+        print("Example usage:")
+        print("\t>python arch_events_update.py -c common_armv8")
         sys.exit()
     main(args)
