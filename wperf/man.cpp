@@ -46,7 +46,7 @@ void print_metric(pmu_device& pdev, const std::wstring& product_name, const std:
 	std::wstring formatted_events = metric.events_raw;
 	ReplaceAllTokensInWString(formatted_events, L",", L", ");
 
-	_col1.push_back(L"RAW EVENTS");
+	_col1.push_back(L"EVENTS");
 	_col2.push_back(formatted_events);
 
 	_col1.push_back(L"FORMULA");
