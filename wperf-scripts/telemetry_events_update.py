@@ -160,7 +160,8 @@ def ts_parse_metrics(j, name):
                   ts_align(ts_quote(formula).lower(), formula_name_max_len),
                   ts_align(ts_quote(formula_sy).lower(), formula_name_max_len),
                   ts_align(ts_quote(metrics[metric]["units"]), units_name_max_len),
-                  ts_quote(metrics[metric]["title"])]
+                  ts_quote(metrics[metric]["title"]),
+                  ts_quote(metrics[metric]["description"])]
         values = ','.join(values)
         ts_print_define(DEFINE, values)
 

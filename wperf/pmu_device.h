@@ -100,6 +100,7 @@ struct product_metric
     std::wstring metric_formula_sy; // Raw string with RPN equivalent expression of metric formula e.g. "STALL_BACKEND CPU_CYCLES / 100 *"
     std::wstring metric_unit;       // Raw string with metric unit "percent of cycles"
     std::wstring title;             // Metric title / short description
+    std::wstring description;       // Metric longer description
 };
 
 struct product_group_metrics
@@ -107,7 +108,7 @@ struct product_group_metrics
     std::wstring name;              // :^)
     std::wstring metrics_raw;       // Raw string of metrics, comma separated e.g. "l2_cache_mpki,l2_cache_miss_ratio"
     std::wstring title;             // Metric title / short description
-    std::wstring description;       // Metric Group Description
+    std::wstring description;       // Metric Group description
 };
 
 

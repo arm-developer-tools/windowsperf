@@ -49,6 +49,9 @@ void print_metric(pmu_device& pdev, const std::wstring& product_name, const std:
 	_col1.push_back(L"EVENTS");
 	_col2.push_back(formatted_events);
 
+	_col1.push_back(L"DESCRIPTION");
+	_col2.push_back(metric.description);
+
 	_col1.push_back(L"FORMULA");
 	_col2.push_back(metric.metric_formula);
 	_col1.push_back(L"UNIT");

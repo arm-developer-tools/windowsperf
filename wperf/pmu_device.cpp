@@ -117,7 +117,7 @@ pmu_device::pmu_device() : m_device_handle(NULL), count_kernel(false), dsu_clust
 void pmu_device::init_ts_metrics()
 {   // Initialize Telemetry Solution metrics from each product
 #       define WPERF_TS_EVENTS(...)
-#       define WPERF_TS_METRICS(A,B,C,D,E,F,G) m_product_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D),std::wstring(L##E),std::wstring(L##F),std::wstring(L##G) };
+#       define WPERF_TS_METRICS(A,B,C,D,E,F,G,H) m_product_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D),std::wstring(L##E),std::wstring(L##F),std::wstring(L##G), std::wstring(L##H) };
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
 #       define WPERF_TS_GROUPS_METRICS(...)
