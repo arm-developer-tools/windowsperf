@@ -65,7 +65,8 @@ std::map<uint8_t, wchar_t*> pmu_device::arm64_vendor_names =
     {0x51, L"Qualcomm Inc"},
     {0x56, L"Marvell International Ltd"},
     {0x69, L"Intel Corporation"},
-    {0xC0, L"Ampere Computing"}
+    {0xC0, L"Ampere Computing"},
+    {0x6D, L"Microsoft Corporation"}
 };
 
 std::map<std::wstring, struct product_configuration> pmu_device::m_product_configuration = {

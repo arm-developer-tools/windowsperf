@@ -38,7 +38,7 @@ import re
 
 ### Common test runner code
 
-# See https://developer.arm.com/documentation/ddi0601/2020-12/AArch64-Registers/MIDR-EL1--Main-ID-Register
+# See https://developer.arm.com/documentation/ddi0601/2024-06/External-Registers/MIDR-EL1--Main-ID-Register?lang=en
 arm64_vendor_names = {
     0x41: "Arm Limited",
     0x42: "Broadcomm Corporation",
@@ -52,7 +52,8 @@ arm64_vendor_names = {
     0x51: "Qualcomm Inc",
     0x56: "Marvell International Ltd",
     0x69: "Intel Corporation",
-    0xC0: "Ampere Computing"
+    0xC0: "Ampere Computing",
+    0x6D: "Microsoft Corporation"
 }
 
 def is_json(str_to_test):
