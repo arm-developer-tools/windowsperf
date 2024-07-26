@@ -17,8 +17,7 @@ New macro, `ENABLE_ETW_TRACING_APP` is used to control ETW output inside the `wp
 # Usage of wperf
 
 ```
->wperf --help
-WindowsPerf ver. 3.5.0 (19c2b723/Release) WOA profiling with performance counters.
+WindowsPerf ver. 3.7.2 (888f7a52/Debug+etw-app) WOA profiling with performance counters.
 Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
 
 NAME:
@@ -58,7 +57,7 @@ SYNOPSIS:
         List installed WindowsPerf-like Kernel Drivers (match GUID).
 
     wperf man [--json]
-        Manual style information about one or more specified event(s), metric(s), and or group(s) of metrics.
+        Plain text information about one or more specified event(s), metric(s), and or group metric(s).
 
 OPTIONS:
     -h, --help
@@ -91,12 +90,12 @@ OPTIONS:
         Note: see list of available metric names using `list` command.
 
     --timeout
-        Specify counting or sampling duration. If not specified, press 
-        Ctrl+C to interrupt counting or sampling. Input may be suffixed by 
-        one (or none) of the following units, with up to 2 decimal 
-        points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds, 
+        Specify counting or sampling duration. If not specified, press
+        Ctrl+C to interrupt counting or sampling. Input may be suffixed by
+        one (or none) of the following units, with up to 2 decimal
+        points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds,
         minutes, hours, days). If no unit is provided, the default unit
-        is seconds. Accuracy is 0.1 sec. 
+        is seconds. Accuracy is 0.1 sec.
 
     -t
         Enable timeline mode (count multiple times with specified interval).
@@ -104,10 +103,10 @@ OPTIONS:
         counts.
 
     -i
-        Specify counting interval. `0` seconds is allowed. Input may be 
-        suffixed with one (or none) of the following units, with up to 
-        2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds, 
-        seconds, minutes, hours, days). If no unit is provided, the default 
+        Specify counting interval. `0` seconds is allowed. Input may be
+        suffixed with one (or none) of the following units, with up to
+        2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds,
+        seconds, minutes, hours, days). If no unit is provided, the default
         unit is seconds (60s by default).
 
     -n
@@ -187,14 +186,14 @@ EXAMPLES:
     Count events `inst_spec`, `vfp_spec`, `ase_spec` and `ld_spec` on core #0
     for 3 seconds.
 
-    > wperf stat -m imix -e l1i_cache -c 7 --timeout 1500ms
+    > wperf stat -m imix -e l1i_cache -c 7 --timeout 10.5
     Count metric `imix` (metric events will be grouped) and additional event
-    `l1i_cache` on core #7 for 1.5 seconds (1500 milliseconds).
+    `l1i_cache` on core #7 for 10.5 seconds.
 
-    > wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 0.1m
+    > wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
     Count in timeline mode (output counting to CSV file) metric `imix` 3 times
     on core #1 with 2 second intervals (delays between counts). Each count
-    will last 6 seconds (0.1 minutes).
+    will last 5 seconds.
 
     > wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1
     Sample event `ld_spec` with frequency `100000` already running process
@@ -601,7 +600,7 @@ See how CPython computation of `10^10^100` is `integer_dp_percentage` and `load_
 Options `--timeout`, `sleep` and `-i` can be used with a number along with one, or none, of the supported units: `ms` (milliseconds), `s` (seconds), `m` (minutes), `h` (hours), `d` (days).
 
 The following restrictions apply:
-* The default unit `seconds` is used if no unit is provided as input. 
+* The default unit `seconds` is used if no unit is provided as input.
 * Units may not be used in conjuction with one another: `--timeout 1m30s` is not accepted.
 * Decimals may be up to 2 decimal places, and must be preceeded by a single `0`: `.001h` is not accepted.
 * Padded `0`s are not permitted: `01h` is not accepted.
@@ -611,9 +610,9 @@ See the following for examples of correct usage:
 ```
 >wperf stat -c 0 -e ld_spec --timeout 10
 
->wperf stat -c 0 -e ld_spec --timeout 1.00h 
+>wperf stat -c 0 -e ld_spec --timeout 1.00h
 
->wperf stat -c 0 -e ld_spec sleep 750ms 
+>wperf stat -c 0 -e ld_spec sleep 750ms
 
 >wperf stat -c 0 -e ld_spec sleep 5m
 ```
@@ -789,7 +788,7 @@ System-wide Overall:
 
 ### Using alias `--cpu`
 
-The alias for `-c`, `--cpu` can be used in the same way. For example, 
+The alias for `-c`, `--cpu` can be used in the same way. For example,
 
 ```
 > wperf stat -e inst_spec --cpu 0 sleep 1
@@ -1440,7 +1439,7 @@ A double-dash (`--`) is a syntax used in shell commands to signify end of comman
 
 ## Using the `annotate` option
 
-A normal output of the following command 
+A normal output of the following command
 
 ```
 >wperf record -c 0 -e vfp_spec:1000 --timeout 5 -- .\WindowsPerfSample1.exe
@@ -1466,7 +1465,7 @@ If you want to have more information about the exact place in the source code wh
 >wperf record -c 0 -e vfp_spec:1000 --timeout 5 --annotate -- .\WindowsPerfSample1.exe
 ```
 
-resulting in 
+resulting in
 
 ```
 base address of '.\WindowsPerfSample1.exe': 0x7ff7526b15c4, runtime delta: 0x7ff6126a0000
@@ -1493,12 +1492,12 @@ df_hot
 100.00%       128  top 3 in total
 ```
 
-You will now see the list of top functions followed by a table with line numbers, hits and filename. 
+You will now see the list of top functions followed by a table with line numbers, hits and filename.
 The filename and line number shows information extracted from the PDB files matching the sample address to a particular position on the source code. The hits column shows the number of samples for that file name/line number pair. Notice that due to address skid this can be a bit off.
 
 ### Using the `disassemble` option
 
-In case you need even more information than the one given by `--annotate` you can use the `--disassemble` option to give the particular surroundings of the instruction that generated the sample. Notice that `--disassemble` implies `--annotate`. Use the following command 
+In case you need even more information than the one given by `--annotate` you can use the `--disassemble` option to give the particular surroundings of the instruction that generated the sample. Notice that `--disassemble` implies `--annotate`. Use the following command
 
 ```
 >wperf record -c 0 -e vfp_spec:1000 --timeout 5 --disassemble -- .\WindowsPerfSample1.exe
@@ -1602,8 +1601,8 @@ __CheckForDebuggerJustMyCode
 100.00%       128  top 4 in total
 ```
 
-The columns are pretty simmilar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair file name/line number's disassembled code. Notice that 
-WindowsPerf uses LLVM's [objdump](https://llvm.org/docs/CommandGuide/llvm-objdump.html) and it needs to be available on PATH or else you will get the following message 
+The columns are pretty simmilar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair file name/line number's disassembled code. Notice that
+WindowsPerf uses LLVM's [objdump](https://llvm.org/docs/CommandGuide/llvm-objdump.html) and it needs to be available on PATH or else you will get the following message
 
 ```
 Error executing disassembler `llvm-objdump`. Is it on PATH?
