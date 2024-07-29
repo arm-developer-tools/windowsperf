@@ -85,8 +85,11 @@ void print_groups_metric(pmu_device& pdev, const std::wstring& product_name, con
 	_col2.push_back(formatted_metrics);
 }
 
-bool find_in_product_data(pmu_device& pdev, const std::wstring& product_name, const std::wstring& requested_arg)
+bool find_in_product_data(pmu_device& pdev, std::wstring product_name, const std::wstring& requested_arg)
 {	
+	if (pdev.is_alias_product_name(product_name))
+		product_name = pdev.get_product_name(product_name);
+
 	if (pdev.m_product_metrics[product_name].count(requested_arg) > 0)
 	{
 		requested_items.push_back({ Item::Metric, product_name, requested_arg });

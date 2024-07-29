@@ -446,7 +446,11 @@ void pmu_device::hw_cfg_detected(struct hw_cfg& hw_cfg)
         if (hw_cfg.vendor_id == prod_conf.implementer && hw_cfg.part_id == prod_conf.part_num)
             if (m_product_metrics.count(prod_name))
             {
-                m_product_name = prod_name;     // Save for later
+                // If prod_name is an alias to the product, just 'colapse' alias to product name.
+                if (m_product_alias.count(prod_name))
+                    m_product_name = m_product_alias[prod_name];
+                else
+                    m_product_name = prod_name;     // Save for later
 
                 for (const auto& [metric_name, metric] : m_product_metrics[prod_name])
                 {
@@ -520,6 +524,21 @@ std::map <std::wstring, std::vector<std::wstring>> pmu_device::get_product_group
     }
 
     return ret;
+}
+
+// Resolve (if applicable) alias of m_product_name to canonical product name (alias -> name).
+std::wstring pmu_device::get_product_name() const
+{
+    std::wstring product_name = m_product_name;
+    if (m_product_alias.count(m_product_name))
+        product_name = m_product_alias[m_product_name];
+    return product_name;
+}
+
+// Get canonical product name from `alias`
+std::wstring pmu_device::get_product_name(std::wstring alias) const
+{
+    return m_product_alias[alias];
 }
 
 std::vector<std::wstring> pmu_device::get_product_names()

@@ -204,7 +204,7 @@ wmain(
 
         try 
         {
-            man(pmu_device, man_query_args, L'/', pmu_device.m_product_name, col1, col2);
+            man(pmu_device, man_query_args, L'/', pmu_device.get_product_name(), col1, col2);
         }
         catch(const fatal_exception&)
         {

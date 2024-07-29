@@ -249,8 +249,8 @@ public:
     static std::map<uint8_t, wchar_t*> arm64_vendor_names;
 
     // Telemetry Solution meta-data
-    static std::map<std::wstring, struct product_configuration> m_product_configuration;
-    static std::map<std::wstring, std::wstring> m_product_alias;
+    static std::map<std::wstring, struct product_configuration> m_product_configuration;         // [product_name] -> [product_configuration]
+    static std::map<std::wstring, std::wstring> m_product_alias;                                 // [alias] -> [product_name]
     std::map<std::wstring, std::map<std::wstring, struct product_event>> m_product_events;       // [product] -> [event_name -> product_event]
     std::map<std::wstring, std::map<std::wstring, struct product_metric>> m_product_metrics;     // [product] -> [metrics_name -> product_metric]
     std::map<std::wstring, std::map<std::wstring, struct product_group_metrics>> m_product_groups_metrics;     // [product] -> [metrics_group_name -> product_metric_group]
@@ -258,6 +258,9 @@ public:
     std::wstring get_product_name_ext();                // Human friendly currently selected product string
     std::wstring get_all_product_name_str();            // Human friendly list of available products comma separated string
     std::wstring get_all_aliases_str();                 // Human friendly list of available alias -> product comma separated string
+    std::wstring get_product_name() const;              // Get canonical m_productname (witout any alias name)
+    std::wstring get_product_name(std::wstring alias) const;              // Get canonical product name from `alias`
+    bool is_alias_product_name(std::wstring alias) const { return m_product_alias.count(alias); };
     std::vector<std::wstring> get_product_names();      // Get all product names
     std::map <std::wstring, std::vector<std::wstring>> get_product_groups_metrics_names();      // Get all groups of metrics names
 
