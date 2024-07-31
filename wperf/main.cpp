@@ -871,12 +871,20 @@ wmain(
                 /* `counter_idx_unmap` carries all the information we need to translate GPCs to event numbers.
                 *    We just loop through it, which represents available GPCs.
                 */
-                for(auto const& [mapped_counter_idx, counter_idx]: pmu_device.counter_idx_unmap)
+                bool spe_gone = false;
+                for (auto const& [mapped_counter_idx, counter_idx] : pmu_device.counter_idx_unmap)
                 {
                     // Check if this sample represents an overflow of this particular GPC
-                    if(!request.m_sampling_with_spe)
+                    if (!request.m_sampling_with_spe)
+                    {
                         if (!(a.ov_flags & (1i64 << (UINT64)mapped_counter_idx)))
                             continue;
+                    }
+                    else {
+                        if (spe_gone)
+                            continue;
+                        spe_gone = true;
+                    }
 
                     bool inserted = false;
                     uint32_t event_src;
