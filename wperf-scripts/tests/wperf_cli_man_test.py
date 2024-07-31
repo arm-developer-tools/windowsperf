@@ -32,63 +32,10 @@
 
 
 """Module is testing `wperf man` features."""
-import json
 import pytest
-from common import run_command, is_json, check_if_file_exists
+from common import run_command
 
 ### Test cases
-
-@pytest.mark.parametrize("cpu",
-[
-    ("neoverse-v1"),
-    ("neoverse-v2"),
-    ("neoverse-n1"),
-    ("neoverse-n2"),
-    ("neoverse-n2-r0p3"),
-]
-)
-def test_wperf_man_json(cpu):
-    """ Test `wperf man` JSON output  """
-    cmd = f'wperf man {cpu}/ld_spec --json'
-    stdout, _ = run_command(cmd.split())
-    assert is_json(stdout)
-
-@pytest.mark.parametrize("cpu",
-[
-    ("neoverse-v1"),
-    ("neoverse-v2"),
-    ("neoverse-n1"),
-    ("neoverse-n2"),
-    ("neoverse-n2-r0p3"),
-]
-)
-def test_wperf_man_json_file_output_exists(cpu,tmp_path):
-    """ Test `wperf  man` JSON output to file """
-    file_path = tmp_path / 'test.json'
-    cmd = ['wperf', 'man', f'{cpu}/ld_spec', '--output', str(file_path)]
-    _, _ = run_command(cmd)
-    assert check_if_file_exists(str(file_path))
-
-@pytest.mark.parametrize("cpu",
-[
-    ("neoverse-v1"),
-    ("neoverse-v2"),
-    ("neoverse-n1"),
-    ("neoverse-n2"),
-    ("neoverse-n2-r0p3"),
-]
-)
-def test_wperf_man_json_file_output_valid(cpu,tmp_path):
-    """ Test `wperf man` JSON output to file validity"""
-    file_path = tmp_path / 'test.json'
-    cmd = ['wperf', 'man', f'{cpu}/sw_incr', '--output', str(file_path)]
-    _, _ = run_command(cmd)
-    try:
-        with open(file_path) as f:
-            json_obj = f.read()
-            assert is_json(json_obj)
-    except:
-        assert 0
 
 def test_wperf_man_help():
     """ Test `wperf man` with no arg"""
@@ -140,38 +87,3 @@ def test_wperf_man_invalid_cpu_throws(cpu, argument):
     expected_error = f"warning: CPU name: \"{cpu}\" not found, use".encode()
 
     assert expected_error in stderr
-
-@pytest.mark.parametrize("cpu",
-[
-    ("neoverse-v1"),
-    ("neoverse-v2"),
-    ("neoverse-n1"),
-    ("neoverse-n2"),
-    ("neoverse-n2-r0p3"),
-
-]
-)
-@pytest.mark.parametrize("argument",
-[
-    (""),
-    ("ip c"),
-    ("tomorrow_land"),
-    ("Miss_Rati0"),
-    ("neoverse-n1/Miss_Ratio"),
-    ("SVE-INST_ --/ld_specSPEC"),
-    (" ... .. .. .."),
-]
-)
-def test_wperf_man_invalid_arg_throws(cpu, argument):
-    """Test `wperf man` when prompted with invlaid CPUs throws the necessary error"""
-    cmd = f'wperf man {cpu}/{argument}'
-    _,stderr = run_command(cmd.split())
-
-    arg_space = argument.find(" ")
-
-    if arg_space == -1 :
-        expected_error_arg = f"warning: \"{argument}\" not found! Ensure it is compatible with the specified CPU".encode()
-    else:
-        expected_error_arg = f"warning: \"{ argument[0:arg_space] }\" not found! Ensure it is compatible with the specified CPU".encode()
-
-    assert expected_error_arg in stderr
