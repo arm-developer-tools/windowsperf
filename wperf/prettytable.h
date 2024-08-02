@@ -481,7 +481,17 @@ public:
 
 							for(auto& line : split_lines)
 							{
-								std::vector<std::wstring> broken_line = formatString(line, L" ", 81);
+								std::vector<std::wstring> broken_line;
+
+								if (j != 0 && line != L"\n") // if not header and empty
+								{
+									broken_line = formatString(line, L" ", 77);
+								}
+								else
+								{
+									broken_line = formatString(line, L" ", 81);
+								}
+
 								formatted_lines.insert(formatted_lines.end(), broken_line.begin(), broken_line.end());
 							}
 
