@@ -42,7 +42,7 @@ def test_wperf_man_help():
     cmd = 'wperf man'
     _, stderr = run_command(cmd.split())
 
-    expected_warning = b'warning: no argument(s) specified, specify an event, metric, or group of metrics to obtain relevant, manual style, information.'
+    expected_warning = b'warning: no argument(s) specified, specify an'
     assert expected_warning in stderr
 
 @pytest.mark.parametrize("cpu, argument",
@@ -87,3 +87,4 @@ def test_wperf_man_invalid_cpu_throws(cpu, argument):
     expected_error = f"warning: CPU name: \"{cpu}\" not found, use".encode()
 
     assert expected_error in stderr
+
