@@ -578,6 +578,10 @@ public:
 		}
 	}
 
+	// Consts
+	static const size_t m_LEFT_MARGIN = 6;
+	static const size_t m_COLUMN_SEPARATOR = 2;
+
 private:
 	size_t length()
 	{
@@ -666,11 +670,6 @@ private:
 		result.push_back(str);
 		return result;
 	}
-
-
-	// Consts
-	const size_t m_LEFT_MARGIN = 6;
-	const size_t m_COLUMN_SEPARATOR = 2;
 
 	// Class members
 	StringStream m_out_stream;

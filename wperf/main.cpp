@@ -997,11 +997,14 @@ wmain(
                     prev_evt_src = a.event_src;
 
                     if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
+                    {
+                        const int total_width = PrettyTable<wchar_t>::m_LEFT_MARGIN + PrettyTable<wchar_t>::m_COLUMN_SEPARATOR + static_cast<int>(strlen("overhead"));
                         m_out.GetOutputStream()
-                        << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                        << IntToDecWideString(printed_sample_freq, 10)
-                        << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
-
+                            << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, total_width) << L"%"
+                            << IntToDecWideString(printed_sample_freq, 6)
+                            << std::wstring(PrettyTable<wchar_t>::m_COLUMN_SEPARATOR, L' ') << L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+                        m_out.GetOutputStream() << std::endl;
+                    }
 
                     m_out.GetOutputStream()
                         << L"======================== sample source: ";
@@ -1019,9 +1022,11 @@ wmain(
 
                 if (printed_sample_num == request.sample_display_row)
                 {
-                    m_out.GetOutputStream() << DoubleToWideStringExt(((double)printed_sample_freq * 100 / (double)total_samples[group_idx]), 2, 6) << L"%"
-                        << IntToDecWideString(printed_sample_freq, 10)
-                        << L"  top " << std::dec << request.sample_display_row << L" in total" << std::endl;
+                    const int total_width = PrettyTable<wchar_t>::m_LEFT_MARGIN + PrettyTable<wchar_t>::m_COLUMN_SEPARATOR + static_cast<int>(strlen("overhead"));
+                    m_out.GetOutputStream()
+                        << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, total_width) << L"%"
+                        << IntToDecWideString(printed_sample_freq, 6)
+                        << std::wstring(PrettyTable<wchar_t>::m_COLUMN_SEPARATOR, L' ') << L"top " << std::dec << request.sample_display_row << L" in total" << std::endl;
                     printed_sample_num++;
                     continue;
                 }
@@ -1226,8 +1231,13 @@ wmain(
             }
 
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)
-                m_out.GetOutputStream() << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, 6) << L"%"
-                << IntToDecWideString(printed_sample_freq, 10) << L"  top " << std::dec << printed_sample_num << L" in total" << std::endl;
+            {
+                const int total_width = PrettyTable<wchar_t>::m_LEFT_MARGIN + PrettyTable<wchar_t>::m_COLUMN_SEPARATOR + static_cast<int>(strlen("overhead"));
+                m_out.GetOutputStream()
+                    << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, total_width) << L"%"
+                    << IntToDecWideString(printed_sample_freq, 6)
+                    << std::wstring(PrettyTable<wchar_t>::m_COLUMN_SEPARATOR, L' ') <<  L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+            }
         }
     }
     catch (const lock_denied_exception& e)
