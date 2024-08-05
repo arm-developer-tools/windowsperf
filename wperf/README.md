@@ -1083,7 +1083,7 @@ Store counting results in JSON file `count.json` and do not print anything on th
 
 ## CPython sampling example
 
-In this example we will build CPython from sources and execute simple instructions in Python interactive mode to obtain sampling from CPython runtime image.
+In this example we will build CPython from sources and execute simple instructions in Python interactive mode to obtain sampling information from CPython runtime image.
 To achieve that we will:
 * Build CPython binaries targeting ARM64 from sources in debug mode.
 * Pin `python_d.exe` interactive console to core no. 1.
@@ -1510,68 +1510,62 @@ base address of '.\WindowsPerfSample1.exe': 0x7ff7526b15c4, runtime delta: 0x7ff
 sampling ....eeee done!
 ======================== sample source: vfp_spec, top 50 hot functions ========================
 simd_hot
-        line_number  hits  filename                                             instruction_address  disassembled_line
-
-        ===========  ====  ========                                             ===================  =================
-
-        53           96    C:\Users\evert\source\repos\WindowsPerfSample\lib.c  13a30                  address  instruction
-                                                                                                       =======  ===========
-                                                                                                       13a30    ldr     q18, [x19], #0x40
-                                                                                                       13a34    add     v16.4s, v16.4s, v18.4s
-                                                                                                       13a38    stur    q16, [x9, #-0x20]
-                                                                                                       13a3c    ldr     q16, [x13, x8]
-                                                                                                       13a40    add     v16.4s, v16.4s, v17.4s
-                                                                                                       13a44    ldr     q17, [x11, x9]
-                                                                                                       13a48    str     q16, [x12, x8]
-                                                                                                       13a4c    ldp     q16, q18, [x8, #0x10]
-                                                                                                       13a50    add     x8, x8, #0x40
-                                                                                                       13a54    add     v17.4s, v17.4s, v16.4s
-                                                                                                       13a58    ldur    q16, [x19, #-0x10]
-                                                                                                       13a5c    add     v16.4s, v18.4s, v16.4s
-                                                                                                       13a60    stp     q17, q16, [x9], #0x40
-                                                                                                       13a64    cbnz    w10, 0x140013a28 <.text+0x2a28>
-                                                                                                       13a68    ldp     x29, x30, [sp], #0x10
-                                                                                                       13a6c    ldr     x21, [sp, #0x10]
-                                                                                                       13a70    ldp     x19, x20, [sp], #0x20
-                                                                                                       13a74    ret
-        52           17    C:\Users\evert\source\repos\WindowsPerfSample\lib.c  13a2c                  address  instruction
-                                                                                                       =======  ===========
-                                                                                                       13a28    ldp     q16, q17, [x8, #-0x10]
-                                                                                                       13a2c    sub     w10, w10, #0x1
+        line_number  hits  filename                 instruction_address    disassembled_line
+        ===========  ====  ========                 ===================    =================
+        53           96    WindowsPerfSample\lib.c  13a30                  address  instruction
+                                                                           =======  ===========
+                                                                           13a30    ldr     q18, [x19], #0x40
+                                                                           13a34    add     v16.4s, v16.4s, v18.4s
+                                                                           13a38    stur    q16, [x9, #-0x20]
+                                                                           13a3c    ldr     q16, [x13, x8]
+                                                                           13a40    add     v16.4s, v16.4s, v17.4s
+                                                                           13a44    ldr     q17, [x11, x9]
+                                                                           13a48    str     q16, [x12, x8]
+                                                                           13a4c    ldp     q16, q18, [x8, #0x10]
+                                                                           13a50    add     x8, x8, #0x40
+                                                                           13a54    add     v17.4s, v17.4s, v16.4s
+                                                                           13a58    ldur    q16, [x19, #-0x10]
+                                                                           13a5c    add     v16.4s, v18.4s, v16.4s
+                                                                           13a60    stp     q17, q16, [x9], #0x40
+                                                                           13a64    cbnz    w10, 0x140013a28 <.text+0x2a28>
+                                                                           13a68    ldp     x29, x30, [sp], #0x10
+                                                                           13a6c    ldr     x21, [sp, #0x10]
+                                                                           13a70    ldp     x19, x20, [sp], #0x20
+                                                                           13a74    ret
+        52           17    WindowsPerfSample\lib.c  13a2c                  address  instruction
+                                                                           =======  ===========
+                                                                           13a28    ldp     q16, q17, [x8, #-0x10]
+                                                                           13a2c    sub     w10, w10, #0x1
 
 
 df_hot
-        line_number  hits  filename                                             instruction_address  disassembled_line
-
-        ===========  ====  ========                                             ===================  =================
-
-        15,732,480   5     C:\Users\evert\source\repos\WindowsPerfSample\lib.c  137bc                  address  instruction
-                                                                                                       =======  ===========
-                                                                                                       137a8    adrp    x8, 0x140023000
-                                                                                                       137ac    add     x0, x8, #0x0
-                                                                                                       137b0    bl      0x1400117e0 <.text+0x7e0>
-                                                                                                       137b4    adrp    x9, 0x14001f000
-                                                                                                       137b8    ldr     d16, [x9]
-                                                                                                       137bc    ldr     d18, 0x140013828 <.text+0x2828>
-                                                                                                       137c0    ldr     d17, 0x140013830 <.text+0x2830>
-                                                                                                       137c4    fdiv    d16, d16, d18
-                                                                                                       137c8    fadd    d19, d16, d17
-                                                                                                       137cc    ldr     d16, 0x140013838 <.text+0x2838>
-                                                                                                       137d0    fmul    d0, d19, d16
-                                                                                                       137d4    str     d0, [x9]
-                                                                                                       137d8    cbnz    w19, 0x14001381c <.text+0x281c>
-        33           1     C:\Users\evert\source\repos\WindowsPerfSample\lib.c  1379c                  address  instruction
-                                                                                                       =======  ===========
-                                                                                                       13798    str     x19, [sp, #-0x10]!
-                                                                                                       1379c    stp     x29, x30, [sp, #-0x10]!
-                                                                                                       137a0    mov     x29, sp
-                                                                                                       137a4    mov     w19, w0
+        line_number  hits  filename                 instruction_address    disassembled_line
+        ===========  ====  ========                 ===================    =================
+        15,732,480   5     WindowsPerfSample\lib.c  137bc                  address  instruction
+                                                                           =======  ===========
+                                                                           137a8    adrp    x8, 0x140023000
+                                                                           137ac    add     x0, x8, #0x0
+                                                                           137b0    bl      0x1400117e0 <.text+0x7e0>
+                                                                           137b4    adrp    x9, 0x14001f000
+                                                                           137b8    ldr     d16, [x9]
+                                                                           137bc    ldr     d18, 0x140013828 <.text+0x2828>
+                                                                           137c0    ldr     d17, 0x140013830 <.text+0x2830>
+                                                                           137c4    fdiv    d16, d16, d18
+                                                                           137c8    fadd    d19, d16, d17
+                                                                           137cc    ldr     d16, 0x140013838 <.text+0x2838>
+                                                                           137d0    fmul    d0, d19, d16
+                                                                           137d4    str     d0, [x9]
+                                                                           137d8    cbnz    w19, 0x14001381c <.text+0x281c>
+        33           1     WindowsPerfSample\lib.c  1379c                  address  instruction
+                                                                           =======  ===========
+                                                                           13798    str     x19, [sp, #-0x10]!
+                                                                           1379c    stp     x29, x30, [sp, #-0x10]!
+                                                                           137a0    mov     x29, sp
+                                                                           137a4    mov     w19, w0
 
 __CheckForDebuggerJustMyCode
         line_number  hits  filename                                                          instruction_address  disassembled_line
-
         ===========  ====  ========                                                          ===================  =================
-
         25           1     D:\a\_work\1\s\src\vctools\crt\vcstartup\src\misc\debugger_jmc.c  13fe0                  address  instruction
                                                                                                                     =======  ===========
                                                                                                                     13fd8    ldr        x8, [sp, #0x10]
@@ -1616,3 +1610,161 @@ You can either:
   - Shortcut: You need clang targeting `aarch64-pc-windows-msvc`:
     - Go to Visual Studio Installer and install: Modify -> Individual Components -> search "clang".
     - Install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
+
+## Sampling with Arm Statistical Profiling Extension (SPE)
+
+WindowsPerf added support (in `record` command) for the Arm Statistical Profiling Extension (SPE). SPE is an optional feature in ARMv8.2 hardware that allows CPU instructions to be sampled and associated with the source code location where that instruction occured.
+
+> :warning: Currently SPE is available on Windows On Arm Test Mode only!
+
+You can use the same `--annotate` and `--disassemble` interface of WindowsPerf with one exception. To reach our to SPE resources please use `-e` command with `arm_spe_0//` options. For example:
+
+```
+>wperf record -e arm_spe_0//` -c 0 --timeout 10 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+```
+
+### SPE detection
+
+> :warning: Currently WindowsPerf support of SPE if in development, you can enable beta code of SPE support with `ENABLE_SPE` macro or just rebuild project with `Debug+SPE` configuration.
+
+#### SPE hardware support detection
+
+You can check if your system supports SPE or if WindowsPerf can detect SPE with `wperf test` command. See below an example of `spe_device.version_name` property value on system with SPE:
+
+```
+>wperf test
+        Test Name                                           Result
+        =========                                           ======
+...
+        spe_device.version_name                             FEAT_SPE
+```
+
+#### How do I know if you WindowsPerf binaries and driver support optional SPE?
+
+You can check feature string (`FeatureString`) of both `wperf` and `wperf-driver` with `wperf --version` command:
+
+```
+>wperf --version
+        Component     Version  GitVer          FeatureString
+        =========     =======  ======          =============
+        wperf         3.7.2    4338371a        +etw-app+spe
+        wperf-driver  3.7.2    4338371a        +trace+spe
+```
+
+If `FeatureString` for both components (`wperf` and `wperf-driver`) contains `+spe` (and `spe_device.version_name` contains `FEAT_SPE`) you are good to go!
+
+### arm_spe_0// format
+
+Users can specify SPE filters with `arm_spe_0//`. We added CLI parser function for `-e arm_spe_0/*/` notation for `record` command. Where `*` is comma separated list of supported filters. Currently we support filters. Users can define filters such as `store_filter=`, `load_filter=`, `branch_filter=` or short equivalents like `st=`, `ld=` and `b=`. Use `0` or `1` to disabled or enable given filter. For example:
+
+```
+>wperf record -c 0 -e arm_spe_0/branch_filter=1/
+>wperf record -c 0 -e arm_spe_0/load_filter=1,branch_filter=0/
+>wperf record -c 0 -e arm_spe_0/st=0,ld=0,b=1/
+```
+
+#### Filtering sample records
+
+SPE register `PMSFCR_EL1.FT` enables filtering by operation type. When enabled `PMSFCR_EL1.{ST, LD, B}` define the collected types:
+- `ST` enables collection of store sampled operations, including all atomic operations.
+- `LD` enables collection of load sampled operations, including atomic operations that return a value to a register.
+- `B` enables collection of branch sampled operations, including direct and indirect branches and exception returns.
+
+### Sampling with SPE CPython example
+
+### SPE with annotate
+
+Annotate example with `ld=1` filter enabled: enables collection of load sampled operations, including atomic operations that return a value to a register.
+
+```
+>wperf record -e arm_spe_0/ld=1/ -c 8 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff69e251288, runtime delta: 0x7ff55e250000
+sampling ...e..........e... done!
+======================== sample source: LOAD_STORE_ATOMIC-LOAD-GP/retired+level1-data-cache-access+tlb_access, top 50 hot functions ========================
+        overhead  count  symbol
+        ========  =====  ======
+           93.75     15  x_mul:python312_d.dll
+            6.25      1  _Py_ThreadCanHandleSignals:python312_d.dll
+100.00%        16  top 2 in total
+```
+
+#### SPE with disassemble
+
+Disassemble example with `ld=1` filter enabled: enables collection of load sampled operations, including atomic operations that return a value to a register.
+
+```
+>wperf record -e arm_spe_0/ld=1/ -c 8 --disassemble -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff69e251288, runtime delta: 0x7ff55e250000
+sampling ...ee..eee..e. done!
+======================== sample source: LOAD_STORE_ATOMIC-LOAD-GP/retired+level1-data-cache-access+tlb_access, top 50 hot functions ========================
+x_mul:python312_d.dll
+        line_number  hits  filename                      instruction_address    disassembled_line
+        ===========  ====  ========                      ===================    =================
+        3,590        1     cpython\Objects\longobject.c  404384                 address  instruction
+                                                                                =======  ===========
+                                                                                40436c   ldr   x8, [sp, #0x20]
+                                                                                404370   ldr   w8, [x8]
+                                                                                404374   ubfx  x8, x8, #0, #32
+                                                                                404378   ldr   x9, [sp, #0x58]
+                                                                                40437c   ldr   w9, [x9]
+                                                                                404380   ubfx  x9, x9, #0, #32
+                                                                                404384   ldr   x10, [sp, #0x50]
+                                                                                404388   mul   x9, x9, x10
+                                                                                40438c   add   x9, x8, x9
+                                                                                404390   ldr   x8, [sp, #0x10]
+                                                                                404394   add   x8, x8, x9
+                                                                                404398   str   x8, [sp, #0x10]
+                                                                                40439c   ldr   x8, [sp, #0x58]
+                                                                                4043a0   add   x8, x8, #0x4
+                                                                                4043a4   str   x8, [sp, #0x58]
+        3,591        1     cpython\Objects\longobject.c  4043bc                 address  instruction
+                                                                                =======  ===========
+                                                                                4043a8   ldr   x8, [sp, #0x10]
+                                                                                4043ac   and   x8, x8, #0x3fffffff
+                                                                                4043b0   mov   w8, w8
+                                                                                4043b4   ldr   x9, [sp, #0x20]
+                                                                                4043b8   str   w8, [x9]
+                                                                                4043bc   ldr   x8, [sp, #0x20]
+                                                                                4043c0   add   x8, x8, #0x4
+                                                                                4043c4   str   x8, [sp, #0x20]
+        3,592        1     cpython\Objects\longobject.c  4043c8                 address  instruction
+                                                                                =======  ===========
+                                                                                4043c8   ldr   x8, [sp, #0x10]
+                                                                                4043cc   lsr   x8, x8, #30
+                                                                                4043d0   str   x8, [sp, #0x10]
+        3,595        1     cpython\Objects\longobject.c  40440c                 address  instruction
+                                                                                =======  ===========
+                                                                                40440c   ldr   x8, [sp, #0x10]
+                                                                                404410   cmp   x8, #0x0
+                                                                                404414   b.eq  0x180404524 <_PyCrossInterpreterData_UnregisterClass+0x3fc798>
+
+x_add:python312_d.dll
+        line_number  hits  filename                      instruction_address    disassembled_line
+        ===========  ====  ========                      ===================    =================
+        3,401        1     cpython\Objects\longobject.c  402fb8                 address  instruction
+                                                                                =======  ===========
+                                                                                402fb0   ldr   x8, [sp, #0x20]
+                                                                                402fb4   add   x8, x8, #0x18
+                                                                                402fb8   ldr   x9, [sp, #0x18]
+                                                                                402fbc   mov   x10, #0x4               // =4
+                                                                                402fc0   mul   x9, x9, x10
+                                                                                402fc4   add   x8, x8, x9
+                                                                                402fc8   ldr   x9, [sp, #0x28]
+                                                                                402fcc   add   x9, x9, #0x18
+                                                                                402fd0   ldr   x10, [sp, #0x18]
+                                                                                402fd4   mov   x11, #0x4               // =4
+                                                                                402fd8   mul   x10, x10, x11
+                                                                                402fdc   add   x9, x9, x10
+                                                                                402fe0   ldr   w8, [x8]
+                                                                                402fe4   ldr   w9, [x9]
+                                                                                402fe8   add   w9, w8, w9
+                                                                                402fec   ldr   w8, [sp, #0x10]
+                                                                                402ff0   add   w8, w8, w9
+                                                                                402ff4   str   w8, [sp, #0x10]
+
+        overhead  count  symbol
+        ========  =====  ======
+           80.00      4  x_mul:python312_d.dll
+           20.00      1  x_add:python312_d.dll
+100.00%         5  top 2 in total
+```

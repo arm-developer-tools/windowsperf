@@ -44,7 +44,7 @@
 
 void user_request::print_help_usage()
 {
-    const wchar_t* wsHelp = LR"(
+    std::wstring wsHelp = LR"(
 NAME:
     wperf - Performance analysis tools for Windows on Arm
 
@@ -230,6 +230,15 @@ EXAMPLES:
     Hint: add `--annotate` or `--disassemble` to `wperf record` command line
     parameters to increase sampling "resolution".
 )";
+
+#ifdef ENABLE_SPE
+    wsHelp += LR"(
+    > wperf record -e arm_spe_0/ld=1/ -c 8 --cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+    Launch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable
+    collection of load sampled operations, including atomic operations that return a value to a register.
+    Hint: add `--annotate` or `--disassemble` to `wperf record` command.
+)";
+#endif
 
     m_out.GetOutputStream() << wsHelp << std::endl;
 }
