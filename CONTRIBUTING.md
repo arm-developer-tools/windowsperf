@@ -13,7 +13,7 @@ All changes you commit or submit by merge request should follow these simple gui
 # Merge requests
 
 * Your merge request title should contain WindowsPerf [JIRA](https://linaro.atlassian.net/jira/software/c/projects/WPERF/boards/169) ticket, which is prefixed `WPERF-`. Note: our GitLab JIRA integration requires developers to add it.
-  * You can post your MR without JIRA ticket but we will require ticket number to merge.
+  * You can post your MR without a JIRA ticket but we will require a ticket number to merge.
   * WindowsPerf JIRA tickets are in format: `WPERF-[0-9]+`.
 * Make use of labels, milestones, assignees, and other relevant query parameters to create informative pull requests.
 
@@ -80,7 +80,7 @@ To learn more please see article [Creating Reliable Kernel-Mode Drivers](https:/
 
 # Code style preferences
 
-Most of code style preferences are defined in project solution (`.sln`) and/or project files attached to this project (`.vcxproj`).
+Most of the code style preferences are defined in project solution (`.sln`) and/or project files attached to this project (`.vcxproj`).
 
 To learn more about how to define code style settings per-project see article [Code style preferences](https://learn.microsoft.com/en-us/visualstudio/ide/code-styles-and-code-cleanup?view=vs-2022).
 
@@ -92,7 +92,7 @@ You can read more about how to create reliable Windows Kernel Drivers, just foll
 
 You should test your code locally before you submit a patch.
 
-* If you are modifying `wperf` project please (if possible) add new unit tests that will cover new functions you've added. Unit test project for `wperf` is [wperf-test](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-test). See `wperf-test` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-test/README.md) for more details on how to write and run the tests. Unit tests isolate and exercise specific units of your code (functions). You should split your code in such way that core functionality shouldn't be depending on e.g. user interface. Those functions can be unit tested. See examples of unit tests for [utils](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-test/wperf-test-utils.cpp) functions for inspiration.
+* If you are modifying `wperf` project please (if possible) add new unit tests that will cover new functions you've added. Unit test project for `wperf` is [wperf-test](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-test). See `wperf-test` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-test/README.md) for more details on how to write and run the tests. Unit tests isolate and exercise specific units of your code (functions). You should split your code in such a way that core functionality shouldn't be depending on e.g. user interface. Those functions can be unit tested. See examples of unit tests for [utils](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-test/wperf-test-utils.cpp) functions for inspiration.
 
 * You should also run regression tests using [PyTest](https://docs.pytest.org/en/) library and corresponding Python test scripts we've provided with [wperf-scripts/tests](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests). See `wperf-scripts/tests` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md) for more details.
 

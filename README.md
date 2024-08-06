@@ -18,7 +18,7 @@ Currently we support:
 - **sampling model**, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels. Sampling model features include:
   - sampling mode initial merge, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/111
   - support for DLL symbol resolution, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/132
-  - deduce from command line image name and PDB file name, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/134
+  - deduce from the command line image name and PDB file name, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/134
   - stop sampling when sampled process ends, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/135
 
 You can find example usage of [counting model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#counting-model) and [sampling model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#sampling-model) in `wperf` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/README.md).
@@ -33,7 +33,7 @@ The `topdown-tool` uses the WindowsPerf to access the PMU events and metrics on 
 
 ## WindowsPerf Installation
 
-You can find latest WindowsPerf installation instructions in [INSTALL.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/INSTALL.md?ref_type=heads).
+You can find the latest WindowsPerf installation instructions in [INSTALL.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/INSTALL.md?ref_type=heads).
 
 ## WindowsPerf Releases
 
@@ -41,7 +41,7 @@ You can find all binary releases of WindowsPerf (`wperf-driver` and `wperf` appl
 
 ## Building WindowsPerf
 
-You can find latest WindowsPerf build instructions in [BUILD.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/BUILD.md?ref_type=heads).
+You can find the latest WindowsPerf build instructions in [BUILD.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/BUILD.md?ref_type=heads).
 
 ## Contributing
 

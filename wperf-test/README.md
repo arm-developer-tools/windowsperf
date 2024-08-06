@@ -89,7 +89,7 @@ Read [Microsoft.VisualStudio.TestTools.CppUnitTestFramework API reference](https
 
 # Command line testing introduction
 
-You can run `wperf`'s unit test project `wperf-test` from command line with top-level `Makefile`. Below documentation describes how to interact with `Makefile` in order to run unit tests for `wperf`.
+You can run `wperf`'s unit test project `wperf-test` from the command line with top-level `Makefile`. Below documentation describes how to interact with `Makefile` in order to run unit tests for `wperf`.
 
 Note: You can also run unit tests from VS. See [Get started with unit testing](https://learn.microsoft.com/en-us/visualstudio/test/getting-started-with-unit-testing?view=vs-2022&tabs=cpp%2Cmsunittest#run-unit-tests) article for more details.
 

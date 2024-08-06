@@ -151,7 +151,7 @@ OPTIONS:
 
     --pdb_file
         Specify the PDB file name (and path), PDB file should directly
-        correspond to PE file set with `--pe_file`.
+        corresponds to PE file set with `--pe_file`.
 
     --sample-display-long
         Display decorated symbol names.
@@ -183,7 +183,7 @@ OPTIONS:
 
     -E
         Provide customized config file which describes custom events or
-        provide custom events from command line.
+        provide custom events from the command line.
 
     --json
         Define output type as JSON.

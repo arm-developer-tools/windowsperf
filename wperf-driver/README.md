@@ -4,7 +4,7 @@
 
 # Build wperf-driver
 
-You can build `wperf-driver` project from command line:
+You can build `wperf-driver` project from the command line:
 
 ```
 > devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf-driver\wperf-driver.vcxproj

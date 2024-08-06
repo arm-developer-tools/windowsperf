@@ -14,7 +14,7 @@ If the `DIA SDK` directory is missing from your system go to your VS installer, 
 
 > :warning: You may see `wperf` error message `CoCreateInstance failed for DIA` in case DIA SDK is not installed or registered as a COM service.
 
-As an Administrator run from command line:
+As an Administrator run from the command line:
 
 ```
 > cd "C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK\bin\arm64"
@@ -35,7 +35,7 @@ Please note that SDK and WDK versions installed on your system must be compatibl
 
 WindowsPerf solution is implemented in `C/C++17`.
 
-## Build solution from command line
+## Build solution from the command line
 
 ```
 > cd WindowsPerf
@@ -44,7 +44,7 @@ WindowsPerf solution is implemented in `C/C++17`.
 
 For more information regarding `devenv` and its command line options visit [Devenv command-line switches](https://learn.microsoft.com/en-us/visualstudio/ide/reference/devenv-command-line-switches?view=vs-2022).
 
-## Build specific project in the solution from command line
+## Build specific project in the solution from the command line
 
 ```
 > cd WindowsPerf

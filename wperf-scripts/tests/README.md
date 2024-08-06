@@ -95,7 +95,7 @@ SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:110: unsupported configuration: 
 
 - GNU Make 3.81 - ustress Makefile requires it.
   - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/make.htm or
-  - install it from command line with `winget install GnuWin32.Make` command.
+  - install it from the command line with `winget install GnuWin32.Make` command.
 - GNU tr - ustress Makefile internals requires it.
   - Download "Complete package, except sources" with installer here: https://gnuwin32.sourceforge.net/packages/coreutils.htm
 - clang targeting `aarch64-pc-windows-msvc`.
@@ -132,7 +132,7 @@ Thread model: posix
 InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\ARM64\bin
 ```
 
-### Example: How to build ustress from command line for neoverse-n1 CPU
+### Example: How to build ustress from the command line for neoverse-n1 CPU
 
 **Note**: Below steps require clang targeting `aarch64-pc-windows-msvc`. See `Build dependencies` chapter for more details.
 

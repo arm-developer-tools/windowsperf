@@ -57,7 +57,7 @@ arm64_vendor_names = {
 }
 
 def is_json(str_to_test):
-    """ Test if string is in JSON format. """
+    """ Test if string is in the JSON format. """
     try:
         json.loads(str_to_test)
     except ValueError:

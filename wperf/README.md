@@ -4,7 +4,7 @@
 
 # Build wperf CLI
 
-You can build `wperf` project from command line:
+You can build `wperf` project from the command line:
 
 ```
 > devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf\wperf.vcxproj
@@ -67,7 +67,7 @@ OPTIONS:
         Display version.
 
     -v, --verbose
-        Enable verbose output also in JSON output.
+        Enable verbose output also in the JSON output.
 
     -q
         Quiet mode, no output is produced.
@@ -126,7 +126,7 @@ OPTIONS:
 
     --pdb_file
         Specify the PDB file name (and path), PDB file should directly
-        correspond to PE file set with `--pe_file`.
+        corresponds to PE file set with `--pe_file`.
 
     --sample-display-long
         Display decorated symbol names.
@@ -158,7 +158,7 @@ OPTIONS:
 
     -E
         Provide customized config file which describes custom events or
-        provide custom events from command line.
+        provide custom events from the command line.
 
     --json
         Define output type as JSON.
@@ -208,7 +208,7 @@ EXAMPLES:
 
 # WindowsPerf Driver lock/unlock feature
 
-When `wperf` communicates with WindowsPerf Kernel Driver, driver acquires lock and will deny access of other instances of `wperf` to access the driver and its resources.
+When `wperf` communicates with WindowsPerf Kernel Driver, driver acquires lock and will deny access to other instances of `wperf` to access the driver and its resources.
 This prevents others from interfering with current `wperf` run and protects you from interference with your count.
 
 When other `wperf` process "locked" access to the driver you will see below warning:
@@ -838,7 +838,7 @@ events to be counted:
 
 Hint:
 - use `-m <metric>` to capture metric events, and/or `-e <events>` to count additional events.
-- use `--json` to additionally return timeline output data in JSON format, add `--output <FILENAME>` to capture output to given file.
+- use `--json` to additionally return timeline output data in the JSON format, add `--output <FILENAME>` to capture output to a given file.
 
 Note: to check available events and metrics please use `wperf list` and `wperf list -v` commands. Latter one gives you a bit more information about events and metrics.
 
@@ -871,9 +871,9 @@ Hint: you can find timeline JSON schema in [wperf-scripts/tests/schemas/wperf.ti
 
 ### Timeline CSV output file
 
-Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-separated_values). It's format uses comma separated values to distinguish between columns. CSV file name contains core number, current timestamp, name of event counted.
+Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-separated_values). Its format uses comma separated values to distinguish between columns. CSV file name contains core number, current timestamp, name of event counted.
 
-Timeline stores results in a form of a CSV file. Below is an output from above timeline example. Please note that we
+Timeline stores results in a form of a CSV file. Below is an output from the above timeline example. Please note that we
 
 ```
 >type wperf_core_1_2023_09_13_13_24_59.core.csv
@@ -896,12 +896,12 @@ Timeline file contains header with few counting setting values (these will incre
 
 Support for `--output` command line in timeline (`-t`) is as follows:
 
-Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from console name of timeline CSV file. Now users can also specify timeline output file name with `--output <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
+Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from the console name of the timeline CSV file. Now users can also specify timeline output file name with `--output <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
 
 User can specify in `<FILENAME>` few placeholders which can improve timeline file name:
-* `{timestamp}` to add current timestamp to output file name. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
-* `{class}` to add event class name (e.g. `core`, `dsu`, `dmc_clk`, `dmc_clkdiv2`). Multiple timeline files will be created if user specifies with `-e` events with different classes.
-* `{core}` to add `<N>` from `-c <N>` command line option. Note: when more than one core is specified `{core}` will be replaced with 1st core specified.
+* `{timestamp}` to add the current timestamp to the output file name. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
+* `{class}` to add event class name (e.g. `core`, `dsu`, `dmc_clk`, `dmc_clkdiv2`). Multiple timeline files will be created if the user specifies `-e` events with different classes.
+* `{core}` to add `<N>` from `-c <N>` command line option. Note: when more than one core is specified `{core}` will be replaced with the first core specified.
 
 Examples:
 
@@ -940,7 +940,7 @@ timeline file: '2023_09_21_12_23_58.7.core.csv'
 
 ### Example counting with Telemetry Solution metric
 
-In case of targets supporting Telemetry Solution metrics users can specify those with `-m` command line option. Because TS metrics contain formulas `wperf` can calculate those based on event occurrences and present metric value in last columns. Metrics are available in CVS file and marked with leading `M@`, e.g. `M@l1d_cache_miss_ratio` or `M@l1d_tlb_mpki` in order to distinguish metric name from event name.
+In case of targets supporting Telemetry Solution metrics users can specify those with `-m` command line option. Because TS metrics contain formulas, `wperf` can calculate those based on event occurrences and present metric value in last columns. Metrics are available in CSV file and marked with leading `M@`, e.g. `M@l1d_cache_miss_ratio` or `M@l1d_tlb_mpki` in order to distinguish metric name from event name.
 
 For below command which is using TS metrics `l1d_cache_miss_ratio` and `l1d_tlb_mpki` available on neoverse CPUs:
 
@@ -1065,16 +1065,16 @@ Will print on standard output:
 }
 ```
 
-### Store counting results in JSON file
+### Store counting results in the JSON file
 
-Print on standard output results of counting and at the same time store these results in JSON file `count.json`.
+Print on standard output results of counting and at the same time store these results in the JSON file `count.json`.
 ```
 > wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 --output count.json sleep 1
 ```
 
-### Only store counting results in JSON file
+### Only store counting results in the JSON file
 
-Store counting results in JSON file `count.json` and do not print anything on the screen. Printouts are suppressed with `-q` command line flag.
+Store counting results in the JSON file `count.json` and does not print anything on the screen. Printouts are suppressed with the `-q` command line flag.
 ```
 > wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 --output count.json -q sleep 1
 ```
@@ -1431,7 +1431,7 @@ verbatim to the program that is being spawned. If you want to execute the CPytho
 
 ### wperf "--" (double-dash) support
 
-A double-dash (`--`) is a syntax used in shell commands to signify end of command options and beginning of positional arguments. In other words, it separates `wperf` CLI options from arguments that command operates on. Use `--` to separate `wperf.exe` command line options from process you want to spawn followed by its verbatim arguments.
+A double-dash (`--`) is a syntax used in shell commands to signify end of command options and beginning of positional arguments. In other words, it separates `wperf` CLI options from arguments that the command operates on. Use `--` to separate `wperf.exe` command line options from the process you want to spawn followed by its verbatim arguments.
 
 ```
 >wperf [OPTIONS] -- PROCESS_NAME [ARGS]
@@ -1595,7 +1595,7 @@ __CheckForDebuggerJustMyCode
 100.00%       128  top 4 in total
 ```
 
-The columns are pretty simmilar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair file name/line number's disassembled code. Notice that
+The columns are pretty similar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair file name/line number's disassembled code. Notice that
 WindowsPerf uses LLVM's [objdump](https://llvm.org/docs/CommandGuide/llvm-objdump.html) and it needs to be available on PATH or else you will get the following message
 
 ```
@@ -1613,11 +1613,11 @@ You can either:
 
 ## Sampling with Arm Statistical Profiling Extension (SPE)
 
-WindowsPerf added support (in `record` command) for the Arm Statistical Profiling Extension (SPE). SPE is an optional feature in ARMv8.2 hardware that allows CPU instructions to be sampled and associated with the source code location where that instruction occured.
+WindowsPerf added support (in `record` command) for the Arm Statistical Profiling Extension (SPE). SPE is an optional feature in ARMv8.2 hardware that allows CPU instructions to be sampled and associated with the source code location where that instruction occurred.
 
 > :warning: Currently SPE is available on Windows On Arm Test Mode only!
 
-You can use the same `--annotate` and `--disassemble` interface of WindowsPerf with one exception. To reach our to SPE resources please use `-e` command with `arm_spe_0//` options. For example:
+You can use the same `--annotate` and `--disassemble` interface of WindowsPerf with one exception. To reach out to SPE resources please use `-e` command with `arm_spe_0//` options. For example:
 
 ```
 >wperf record -e arm_spe_0//` -c 0 --timeout 10 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
@@ -1625,7 +1625,7 @@ You can use the same `--annotate` and `--disassemble` interface of WindowsPerf w
 
 ### SPE detection
 
-> :warning: Currently WindowsPerf support of SPE if in development, you can enable beta code of SPE support with `ENABLE_SPE` macro or just rebuild project with `Debug+SPE` configuration.
+> :warning: Currently WindowsPerf support of SPE is in development, you can enable beta code of SPE support with `ENABLE_SPE` macro or just rebuild project with `Debug+SPE` configuration.
 
 #### SPE hardware support detection
 
@@ -1655,7 +1655,7 @@ If `FeatureString` for both components (`wperf` and `wperf-driver`) contains `+s
 
 ### arm_spe_0// format
 
-Users can specify SPE filters with `arm_spe_0//`. We added CLI parser function for `-e arm_spe_0/*/` notation for `record` command. Where `*` is comma separated list of supported filters. Currently we support filters. Users can define filters such as `store_filter=`, `load_filter=`, `branch_filter=` or short equivalents like `st=`, `ld=` and `b=`. Use `0` or `1` to disabled or enable given filter. For example:
+Users can specify SPE filters with `arm_spe_0//`. We added CLI parser function for `-e arm_spe_0/*/` notation for `record` command. Where `*` is a comma separated list of supported filters. Currently we support filters. Users can define filters such as `store_filter=`, `load_filter=`, `branch_filter=` or short equivalents like `st=`, `ld=` and `b=`. Use `0` or `1` to disabled or enable a given filter. For example:
 
 ```
 >wperf record -c 0 -e arm_spe_0/branch_filter=1/

@@ -49,9 +49,9 @@ TS_USTRESS_HEADER = os.path.join(TS_USTRESS_DIR, "cpuinfo.h")
 ### Module functions
 
 def get_metric_values(cvs_file_path, metric):
-    """ Return list of values from timeline CVS file (for one core only). """
+    """ Return list of values from timeline CSV file (for one core only). """
     result = []
-    metric_column = "M@" + metric   # This is how we encode metric column in CVS timeline file
+    metric_column = "M@" + metric   # This is how we encode metric column in CSV timeline file
 
     with open(cvs_file_path, newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
