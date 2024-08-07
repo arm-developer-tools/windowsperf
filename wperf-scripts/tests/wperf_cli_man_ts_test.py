@@ -33,6 +33,7 @@
 
 """Module is testing `wperf man` features."""
 import pytest
+import json
 from common import run_command, is_json, check_if_file_exists
 
 ### Test cases
@@ -89,6 +90,44 @@ def test_wperf_man_ts_json_file_output_valid(cpu,tmp_path):
     except:
         assert 0
 
+def test_wperf_man_ts_event_json():
+    """ Test `wperf man` JSON output  """
+    cmd = f'wperf man neoverse-n1/ld_spec --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+    assert b'CPU' in stdout
+    assert b'NAME' in stdout
+    assert b'DESCRIPTION' in stdout
+
+def test_wperf_man_ts_metric_json():
+    """ Test `wperf man` JSON output  """
+    cmd = f'wperf man neoverse-n1/branch_percentage --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+    assert b'CPU' in stdout
+    assert b'NAME' in stdout
+    assert b'DESCRIPTION' in stdout
+    assert b'EVENTS' in stdout
+    assert b'FORMULA' in stdout
+    assert b'UNIT' in stdout
+
+def test_wperf_man_ts_group_metrics_json():
+    """ Test `wperf man` JSON output  """
+    cmd = f'wperf man neoverse-n1/Miss_Ratio --json'
+    stdout, _ = run_command(cmd.split())
+    json_output = json.loads(stdout)
+
+    assert is_json(stdout)
+    assert b'CPU' in stdout
+    assert b'NAME' in stdout
+    assert b'DESCRIPTION' in stdout
+    assert b'METRICS' in stdout
+
+
 @pytest.mark.parametrize("cpu",
 [
     ("neoverse-v1"),
@@ -144,7 +183,9 @@ def test_wperf_man_ts_cpu_alias_compare(alias, cpu, event):
     stdout_cpu, _ = run_command(cmd.split())
 
     assert b"NAME" in stdout_alias
+    assert b"CPU" in stdout_alias
     assert b"NAME" in stdout_cpu
+    assert b"CPU" in stdout_cpu
     assert stdout_alias == stdout_cpu
 
 @pytest.mark.parametrize("cpu",
@@ -169,6 +210,7 @@ def test_wperf_man_ts_events(cpu, argument, title, description):
     cmd = ['wperf', 'man', f'{cpu}/{argument}']
     stdout,_ = run_command(cmd)
 
+    assert b'CPU' in stdout
     assert b'NAME' in stdout
     assert b'DESCRIPTION' in stdout
     assert argument.encode() in stdout
@@ -199,6 +241,7 @@ def test_wperf_man_ts_metrics(cpu, argument, event, unit):
     cmd = ['wperf', 'man', f'{cpu}/{argument}']
     stdout,_ = run_command(cmd)
 
+    assert b'CPU' in stdout
     assert b'NAME' in stdout
     assert b'DESCRIPTION' in stdout
     assert b'EVENTS' in stdout
@@ -233,6 +276,7 @@ def test_wperf_man_ts_group_metrics(cpu, argument, title, metric):
     cmd = ['wperf', 'man', f'{cpu}/{argument}']
     stdout,_ = run_command(cmd)
 
+    assert b'CPU' in stdout
     assert b'NAME' in stdout
     assert b'DESCRIPTION' in stdout
     assert b'METRICS' in stdout
