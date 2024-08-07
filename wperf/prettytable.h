@@ -485,21 +485,23 @@ public:
 
 								if (j != 0 && line != L"\n") // if not header and empty
 								{
-									broken_line = formatString(line, L" ", 77);
+									broken_line = formatString(line, L" ", m_LINE_LEN - m_TAB_SIZE);
 								}
 								else
 								{
-									broken_line = formatString(line, L" ", 81);
+									broken_line = formatString(line, L" ", m_LINE_LEN);
 								}
 
 								formatted_lines.insert(formatted_lines.end(), broken_line.begin(), broken_line.end());
 							}
 
+							std::wstring tab = std::wstring(m_TAB_SIZE, L' ');
+
 							for (auto& line : formatted_lines)
 							{
 								if (j != 0 && line != L"\n") // if not header and empty
 								{
-									out_stream << L"    ";
+									out_stream << tab;
 								}
 
 								out_stream << line;
@@ -670,6 +672,9 @@ private:
 		result.push_back(str);
 		return result;
 	}
+
+	static const int m_LINE_LEN = 81;
+	static const int m_TAB_SIZE = 4;
 
 	// Class members
 	StringStream m_out_stream;
