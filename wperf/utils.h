@@ -31,6 +31,7 @@
 #pragma once
 
 #include <algorithm>
+#include <filesystem>
 #include <iomanip>
 #include <string>
 #include <type_traits>
@@ -54,6 +55,7 @@ void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, 
 void TokenizeWideStringOfStringsDelim(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens);
 double ConvertNumberWithUnit(double number, std::wstring unit, const std::unordered_map<std::wstring, double>& unitConversionMap);
 void ReplaceAllTokensInWString(std::wstring& str, const std::wstring& old_token, const std::wstring& new_token);
+std::wstring GetFullFilePath(std::wstring dir_str, std::wstring filename_str);
 
 /// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"

@@ -968,10 +968,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
         if (m_cwd.size())
         {
-            std::filesystem::path dir(m_cwd);
-            std::filesystem::path file(output_filename);
-            std::filesystem::path full_path = dir / file;
-            output_filename_full_path = full_path;
+            output_filename_full_path = GetFullFilePath(m_cwd, output_filename);
         }
 
         if (do_timeline)

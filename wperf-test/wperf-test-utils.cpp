@@ -46,6 +46,16 @@ namespace wperftest
 	{
 	public:
 
+		TEST_METHOD(test_GetFullFilePath)
+		{
+			Assert::AreEqual(GetFullFilePath(std::wstring(L"c:\\Workspace"),
+				std::wstring(L"filename.csv")),
+				std::wstring(L"c:\\Workspace\\filename.csv"));
+			Assert::AreEqual(GetFullFilePath(std::wstring(L"c:\\Program Files (x86)\\InstallShield Installation Information\\{04201224-2B34-4EE7-862B-B7BBF89DB3AB}"),
+				std::wstring(L"setup.exe")),
+				std::wstring(L"c:\\Program Files (x86)\\InstallShield Installation Information\\{04201224-2B34-4EE7-862B-B7BBF89DB3AB}\\setup.exe"));
+		}
+
 		TEST_METHOD(test_WStringJoin_corner_empty_vect)
 		{
 			{

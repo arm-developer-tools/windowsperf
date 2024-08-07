@@ -270,3 +270,18 @@ void ReplaceAllTokensInWString(std::wstring& str, const std::wstring& old_token,
         pos += new_token.size();
     }
 }
+
+/// <summary>
+/// Merge directory name with file name and form full file path
+/// Note: only WSTRING path support for Windows OS.
+/// </summary>
+/// <param name="dir_str">Prefix directory</param>
+/// <param name="filename_str">filename to merge</param>
+/// <returns>Merged path to the file</returns>
+std::wstring GetFullFilePath(std::wstring dir_str, std::wstring filename_str)
+{
+    std::filesystem::path dir(dir_str);
+    std::filesystem::path file(filename_str);
+    std::filesystem::path full_path = dir / file;
+    return full_path;
+}
