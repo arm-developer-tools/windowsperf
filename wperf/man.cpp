@@ -40,6 +40,9 @@ void print_metric(pmu_device& pdev, const std::wstring& product_name, const std:
 {
 	product_metric metric = pdev.m_product_metrics[product_name][requested_metric];
 
+	_col1.push_back(L"CPU");
+	_col2.push_back(product_name);
+
 	_col1.push_back(L"NAME");
 	_col2.push_back(metric.name + L" - " + metric.title);
 
@@ -62,9 +65,13 @@ void print_metric(pmu_device& pdev, const std::wstring& product_name, const std:
 void print_event(pmu_device& pdev, const std::wstring& product_name, const std::wstring& requested_event) 
 {
 	product_event event = pdev.m_product_events[product_name][requested_event];
+	
+	_col1.push_back(L"CPU");
+	_col2.push_back(product_name);
 
 	_col1.push_back(L"NAME");
 	_col2.push_back(event.name + L" - " + event.title);
+
 	_col1.push_back(L"DESCRIPTION");
 	_col2.push_back(event.description);
 }
@@ -73,8 +80,12 @@ void print_groups_metric(pmu_device& pdev, const std::wstring& product_name, con
 {
 	product_group_metrics group_metrics = pdev.m_product_groups_metrics[product_name][requested_arg];
 
+	_col1.push_back(L"CPU");
+	_col2.push_back(product_name);
+
 	_col1.push_back(L"NAME");
 	_col2.push_back(group_metrics.name + L" - " + group_metrics.title);
+
 	_col1.push_back(L"DESCRIPTION");
 	_col2.push_back(group_metrics.description);
 
