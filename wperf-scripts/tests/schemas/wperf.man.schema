@@ -1,0 +1,22 @@
+{
+    "title": "WindowsPerf manual JSON output format",
+    "description": "WindowsPerf outputs JSON format for the manual (man) feature",
+    "type": "object", 
+    "required": [ "Manual_Results" ],
+    "additionalProperties": false,
+    "properties": {
+        "Manual_Results": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "required": [ "Field_Type", "Result" ],
+                "additionalProperties": false,
+                "properties": {
+                    "Field_Type": { "type": "string" },
+                    "Result": { "type": "string" }
+                }
+            }
+        }
+    }
+}
