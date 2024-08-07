@@ -166,6 +166,9 @@ OPTIONS:
     --output, -o
         Specify JSON output file name.
 
+    --output-prefix, --cwd
+         Set current working dir for storing output JSON and CSV file.
+
     --config
         Specify configuration parameters.
 

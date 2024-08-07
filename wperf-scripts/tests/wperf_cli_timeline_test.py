@@ -45,6 +45,7 @@ import json
 import os
 import re
 import pytest
+import tempfile
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
@@ -112,6 +113,36 @@ def test_wperf_timeline_core_n_file_output(C, I, N, SLEEP):
         # Find lines with counter values, e.g.. 80182394,86203106,38111732,89739,61892,20932002,
         pattern = r'([0-9]+,){%s}\n' % (gpc_num + 1)
         assert len(re.findall(pattern, cvs, re.DOTALL)) == N
+
+@pytest.mark.parametrize("C,I,N,SLEEP",
+[
+    (0,0,3,1),
+    (0,1,5,2),
+]
+)
+def test_wperf_timeline_core_n_file_cwd_output(C, I, N, SLEEP):
+    """ Test timeline (core X) file format output.  """
+    csv_file = "timeline_csv_cwd_%d.csv" % os.getpid()
+    tmp_dir = tempfile.TemporaryDirectory()
+    file_path = os.path.join(tmp_dir.name, csv_file)
+
+    cmd = f'wperf stat -m imix -c {C} -t -i {I} -n {N} -v --output {csv_file} --timeout {SLEEP}'
+    stdout, _ = run_command(cmd.split() + ['--cwd', tmp_dir.name])
+
+    # Test for timeline file name in verbose mode
+    assert str.encode(file_path) in stdout
+    assert b"timeline file: '%s'" % (str.encode(file_path)) in stdout
+
+    # Test for timeline file content
+    with open(file_path, 'r') as file:
+        cvs = file.read()
+        assert cvs.count("Multiplexing,FALSE") == 1
+        assert cvs.count("Kernel mode,FALSE") == 1
+        assert cvs.count(f"Count interval,{I}.00") == 1
+        assert cvs.count("Event class,core") == 1
+        assert cvs.count("cycle,inst_spec,dp_spec,vfp_spec,") == 1  # This should be checked dynamically
+
+    tmp_dir.cleanup()
 
 @pytest.mark.parametrize("I,N,SLEEP",
 [
@@ -283,3 +314,50 @@ def test_wperf_timeline_json_output(C, I, N, SLEEP):
     assert json_output["count_duration"] == SLEEP
     assert json_output["count_interval"] == I
     assert json_output["count_timeline"] == N
+
+@pytest.mark.parametrize("C,I,N,SLEEP",
+[
+    (0, 1, 1, 2),
+    (1, 1, 2, 2),
+    (2, 1, 3, 2),
+]
+)
+def test_wperf_timeline_json_cwd_output(C, I, N, SLEEP):
+    """ Test timeline (core X) file format output.  """
+    json_file = "timeline_json_cwd_%d.json" % os.getpid()
+    tmp_dir = tempfile.TemporaryDirectory()
+    file_path = os.path.join(tmp_dir.name, json_file)
+
+    cmd = ['wperf', 'stat',
+           '-m', 'imix',
+           '-c', str(C),
+           '--json',
+           '--cwd', tmp_dir.name,
+           '--output', str(json_file),
+           '-t', '-i', str(I), '-n', str(N), '--timeout', str(SLEEP)]
+    _, _ = run_command(cmd)
+
+    try:
+        with open(file_path) as f:
+            json_output_f = f.read()
+    except:
+        assert 0, f"in {cmd}"
+
+    assert is_json(json_output_f), f"in {cmd}"
+
+    # load to object JSON from file for more checks
+    json_output = json.loads(json_output_f)
+
+    assert "count_duration" in json_output
+    assert "count_interval" in json_output
+    assert "count_timeline" in json_output
+    assert "timeline" in json_output
+
+    assert type(json_output["timeline"]) is list
+    assert len(json_output["timeline"]) == N
+
+    assert json_output["count_duration"] == SLEEP
+    assert json_output["count_interval"] == I
+    assert json_output["count_timeline"] == N
+
+    tmp_dir.cleanup()

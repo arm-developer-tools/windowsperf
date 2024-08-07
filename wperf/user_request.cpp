@@ -191,6 +191,9 @@ OPTIONS:
     --output, -o
         Specify JSON output file name.
 
+    --output-prefix, --cwd
+         Set current working dir for storing output JSON and CSV file.
+
     --config
         Specify configuration parameters.
 
@@ -392,6 +395,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_commandline = false;
     bool waiting_record_spawn_delay = false;
     bool waiting_man_query = false;
+    bool waiting_cwd = false;
 
     bool sample_pe_file_given = false;
 
@@ -515,6 +519,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             else
                 parse_events_str(a, events, groups, L"", pmu_cfg);
             waiting_events = false;
+            continue;
+        }
+
+        if (waiting_cwd)
+        {
+            waiting_cwd = false;
+            m_cwd = a;
             continue;
         }
 
@@ -811,6 +822,11 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (a == L"--cwd" || a == L"--output-prefix")
+        {
+            waiting_cwd = true;
+        }
+
         if (a == L"--output" || a == L"-o")
         {
             waiting_output_filename = true;
@@ -948,23 +964,33 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     // Support custom outpus for --output
     if (output_filename.size())
     {
+        std::wstring output_filename_full_path = output_filename;
+
+        if (m_cwd.size())
+        {
+            std::filesystem::path dir(m_cwd);
+            std::filesystem::path file(output_filename);
+            std::filesystem::path full_path = dir / file;
+            output_filename_full_path = full_path;
+        }
+
         if (do_timeline)
         {
             if (m_outputType == TableType::JSON)    //  -t ... --json --output filename.json
             {
                 m_outputType = TableType::ALL;
-                m_out.m_filename = output_filename;
+                m_out.m_filename = output_filename_full_path;
                 m_out.m_shouldWriteToFile = true;
             }
             else //  -t ... --output filename.csv
             {
-                timeline_output_file = output_filename;
+                timeline_output_file = output_filename_full_path;
             }
         }
         else // Output to JSON
         {
             m_outputType = TableType::ALL;
-            m_out.m_filename = output_filename;
+            m_out.m_filename = output_filename_full_path;
             m_out.m_shouldWriteToFile = true;
         }
     }

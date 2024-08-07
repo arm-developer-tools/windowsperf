@@ -88,6 +88,7 @@ public:
     bool do_detect = false;
     bool do_force_lock = false;     // Force lock acquire of the driver
     bool do_export_perf_data;
+    bool do_cwd = false;            // Set current working dir for storing output files
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;
     std::vector<uint8_t> cores_idx;
@@ -102,6 +103,7 @@ public:
     std::wstring sample_pdb_file;
     std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
     std::wstring timeline_output_file; 
+    std::wstring m_cwd;                     // Current working dir for storing output files
     uint32_t sample_display_row;
     bool sample_display_short;
     std::map<enum evt_class, std::vector<struct evt_noted>> ioctl_events;
