@@ -17,7 +17,7 @@ New macro, `ENABLE_ETW_TRACING_APP` is used to control ETW output inside the `wp
 # Usage of wperf
 
 ```
-WindowsPerf ver. 3.7.2 (888f7a52/Debug+etw-app) WOA profiling with performance counters.
+WindowsPerf ver. 3.7.2 (489c1443/Debug+etw-app) WOA profiling with performance counters.
 Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
 
 NAME:
@@ -67,7 +67,7 @@ OPTIONS:
         Display version.
 
     -v, --verbose
-        Enable verbose output also in the JSON output.
+        Enable verbose output also in JSON output.
 
     -q
         Quiet mode, no output is produced.
@@ -165,6 +165,9 @@ OPTIONS:
 
     --output, -o
         Specify JSON output file name.
+
+    --output-csv
+        Specify CSV output file name. Only with timeline `-t`.
 
     --output-prefix, --cwd
          Set current working dir for storing output JSON and CSV file.
@@ -812,7 +815,12 @@ counts on core 0.
 
 ## Timeline (count multiple times between intervals)
 
-Timeline feature allow users to perform continuous counting (defined with `--timeout <DURATION>` command line option) between intervals (defined with `-i <DURATION>`) for `N` times (defined with `-n <N>`). For example command:
+Timeline feature allow users to perform continuous counting:
+- defined with `--timeout <DURATION>` command line option
+- between intervals, defined with `-i <DURATION>`
+- for `N` times, defined with `-n <N>`.
+
+For example command:
 
 ```
 >wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
@@ -841,7 +849,9 @@ events to be counted:
 
 Hint:
 - use `-m <metric>` to capture metric events, and/or `-e <events>` to count additional events.
-- use `--json` to additionally return timeline output data in the JSON format, add `--output <FILENAME>` to capture output to a given file.
+- use `--json` to additionally return timeline output data in the JSON format, add `--output <FILENAME>` to capture JSON output to a given file.
+  - use `--output-csv <CSV_FILENAME>` with `--json` and `--output <JSON_FILENAME>` to capture JSON timeline output to `<JSON_FILENAME>` and CSV timeline output to `<CSV_FILENAME>` file.
+- use `--cwd <PATH>` command line to specify directory in which WindowsPerf will store JSON and CSV files.
 
 Note: to check available events and metrics please use `wperf list` and `wperf list -v` commands. Latter one gives you a bit more information about events and metrics.
 
@@ -895,11 +905,11 @@ cycle,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,
 
 Timeline file contains header with few counting setting values (these will increase in the future), and rows with column oriented values. These specify cores, events and metrics counted and computed during timeline pass:
 
-#### Specify timeline CSV output file name with --output command line option
+#### Specify timeline CSV output file name with --output-csv command line option
 
-Support for `--output` command line in timeline (`-t`) is as follows:
+Support for `--output-csv` command line in timeline (`-t`) is as follows:
 
-Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from the console name of the timeline CSV file. Now users can also specify timeline output file name with `--output <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
+Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from the console name of the timeline CSV file. Now users can also specify timeline output file name with `--output-csv <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
 
 User can specify in `<FILENAME>` few placeholders which can improve timeline file name:
 * `{timestamp}` to add the current timestamp to the output file name. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
@@ -909,12 +919,12 @@ User can specify in `<FILENAME>` few placeholders which can improve timeline fil
 Examples:
 
 ```
->wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 1,2,3 -v --output timeline_{core}_{timestamp}_{class}.csv
+>wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 1,2,3 -v --output-csv timeline_{core}_{timestamp}_{class}.csv
 timeline file: 'timeline_1_2023_09_21_12_21_46_core.csv'
 ```
 
 ```
->wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output timeline--{core}--{class}.csv
+>wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output-csv timeline--{core}--{class}.csv
 timeline file: 'timeline--7--core.csv'
 ```
 
@@ -973,9 +983,9 @@ Note: use `wperf list -v` command line option to determine if your CPU supports 
 You can output JSON instead of human readable tables with `wperf`. We've introduced three new command line flags which should help you emit JSON.
 Flag `--json` will emit JSON for tables with values.
 Quiet mode can be selected with `-q`. This will suppress human readable printouts. Please note that `--json` implies `-q`.
-You can also emit JSON to file directly with `--output <filename>`.
+You can also emit JSON to file directly with `--output <FILENAME>`. Optionally add `--cwd` command line option to specify directory where `<FILENAME>` will be created.
 
-Currently we support `--json` with `stat`, `list` and `test` commands.
+Currently we support `--json` with `stat`, `sample`, `record`, `list`, `man` and `test` commands.
 
 ### Emit JSON output for simple counting with -json
 

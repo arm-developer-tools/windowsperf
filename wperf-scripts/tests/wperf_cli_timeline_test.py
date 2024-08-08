@@ -49,7 +49,7 @@ import tempfile
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
-from common import is_json
+from common import is_json, check_if_file_exists
 
 ### Test cases
 
@@ -120,18 +120,26 @@ def test_wperf_timeline_core_n_file_output(C, I, N, SLEEP):
     (0,1,5,2),
 ]
 )
-def test_wperf_timeline_core_n_file_cwd_output(C, I, N, SLEEP):
+@pytest.mark.parametrize("CLI_OUTPUT",
+[
+    ("output"),
+    ("output-csv"),
+]
+)
+def test_wperf_timeline_core_n_file_cwd_output_and_csv_output(C, I, N, SLEEP, CLI_OUTPUT):
     """ Test timeline (core X) file format output.  """
-    csv_file = "timeline_csv_cwd_%d.csv" % os.getpid()
+    csv_file = f"timeline_csv_cwd_{os.getpid()}--{CLI_OUTPUT}.csv"
     tmp_dir = tempfile.TemporaryDirectory()
     file_path = os.path.join(tmp_dir.name, csv_file)
 
-    cmd = f'wperf stat -m imix -c {C} -t -i {I} -n {N} -v --output {csv_file} --timeout {SLEEP}'
+    assert len(file_path) > len(csv_file), f"'{file_path}' vs '{csv_file}'"
+
+    cmd = f'wperf stat -m imix -c {C} -t -i {I} -n {N} -v --{CLI_OUTPUT} {csv_file} --timeout {SLEEP}'
     stdout, _ = run_command(cmd.split() + ['--cwd', tmp_dir.name])
 
     # Test for timeline file name in verbose mode
-    assert str.encode(file_path) in stdout
-    assert b"timeline file: '%s'" % (str.encode(file_path)) in stdout
+    assert str.encode(file_path) in stdout, f"in {cmd} --cwd {tmp_dir.name}"
+    assert b"timeline file: '%s'" % (str.encode(file_path)) in stdout, f"in {cmd} --cwd {tmp_dir.name}"
 
     # Test for timeline file content
     with open(file_path, 'r') as file:
@@ -202,14 +210,22 @@ def test_wperf_timeline_system_n_file_output(I, N, SLEEP):
     ("4,5,6",   "timeline_{core}_{class}.csv", b"timeline_4_core.csv"),
 ]
 )
-def test_wperf_timeline_core_n_cli_file_output_command(C, CSV_FILENAME, EXPECTED):
+@pytest.mark.parametrize("CLI_OUTPUT",
+[
+    ("output"),
+    ("output-csv"),
+]
+)
+def test_wperf_timeline_core_n_cli_file_output_command(C, CSV_FILENAME, EXPECTED, CLI_OUTPUT):
     """ Test timeline --output <FILENAME> custom format.  """
-    cmd = f'wperf stat -m imix -c {C} -t -i 1 -n 2 -v --timeout 1 --output {CSV_FILENAME}'
+    cmd = f'wperf stat -m imix -c {C} -t -i 1 -n 2 -v --timeout 1 --{CLI_OUTPUT} {CSV_FILENAME}'
     stdout, _ = run_command(cmd.split())
 
     # Test for timeline file content
     assert b"timeline file: '" in stdout    # Smoke test
     assert b"timeline file: '" + EXPECTED in stdout
+    assert check_if_file_exists(EXPECTED)
+    os.remove(EXPECTED)
 
 @pytest.mark.parametrize("I,N,SLEEP,KERNEL_MODE,EVENTS",
 [
@@ -359,5 +375,54 @@ def test_wperf_timeline_json_cwd_output(C, I, N, SLEEP):
     assert json_output["count_duration"] == SLEEP
     assert json_output["count_interval"] == I
     assert json_output["count_timeline"] == N
+
+    tmp_dir.cleanup()
+
+@pytest.mark.parametrize("C,I,N,SLEEP",
+[
+    (0, 1, 2, 3),
+]
+)
+def test_wperf_timeline_json_cwd_output_and_csv_output(C, I, N, SLEEP):
+    """ Test timeline with --output and --output-csv  """
+    json_file = "timeline_cwd_json_2_%d.json" % os.getpid()
+    csv_file = "timeline_cwd_csv_2_%d.csv" % os.getpid()
+    tmp_dir = tempfile.TemporaryDirectory()
+    file_json_path = os.path.join(tmp_dir.name, json_file)
+    file_csv_path = os.path.join(tmp_dir.name, csv_file)
+
+    cmd = ['wperf', 'stat',
+           '-m', 'imix',
+           '-c', str(C),
+           '--json',
+           '--cwd', tmp_dir.name,
+           '--output', str(json_file),
+           '--output-csv', str(csv_file),
+           '-t', '-i', str(I), '-n', str(N), '--timeout', str(SLEEP)]
+    _, _ = run_command(cmd)
+
+    assert len(file_json_path) > len(json_file)
+    assert len(file_csv_path) > len(csv_file)
+
+    #
+    # Check if --output has JSON file
+    #
+    try:
+        with open(file_json_path) as f:
+            json_output_f = f.read()
+            assert is_json(json_output_f), f"in {cmd}"
+    except:
+        assert 0, f"in {cmd}"
+
+    #
+    # Check if --output-csv has CSV file
+    #
+    with open(file_csv_path, 'r') as file:
+        cvs = file.read()
+        assert cvs.count("Multiplexing,FALSE") == 1, f"in {cmd}"
+        assert cvs.count("Kernel mode,FALSE") == 1, f"in {cmd}"
+        assert cvs.count(f"Count interval,{I}.00") == 1, f"in {cmd}"
+        assert cvs.count("Event class,core") == 1, f"in {cmd}"
+        assert cvs.count("cycle,inst_spec,dp_spec,vfp_spec,") == 1, f"in {cmd}"  # This should be checked dynamically
 
     tmp_dir.cleanup()

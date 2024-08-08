@@ -86,7 +86,9 @@ def test_wperf_cli_help_format():
     assert b"-E"                        b"\r\n" in stdout
     assert b"--json"                    b"\r\n" in stdout
     assert b"--output, -o"              b"\r\n" in stdout
+    assert b"--output-csv"              b"\r\n" in stdout
     assert b"--config"                  b"\r\n" in stdout
+    assert b"--output-prefix, --cwd"    b"\r\n" in stdout
 
 def test_wperf_cli_help_spe_usage_included():
     """ Test for SPE in --help usage string

@@ -191,6 +191,9 @@ OPTIONS:
     --output, -o
         Specify JSON output file name.
 
+    --output-csv
+        Specify CSV output file name. Only with timeline `-t`.
+
     --output-prefix, --cwd
          Set current working dir for storing output JSON and CSV file.
 
@@ -386,6 +389,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_metric_config = false;
     bool waiting_events_config = false;
     bool waiting_output_filename = false;
+    bool waiting_output_csv_filename = false;
     bool waiting_image_name = false;
     bool waiting_pe_file = false;
     bool waiting_pdb_file = false;
@@ -400,7 +404,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool sample_pe_file_given = false;
 
     std::wstring waiting_duration_arg;
-    std::wstring output_filename;
+    std::wstring output_filename, output_csv_filename;
 
     if (raw_args.empty())
     {
@@ -533,6 +537,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         {
             waiting_output_filename = false;
             output_filename = a;
+            continue;
+        }
+
+        if (waiting_output_csv_filename)
+        {
+            waiting_output_csv_filename = false;
+            output_csv_filename = a;
             continue;
         }
 
@@ -833,6 +844,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (a == L"--output-csv")
+        {
+            waiting_output_csv_filename = true;
+            continue;
+        }
+
         if (a == L"--config")
         {
             waiting_config = true;
@@ -961,27 +978,33 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         m_out.GetErrorOutputStream() << L"warning: unexpected arg '" << a << L"' ignored" << std::endl;
     }
 
+    std::wstring output_filename_full_path = output_filename;
+    std::wstring output_filename_csv_full_path = output_csv_filename;
+
+    if (m_cwd.size())
+    {
+        output_filename_full_path = GetFullFilePath(m_cwd, output_filename);
+        output_filename_csv_full_path = GetFullFilePath(m_cwd, output_csv_filename);
+    }
+
     // Support custom outpus for --output
     if (output_filename.size())
     {
-        std::wstring output_filename_full_path = output_filename;
-
-        if (m_cwd.size())
-        {
-            output_filename_full_path = GetFullFilePath(m_cwd, output_filename);
-        }
-
         if (do_timeline)
         {
-            if (m_outputType == TableType::JSON)    //  -t ... --json --output filename.json
+            if (m_outputType == TableType::JSON)    //  -t ... --json
             {
                 m_outputType = TableType::ALL;
-                m_out.m_filename = output_filename_full_path;
+                m_out.m_filename = output_filename_full_path;           // -t ... --json --output filename.json
                 m_out.m_shouldWriteToFile = true;
+                timeline_output_file = output_filename_csv_full_path;   // -t ... --json --output filename.json --output-csv filename.csv
             }
-            else //  -t ... --output filename.csv
+            else //  -t ... --output filename.csv / --output-csv filename.csv
             {
-                timeline_output_file = output_filename_full_path;
+                if (output_csv_filename.size())
+                    timeline_output_file = output_filename_csv_full_path;   // -t ... --output filename.csv --output-csv filename.csv, --output-csv has higher priority
+                else
+                    timeline_output_file = output_filename_full_path;       // -t ... --output filename.csv
             }
         }
         else // Output to JSON
@@ -991,6 +1014,10 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             m_out.m_shouldWriteToFile = true;
         }
     }
+
+    // --output-csv has higher priority
+    if (output_csv_filename.size() && do_timeline)
+        timeline_output_file = output_filename_csv_full_path;   // -t ... --output-csv filename.csv
 
     if (do_sample && cores_idx.size() > 1)
     {
@@ -1195,3 +1222,4 @@ double user_request::convert_timeout_arg_to_seconds(std::wstring number_and_suff
 
     return ConvertNumberWithUnit(number, suffix, unit_map);
 }
+

@@ -117,7 +117,7 @@ public:
         L"ld", L"st", L"b" };
 
 private:
-    bool all_cores_p() {
+    bool all_cores_p() const {
         return cores_idx.size() > 1;
     }
 
