@@ -459,6 +459,34 @@ wmain(
         }
         else if (request.do_sample || request.do_record)
         {
+            enable_bits = 0;
+            if(request.m_sampling_with_spe)
+            {
+                /* If we are sampling with SPE we will also enable special PMU events to be counted during
+                the sampling session. We added those events manually.*/
+                try
+                {
+                    std::vector<enum evt_class> e_classes;
+                    for (const auto& [key, _] : request.ioctl_events)
+                        e_classes.push_back(key);
+
+                    enable_bits = pmu_device.enable_bits(e_classes);
+                }
+                catch (fatal_exception& e)
+                {
+                    m_out.GetErrorOutputStream() << e.what() << std::endl;
+                    exit_code = EXIT_FAILURE;
+                    goto clean_exit;
+                }
+
+                uint32_t stop_bits = pmu_device.stop_bits();
+
+                pmu_device.stop(stop_bits);
+
+                for (uint32_t core_idx : request.cores_idx)
+                    pmu_device.events_assign(core_idx, request.ioctl_events, request.do_kernel);
+            }
+
             if (request.do_verbose)
             {
                 m_out.GetOutputStream() << "sampling type: ";
@@ -717,7 +745,12 @@ wmain(
                     static_cast<int64_t>(request.count_duration * 10) : _I64_MAX;
                 int64_t t_count1 = sampling_duration_iter;
 
-                if (request.m_sampling_with_spe) pmu_device.spe_start(request.m_sampling_flags);
+                if (request.m_sampling_with_spe)
+                {
+                    pmu_device.reset(enable_bits);
+                    pmu_device.start(enable_bits);
+                    pmu_device.spe_start(request.m_sampling_flags);
+                }
                 else pmu_device.start_sample();
 
                 m_out.GetOutputStream() << L"sampling ...";
@@ -753,8 +786,15 @@ wmain(
 
                 if(request.m_sampling_with_spe)
                 {
+                    // We stop the SPE first so we don't miss any PMU events
                     pmu_device.spe_stop();
                     pmu_device.spe_get();
+                    pmu_device.stop(enable_bits);
+
+                    // Now we read jus the core events and print the debugging information
+                    pmu_device.core_events_read();
+                    pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
+                    pmu_device.print_core_metrics(request.ioctl_events[EVT_CORE]);
                 } else {
                     pmu_device.stop_sample();
                 }
@@ -1227,7 +1267,10 @@ wmain(
 
             if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
             {
-                m_out.Print(m_globalSamplingJSON);
+                if (request.m_sampling_with_spe)
+                    m_out.Print(m_globalSamplingJSON, m_globalJSON);
+                else
+                    m_out.Print(m_globalSamplingJSON);
             }
 
             if (printed_sample_num > 0 && printed_sample_num < request.sample_display_row)

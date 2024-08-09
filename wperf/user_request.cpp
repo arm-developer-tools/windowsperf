@@ -500,6 +500,12 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                             throw fatal_exception("ERROR_SPE_FILTER_ERR");
                         }
                     }
+
+                    /* When the user requests SPE we always include hidden events for the PMU. This 
+                    *  events help diagnose the run. We call `parse_events_str` directly so all data 
+                    *  structures required by the driver will be properly setup. 
+                    */
+                    parse_events_str(L"SAMPLE_POP,SAMPLE_FEED,SAMPLE_FILTRATE,SAMPLE_COLLISION", events, groups, L"", pmu_cfg);
                 }
                 else    // Software sampling (no SPE)
                 {

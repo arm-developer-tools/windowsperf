@@ -1,0 +1,24 @@
+{
+    "title": "WindowsPerf timeline JSON output format",
+    "description": "WindowsPerf outputs JSON format for sampling feature (SPE)",
+    "type": "object",
+    "required": [
+        "counting",
+        "sampling"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "counting": {
+            "type": "object",
+            "items": {
+                "$ref": "file:schemas/wperf.stat.schema"
+            }
+        },
+        "sampling": {
+            "type": "object",
+            "items": {
+                "$ref": "file:schemas/wperf.sample.schema"
+            }
+        }
+    }
+}

@@ -978,6 +978,27 @@ struct OutputControl
         }
     }
 
+    /* When SPE is used we also enable the PMU to gather diagnosticis data. 
+    Here we print a special sampling/counting output keeping each one of them still compatible with the sample/count schema. */
+    void Print(WPerfSamplingJSON<CharType>& tableSampling, WPerfStatJSON<CharType>& tableStat)
+    {
+        if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
+        {
+            StringType sSampling = tableSampling.Print().str();
+            StringType sStat = tableStat.Print().str();
+
+            StringType s = L"{\"sampling\":" + sSampling + L",\n\"counting\":" + sStat + L"}";
+
+            if (!m_shouldWriteToFile)
+            {
+                Print_(s);
+            }
+            else {
+                OutputToFile(s);
+            }
+        }
+    }
+
     void Print(WPerfTimelineJSON<CharType>& table)
     {
         if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)

@@ -36,7 +36,8 @@ import json
 from statistics import median
 from time import sleep
 import pytest
-from common import run_command, is_json, check_if_file_exists
+from jsonschema import validate
+from common import run_command, is_json, check_if_file_exists, get_schema
 from common import get_spe_version, wperf_event_is_available
 from common_cpython import CPYTHON_EXE_DIR
 
@@ -211,9 +212,11 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
 
         # Check sampling JSON output for expected functions
         assert "sampling" in json_output
-        assert "events" in json_output["sampling"]
+        assert "counting" in json_output
+        assert "sampling" in json_output["sampling"]
+        assert "events" in json_output["sampling"]["sampling"]
 
-        events = json_output["sampling"]["events"]  # List of dictionaries, for each event
+        events = json_output["sampling"]["sampling"]["events"]  # List of dictionaries, for each event
         assert len(events) >= 1  # We expect at least one record
 
         """
@@ -241,3 +244,125 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
     # We want to see at least e.g. 70% of samples in e.g `x_mul`:
     #
     assert median(overheads) >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% SPE sampling hotspot in {HOT_SYMBOL}, overheads={overheads}, cmd={cmd}"
+
+@pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
+[
+    ("arm_spe_0", "",              "10**10**100"),
+    ("arm_spe_0", "load_filter=1", "10**10**100"),
+]
+)
+def test_cpython_bench_spe_json_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
+    """ Test SPE JSON output against scheme """
+    ## Do we have FEAT_SPE
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    ## Execute benchmark
+    pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
+
+    if not check_if_file_exists(pyhton_d_exe_path):
+        pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
+
+    test_path = os.path.dirname(request.path)
+    file_path = tmp_path / 'test.json'
+
+    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --output {str(file_path)} -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+    _, _ = run_command(cmd.split())
+
+    json_output = {}
+
+    try:
+        with open(str(file_path)) as json_file:
+            json_output = json.loads(json_file.read())
+        validate(instance=json_output, schema=get_schema("spe", test_path))
+    except Exception as err:
+        assert False, f"Unexpected {err=}, {type(err)=}"
+
+@pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
+[
+    ("arm_spe_0", "",              "10**10**100"),
+    ("arm_spe_0", "load_filter=1", "10**10**100"),
+]
+)
+def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
+    """ Test SPE JSON output against stdout scheme """
+    ## Do we have FEAT_SPE
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    ## Execute benchmark
+    pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
+
+    if not check_if_file_exists(pyhton_d_exe_path):
+        pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
+
+    test_path = os.path.dirname(request.path)
+
+    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+    stdout, _ = run_command(cmd.split())
+
+    json_output = json.loads(stdout)
+
+    try:
+        validate(instance=json_output, schema=get_schema("spe", test_path))
+    except Exception as err:
+        assert False, f"Unexpected {err=}, {type(err)=}"
+
+@pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
+[
+    ("arm_spe_0", "",                   "10**10**100"),
+    ("arm_spe_0", "load_filter=1",      "10**10**100"),
+    ("arm_spe_0", "load_filter=1,st=1", "10**10**100"),
+]
+)
+def test_cpython_bench_spe_consistency(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
+    """ Test SPE JSON output against stdout scheme """
+    ## Do we have FEAT_SPE
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    ## Execute benchmark
+    pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
+
+    if not check_if_file_exists(pyhton_d_exe_path):
+        pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
+
+    test_path = os.path.dirname(request.path)
+
+    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+    stdout, _ = run_command(cmd.split())
+
+    json_output = json.loads(stdout)
+
+    total_hits = 0
+    for event in json_output["sampling"]["sampling"]["events"]:
+        event_hits = 0
+        #assert False, f"{event["samples"]=}"
+        for sample in event["samples"]:
+            event_hits = event_hits + sample["count"]
+        total_hits = total_hits + event_hits
+    
+    total_hits_pmu = 0
+    for events in json_output["counting"]["core"]["cores"][0]["Performance_counter"]:
+        if events["event_name"] == "sample_filtrate":
+            total_hits_pmu = events["counter_value"]
+
+    assert total_hits == total_hits_pmu
