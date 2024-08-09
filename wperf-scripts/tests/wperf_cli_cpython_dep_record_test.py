@@ -53,10 +53,10 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
         with some minimum sampling %."""
 
     ## Execute benchmark
-    pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
+    python_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
 
-    if not check_if_file_exists(pyhton_d_exe_path):
-        pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
+    if not check_if_file_exists(python_d_exe_path):
+        pytest.skip(f"Can't locate CPython native executable in {python_d_exe_path}")
 
     overheads = []  # Results of sampling of the symbol
     #
@@ -65,7 +65,7 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
     for _ in range(3):
         sleep(2)    # Cool-down the core
 
-        cmd = f"wperf record -e {EVENT}:{EVENT_FREQ} -c 7 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+        cmd = f"wperf record -e {EVENT}:{EVENT_FREQ} -c 7 --timeout 5 --json -- {python_d_exe_path} -c {PYTHON_ARG}"
         stdout, _ = run_command(cmd)
 
         # Sanity checks
@@ -131,3 +131,14 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
     # We want to see at least e.g. 70% of samples in e.g `x_mul`:
     #
     assert median(overheads) >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% sampling hotspot in {HOT_SYMBOL}, overheads={overheads}"
+
+def test_cpython_bench_record_time():
+    python_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
+
+    if not check_if_file_exists(python_d_exe_path):
+        pytest.skip(f"Can't locate CPython native executable in {python_d_exe_path}")
+
+    cmd = f"wperf record -e ld_spec:100000 -c 1 --timeout 1 --annotate -- {python_d_exe_path} -c 10**10**100"
+    stdout, _ = run_command(cmd)
+
+    assert b'seconds time elapsed' in stdout

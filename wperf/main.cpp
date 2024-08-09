@@ -736,6 +736,9 @@ wmain(
                 if (request.do_export_perf_data)
                     perfDataWriter.RegisterEvent(PerfDataWriter::COMM, pid, request.sample_image_name);
             }
+
+            SYSTEMTIME timestamp_a;
+            SYSTEMTIME timestamp_b;
             
             std::vector<FrameChain> raw_samples;
             {
@@ -754,6 +757,9 @@ wmain(
                 else pmu_device.start_sample();
 
                 m_out.GetOutputStream() << L"sampling ...";
+
+                
+                GetSystemTime(&timestamp_a);
 
                 do
                 {
@@ -781,6 +787,8 @@ wmain(
                             break;
                 }
                 while (t_count1 > 0 && no_ctrl_c);
+
+                GetSystemTime(&timestamp_b);
 
                 m_out.GetOutputStream() << " done!" << std::endl;
 
@@ -1280,6 +1288,26 @@ wmain(
                     << DoubleToWideStringExt((double)printed_sample_freq * 100 / (double)total_samples[group_idx], 2, total_width) << L"%"
                     << IntToDecWideString(printed_sample_freq, 6)
                     << std::wstring(PrettyTable<wchar_t>::m_COLUMN_SEPARATOR, L' ') <<  L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
+            }
+
+            ULARGE_INTEGER li_a, li_b;
+            FILETIME time_a, time_b;
+
+            SystemTimeToFileTime(&timestamp_a, &time_a);
+            SystemTimeToFileTime(&timestamp_b, &time_b);
+            li_a.u.LowPart = time_a.dwLowDateTime;
+            li_a.u.HighPart = time_a.dwHighDateTime;
+            li_b.u.LowPart = time_b.dwLowDateTime;
+            li_b.u.HighPart = time_b.dwHighDateTime;
+
+            const double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
+            m_globalJSON.m_duration = duration;
+
+            if (!request.do_timeline)
+            {
+                m_out.GetOutputStream() << std::endl;
+                m_out.GetOutputStream() << std::right << std::setw(20)
+                    << duration << L" seconds time elapsed" << std::endl;
             }
         }
     }
