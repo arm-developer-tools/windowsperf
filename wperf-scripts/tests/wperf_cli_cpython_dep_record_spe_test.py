@@ -41,6 +41,22 @@ from common import run_command, is_json, check_if_file_exists, get_schema
 from common import get_spe_version, wperf_event_is_available
 from common_cpython import CPYTHON_EXE_DIR
 
+#
+# Skip whole module if SPE is not supported in this configuration
+#
+
+# Skip whole module if ustress is not supported by this CPU
+spe_device = get_spe_version()
+assert spe_device is not None
+if not spe_device.startswith("FEAT_SPE"):
+    pytest.skip(f"unsupported configuration: no SPE support in HW, see spe_device.version_name={spe_device}",
+        allow_module_level=True)
+
+## Is SPE enabled in `wperf` CLI?
+if not wperf_event_is_available("arm_spe_0//"):
+    pytest.skip(f"unsupported configuration: no SPE support in `wperf`, see spe_device.version_name={spe_device}",
+        allow_module_level=True)
+
 ### Test cases
 
 @pytest.mark.parametrize("SPE_FILTERS",
@@ -72,15 +88,6 @@ def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
     "incorrect SPE filter: '<SPE_FILTERS>' in <SPE_FILTERS>"
 
     """
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
@@ -105,15 +112,6 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
 
     This error is for "empty" filter name.
     """
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
@@ -150,15 +148,6 @@ def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):
 
     "incorrect SPE filter value: '<SPE_FILTERS>' in <SPE_FILTERS>"
     """
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
@@ -177,17 +166,6 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
     """ Test `wperf record` for python_d.exe call for example `Googolplex` calculation.
         We will sample with SPE for one event + filters and we expect one hottest symbol
         with some minimum sampling %."""
-
-    ## Do we have FEAT_SPE
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
 
@@ -253,16 +231,6 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
 )
 def test_cpython_bench_spe_json_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
     """ Test SPE JSON output against scheme """
-    ## Do we have FEAT_SPE
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
 
@@ -292,16 +260,6 @@ def test_cpython_bench_spe_json_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTH
 )
 def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
     """ Test SPE JSON output against stdout scheme """
-    ## Do we have FEAT_SPE
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
 
@@ -329,23 +287,11 @@ def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, EVENT,SPE_FILTE
 )
 def test_cpython_bench_spe_consistency(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
     """ Test SPE JSON output against stdout scheme """
-    ## Do we have FEAT_SPE
-    spe_device = get_spe_version()
-    assert spe_device is not None
-    if not spe_device.startswith("FEAT_SPE"):
-        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
-
-    ## Is SPE enabled in `wperf` CLI?
-    if not wperf_event_is_available("arm_spe_0//"):
-        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
-
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
 
     if not check_if_file_exists(pyhton_d_exe_path):
         pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
-
-    test_path = os.path.dirname(request.path)
 
     cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
     stdout, _ = run_command(cmd.split())
@@ -359,7 +305,7 @@ def test_cpython_bench_spe_consistency(request, tmp_path, EVENT,SPE_FILTERS,PYTH
         for sample in event["samples"]:
             event_hits = event_hits + sample["count"]
         total_hits = total_hits + event_hits
-    
+
     total_hits_pmu = 0
     for events in json_output["counting"]["core"]["cores"][0]["Performance_counter"]:
         if events["event_name"] == "sample_filtrate":
