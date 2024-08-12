@@ -318,6 +318,10 @@ NTSTATUS get_pmu_resource(VOID)
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "HAL: allocate failed 0x%x\n", status));
         return status;
     }
+    else
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "HalAllocateHardwareCounters: success\n"));
+    }
     numFreeGPC = numFreeCounters;
 
     // This driver expose private APIs (IOCTL commands), but also enable ThreadProfiling APIs.
