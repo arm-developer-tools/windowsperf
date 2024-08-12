@@ -38,3 +38,5 @@ GetDevicePath(
     _Out_writes_(BufLen) PWCHAR DevicePath,
     _In_ size_t BufLen
 );
+
+double timestamps_to_duration(const SYSTEMTIME& timestamp_a, const SYSTEMTIME& timestamp_b);

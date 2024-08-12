@@ -122,3 +122,21 @@ clean0:
 
     return bRet;
 }
+
+double timestamps_to_duration(const SYSTEMTIME& timestamp_a, const SYSTEMTIME& timestamp_b) 
+{
+    ULARGE_INTEGER li_a, li_b;
+    FILETIME time_a, time_b;
+
+    SystemTimeToFileTime(&timestamp_a, &time_a);
+    SystemTimeToFileTime(&timestamp_b, &time_b);
+
+    li_a.u.LowPart = time_a.dwLowDateTime;
+    li_a.u.HighPart = time_a.dwHighDateTime;
+    li_b.u.LowPart = time_b.dwLowDateTime;
+    li_b.u.HighPart = time_b.dwHighDateTime;
+
+    double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
+
+    return duration;
+}

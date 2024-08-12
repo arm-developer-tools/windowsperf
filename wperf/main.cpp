@@ -390,17 +390,7 @@ wmain(
                     pmu_device.print_dmc_stat(request.ioctl_events[EVT_DMC_CLK], request.ioctl_events[EVT_DMC_CLKDIV2], request.report_ddr_bw_metric);
                 }
 
-                ULARGE_INTEGER li_a, li_b;
-                FILETIME time_a, time_b;
-
-                SystemTimeToFileTime(&timestamp_a, &time_a);
-                SystemTimeToFileTime(&timestamp_b, &time_b);
-                li_a.u.LowPart = time_a.dwLowDateTime;
-                li_a.u.HighPart = time_a.dwHighDateTime;
-                li_b.u.LowPart = time_b.dwLowDateTime;
-                li_b.u.HighPart = time_b.dwHighDateTime;
-
-                const double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
+                const double  duration = timestamps_to_duration(timestamp_a, timestamp_b);
                 m_globalJSON.m_duration = duration;
 
                 if (!request.do_timeline)
@@ -1290,17 +1280,7 @@ wmain(
                     << std::wstring(PrettyTable<wchar_t>::m_COLUMN_SEPARATOR, L' ') <<  L"top " << std::dec << printed_sample_num << L" in total" << std::endl;
             }
 
-            ULARGE_INTEGER li_a, li_b;
-            FILETIME time_a, time_b;
-
-            SystemTimeToFileTime(&timestamp_a, &time_a);
-            SystemTimeToFileTime(&timestamp_b, &time_b);
-            li_a.u.LowPart = time_a.dwLowDateTime;
-            li_a.u.HighPart = time_a.dwHighDateTime;
-            li_b.u.LowPart = time_b.dwLowDateTime;
-            li_b.u.HighPart = time_b.dwHighDateTime;
-
-            const double duration = (double)(li_b.QuadPart - li_a.QuadPart) / 10000000.0;
+            const double  duration = timestamps_to_duration(timestamp_a, timestamp_b);
             m_globalJSON.m_duration = duration;
 
             if (!request.do_timeline)
