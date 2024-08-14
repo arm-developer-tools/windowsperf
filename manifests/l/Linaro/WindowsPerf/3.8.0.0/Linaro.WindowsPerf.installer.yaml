@@ -1,0 +1,14 @@
+# Created using wingetcreate 1.6.4.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: Linaro.WindowsPerf
+PackageVersion: 3.8.0.0
+InstallerLocale: en-US
+InstallerType: wix
+ProductCode: '{83690F53-336D-4316-B762-36BBCB22064F}'
+Installers:
+- InstallerUrl: https://gitlab.com/api/v4/projects/40381146/packages/generic/windowsperf/3.8.0/wperf-installer.msi
+  Architecture: arm64
+  InstallerSha256: 73AC140C8CB29EC81FF0496F883D62FDFDD22D8A6369E41F45A6926E109E1C8D
+ManifestType: installer
+ManifestVersion: 1.6.0
