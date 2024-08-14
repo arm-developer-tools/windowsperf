@@ -92,6 +92,8 @@ def test_wperf_stat_no_events():
     """ Test for required -e for `wperf stat` """
     cmd = "wperf stat -c 0 sleep 1"
     _, stderr = run_command(cmd)
+
+    assert b"unexpected arg" not in stderr
     assert b'no event specified' in stderr
 
 @pytest.mark.parametrize("events,cores,metric,sleep",
@@ -369,7 +371,7 @@ def test_wperf_stat_timeout_flag_throws(duration):
     _,stderr = run_command(cmd.split())
 
     expected_error = f"input: \"{duration}\" to argument '--timeout' is invalid".encode()
-
+    assert b"unexpected arg" not in stderr
     assert expected_error in stderr
 
 @pytest.mark.parametrize("duration,expected_result",
@@ -401,7 +403,7 @@ def test_wperf_stat_i_flag_throws(duration):
     _,stderr = run_command(cmd.split())
 
     expected_error = f"input: \"{duration}\" to argument '-i' is invalid".encode()
-
+    assert b"unexpected arg" not in stderr
     assert expected_error in stderr
 
 

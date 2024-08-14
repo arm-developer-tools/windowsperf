@@ -51,6 +51,7 @@ def test_record_many_cores_selected(cores):
     """ It is not allowed to specify more than one core for sampling. """
     _, stderr = run_command(f"wperf record -c {cores} -- TEST")
 
+    assert b"unexpected arg" not in stderr
     assert b"you can specify only one core for sampling" in stderr
 
 @pytest.mark.parametrize("cores",
@@ -68,6 +69,7 @@ def test_record_many_cores_selected_ext(cores):
     """ It is not allowed to specify more than one core for sampling. """
     _, stderr = run_command(f"wperf record -v -e ld_spec:100000 -c {cores} --timeout 30 -- python_d.exe -c 10**10**100")
 
+    assert b"unexpected arg" not in stderr
     assert b"you can specify only one core for sampling" in stderr
 
 def test_record_pe_file_not_specified():
@@ -87,6 +89,7 @@ def test_record_pe_file_not_specified():
 
     # We will check this in CLI parsing, so we do not have to provide other parameters like `-c`
     _, stderr = run_command(cmd.split())
+    assert b"unexpected arg" not in stderr
     assert b"no pid or process name specified, sample address are not de-ASLRed" in stderr, f"cmd='{cmd}'"
 
 @pytest.mark.parametrize("gpc_name,error_msg",
@@ -121,6 +124,7 @@ def test_record_too_many_events_to_sample_total_gpc_num(gpc_name,error_msg):
 
     # We will check this in CLI parsing, so we do not have to provide other parameters like `-c`
     _, stderr = run_command(cmd.split())
+    assert b"unexpected arg" not in stderr
     assert error_msg in stderr, f"gpc_name={gpc_name} cmd='{cmd}'"
 
 @pytest.mark.parametrize("gpc_name,error_msg",
@@ -163,4 +167,5 @@ def test_record_too_many_events_to_sample_gpc_num(gpc_name,error_msg):
 
     # We will check this in CLI parsing, so we do not have to provide other parameters like `-c`
     _, stderr = run_command(cmd.split())
+    assert b"unexpected arg" not in stderr
     assert error_msg in stderr, f"gpc_name={gpc_name} cmd='{cmd}'"

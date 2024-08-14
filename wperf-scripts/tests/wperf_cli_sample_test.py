@@ -44,6 +44,7 @@ def test_sample_cli_pdb_file():
     if os.path.isfile(pdb_file):
         pytest.skip(f"File {pdb_file} already exists")
 
+    assert b"unexpected arg" not in stderr
     assert b"PDB file 'pythasdasdasdason.db' doesn't exist" in stderr
 
 def test_sample_cli_pe_file():
@@ -54,6 +55,7 @@ def test_sample_cli_pe_file():
     if os.path.isfile(pe_file):
         pytest.skip(f"File {pe_file} already exists")
 
+    assert b"unexpected arg" not in stderr
     assert b"PE file 'pythasdasdasdason.exe' doesn't exist" in stderr
 
 @pytest.mark.parametrize("interval",
@@ -70,6 +72,8 @@ def test_sample_cli_event_interval_text(interval):
     """ Test sampling event interval for parsing error. """
     cmd = f"wperf sample -e ld_spec:{interval} --pe_file file.exe -c 1"
     _, stderr = run_command(cmd)
+
+    assert b"unexpected arg" not in stderr
     assert b"event interval: %s is invalid!" % str.encode(str(interval)) in stderr, cmd
 
 @pytest.mark.parametrize("interval",
@@ -84,4 +88,6 @@ def test_sample_cli_event_interval_overflow(interval):
     """
     cmd = f"wperf sample -e ld_spec:{interval} --pe_file file.exe -c 1"
     _, stderr = run_command(cmd)
+
+    assert b"unexpected arg" not in stderr
     assert b"event interval: %s is out of range!" % str.encode(str(interval)) in stderr, cmd

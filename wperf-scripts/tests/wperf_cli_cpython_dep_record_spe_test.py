@@ -94,6 +94,7 @@ def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
     cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
+    assert b"unexpected arg" not in stderr
     assert b"incorrect SPE filter:" in stderr
 
 @pytest.mark.parametrize("SPE_FILTERS",
@@ -118,6 +119,7 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
     cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
+    assert b"unexpected arg" not in stderr
     assert b"incorrect SPE filter name:" in stderr
 
 @pytest.mark.parametrize("SPE_FILTERS",
@@ -154,6 +156,7 @@ def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):
     cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
+    assert b"unexpected arg" not in stderr
     assert b"incorrect SPE filter value:" in stderr
 
 @pytest.mark.parametrize("EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG",

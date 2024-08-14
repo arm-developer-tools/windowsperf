@@ -42,6 +42,7 @@ def test_wperf_man_help():
     cmd = 'wperf man'
     _, stderr = run_command(cmd.split())
 
+    assert b"unexpected arg" not in stderr
     expected_warning = b'warning: no argument(s) specified, specify an'
     assert expected_warning in stderr
 
@@ -56,6 +57,7 @@ def test_wperf_man_not_compatible_cpu_throws(cpu, argument):
     cmd = f'wperf man {cpu}/{argument}'
     _,stderr = run_command(cmd.split())
 
+    assert b"unexpected arg" not in stderr
     expected_error = f"warning: \"{argument}\" not found! Ensure it is compatible with the specified CPU".encode()
     assert expected_error in stderr
 
@@ -84,7 +86,6 @@ def test_wperf_man_invalid_cpu_throws(cpu, argument):
     cmd = f'wperf man {cpu}/{argument}'
     _,stderr = run_command(cmd.split())
 
+    assert b"unexpected arg" not in stderr
     expected_error = f"warning: CPU name: \"{cpu}\" not found, use".encode()
-
     assert expected_error in stderr
-

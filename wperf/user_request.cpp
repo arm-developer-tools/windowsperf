@@ -842,6 +842,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"--cwd" || a == L"--output-prefix")
         {
             waiting_cwd = true;
+            continue;
         }
 
         if (a == L"--output" || a == L"-o")

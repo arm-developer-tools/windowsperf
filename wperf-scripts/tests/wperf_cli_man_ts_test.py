@@ -140,18 +140,20 @@ def test_wperf_man_ts_group_metrics_json():
 @pytest.mark.parametrize("argument",
 [
     (""),
-    ("ip c"),
+    ("ip_c"),
     ("tomorrow_land"),
     ("Miss_Rati0"),
     ("neoverse-n1/Miss_Ratio"),
-    ("SVE-INST_ --/ld_specSPEC"),
-    (" ... .. .. .."),
+    ("SVE-INST_--/ld_specSPEC"),
+    ("..."),
 ]
 )
 def test_wperf_man_ts_invalid_arg_throws(cpu, argument):
-    """Test `wperf man` when prompted with invlaid CPUs throws the necessary error"""
+    """Test `wperf man` when prompted with invalid CPUs throws the necessary error"""
     cmd = f'wperf man {cpu}/{argument}'
     _,stderr = run_command(cmd.split())
+
+    assert b"unexpected arg" not in stderr
 
     arg_space = argument.find(" ")
 

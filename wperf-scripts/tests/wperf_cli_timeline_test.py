@@ -44,8 +44,8 @@ Usage:
 import json
 import os
 import re
-import pytest
 import tempfile
+import pytest
 from common import run_command
 from common import get_result_from_test_results
 from common import wperf_test_no_params
@@ -135,7 +135,9 @@ def test_wperf_timeline_core_n_file_cwd_output_and_csv_output(C, I, N, SLEEP, CL
     assert len(file_path) > len(csv_file), f"'{file_path}' vs '{csv_file}'"
 
     cmd = f'wperf stat -m imix -c {C} -t -i {I} -n {N} -v --{CLI_OUTPUT} {csv_file} --timeout {SLEEP}'
-    stdout, _ = run_command(cmd.split() + ['--cwd', tmp_dir.name])
+    stdout, stderr = run_command(cmd.split() + ['--cwd', tmp_dir.name])
+
+    assert b"unexpected arg" not in stderr
 
     # Test for timeline file name in verbose mode
     assert str.encode(file_path) in stdout, f"in {cmd} --cwd {tmp_dir.name}"
@@ -245,7 +247,7 @@ def test_wperf_timeline_core_n_cli_file_output_command(C, CSV_FILENAME, EXPECTED
 def test_wperf_timeline_core_file_output_multiplexing(I, N, SLEEP, KERNEL_MODE, EVENTS):
     """ Test timeline (system - all cores) with multiplexing.  """
     cmd = f'wperf stat -e {EVENTS} -t -i {I} -n {N} sleep {SLEEP} -v'
-    if (KERNEL_MODE):
+    if KERNEL_MODE:
         cmd += ' -k'
 
     stdout, _ = run_command(cmd.split())
@@ -351,7 +353,9 @@ def test_wperf_timeline_json_cwd_output(C, I, N, SLEEP):
            '--cwd', tmp_dir.name,
            '--output', str(json_file),
            '-t', '-i', str(I), '-n', str(N), '--timeout', str(SLEEP)]
-    _, _ = run_command(cmd)
+    _, stderr = run_command(cmd)
+
+    assert b"unexpected arg" not in stderr
 
     try:
         with open(file_path) as f:
@@ -399,7 +403,9 @@ def test_wperf_timeline_json_cwd_output_and_csv_output(C, I, N, SLEEP):
            '--output', str(json_file),
            '--output-csv', str(csv_file),
            '-t', '-i', str(I), '-n', str(N), '--timeout', str(SLEEP)]
-    _, _ = run_command(cmd)
+    _, stderr = run_command(cmd)
+
+    assert b"unexpected arg" not in stderr
 
     assert len(file_json_path) > len(json_file)
     assert len(file_csv_path) > len(csv_file)
