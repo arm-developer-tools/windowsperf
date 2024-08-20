@@ -29,6 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
+#include <fstream>
 #include <conio.h>
 #include <windows.h>
 #include <swdevice.h>
@@ -54,12 +55,14 @@ PCWSTR compatibleIds = L"Root\\WPERFDRIVER";
 PCWSTR devDescription = L"WPERFDRIVER Driver";
 
 std::wstring *FullInfPath = nullptr;
+std::wstring thisExeName = L"wperf-devgen.exe";
 const std::wstring InfName(L"wperf-driver.inf");
 
 void GetFullInfPath()
 {
     if(FullInfPath == nullptr)
     {
+        bool foundPath = false;
         /* Get full inf file path. */
         DWORD size = GetCurrentDirectory(0, NULL);
         try
@@ -69,6 +72,52 @@ void GetFullInfPath()
             std::wstringstream wstream;
             wstream << std::wstring(buff.get()) << L"\\" << InfName;
             FullInfPath = new std::wstring(wstream.str().c_str());
+            
+            std::wifstream inf;
+            inf.open(*FullInfPath, std::wios::in);
+            if (inf.is_open())
+            {
+                foundPath = true;
+                inf.close();
+            }
+            
+            std::wcout << "Found path " << wstream.str() << std::endl;
+        }
+        catch (const std::bad_alloc& e)
+        {
+            std::cerr << "Error allocating buffer: " << e.what() << std::endl;
+            exit(-1);
+        }
+
+        if (foundPath) return;
+        delete FullInfPath;
+
+        size = MAX_PATH;
+        std::cout << size << std::endl;
+        try {
+            std::unique_ptr<wchar_t[]> buff = std::make_unique<wchar_t[]>(size);
+            GetModuleFileNameW(NULL, buff.get(), size);
+            std::wstringstream wstream;
+            std::wstring moduleFileName = std::wstring(buff.get());
+            
+            wstream << moduleFileName.erase(moduleFileName.length() - thisExeName.length(), thisExeName.length()) << L"\\" << InfName;
+
+            FullInfPath = new std::wstring(wstream.str().c_str());
+
+            std::wifstream inf;
+            inf.open(*FullInfPath, std::wios::in);
+            if (inf.is_open())
+            {
+                foundPath = true;
+                inf.close();
+            }
+            else {
+                delete FullInfPath;
+                std::cerr << "Unable to find inf files make sure they are on the same path as wperf-devgen.exe" << std::endl;
+                exit(-1);
+            }
+
+            std::wcout << "Found path " << wstream.str() << std::endl;
         }
         catch (const std::bad_alloc& e)
         {
@@ -174,7 +223,7 @@ BOOL do_remove_device()
         std::cout << "Device found" << std::endl;
         if (!SetupDiCallClassInstaller(DIF_REMOVE, deviceInfoSet, &deviceInfoData))
         {
-            std::cerr << "Error uninstalling device " << std::endl;
+            std::cerr << "Error uninstalling device (" << GetLastError() << ")" << std::endl;
             exit = false;
             goto clean_remove_device;
         }

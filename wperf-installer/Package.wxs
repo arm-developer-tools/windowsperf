@@ -1,0 +1,47 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="WindowsPerf" 
+           Manufacturer="Arm" 
+           Version="3.8.0.0" 
+           Scope="perMachine"
+           UpgradeCode="7c168401-7a04-4869-8165-336c65b7b0d6"
+           Compressed="yes">
+    <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
+    <MediaTemplate EmbedCab="yes"/>
+    <Feature Id="Main">
+      <ComponentGroupRef Id="WindowsPerf" />
+    </Feature>
+    
+    <WixVariable Id="ReleaseFolder" Value="..\release\release-3.8.0\"/>
+    
+    <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
+    
+    <CustomAction Id="UninstallDriver_During_Install" 
+                  FileRef="wperf_devgen"
+                  ExeCommand="uninstall"
+                  Impersonate="yes"/>
+
+    <CustomAction Id="UninstallDriver_During_Uninstall"
+                  FileRef="wperf_devgen"
+                  ExeCommand="uninstall"
+                  Impersonate="yes"/>
+
+    <CustomAction Id="InstallDriver"
+                  FileRef="wperf_devgen"
+                  ExeCommand="install"
+                  Impersonate="yes"/>
+
+    <Launch Message="Administrative privileges required" Condition="Privileged"/>
+    
+    <InstallExecuteSequence>
+      <Custom Action="UninstallDriver_During_Install" 
+              After="InstallFinalize"
+              Condition="NOT Installed"/>
+      <Custom Action="UninstallDriver_During_Uninstall"
+              Before="InstallFinalize"  
+              Condition="Installed"/>
+      <Custom Action="InstallDriver"
+        After="UninstallDriver_During_Install"
+        Condition="NOT Installed"/>
+    </InstallExecuteSequence>
+  </Package>
+</Wix>

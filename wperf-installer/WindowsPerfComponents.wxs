@@ -1,0 +1,45 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <ComponentGroup Id="WindowsPerf">
+      <!-- WindowsPerf Application component -->
+      <Component Guid="D9819E34-DB89-4E7B-9EE3-3906B0DDB7B8" Directory="INSTALLFOLDERAPP">
+        <File Source="!(wix.ReleaseFolder)wperf\wperf.exe" />
+        <File Source="!(wix.ReleaseFolder)wperf\wperf-etw.rc" />
+        <File Source="!(wix.ReleaseFolder)wperf\wperf-etw_MSG00001.bin" />
+        <File Source="!(wix.ReleaseFolder)wperf\wperf-etwTEMP.BIN" />
+        <File Source="!(wix.ReleaseFolder)wperf\wperf-etw-manifest.xml" />
+        <File Source="!(wix.ReleaseFolder)wperf\wperf-app-wpr-profile.wprp" />
+
+        <Environment
+              Id="PATH"
+              Name="PATH"
+              Value="[INSTALLFOLDERAPP]"
+              Permanent="yes"
+              Part="last"
+              Action="set"
+              System="yes" />
+
+      </Component>
+      
+      <!-- WindowsPerf Lib component -->
+      <Component Guid="85B26301-A9A4-4EB1-A82D-C74AC4D4F00C" Directory="INSTALLFOLDERLIB">
+        <File Source="!(wix.ReleaseFolder)lib\wperf-lib.lib" />
+        <File Source="!(wix.ReleaseFolder)lib\wperf-lib.dll" />
+        <File Source="!(wix.ReleaseFolder)lib\wperf-lib.h" />
+      </Component>
+      
+      <!-- WindowsPerf Driver component -->
+      <Component Guid="1F3B3DA2-E140-4765-8214-8309108A8875" Directory="INSTALLFOLDERDRIVER">
+        <File Id="wperf_devgen" Source="!(wix.ReleaseFolder)wperf-driver\wperf-devgen.exe" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver.sys" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver.cat" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver.inf" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver-etw.rc" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver-etw_MSG00001.bin" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver-etwTEMP.BIN" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-driver-etw-manifest.xml" />
+        <File Source="!(wix.ReleaseFolder)wperf-driver\wperf-wpr-profile.wprp" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

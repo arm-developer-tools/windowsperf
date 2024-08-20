@@ -1,0 +1,10 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="!(bind.Property.ProductName)" />
+      <Directory Id="INSTALLFOLDERAPP" Name="!(bind.Property.ProductName)\wperf"/>
+      <Directory Id="INSTALLFOLDERDRIVER" Name="!(bind.Property.ProductName)\wperf-driver"/>
+      <Directory Id="INSTALLFOLDERLIB" Name="!(bind.Property.ProductName)\wperf-lib"/>
+    </StandardDirectory>
+  </Fragment>
+</Wix>

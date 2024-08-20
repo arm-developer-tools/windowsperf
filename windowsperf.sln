@@ -43,6 +43,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wperf-lib-c-compat", "wperf
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wperf-lib", "wperf-lib", "{F473AD42-0B3D-4255-8176-B3A89A7AD6A9}"
 EndProject
+Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "wperf-installer", "wperf-installer\wperf-installer.wixproj", "{1E576B20-DB7A-4058-B4A0-8E642A310ACF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -195,6 +197,19 @@ Global
 		{73ABD656-7DB0-43F4-8DB7-4678055DA564}.Release|Win32.Build.0 = Release|Win32
 		{73ABD656-7DB0-43F4-8DB7-4678055DA564}.Release|x64.ActiveCfg = Release|x64
 		{73ABD656-7DB0-43F4-8DB7-4678055DA564}.Release|x64.Build.0 = Release|x64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug|Win32.ActiveCfg = Debug|x86
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug|Win32.Build.0 = Debug|x86
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug|x64.ActiveCfg = Debug|x64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug|x64.Build.0 = Debug|x64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug+SPE|ARM64.ActiveCfg = Debug|ARM64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug+SPE|Win32.ActiveCfg = Debug|x86
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug+SPE|Win32.Build.0 = Debug|x86
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug+SPE|x64.ActiveCfg = Debug|x64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Debug+SPE|x64.Build.0 = Debug|x64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Release|ARM64.ActiveCfg = Release|ARM64
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Release|Win32.ActiveCfg = Release|x86
+		{1E576B20-DB7A-4058-B4A0-8E642A310ACF}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
