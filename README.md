@@ -57,6 +57,12 @@ WindowsPerf solution contains few projects:
   - See [Using WDF to Develop a Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/using-the-framework-to-develop-a-driver) article for more details on KMDF.
 - [wperf-devgen](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-devgen) is our own simple implementation of tool which can install or remove [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver).
   - See [INSTALL.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/INSTALL.md?ref_type=heads) for more details and usage.
+- [wperf-installer](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-installer) is our Windows Installer project. The project uses [WiX Toolset](https://wixtoolset.org/) to build a MSI package to install WindowsPerf. This project requires WiX v5.
+  - See [wperf-installer/README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-installer/README.md) for more details.
+- [wperf-lib](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-lib) is our WindowsPerf C library, please note that is doesn't not support all the latest features of WindowsPerf.
+  - [wperf-lib-app](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-lib-app) is an example application linked with `wperf-lib`.
+    - [wperf-lib-c-compat](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-lib-app/wperf-lib-c-compat) is smoke test application for `wperf-lib`.
+    - [wperf-lib-timeline](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-lib-app/wperf-lib-timeline) is smoke test application for `wperf-lib`.
 
 Other directories contain:
 - [wperf-common](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-common) contains common code between `wperf` and `wperf-driver` project. Mostly data structures describing IOCTRL binary protocol.
