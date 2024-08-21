@@ -151,7 +151,7 @@ OPTIONS:
 
     --pdb_file
         Specify the PDB file name (and path), PDB file should directly
-        corresponds to PE file set with `--pe_file`.
+        corresponds to a PE file set with `--pe_file`.
 
     --sample-display-long
         Display decorated symbol names.

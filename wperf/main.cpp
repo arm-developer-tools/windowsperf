@@ -123,7 +123,7 @@ wmain(
     {
         m_out.GetErrorOutputStream() << L"warning: other WindowsPerf process acquired the wperf-driver." << std::endl;
         m_out.GetErrorOutputStream() << L"note: use --force-lock to force driver to give lock to current `wperf` process." << std::endl;
-        m_out.GetErrorOutputStream() << L"Operation canceled!" << std::endl;
+        m_out.GetErrorOutputStream() << L"Operation cancelled!" << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
@@ -137,14 +137,14 @@ wmain(
     catch (const lock_insufficient_resources_exception&)
     {
         m_out.GetErrorOutputStream() << L"warning: not enough resources available to execute the request." << std::endl;
-        m_out.GetErrorOutputStream() << L"Operation canceled!" << std::endl;
+        m_out.GetErrorOutputStream() << L"Operation cancelled!" << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
     }
     catch (const lock_unknown_exception&)
     {
         m_out.GetErrorOutputStream() << L"warning: unknown lock error." << std::endl;
-        m_out.GetErrorOutputStream() << L"Operation canceled!" << std::endl;
+        m_out.GetErrorOutputStream() << L"Operation cancelled!" << std::endl;
         exit_code = EXIT_FAILURE;
         goto clean_exit;
 

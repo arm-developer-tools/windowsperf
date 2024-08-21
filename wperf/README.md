@@ -122,11 +122,11 @@ OPTIONS:
         Specify the image name you want to sample.
 
     --pe_file
-        Specify the PE file name (and path).
+        Specify the PE filename (and path).
 
     --pdb_file
-        Specify the PDB file name (and path), PDB file should directly
-        corresponds to PE file set with `--pe_file`.
+        Specify the PDB filename (and path), PDB file should directly
+        corresponds to a PE file set with `--pe_file`.
 
     --sample-display-long
         Display decorated symbol names.
@@ -164,10 +164,10 @@ OPTIONS:
         Define output type as JSON.
 
     --output, -o
-        Specify JSON output file name.
+        Specify JSON output filename.
 
     --output-csv
-        Specify CSV output file name. Only with timeline `-t`.
+        Specify CSV output filename. Only with timeline `-t`.
 
     --output-prefix, --cwd
          Set current working dir for storing output JSON and CSV file.
@@ -222,7 +222,7 @@ When other `wperf` process "locked" access to the driver you will see below warn
 ```
 >wperf --version
 warning: other WindowsPerf process acquired the wperf-driver.
-Operation canceled!
+Operation cancelled!
 ```
 
 You can force the lock (and kick-out other `wperf` process from accessing Kernel Driver) with `--force-lock` command line option:
@@ -529,7 +529,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 You can create your own metrics and enable them via custom configuration file. Provide customized config file which describes metrics with `-C <filename>` command line option.
 
-Create a config file named `customized_config`, and add metric(s):
+Create a config filenamed `customized_config`, and add metric(s):
 ```
 > cat customized_config
 customizedmetric:{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}
@@ -607,8 +607,8 @@ Options `--timeout`, `sleep` and `-i` can be used with a number along with one, 
 
 The following restrictions apply:
 * The default unit `seconds` is used if no unit is provided as input.
-* Units may not be used in conjuction with one another: `--timeout 1m30s` is not accepted.
-* Decimals may be up to 2 decimal places, and must be preceeded by a single `0`: `.001h` is not accepted.
+* Units may not be used in conjunction with one another: `--timeout 1m30s` is not accepted.
+* Decimals may be up to 2 decimal places, and must be preceded by a single `0`: `.001h` is not accepted.
 * Padded `0`s are not permitted: `01h` is not accepted.
 
 See the following for examples of correct usage:
@@ -623,7 +623,7 @@ See the following for examples of correct usage:
 >wperf stat -c 0 -e ld_spec sleep 5m
 ```
 
-represent a duration of `10`, `3600`, `0.75` & `300` seconds respecitvely.
+represent a duration of `10`, `3600`, `0.75` & `300` seconds respectively.
 
 Similarly:
 ```
@@ -725,7 +725,7 @@ System-wide Overall:
 
 ### Specify a range of cores
 
-Ranges are specified as `[core_number]-[core_number]`, and can be specified alongisde singular cores. For example,
+Ranges are specified as `[core_number]-[core_number]`, and can be specified alongside singular cores. For example,
 
 ```
 > wperf stat -m imix -c 0,3-5 --timeout 1 --json
@@ -835,9 +835,9 @@ sleeping ... done
 will perform:
 1) Count of `imix` metric (`-m imix`) events for 5 seconds (`--timeout 5`) on CPU core #1 (`-c 1`).
 2) Sleep for 2 seconds (`-i 2`)
-3) Repeat above count and sleep 3 times (`-n 3`).
+3) Repeat the above count and sleep 3 times (`-n 3`).
 
-Note: use `-v` (verbose) command line option together with timeline to get access to CSV output file name:
+Note: use `-v` (verbose) command line option together with timeline to get access to CSV output filename:
 
 ```
 >wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5  -v
@@ -851,7 +851,7 @@ Hint:
 - use `-m <metric>` to capture metric events, and/or `-e <events>` to count additional events.
 - use `--json` to additionally return timeline output data in the JSON format, add `--output <FILENAME>` to capture JSON output to a given file.
   - use `--output-csv <CSV_FILENAME>` with `--json` and `--output <JSON_FILENAME>` to capture JSON timeline output to `<JSON_FILENAME>` and CSV timeline output to `<CSV_FILENAME>` file.
-- use `--cwd <PATH>` command line to specify directory in which WindowsPerf will store JSON and CSV files.
+- use `--cwd <PATH>` command line to specify the directory in which WindowsPerf will store JSON and CSV files.
 
 Note: to check available events and metrics please use `wperf list` and `wperf list -v` commands. Latter one gives you a bit more information about events and metrics.
 
@@ -884,7 +884,7 @@ Hint: you can find timeline JSON schema in [wperf-scripts/tests/schemas/wperf.ti
 
 ### Timeline CSV output file
 
-Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-separated_values). Its format uses comma separated values to distinguish between columns. CSV file name contains core number, current timestamp, name of event counted.
+Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-separated_values). Its format uses comma separated values to distinguish between columns. CSV filename contains core number, current timestamp, name of event counted.
 
 Timeline stores results in a form of a CSV file. Below is an output from the above timeline example. Please note that we
 
@@ -905,14 +905,14 @@ cycle,inst_spec,dp_spec,vfp_spec,ase_spec,ld_spec,
 
 Timeline file contains header with few counting setting values (these will increase in the future), and rows with column oriented values. These specify cores, events and metrics counted and computed during timeline pass:
 
-#### Specify timeline CSV output file name with --output-csv command line option
+#### Specify timeline CSV output filename with --output-csv command line option
 
 Support for `--output-csv` command line in timeline (`-t`) is as follows:
 
-Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from the console name of the timeline CSV file. Now users can also specify timeline output file name with `--output-csv <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
+Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from the console name of the timeline CSV file. Now users can also specify timeline output filename with `--output-csv <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
 
-User can specify in `<FILENAME>` few placeholders which can improve timeline file name:
-* `{timestamp}` to add the current timestamp to the output file name. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
+User can specify in `<FILENAME>` few placeholders which can improve timeline filename:
+* `{timestamp}` to add the current timestamp to the output filename. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
 * `{class}` to add event class name (e.g. `core`, `dsu`, `dmc_clk`, `dmc_clkdiv2`). Multiple timeline files will be created if the user specifies `-e` events with different classes.
 * `{core}` to add `<N>` from `-c <N>` command line option. Note: when more than one core is specified `{core}` will be replaced with the first core specified.
 
@@ -983,7 +983,7 @@ Note: use `wperf list -v` command line option to determine if your CPU supports 
 You can output JSON instead of human readable tables with `wperf`. We've introduced three new command line flags which should help you emit JSON.
 Flag `--json` will emit JSON for tables with values.
 Quiet mode can be selected with `-q`. This will suppress human readable printouts. Please note that `--json` implies `-q`.
-You can also emit JSON to file directly with `--output <FILENAME>`. Optionally add `--cwd` command line option to specify directory where `<FILENAME>` will be created.
+You can also emit JSON to file directly with `--output <FILENAME>`. Optionally add `--cwd` command line option to specify the directory where `<FILENAME>` will be created.
 
 Currently we support `--json` with `stat`, `sample`, `record`, `list`, `man` and `test` commands.
 
@@ -1170,7 +1170,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 #### Sampling for `ld_spec` event which, by looking at counting is dominant (at least for `imix` metrics)
 
-Let's sample the `ld_spec` event. Please note that you can specify the process image name and PDB file name with `--pdb_file python_d.pdb` and `--image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE file name) and PDB file from PR file name.
+Let's sample the `ld_spec` event. Please note that you can specify the process image name and PDB filename with `--pdb_file python_d.pdb` and `--image_name python_d.exe`. In our case `wperf` is able to deduce image name (same as PE filename) and PDB file from PR filename.
 
 We can stop sampling by pressing `Ctrl-C` in the `wperf` console or we can end the process we are sampling.
 
@@ -1204,7 +1204,7 @@ sampling ....e.e.e.e.e.eCtrl-C received, quit counting... done!
 
 In the above example we can see that the majority of code executed by CPython's `python_d.exe` executable resides inside the `python312_d.dll` DLL.
 
-Note that in `sampling ....e.e.e.e.e.` progressing printout `.` represents sample payload (of 128 samples)  received from the driver. 'e' represents an unsuccessful attempt to fetch whole sample payload. `wperf` is polling `wperf-driver` awaiting sample payload.
+Note that in `sampling ....e.e.e.e.e.` progressing printout `.` represents sample payload (of 128 samples)  received from the driver. 'e' represents an unsuccessful attempt to fetch a whole sample payload. `wperf` is polling `wperf-driver` awaiting sample payload.
 
 ### Example 2: sampling of CPython executable on ARM64 running simple Fibonacci lambda:
 
@@ -1506,7 +1506,7 @@ df_hot
 ```
 
 You will now see the list of top functions followed by a table with line numbers, hits and filename.
-The filename and line number shows information extracted from the PDB files matching the sample address to a particular position on the source code. The hits column shows the number of samples for that file name/line number pair. Notice that due to address skid this can be a bit off.
+The filename and line number shows information extracted from the PDB files matching the sample address to a particular position on the source code. The hits column shows the number of samples for that filename/line number pair. Notice that due to address skid this can be a bit off.
 
 ### Using the `disassemble` option
 
@@ -1608,7 +1608,7 @@ __CheckForDebuggerJustMyCode
 100.00%       128  top 4 in total
 ```
 
-The columns are pretty similar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair file name/line number's disassembled code. Notice that
+The columns are pretty similar to what you would get from `--annotate` except that now you have an entry for each instruction address along with the pair filename/line number's disassembled code. Notice that
 WindowsPerf uses LLVM's [objdump](https://llvm.org/docs/CommandGuide/llvm-objdump.html) and it needs to be available on PATH or else you will get the following message
 
 ```
@@ -1633,7 +1633,7 @@ WindowsPerf added support (in `record` command) for the Arm Statistical Profilin
 You can use the same `--annotate` and `--disassemble` interface of WindowsPerf with one exception. To reach out to SPE resources please use `-e` command with `arm_spe_0//` options. For example:
 
 ```
->wperf record -e arm_spe_0//` -c 0 --timeout 10 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+>wperf record -e arm_spe_0// -c 0 --timeout 10 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
 ```
 
 ### SPE detection
