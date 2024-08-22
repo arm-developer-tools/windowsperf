@@ -112,9 +112,6 @@ public:
     std::map<uint32_t, uint32_t> sampling_inverval;     //!< [event_index] -> event_sampling_interval
     bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
     std::map<std::wstring, bool> m_sampling_flags;      // SPE: sampling flags
-    const std::vector<std::wstring> m_filter_names = {  // All availabkle filters for SPE `arm_spe_0//`
-        L"load_filter", L"store_filter", L"branch_filter",
-        L"ld", L"st", L"b" };
 
 private:
     bool all_cores_p() const {

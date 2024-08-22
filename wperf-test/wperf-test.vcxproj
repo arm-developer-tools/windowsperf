@@ -281,6 +281,7 @@
     <ClCompile Include="wperf-test-parsers.cpp" />
     <ClCompile Include="wperf-test-pe_file.cpp" />
     <ClCompile Include="wperf-test-public.cpp" />
+    <ClCompile Include="wperf-test-spe_device.cpp" />
     <ClCompile Include="wperf-test-user_request.cpp" />
     <ClCompile Include="wperf-test-utils.cpp" />
     <ClCompile Include="wperf-test-json.cpp" />

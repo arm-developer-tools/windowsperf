@@ -1,4 +1,3 @@
-#pragma once
 // BSD 3-Clause License
 //
 // Copyright (c) 2024, Arm Limited
@@ -29,45 +28,38 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <windows.h>
-#include <string>
-#include "wperf-common/macros.h"
-#include "wperf-common/iorequest.h"
-#include <vector>
-#include <map>
+#include "pch.h"
+#include "CppUnitTest.h"
 
-class spe_device
+#include "wperf\spe_device.h"
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+namespace wperftest
 {
-public:
-    spe_device();
-    ~spe_device();
+	TEST_CLASS(wperftest_spe_device)
+	{
+	public:
 
-    void init();
+		TEST_METHOD(test_spe_device_filter_name)
+		{
+			Assert::IsTrue(spe_device::is_filter_name(L"load_filter"));
+			Assert::IsTrue(spe_device::is_filter_name(L"store_filter"));
+			Assert::IsTrue(spe_device::is_filter_name(L"branch_filter"));
+		}
 
-    // Consts
+		TEST_METHOD(test_spe_device_filter_name_as_alias)
+		{
+			Assert::IsTrue(spe_device::is_filter_name(L"ld"));
+			Assert::IsTrue(spe_device::is_filter_name(L"st"));
+			Assert::IsTrue(spe_device::is_filter_name(L"b"));
+		}
 
-    // All availabkle filters for SPE `arm_spe_0//`
-    static const std::vector<std::wstring> m_filter_names;
-
-    // Filters also have aliases, this structure helps to translate alias to filter name
-    static const std::map<std::wstring, std::wstring> m_filter_names_aliases;
-
-    // Filter names have also short descriptions
-    static const std::map<std::wstring, std::wstring> spe_device::m_filter_names_description;
-
-    // Helper functions
-
-    static std::wstring get_spe_version_name(UINT64 id_aa64dfr0_el1_value);
-    static bool is_spe_supported(UINT64 id_aa64dfr0_el1_value);
-    static void get_samples(const std::vector<UINT8>& spe_buffer, std::vector<FrameChain>& raw_samples, std::map<UINT64, std::wstring>& spe_events);
-
-    static bool is_filter_name(std::wstring fname) {
-        if (m_filter_names_aliases.count(fname))
-            fname = m_filter_names_aliases.at(fname);
-        return std::find(m_filter_names.begin(), m_filter_names.end(), fname) != m_filter_names.end();
-    }
-
-    static bool is_filter_name_alias(std::wstring fname) {
-        return m_filter_names_aliases.count(fname);
-    }
-};
+		TEST_METHOD(test_spe_device_filter_name_is_alias)
+		{
+			Assert::IsTrue(spe_device::is_filter_name_alias (L"ld"));
+			Assert::IsTrue(spe_device::is_filter_name_alias(L"st"));
+			Assert::IsTrue(spe_device::is_filter_name_alias(L"b"));
+		}
+	};
+}

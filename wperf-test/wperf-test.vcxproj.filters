@@ -60,6 +60,9 @@
     <ClCompile Include="wperf-test-public.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="wperf-test-spe_device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">

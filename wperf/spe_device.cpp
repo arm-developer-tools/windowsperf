@@ -404,6 +404,23 @@ namespace SPEParser
     }
 }
 
+const std::vector<std::wstring> spe_device::m_filter_names = {
+        L"load_filter", L"store_filter", L"branch_filter" };
+
+// Filters also have aliases, this structure helps to translate alias to filter name
+const std::map<std::wstring, std::wstring> spe_device::m_filter_names_aliases = {
+    { L"ld", L"load_filter", },
+    { L"st", L"store_filter", },
+    { L"b" , L"branch_filter" }
+};
+
+// Filters also have aliases, this structure helps to translate alias to filter name
+const std::map<std::wstring, std::wstring> spe_device::m_filter_names_description = {
+    { L"load_filter",   L"Enables collection of load sampled operations, including atomic operations that return a value to a register." },
+    { L"store_filter",  L"Enables collection of store sampled operations, including all atomic operations." },
+    { L"branch_filter", L"Enables collection of branch sampled operations, including direct and indirect branches and exception returns." }
+};
+
 spe_device::spe_device() {}
 
 spe_device::~spe_device() {}

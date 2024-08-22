@@ -493,10 +493,11 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
 
                     for (const auto& [key, value] : m_sampling_flags)
                     {
-                        if (std::any_of(m_filter_names.begin(), m_filter_names.end(),
-                            [&key](std::wstring s) { return s == key; }) == false)
+                        if (spe_device::is_filter_name(key) == false)
                         {
-                            m_out.GetErrorOutputStream() << L"SPE filter unknown, use: " << WStringJoin(m_filter_names, L", ") << std::endl;
+                            m_out.GetErrorOutputStream() << L"SPE filter '" << key <<  L"' unknown, use: "
+                                << WStringJoin(spe_device::m_filter_names, L", ")
+                                << std::endl;
                             throw fatal_exception("ERROR_SPE_FILTER_ERR");
                         }
                     }
