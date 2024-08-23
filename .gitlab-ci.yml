@@ -34,6 +34,11 @@ stages:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  PYTHON_PATH: C:\wenv\arm64\python\tools
+  MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin
+  VSTEST_PATH: C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\
+  LOCAL_CI_PATH: C:\ci
+  WINDOWSKIT_TOOLS_PATH: C:\Program Files (x86)\Windows Kits\10\Tools\10.0.22621.0\arm64
 
 # CI machines are not yet setup to run this
 # sast:
@@ -46,7 +51,9 @@ build:
   tags: 
     - win-arm64-builder
   script:
-    - cmd.exe /c "C:/wenv/arm64/activate.bat" powershell -Command "MSBuild /p:Configuration=Release /p:Platform=ARM64"
+    - > 
+      $env:PATH += ";$MSBUILD_PATH";
+      MSBuild /p:Configuration=Release /p:Platform=ARM64
   artifacts:
     paths:
       - wperf/ARM64/Release/wperf.exe
@@ -72,7 +79,7 @@ cpp_test_wperf:
     - job: build
       artifacts: true
   script:
-    - $env:PATH += ";C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll --TestCaseFilter:Name!~"test_lib"
+    - $env:PATH += ";$VSTEST_PATH"; vstest.console.arm64.exe .\wperf-test\ARM64\Release\wperf-test.dll --TestCaseFilter:Name!~"test_lib"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -90,13 +97,13 @@ test_python:
       junit: test_result.xml
   script:
       - >
-        $env:PATH += ";C:\wenv\arm64\python\tools";
+        $env:PATH += ";$PYTHON_PATH";
         python -m pip install -r .\wperf-scripts\requirements.txt;
-        $MPATH=$(pwd);cd c:\ci;mkdir $CI_JOB_ID; cd $MPATH;
+        $MPATH=$(pwd);cd $LOCAL_CI_PATH;mkdir $CI_JOB_ID; cd $MPATH;
         cp -Recurse -Force .\wperf-scripts\tests c:\ci\$CI_JOB_ID;
-        cp wperf\ARM64\Release\wperf.exe c:\ci\$CI_JOB_ID\tests;
-        cd c:\ci\$CI_JOB_ID\tests;
-        $env:PATH += ";C:\ci\$CI_JOB_ID\tests";
+        cp wperf\ARM64\Release\wperf.exe $LOCAL_CI_PATH\$CI_JOB_ID\tests;
+        cd $LOCAL_CI_PATH\$CI_JOB_ID\tests;
+        $env:PATH += ";$LOCAL_CI_PATH\$CI_JOB_ID\tests";
         python -m pytest --maxfail=1 --junitxml=$MPATH\test_result.xml;
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(test_python)/i'
@@ -122,7 +129,7 @@ archive:
       cp wperf-lib/ARM64/Release/wperf-lib.dll release/lib;
       cp wperf-lib/ARM64/Release/wperf-lib.lib release/lib;
     - >
-      $env:PATH += ";C:\wenv\arm64\python\tools";
+      $env:PATH += ";$PYTHON_PATH";
       cp ci/ddf.py release;
       cp ci/wperf-driver.raw.ddf release;
       cd release;
@@ -155,18 +162,18 @@ test_driver:
     # Command to create device node on CI machine
     # devgen /add /hardwareid "Root\WPERFDRIVER" /bus ROOT
     - >
-      $env:PATH+=";C:\Program Files (x86)\Windows Kits\10\Tools\10.0.22621.0\arm64";
-      $MPATH=$(pwd);cd c:\ci;mkdir $CI_JOB_ID; cd $MPATH;
-      cp wperf-driver\ARM64\Release\wperf-driver\* c:\ci\$CI_JOB_ID; 
-      cp wperf-driver\ARM64\Release\wperf-driver.cer c:\ci\$CI_JOB_ID;
-      cp wperf\ARM64\Release\wperf.exe c:\ci\$CI_JOB_ID;
-      cp -Recurse -Force wperf-scripts\tests c:\ci\$CI_JOB_ID;
-      cd c:\ci\$CI_JOB_ID;
+      $env:PATH+=";$WINDOWSKIT_TOOLS_FOLDER";
+      $MPATH=$(pwd);cd $LOCAL_CI_PATH;mkdir $CI_JOB_ID; cd $MPATH;
+      cp wperf-driver\ARM64\Release\wperf-driver\* $LOCAL_CI_PATH\$CI_JOB_ID; 
+      cp wperf-driver\ARM64\Release\wperf-driver.cer $LOCAL_CI_PATH\$CI_JOB_ID;
+      cp wperf\ARM64\Release\wperf.exe $LOCAL_CI_PATH\$CI_JOB_ID;
+      cp -Recurse -Force wperf-scripts\tests $LOCAL_CI_PATH\$CI_JOB_ID;
+      cd $LOCAL_CI_PATH\$CI_JOB_ID;
       certutil -addstore root wperf-driver.cer;
 #      pnputil /add-driver .\wperf-driver.inf /install
     - >
       ls;
-      $env:PATH += ";C:\wenv\arm64\python\tools;C:\ci\$CI_JOB_ID";
+      $env:PATH += ";$PYTHON_PATH;$LOCAL_CI_PATH\$CI_JOB_ID";
       python -m pip install pytest;
       python -m pytest --maxfail=1;
 #      powershell .\tests\stress.ps1 5
