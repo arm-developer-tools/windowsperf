@@ -2231,6 +2231,15 @@ void pmu_device::do_list_prep_events(_Out_ std::vector<std::wstring>& col_alias_
         col_raw_index.push_back(L"");
         col_event_type.push_back(L"[Kernel PMU event]");
         col_desc.push_back(get_spe_version_name());
+
+        // Add SPE Filter names
+        for (const auto& fname : spe_device::m_filter_names)
+        {
+            col_alias_name.push_back(fname);
+            col_raw_index.push_back(L"");
+            col_event_type.push_back(L"[SPE filter]");
+            col_desc.push_back(spe_device::m_filter_names_description.at(fname));
+        }
     }
 }
 

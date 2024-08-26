@@ -34,6 +34,7 @@
 """Module is testing `wperf list` features."""
 import json
 from common import run_command, is_json, check_if_file_exists
+from common import get_spe_version, wperf_event_is_available
 
 ### Test cases
 
@@ -117,3 +118,32 @@ def test_wperf_list_events_json_verbose(tmp_path):
         assert 'Raw_Index' in metric
         assert 'Event_Type' in metric
         assert 'Description' in metric
+
+def test_wperf_list_spe_available():
+    """ Test for SPE in --help usage string
+    """
+    spe_device = get_spe_version()
+    assert spe_device is not None
+    if not spe_device.startswith("FEAT_SPE"):
+        pytest.skip(f"no SPE support in HW, see spe_device.version_name={spe_device}")
+
+    ## Is SPE enabled in `wperf` CLI?
+    if not wperf_event_is_available("arm_spe_0//"):
+        pytest.skip(f"no SPE support in `wperf`, see spe_device.version_name={spe_device}")
+
+    cmd = 'wperf list'
+    stdout, _ = run_command(cmd.split())
+
+    """
+        arm_spe_0//                                        [Kernel PMU event]
+        load_filter                                        [SPE filter]
+        store_filter                                       [SPE filter]
+        branch_filter                                      [SPE filter]
+    """
+    for line in stdout.splitlines():
+        if b"load_filter" in line:
+            assert b"[SPE filter]" in line
+        if b"store_filter" in line:
+            assert b"[SPE filter]" in line
+        if b"branch_filter" in line:
+            assert b"[SPE filter]" in line
