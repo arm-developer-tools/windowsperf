@@ -14,7 +14,7 @@
               Id="PATH"
               Name="PATH"
               Value="[INSTALLFOLDERAPP]"
-              Permanent="yes"
+              Permanent="no"
               Part="last"
               Action="set"
               System="yes" />
