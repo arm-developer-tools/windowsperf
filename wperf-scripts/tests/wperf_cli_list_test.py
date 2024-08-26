@@ -33,6 +33,7 @@
 
 """Module is testing `wperf list` features."""
 import json
+import pytest
 from common import run_command, is_json, check_if_file_exists
 from common import get_spe_version, wperf_event_is_available
 
