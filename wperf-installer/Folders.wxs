@@ -5,6 +5,7 @@
       <Directory Id="INSTALLFOLDERAPP" Name="!(bind.Property.ProductName)\wperf"/>
       <Directory Id="INSTALLFOLDERDRIVER" Name="!(bind.Property.ProductName)\wperf-driver"/>
       <Directory Id="INSTALLFOLDERLIB" Name="!(bind.Property.ProductName)\wperf-lib"/>
+      <Directory Id="INSTALLFOLDERWPA" Name="!(bind.Property.ProductName)\wpa-plugins"/>
     </StandardDirectory>
   </Fragment>
 </Wix>

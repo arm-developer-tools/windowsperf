@@ -21,6 +21,34 @@
 
       </Component>
       
+      <!-- WindowsPerf WPA Plugin -->
+      <Component Guid="95B6221A-F5A3-4F19-AD68-33CDB2CB0BFE" Directory="INSTALLFOLDERWPA">
+        <File Source="!(wix.ReleaseFolder)wperf-wpa-plugin\WPAPlugin.dll" />
+
+        <Environment
+            Id="WINDOWSPERF_PATH"
+            Name="WINDOWSPERF_PATH"
+            Value="[INSTALLFOLDER]"
+            Permanent="no"
+            Part="last"
+            Action="set"
+            System="yes" />
+
+        <Environment
+            Id="WPA_ADDITIONAL_SEARCH_DIRECTORIES"
+            Name="WPA_ADDITIONAL_SEARCH_DIRECTORIES"
+            Value="[INSTALLFOLDERWPA]"
+            Permanent="no"
+            Part="last"
+            Action="set"
+            System="yes" />
+      </Component>
+      
+      <!-- WindowsPerf WPA Plugin ETL -->
+      <Component Guid="EA102965-EC16-427D-B765-ADCB855414A1" Directory="INSTALLFOLDERWPA">
+        <File Source="!(wix.ReleaseFolder)wperf-wpa-plugin-etl\wpa-plugin-etl.dll" />
+      </Component>
+      
       <!-- WindowsPerf Lib component -->
       <Component Guid="85B26301-A9A4-4EB1-A82D-C74AC4D4F00C" Directory="INSTALLFOLDERLIB">
         <File Source="!(wix.ReleaseFolder)lib\wperf-lib.lib" />
