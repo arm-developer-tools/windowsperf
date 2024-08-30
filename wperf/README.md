@@ -212,6 +212,26 @@ EXAMPLES:
     parameters to increase sampling "resolution".
 ```
 
+## Important Note: Use of curly braces in command line
+
+* PowerShell (and Developer PowerShell for VS):
+
+[PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview) treats curly braces `{}` as a special character, therefore passing them incorrectly when used in command line.
+
+Therefore, a list of events must be surrounded by quotation marks `""` when using curly braces for correct parsing:
+
+```
+>wperf stat -e "{inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec" -c 0 sleep 1
+```
+
+* Command Prompt (and Developer Command Prompt for VS):
+
+No such special requirements, the command works as is:
+
+```
+>wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
+```
+
 # WindowsPerf Driver lock/unlock feature
 
 When `wperf` communicates with WindowsPerf Kernel Driver, driver acquires lock and will deny access to other instances of `wperf` to access the driver and its resources.
