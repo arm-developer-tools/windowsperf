@@ -121,7 +121,7 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
         symbol_name = hotest_symbol["symbol"]
 
         if find_sample(samples, HOT_SYMBOL) is False:
-            pytest.skip(f"{pyhton_d_exe_path} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{HOT_SYMBOL}' -- sampling mismatch")
+            pytest.skip(f"{python_d_exe_path} hottest function sampled: '{symbol_name}' count={symbol_count} overhead={symbol_overhead}, expected '{HOT_SYMBOL}' -- sampling mismatch")
 
         evt_sample = find_sample(samples, HOT_SYMBOL)
         assert evt_sample is not None, f"Can't find `{HOT_SYMBOL}` symbol in sampling output!"
@@ -133,6 +133,7 @@ def test_cpython_bench_record_hotspot(EVENT,EVENT_FREQ,HOT_SYMBOL,HOT_MINIMUM,PY
     assert median(overheads) >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% sampling hotspot in {HOT_SYMBOL}, overheads={overheads}"
 
 def test_cpython_bench_record_time():
+    """ Test if we print `seconds time elapsed` with sampling.  """
     python_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
 
     if not check_if_file_exists(python_d_exe_path):
@@ -142,3 +143,25 @@ def test_cpython_bench_record_time():
     stdout, _ = run_command(cmd)
 
     assert b'seconds time elapsed' in stdout
+
+@pytest.mark.parametrize("arg",
+[
+   ("x_mul"),
+   ("^x_"),
+   ("_mul$"),
+   ("X_MUL"),
+   ("^x_mul$"),
+]
+)
+def test_cpython_bench_record_symbol(arg):
+    """ Test sampling filtering for record with `-s <symbol>` """
+    python_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
+
+    if not check_if_file_exists(python_d_exe_path):
+        pytest.skip(f"Can't locate CPython native executable in {python_d_exe_path}")
+        
+    cmd = f"wperf record -e ld_spec:100000 -c 1 --symbol \"{arg}\" --timeout 3 -- {python_d_exe_path} -c 10**10**100"
+    stdout, _ = run_command(cmd)
+    
+    assert b'x_mul' in stdout
+    assert b'x_mul:python' in stdout

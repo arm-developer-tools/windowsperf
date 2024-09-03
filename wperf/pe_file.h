@@ -61,7 +61,8 @@ typedef struct _FuncSymDesc
     uint32_t sec_idx{};
     uint32_t size{};
     uint64_t offset{};
-    std::wstring name;
+    std::wstring name;      // Name of the whole symbol, e.g. x_mul:python312.dll
+    std::wstring sname;     // Symbol name only
     std::vector<LineNumberDesc> lines;
 } FuncSymDesc;
 

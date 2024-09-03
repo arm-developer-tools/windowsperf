@@ -951,6 +951,7 @@ extern "C" bool wperf_sample(PSAMPLE_CONF sample_conf, PSAMPLE_INFO sample_info)
                                 {
                                     sd.desc = b;
                                     sd.desc.name = b.name + L":" + key;
+                                    sd.desc.sname = b.name;
                                     sd.module = &mmd;
                                     found = true;
                                     break;

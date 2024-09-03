@@ -69,8 +69,10 @@ public:
     static bool is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt);    // Return true if `opt` is in CLI options
     static bool is_force_lock(const wstr_vec& raw_args);    // Return true if `--force-lock` is in CLI options
     static bool is_help(const wstr_vec& raw_args);          // Return true if `--help` is in CLI options
-    static bool user_request::check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map);
-    static double user_request::convert_timeout_arg_to_seconds(std::wstring number_and_suffix, const std::wstring& cmd_arg);
+    static bool check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map);
+    static double convert_timeout_arg_to_seconds(std::wstring number_and_suffix, const std::wstring& cmd_arg);
+    static bool check_symbol_arg(const std::wstring& symbol, const std::wstring& arg,
+        const wchar_t prefix_delim = PARSER_SYMBOL_PREFIX, const wchar_t suffix_delim = PARSER_SYMBOL_SUFFIX);
 
     bool do_list;
     bool do_count;
@@ -85,6 +87,7 @@ public:
     bool do_annotate;
     bool do_disassembly;
     bool do_man;
+    bool do_symbol;
     bool do_detect = false;
     bool do_force_lock = false;     // Force lock acquire of the driver
     bool do_export_perf_data;
@@ -98,6 +101,7 @@ public:
     int count_timeline;
     uint32_t record_spawn_delay = 1000;
     std::wstring man_query_args;
+    std::wstring symbol_arg;
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
@@ -117,6 +121,9 @@ private:
     bool all_cores_p() const {
         return cores_idx.size() > 1;
     }
+
+    static const wchar_t PARSER_SYMBOL_PREFIX = L'^';
+    static const wchar_t PARSER_SYMBOL_SUFFIX = L'$';
 
     std::wstring trim(const std::wstring& str, const std::wstring& whitespace = L" \t");
 };

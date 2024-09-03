@@ -482,9 +482,47 @@ namespace wperftest
 
 		TEST_METHOD(test_CaseInsensitiveWStringStartsWith)
 		{
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/dsu/")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
+
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DSU/l3d_cache"), std::wstring(L"")));
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DSU/l3d_cache"), std::wstring(L"/dsu/")));
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/DMC_CLKDIV2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
+		}
+
+		TEST_METHOD(test_CaseInsensitiveWStringStartsWith_nok)
+		{
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"l3d_cache")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/dsu_")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"rdwr")));
+		}
+
+		TEST_METHOD(test_WStringEndsWith)
+		{
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/l3d_cache")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"refill")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"/rdwr")));
+		}
+
+		TEST_METHOD(test_CaseInsensitiveWStringEndsWith)
+		{
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/l3d_cache")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"refill")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"/rdwr")));
+
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/DSU/L3D_CACHE"), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/DSU/L3D_CACHE"), std::wstring(L"/l3d_cache")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/DSU/L3D_CACHE_REFILL"), std::wstring(L"refill")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/DMC_CLKDIV2/RDWR"), std::wstring(L"/rdwr")));
+		}
+
+		TEST_METHOD(test_CaseInsensitiveWStringEndsWith_nok)
+		{
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"_l3d_cache")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"/dsu")));
 		}
 
 		TEST_METHOD(test_ReplaceAllTokensInWString)

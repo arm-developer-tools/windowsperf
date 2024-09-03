@@ -895,6 +895,7 @@ wmain(
                                 {
                                     sd.desc = b;
                                     sd.desc.name = b.name + L":" + key;
+                                    sd.desc.sname = b.name;
                                     sd.module = &mmd;
                                     found = true;
                                     break;
@@ -1072,9 +1073,12 @@ wmain(
                 if (printed_sample_num > request.sample_display_row)
                     continue;
 
-                col_overhead.push_back(((double)a.freq * 100 / (double)total_samples[group_idx]));// +L"%");
-                col_count.push_back(a.freq);
-                col_symbol.push_back(a.desc.name);
+                if ( !request.do_symbol || request.check_symbol_arg(a.desc.sname, request.symbol_arg))
+                {
+                    col_overhead.push_back(((double)a.freq * 100 / (double)total_samples[group_idx]));// +L"%");
+                    col_count.push_back(a.freq);
+                    col_symbol.push_back(a.desc.name);
+                }
 
                 if (request.do_verbose)
                 {

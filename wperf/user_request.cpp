@@ -288,7 +288,7 @@ void user_request::print_help()
 
 user_request::user_request() : do_list{ false }, do_disassembly(false), do_count(false), do_kernel(false), do_timeline(false),
     do_sample(false), do_record(false), do_annotate(false), do_version(false), do_verbose(false), do_test(false),
-    do_help(false), do_man(false), do_export_perf_data(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
+    do_help(false), do_man(false), do_export_perf_data(false), do_symbol(false), dmc_idx(_UI8_MAX), count_duration(-1.0),
     sample_image_name(L""), sample_pe_file(L""), sample_pdb_file(L""),
     sample_display_row(50), sample_display_short(true), count_timeline(0),
     count_interval(-1.0), report_l3_cache_metric(false), report_ddr_bw_metric(false) {}
@@ -400,6 +400,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
     bool waiting_record_spawn_delay = false;
     bool waiting_man_query = false;
     bool waiting_cwd = false;
+    bool waiting_symbol = false;
 
     bool sample_pe_file_given = false;
 
@@ -729,6 +730,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
             continue;
         }
 
+        if (waiting_symbol)
+        {
+            symbol_arg = a;
+            waiting_symbol = false;
+            continue;
+        }
+
         // For compatibility with Linux perf
         if (a == L"list" || a == L"-l")
         {
@@ -960,6 +968,13 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
         if (a == L"test")
         {
             do_test = true;
+            continue;
+        }
+
+        if (a == L"-s" || a == L"--symbol")
+        {
+            do_symbol = true;
+            waiting_symbol = true;
             continue;
         }
 
@@ -1229,5 +1244,33 @@ double user_request::convert_timeout_arg_to_seconds(std::wstring number_and_suff
     //However, if the unit map/regex construction is changeed in the future, this serves as a good safety net
 
     return ConvertNumberWithUnit(number, suffix, unit_map);
+}
+
+bool user_request::check_symbol_arg(const std::wstring& symbol, const std::wstring& arg,
+    const wchar_t prefix_delim, const wchar_t suffix_delim)
+{
+    std::wstring lower_symbol = WStringToLower(symbol);
+    std::wstring lower_arg = WStringToLower(arg);
+
+    if (WStringStartsWith(arg, std::wstring(1, prefix_delim)) && WStringEndsWith(arg, std::wstring(1, suffix_delim)))
+    {
+        // both delimiters are present, treat as if neither are there
+        return (lower_symbol == WStringToLower(arg.substr(1, arg.size() - 2)));
+    }
+    else if (WStringStartsWith(arg, std::wstring(1, prefix_delim)))
+    {
+        // symbol exists at beginning
+        return CaseInsensitiveWStringStartsWith(symbol, arg.substr(1));
+    }
+    else if (WStringEndsWith(arg, std::wstring(1, suffix_delim)))
+    {
+        // symbol exists at end
+        return CaseInsensitiveWStringEndsWith(symbol, arg.substr(0, arg.size() - 1));
+    }
+    else
+    {
+        // symbol matches - case insensitive
+        return (lower_symbol == lower_arg);
+    }
 }
 

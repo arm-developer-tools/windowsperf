@@ -209,6 +209,17 @@ bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix)
 }
 
 /// <summary>
+/// Return TRUE if STR ends with SUFFIX
+/// </summary>
+/// <param name="str">String to compare</param>
+/// <param name="prefix">Prefix to compare</param>
+bool WStringEndsWith(const std::wstring& str, const std::wstring& suffix)
+{
+    return (str.size() > suffix.size() &&
+        std::equal(suffix.rbegin(), suffix.rend(), str.rbegin()));
+}
+
+/// <summary>
 /// Return TRUE if STR starts with PREFIX (case insensitive comparision)
 /// </summary>
 /// <param name="str">String to compare</param>
@@ -216,6 +227,16 @@ bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix)
 bool CaseInsensitiveWStringStartsWith(const std::wstring& str, const std::wstring& prefix)
 {
     return WStringStartsWith(WStringToLower(str), WStringToLower(prefix));
+}
+
+/// <summary>
+/// Return TRUE if STR starts with PREFIX (case insensitive comparision)
+/// </summary>
+/// <param name="str">String to compare</param>
+/// <param name="prefix">Prefix to compare</param>
+bool CaseInsensitiveWStringEndsWith(const std::wstring& str, const std::wstring& suffix)
+{
+    return WStringEndsWith(WStringToLower(str), WStringToLower(suffix));
 }
 
 /// <summary>
