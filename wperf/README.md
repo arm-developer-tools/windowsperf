@@ -35,14 +35,14 @@ SYNOPSIS:
 
     wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
-                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble]
+                 [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble]
         Sampling mode, for determining the frequencies of event occurrences
         produced by program locations at the function, basic block, and/or
         instruction levels.
 
     wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
-                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
+                 [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
         Same as sample but also automatically spawns the process and pins it to
         the core specified by `-c`. Process name is defined by COMMAND. User can
         pass verbatim arguments to the process with [ARGS].
@@ -133,6 +133,9 @@ OPTIONS:
 
     --sample-display-row
         Set how many samples you want to see in the summary (50 by default).
+
+    -s, --symbol
+        Filter results for specific symbols (for use with 'record' and 'sample' commands).
 
     --record_spawn_delay
         Set the waiting time, in milliseconds, before reading process data after
@@ -1643,6 +1646,65 @@ You can either:
   - Shortcut: You need clang targeting `aarch64-pc-windows-msvc`:
     - Go to Visual Studio Installer and install: Modify -> Individual Components -> search "clang".
     - Install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
+
+### Using the '--symbol' option
+
+This option filters the symbols in the output of a `record` command (and `sample` command). It has the alias `-s`. and symbol name are case insensitive. 
+
+:warning: Note: the symbol argument should be wrapped with double quotes.
+
+Example filtering for exact symbol `x_mul`:
+
+```
+>wperf record -e ld_spec:100000 -c 1 --timeout 3 --symbol "x_mul" -- python_d.exe -c 10**10**100
+base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff73e481288, runtime delta: 0x7ff5fe480000
+sampling .....e done!
+======================== sample source: ld_spec, top 50 hot functions ========================
+        overhead  count  symbol
+        ========  =====  ======
+           76.17    195  x_mul:python312_d.dll
+          100.00%   256  top 17 in total
+
+               3.334 seconds time elapsed
+```
+
+There are two additional symbol filtering options:
+- `^` before the prefix or
+- `$` after the suffix, you can filter by a prefix or suffix.
+
+For example, filtering for all symbols starting with `x_`,
+
+```
+>wperf record -e ld_spec:100000 -c 1 --timeout 10 --symbol "^x_" -- python_d.exe -c 10**10**10
+base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff62aab1288, runtime delta: 0x7ff4eaab0000
+sampling .... done!
+======================== sample source: ld_spec, top 50 hot functions ========================
+        overhead  count  symbol
+        ========  =====  ======
+           75.78     97  x_mul:python312_d.dll
+            0.78      1  x_add:python312_d.dll
+          100.00%   128  top 12 in total
+
+               1.117 seconds time elapsed
+```
+
+Or for suffix `_mul`,
+
+```
+>wperf record -e ld_spec:100000 -c 1 --timeout 10 --symbol "mul$" -- python_d.exe -c 10**10**10
+base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff62aab1288, runtime delta: 0x7ff4eaab0000
+sampling .... done!
+======================== sample source: ld_spec, top 50 hot functions ========================
+        overhead  count  symbol
+        ========  =====  ======
+           75.00     96  x_mul:python312_d.dll
+            0.78      1  k_mul:python312_d.dll
+          100.00%   128  top 11 in total
+
+               1.098 seconds time elapsed
+```
+
+Using `^` and `$` together (e.g. `"^x_mul$"`) is the same as using neither (`"x_mul"`).
 
 ## Sampling with Arm Statistical Profiling Extension (SPE)
 

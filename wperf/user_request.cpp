@@ -60,14 +60,14 @@ SYNOPSIS:
 
     wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
-                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble]
+                 [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble]
         Sampling mode, for determining the frequencies of event occurrences
         produced by program locations at the function, basic block, and/or
         instruction levels.
 
     wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config]
                  [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock]
-                 [--sample-display-row] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
+                 [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble] -- COMMAND [ARGS]
         Same as sample but also automatically spawns the process and pins it to
         the core specified by `-c`. Process name is defined by COMMAND. User can
         pass verbatim arguments to the process with [ARGS].
@@ -115,12 +115,12 @@ OPTIONS:
         Note: see list of available metric names using `list` command.
 
     --timeout
-        Specify counting or sampling duration. If not specified, press 
-        Ctrl+C to interrupt counting or sampling. Input may be suffixed by 
-        one (or none) of the following units, with up to 2 decimal 
-        points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds, 
+        Specify counting or sampling duration. If not specified, press
+        Ctrl+C to interrupt counting or sampling. Input may be suffixed by
+        one (or none) of the following units, with up to 2 decimal
+        points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds,
         minutes, hours, days). If no unit is provided, the default unit
-        is seconds. Accuracy is 0.1 sec. 
+        is seconds. Accuracy is 0.1 sec.
 
     -t
         Enable timeline mode (count multiple times with specified interval).
@@ -128,10 +128,10 @@ OPTIONS:
         counts.
 
     -i
-        Specify counting interval. `0` seconds is allowed. Input may be 
-        suffixed with one (or none) of the following units, with up to 
-        2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds, 
-        seconds, minutes, hours, days). If no unit is provided, the default 
+        Specify counting interval. `0` seconds is allowed. Input may be
+        suffixed with one (or none) of the following units, with up to
+        2 decimal points: "ms", "s", "m", "h", "d" (i.e. milliseconds,
+        seconds, minutes, hours, days). If no unit is provided, the default
         unit is seconds (60s by default).
 
     -n
@@ -147,10 +147,10 @@ OPTIONS:
         Specify the image name you want to sample.
 
     --pe_file
-        Specify the PE file name (and path).
+        Specify the PE filename (and path).
 
     --pdb_file
-        Specify the PDB file name (and path), PDB file should directly
+        Specify the PDB filename (and path), PDB file should directly
         corresponds to a PE file set with `--pe_file`.
 
     --sample-display-long
@@ -158,6 +158,9 @@ OPTIONS:
 
     --sample-display-row
         Set how many samples you want to see in the summary (50 by default).
+
+    --symbol
+        Filter results for specific symbols (for use with 'record' and 'sample' commands).
 
     --record_spawn_delay
         Set the waiting time, in milliseconds, before reading process data after
@@ -189,10 +192,10 @@ OPTIONS:
         Define output type as JSON.
 
     --output, -o
-        Specify JSON output file name.
+        Specify JSON output filename.
 
     --output-csv
-        Specify CSV output file name. Only with timeline `-t`.
+        Specify CSV output filename. Only with timeline `-t`.
 
     --output-prefix, --cwd
          Set current working dir for storing output JSON and CSV file.
@@ -206,6 +209,8 @@ OPTIONS aliases:
 
     sleep
         Alias of `--timeout`.
+    -s
+        Alias of `--symbol`.
 
 EXAMPLES:
 
