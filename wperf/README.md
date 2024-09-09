@@ -1773,14 +1773,32 @@ Annotate example with `ld=1` filter enabled: enables collection of load sampled 
 
 ```
 >wperf record -e arm_spe_0/ld=1/ -c 8 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
-base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff69e251288, runtime delta: 0x7ff55e250000
-sampling ...e..........e... done!
+```
+
+Expected output contains both PMU `sample_` events associated with SPE and sampling section with symbols, overhead and hit count:
+
+```
+base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff7f4f71288, runtime delta: 0x7ff6b4f70000
+sampling ...e.e.... done!
+
+Performance counter stats for core 8, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
+note: 'e' - normal event, 'gN' - grouped event with group number N, metric name will be appended if 'e' or 'g' comes from it
+
+         counter value  event name        event idx  event note
+         =============  ==========        =========  ==========
+        23,963,745,619  cycle             fixed      e
+        62,492,028,843  sample_pop        0x4000     e
+                    29  sample_feed       0x4001     e
+                    10  sample_filtrate   0x4002     e
+                     0  sample_collision  0x4003     e
 ======================== sample source: LOAD_STORE_ATOMIC-LOAD-GP/retired+level1-data-cache-access+tlb_access, top 50 hot functions ========================
         overhead  count  symbol
         ========  =====  ======
-           93.75     15  x_mul:python312_d.dll
-            6.25      1  _Py_ThreadCanHandleSignals:python312_d.dll
-100.00%        16  top 2 in total
+           90.00      9  x_mul:python312_d.dll
+           10.00      1  v_iadd:python312_d.dll
+          100.00%    10  top 2 in total
+
+                8.05 seconds time elapsed
 ```
 
 #### SPE with disassemble
