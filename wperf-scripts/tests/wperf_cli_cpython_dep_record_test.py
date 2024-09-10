@@ -146,8 +146,12 @@ def test_cpython_bench_record_time():
 
 @pytest.mark.parametrize("arg",
 [
+   ("^"),       # All strings start with empty string
+   ("$"),       # All strings end with empty string
    ("x_mul"),
    ("^x_"),
+   ("^x_mul"),
+   ("x_mul$"),
    ("_mul$"),
    ("X_MUL"),
    ("^x_mul$"),

@@ -204,7 +204,7 @@ std::wstring WStringJoin(const std::vector<std::wstring>& input, std::wstring se
 /// <param name="prefix">Prefix to compare</param>
 bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix)
 {
-    return (str.size() > prefix.size() &&
+    return (str.size() >= prefix.size() &&
         std::equal(prefix.begin(), prefix.end(), str.begin()));
 }
 
@@ -215,7 +215,7 @@ bool WStringStartsWith(const std::wstring& str, const std::wstring& prefix)
 /// <param name="prefix">Prefix to compare</param>
 bool WStringEndsWith(const std::wstring& str, const std::wstring& suffix)
 {
-    return (str.size() > suffix.size() &&
+    return (str.size() >= suffix.size() &&
         std::equal(suffix.rbegin(), suffix.rend(), str.rbegin()));
 }
 

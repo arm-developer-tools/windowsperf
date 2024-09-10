@@ -474,6 +474,15 @@ namespace wperftest
 
 		TEST_METHOD(test_WStringStartsWith)
 		{
+			Assert::IsTrue(WStringStartsWith(std::wstring(L""), std::wstring(L"")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"a"), std::wstring(L"")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"a"), std::wstring(L"a")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"a_"), std::wstring(L"a")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"ab"), std::wstring(L"ab")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"ab_"), std::wstring(L"ab")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"abc"), std::wstring(L"abc")));
+			Assert::IsTrue(WStringStartsWith(std::wstring(L"abc_"), std::wstring(L"abc")));
+
 			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
 			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/dsu/")));
 			Assert::IsTrue(WStringStartsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"/dsu/")));
@@ -500,6 +509,15 @@ namespace wperftest
 
 		TEST_METHOD(test_WStringEndsWith)
 		{
+			Assert::IsTrue(WStringEndsWith(std::wstring(L""), std::wstring(L"")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"a"), std::wstring(L"")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"a"), std::wstring(L"a")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"_a"), std::wstring(L"a")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"ab"), std::wstring(L"ab")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"_ab"), std::wstring(L"ab")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"abc"), std::wstring(L"abc")));
+			Assert::IsTrue(WStringEndsWith(std::wstring(L"_abc"), std::wstring(L"abc")));
+
 			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
 			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/l3d_cache")));
 			Assert::IsTrue(WStringEndsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"refill")));

@@ -142,12 +142,15 @@ namespace wperftest
 
 		TEST_METHOD(test_check_symbol_arg)
 		{
+			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"^"));
+			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"$"));
+
 			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"xmul"));
 			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"^x"));
 			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"^xm"));
-			//Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"^xmul"));
+			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"^xmul"));
 
-			//Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"xmul$"));
+			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"xmul$"));
 			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"mul$"));
 			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"ul$"));
 			Assert::IsTrue(user_request::check_symbol_arg(L"xmul", L"l$"));
@@ -157,9 +160,6 @@ namespace wperftest
 
 		TEST_METHOD(test_check_symbol_arg_nok)
 		{
-			Assert::IsFalse(user_request::check_symbol_arg(L"xmul", L"^"));
-			Assert::IsFalse(user_request::check_symbol_arg(L"xmul", L"$"));
-
 			Assert::IsFalse(user_request::check_symbol_arg(L"xmul", L"^a"));
 			Assert::IsFalse(user_request::check_symbol_arg(L"xmul", L"^xmul_"));
 			Assert::IsFalse(user_request::check_symbol_arg(L"xmul", L"^ x"));
