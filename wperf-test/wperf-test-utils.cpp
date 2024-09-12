@@ -148,26 +148,127 @@ namespace wperftest
 			Assert::AreEqual(WideStringFromMultiByte(0), std::wstring());
 		}
 
+		TEST_METHOD(test_IntToHexWideString_zero_width)
+		{
+			Assert::AreEqual(IntToHexWideString(0x0, 0), std::wstring(L"0x0"));
+			Assert::AreEqual(IntToHexWideString(0x1, 0), std::wstring(L"0x1"));
+			Assert::AreEqual(IntToHexWideString(0x12, 0), std::wstring(L"0x12"));
+			Assert::AreEqual(IntToHexWideString(0x123, 0), std::wstring(L"0x123"));
+			Assert::AreEqual(IntToHexWideString(0x1234, 0), std::wstring(L"0x1234"));
+			Assert::AreEqual(IntToHexWideString(0x12345, 0), std::wstring(L"0x12345"));
+		}
 		TEST_METHOD(test_IntToHexWideString)
 		{
+			Assert::AreEqual(IntToHexWideString(0, 1), std::wstring(L"0x0"));
+			Assert::AreEqual(IntToHexWideString(0, 2), std::wstring(L"0x00"));
+			Assert::AreEqual(IntToHexWideString(0, 3), std::wstring(L"0x000"));
+			Assert::AreEqual(IntToHexWideString(0, 4), std::wstring(L"0x0000"));
+			Assert::AreEqual(IntToHexWideString(0, 5), std::wstring(L"0x00000"));
+			Assert::AreEqual(IntToHexWideString(0, 6), std::wstring(L"0x000000"));
+
+			Assert::AreEqual(IntToHexWideString(0xF, 1), std::wstring(L"0xf"));
+			Assert::AreEqual(IntToHexWideString(0xF, 2), std::wstring(L"0x0f"));
+			Assert::AreEqual(IntToHexWideString(0xF, 3), std::wstring(L"0x00f"));
+			Assert::AreEqual(IntToHexWideString(0xF, 4), std::wstring(L"0x000f"));
+			Assert::AreEqual(IntToHexWideString(0xF, 5), std::wstring(L"0x0000f"));
+			Assert::AreEqual(IntToHexWideString(0xF, 6), std::wstring(L"0x00000f"));
+
+			Assert::AreEqual(IntToHexWideString(0x1F, 1), std::wstring(L"0x1f"));
+			Assert::AreEqual(IntToHexWideString(0x1F, 2), std::wstring(L"0x1f"));
+			Assert::AreEqual(IntToHexWideString(0x1F, 3), std::wstring(L"0x01f"));
+			Assert::AreEqual(IntToHexWideString(0x1F, 4), std::wstring(L"0x001f"));
+			Assert::AreEqual(IntToHexWideString(0x1F, 5), std::wstring(L"0x0001f"));
+			Assert::AreEqual(IntToHexWideString(0x1F, 6), std::wstring(L"0x00001f"));
+
 			Assert::AreEqual(IntToHexWideString(0, 4), std::wstring(L"0x0000"));
 			Assert::AreEqual(IntToHexWideString(1, 4), std::wstring(L"0x0001"));
 			Assert::AreEqual(IntToHexWideString(256, 4), std::wstring(L"0x0100"));
+			Assert::AreEqual(IntToHexWideString(0x1000, 4), std::wstring(L"0x1000"));
+
+			Assert::AreEqual(IntToHexWideString(0x1234, 1), std::wstring(L"0x1234"));
+			Assert::AreEqual(IntToHexWideString(0x1234, 2), std::wstring(L"0x1234"));
+			Assert::AreEqual(IntToHexWideString(0x1234, 3), std::wstring(L"0x1234"));
 		}
 
 		TEST_METHOD(test_IntToHexWideString_wchar_t)
 		{
 			wchar_t wchar = 0x123;
+			Assert::AreEqual(IntToHexWideString(wchar, 1), std::wstring(L"0x123"));
+			Assert::AreEqual(IntToHexWideString(wchar, 2), std::wstring(L"0x123"));
+			Assert::AreEqual(IntToHexWideString(wchar, 3), std::wstring(L"0x123"));
 			Assert::AreEqual(IntToHexWideString(wchar, 4), std::wstring(L"0x0123"));
 			Assert::AreEqual(IntToHexWideString(wchar, 10), std::wstring(L"0x0000000123"));
+		}
 
+		TEST_METHOD(test_IntToHexWideString_ui16)
+		{
 			uint16_t ui16 = 0x256;
+			Assert::AreEqual(IntToHexWideString(ui16, 1), std::wstring(L"0x256"));
+			Assert::AreEqual(IntToHexWideString(ui16, 2), std::wstring(L"0x256"));
+			Assert::AreEqual(IntToHexWideString(ui16, 3), std::wstring(L"0x256"));
 			Assert::AreEqual(IntToHexWideString(ui16, 4), std::wstring(L"0x0256"));
 			Assert::AreEqual(IntToHexWideString(ui16, 10), std::wstring(L"0x0000000256"));
 		}
 
+		TEST_METHOD(test_IntToHexWideString_type_mix_comp)
+		{
+			wchar_t wchar = 0x123;
+			uint16_t ui16 = 0x123;
+
+			// wchar vs ui16
+			Assert::AreEqual(IntToHexWideString(wchar, 0), IntToHexWideString(ui16, 0));
+			Assert::AreEqual(IntToHexWideString(wchar, 0), IntToHexWideString(ui16, 0));
+
+			Assert::AreEqual(IntToHexWideString(wchar, 1), IntToHexWideString(ui16, 1));
+			Assert::AreEqual(IntToHexWideString(wchar, 1), IntToHexWideString(ui16, 1));
+
+			Assert::AreEqual(IntToHexWideString(wchar, 2), IntToHexWideString(ui16, 2));
+			Assert::AreEqual(IntToHexWideString(wchar, 2), IntToHexWideString(ui16, 2));
+
+			Assert::AreEqual(IntToHexWideString(wchar, 10), IntToHexWideString(ui16, 10));
+			Assert::AreEqual(IntToHexWideString(wchar, 10), IntToHexWideString(ui16, 10));
+
+			// wchar vs int(0x123)
+			Assert::AreEqual(IntToHexWideString(wchar, 0), IntToHexWideString(0x123, 0));
+			Assert::AreEqual(IntToHexWideString(wchar, 0), IntToHexWideString(0x123, 0));
+
+			Assert::AreEqual(IntToHexWideString(wchar, 1), IntToHexWideString(0x123, 1));
+			Assert::AreEqual(IntToHexWideString(wchar, 1), IntToHexWideString(0x123, 1));
+
+			Assert::AreEqual(IntToHexWideString(wchar, 2), IntToHexWideString(0x123, 2));
+			Assert::AreEqual(IntToHexWideString(wchar, 2), IntToHexWideString(0x123, 2));
+
+			Assert::AreEqual(IntToHexWideString(wchar, 10), IntToHexWideString(0x123, 10));
+			Assert::AreEqual(IntToHexWideString(wchar, 10), IntToHexWideString(0x123, 10));
+
+			// ui16 vs int(0x123)
+			Assert::AreEqual(IntToHexWideString(ui16, 0), IntToHexWideString(0x123, 0));
+			Assert::AreEqual(IntToHexWideString(ui16, 0), IntToHexWideString(0x123, 0));
+
+			Assert::AreEqual(IntToHexWideString(ui16, 1), IntToHexWideString(0x123, 1));
+			Assert::AreEqual(IntToHexWideString(ui16, 1), IntToHexWideString(0x123, 1));
+
+			Assert::AreEqual(IntToHexWideString(ui16, 2), IntToHexWideString(0x123, 2));
+			Assert::AreEqual(IntToHexWideString(ui16, 2), IntToHexWideString(0x123, 2));
+
+			Assert::AreEqual(IntToHexWideString(ui16, 10), IntToHexWideString(0x123, 10));
+			Assert::AreEqual(IntToHexWideString(ui16, 10), IntToHexWideString(0x123, 10));
+		}
+
 		TEST_METHOD(test_IntToHexWideStringNoPrefix)
 		{
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xF, 0), std::wstring(L"f"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xF, 1), std::wstring(L"f"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xF, 2), std::wstring(L"0f"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xF, 3), std::wstring(L"00f"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xF, 4), std::wstring(L"000f"));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xaF, 0), std::wstring(L"af"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xaF, 1), std::wstring(L"af"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xaF, 2), std::wstring(L"af"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xaF, 3), std::wstring(L"0af"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(0xaF, 4), std::wstring(L"00af"));
+
 			Assert::AreEqual(IntToHexWideStringNoPrefix(0, 4), std::wstring(L"0000"));
 			Assert::AreEqual(IntToHexWideStringNoPrefix(1, 4), std::wstring(L"0001"));
 			Assert::AreEqual(IntToHexWideStringNoPrefix(256, 4), std::wstring(L"0100"));
@@ -176,14 +277,71 @@ namespace wperftest
 		TEST_METHOD(test_IntToHexWideStringNoPrefix_wchar_t)
 		{
 			wchar_t wchar = 0x123;
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 0), std::wstring(L"123"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 1), std::wstring(L"123"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 2), std::wstring(L"123"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 3), std::wstring(L"123"));
 			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 4), std::wstring(L"0123"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 5), std::wstring(L"00123"));
 			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 10), std::wstring(L"0000000123"));
-
+		}
+		
+		TEST_METHOD(test_IntToHexWideStringNoPrefix_ui16)
+		{
 			uint16_t ui16 = 0x256;
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 0), std::wstring(L"256"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 1), std::wstring(L"256"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 2), std::wstring(L"256"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 3), std::wstring(L"256"));
 			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 4), std::wstring(L"0256"));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 5), std::wstring(L"00256"));
 			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 10), std::wstring(L"0000000256"));
 		}
 
+		TEST_METHOD(test_IntToHexWideStringNoPrefix_type_mix_comp)
+		{
+			wchar_t wchar = 0x123;
+			uint16_t ui16 = 0x123;
+
+			// wchar vs ui16
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 0), IntToHexWideStringNoPrefix(ui16, 0));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 0), IntToHexWideStringNoPrefix(ui16, 0));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 1), IntToHexWideStringNoPrefix(ui16, 1));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 1), IntToHexWideStringNoPrefix(ui16, 1));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 2), IntToHexWideStringNoPrefix(ui16, 2));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 2), IntToHexWideStringNoPrefix(ui16, 2));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 10), IntToHexWideStringNoPrefix(ui16, 10));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 10), IntToHexWideStringNoPrefix(ui16, 10));
+
+			// wchar vs int(0x123)
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 0), IntToHexWideStringNoPrefix(0x123, 0));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 0), IntToHexWideStringNoPrefix(0x123, 0));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 1), IntToHexWideStringNoPrefix(0x123, 1));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 1), IntToHexWideStringNoPrefix(0x123, 1));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 2), IntToHexWideStringNoPrefix(0x123, 2));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 2), IntToHexWideStringNoPrefix(0x123, 2));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 10), IntToHexWideStringNoPrefix(0x123, 10));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(wchar, 10), IntToHexWideStringNoPrefix(0x123, 10));
+
+			// ui16 vs int(0x123)
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 0), IntToHexWideStringNoPrefix(0x123, 0));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 0), IntToHexWideStringNoPrefix(0x123, 0));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 1), IntToHexWideStringNoPrefix(0x123, 1));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 1), IntToHexWideStringNoPrefix(0x123, 1));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 2), IntToHexWideStringNoPrefix(0x123, 2));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 2), IntToHexWideStringNoPrefix(0x123, 2));
+
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 10), IntToHexWideStringNoPrefix(0x123, 10));
+			Assert::AreEqual(IntToHexWideStringNoPrefix(ui16, 10), IntToHexWideStringNoPrefix(0x123, 10));
+		}
 
 		TEST_METHOD(test_IntToDecWideString)
 		{
