@@ -491,6 +491,12 @@ namespace wperftest
 
 		TEST_METHOD(test_CaseInsensitiveWStringStartsWith)
 		{
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"/ABCD/EFG")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"/ABCD/EF")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"/abcd/efg")));
+			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"/abcd/ef")));
+
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/dsu/")));
 			Assert::IsTrue(CaseInsensitiveWStringStartsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"/dmc_clkdiv2/")));
@@ -502,6 +508,33 @@ namespace wperftest
 
 		TEST_METHOD(test_CaseInsensitiveWStringStartsWith_nok)
 		{
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L""), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L" abc"), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"_abc"), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"bc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"cba")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"bca")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"cba")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"_")));
+
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L""), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L" ABC"), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"_ABC"), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"AbC"), std::wstring(L"bc")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"AbC"), std::wstring(L"cba")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"AbC"), std::wstring(L"BCA")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"AbC"), std::wstring(L"CBA")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"AbC"), std::wstring(L"_")));
+
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L""), std::wstring(L"ABC")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L" abc"), std::wstring(L"ABC")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"_abc"), std::wstring(L"ABC")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"BC")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"CBA")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"BCA")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"CBA")));
+			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"abc"), std::wstring(L"_")));
+
 			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"l3d_cache")));
 			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/dsu_")));
 			Assert::IsFalse(CaseInsensitiveWStringStartsWith(std::wstring(L"/dmc_clkdiv2/rdwr"), std::wstring(L"rdwr")));
@@ -526,6 +559,12 @@ namespace wperftest
 
 		TEST_METHOD(test_CaseInsensitiveWStringEndsWith)
 		{
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"/ABCD/EFG")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"ABCD/EFG")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"/abcd/efg")));
+			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/AbCd/Efg"), std::wstring(L"abcd/efg")));
+
 			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"")));
 			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"/l3d_cache")));
 			Assert::IsTrue(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"refill")));
@@ -539,6 +578,27 @@ namespace wperftest
 
 		TEST_METHOD(test_CaseInsensitiveWStringEndsWith_nok)
 		{
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L""), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"cba")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"ab")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"a")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"abc ")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"abc_")));
+
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L""), std::wstring(L"abc")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"ABC"), std::wstring(L"cba")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"ABC"), std::wstring(L"ab")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"ABC"), std::wstring(L"a")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"ABC"), std::wstring(L"abc ")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"ABC"), std::wstring(L"abc_")));
+
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L""), std::wstring(L"ABC")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"CBA")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"AB")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"A")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"ABC ")));
+			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"abc"), std::wstring(L"ABC_")));
+
 			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache"), std::wstring(L"_l3d_cache")));
 			Assert::IsFalse(CaseInsensitiveWStringEndsWith(std::wstring(L"/dsu/l3d_cache_refill"), std::wstring(L"/dsu")));
 		}
