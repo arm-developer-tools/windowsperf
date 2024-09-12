@@ -1070,6 +1070,28 @@ namespace wperftest
 		{
 			const std::unordered_map<std::wstring, double> unitMap = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400}};
 
+			Assert::AreEqual(ConvertNumberWithUnit(double(1000), std::wstring(L"ms"), unitMap), double(1.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(1500), std::wstring(L"ms"), unitMap), double(1.5));
+			Assert::AreEqual(ConvertNumberWithUnit(double(1551), std::wstring(L"ms"), unitMap), double(1.551));
+
+			Assert::AreEqual(ConvertNumberWithUnit(double(0), std::wstring(L"s"), unitMap), double(0.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(1), std::wstring(L"s"), unitMap), double(1.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(2), std::wstring(L"s"), unitMap), double(2.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(8), std::wstring(L"s"), unitMap), double(8.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(13), std::wstring(L"s"), unitMap), double(13.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(55), std::wstring(L"s"), unitMap), double(55.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(144), std::wstring(L"s"), unitMap), double(144.0));
+			Assert::AreEqual(ConvertNumberWithUnit(double(233), std::wstring(L"s"), unitMap), double(233.0));
+
+			Assert::AreEqual(ConvertNumberWithUnit(double(0), std::wstring(L"m"), unitMap), double(0.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(1), std::wstring(L"m"), unitMap), double(1.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(2), std::wstring(L"m"), unitMap), double(2.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(8), std::wstring(L"m"), unitMap), double(8.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(13), std::wstring(L"m"), unitMap), double(13.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(55), std::wstring(L"m"), unitMap), double(55.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(144), std::wstring(L"m"), unitMap), double(144.0 * 60));
+			Assert::AreEqual(ConvertNumberWithUnit(double(233), std::wstring(L"m"), unitMap), double(233.0 * 60));
+
 			Assert::AreEqual(ConvertNumberWithUnit(double(0.311), std::wstring(L"ms"), unitMap), double(0.000311));
 			Assert::AreEqual(ConvertNumberWithUnit(double(10.24), std::wstring(L"s"), unitMap), double(10.24));
 			Assert::AreEqual(ConvertNumberWithUnit(double(60), std::wstring(L"d"), unitMap), double(5184000));

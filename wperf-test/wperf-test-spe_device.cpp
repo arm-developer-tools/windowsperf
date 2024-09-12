@@ -41,6 +41,33 @@ namespace wperftest
 	{
 	public:
 
+		const UINT64 id_aa64dfr0_value = 0x00000000000110305408;
+
+		TEST_METHOD(test_spe_device_get_spe_version_name)
+		{
+			Assert::AreEqual(spe_device::get_spe_version_name(id_aa64dfr0_value), std::wstring(L"FEAT_SPE"));
+		}
+
+		TEST_METHOD(test_spe_device_is_spe_supported)
+		{
+#ifdef ENABLE_SPE
+			Assert::IsTrue(spe_device::is_spe_supported(id_aa64dfr0_value));
+#else
+			Assert::IsFalse(spe_device::is_spe_supported(id_aa64dfr0_value));	// When SPE is not enabled we always return false;
+#endif
+		}
+
+		TEST_METHOD(test_spe_device_ID_AA64DFR0_EL1_PMSVer)
+		{
+			Assert::IsTrue(ID_AA64DFR0_EL1_PMSVer(id_aa64dfr0_value) == 0b001);
+		}
+
+		TEST_METHOD(test_spe_device_get_spe_version_name_nok)
+		{
+			Assert::IsFalse(spe_device::is_spe_supported(UINT64(0)));
+			Assert::IsFalse(spe_device::is_spe_supported(~UINT64(0)));
+		}
+
 		TEST_METHOD(test_spe_device_filter_name)
 		{
 			Assert::IsTrue(spe_device::is_filter_name(L"load_filter"));
