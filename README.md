@@ -77,6 +77,7 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 
 ## Blogs and announcements
 
+- [WindowsPerf Release 3.7.2](https://www.linaro.org/blog/expanding-profiling-capabilities-with-windowsperf-372-release) blog post.
 - [WindowsPerf Release 3.3.0](https://www.linaro.org/blog/windowsperf-release-3-3-0/) blog post.
 - [WindowsPerf Release 3.0.0](https://www.linaro.org/blog/windowsperf-release-3-0-0/) blog post.
 - [WindowsPerf Release 2.5.1](https://www.linaro.org/blog/windowsperf-release-2-5-1/) blog post.
