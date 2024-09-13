@@ -65,6 +65,14 @@ void TokenizeWideStringOfStrings(const std::wstring& str, const wchar_t& delim, 
     }
 }
 
+/// <summary>
+/// Tokenizes wstring to a vector of wstring tokens delimeted by a specific character. Includes delimiter in token.
+/// 
+/// For example, splitting a sentence on a comma, where you would like to preserve the comma.
+/// </summary>
+/// <param name="str">Source string to get the tokens</param>
+/// <param name="delim">The delimiting character</param>
+/// <param name="tokens">The vector that is going to receive the tokens</param>
 void TokenizeWideStringOfStringsDelim(const std::wstring& str, const wchar_t& delim, std::vector<std::wstring>& tokens)
 {
     using size_type = std::basic_string<wchar_t>::size_type;

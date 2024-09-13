@@ -1066,6 +1066,121 @@ namespace wperftest
 			}
 		}
 
+		TEST_METHOD(test_TokenizeWideStringOfStringsDelim_corner_cases)
+		{
+			{
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(L"", L'\n', tokens);
+				Assert::AreEqual(0, int(tokens.size()));
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n", L'\n', tokens);
+				Assert::AreEqual(1, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n\n", L'\n', tokens);
+				Assert::AreEqual(2, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n\n\n", L'\n', tokens);
+				Assert::AreEqual(3, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[2]);
+			}
+
+			{
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(L"_\n", L'\n', tokens);
+				Assert::AreEqual(1, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[0]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n_", L'\n', tokens);
+				Assert::AreEqual(2, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"_"), tokens[1]);
+			}
+
+			{
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(L"_\n\n", L'\n', tokens);
+				Assert::AreEqual(2, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n_\n", L'\n', tokens);
+				Assert::AreEqual(2, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[1]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n\n_", L'\n', tokens);
+				Assert::AreEqual(3, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"_"), tokens[2]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"_\n\n_", L'\n', tokens);
+				Assert::AreEqual(3, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"_"), tokens[2]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"_\n_\n_", L'\n', tokens);
+				Assert::AreEqual(3, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"_"), tokens[2]);
+			}
+
+			{
+				std::vector<std::wstring> tokens;
+				TokenizeWideStringOfStringsDelim(L"_\n\n\n", L'\n', tokens);
+				Assert::AreEqual(3, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[2]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"__\n_\n\n__", L'\n', tokens);
+				Assert::AreEqual(4, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"__\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[2]);
+				Assert::AreEqual(std::wstring(L"__"), tokens[3]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n\n_\n", L'\n', tokens);
+				Assert::AreEqual(3, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"_\n"), tokens[2]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n\n\n_", L'\n', tokens);
+				Assert::AreEqual(4, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"\n"), tokens[2]);
+				Assert::AreEqual(std::wstring(L"_"), tokens[3]);
+
+				tokens.clear();
+				TokenizeWideStringOfStringsDelim(L"\n    *_\n    \n _ ", L'\n', tokens);
+				Assert::AreEqual(4, int(tokens.size()));
+				Assert::AreEqual(std::wstring(L"\n"), tokens[0]);
+				Assert::AreEqual(std::wstring(L"    *_\n"), tokens[1]);
+				Assert::AreEqual(std::wstring(L"    \n"), tokens[2]);
+				Assert::AreEqual(std::wstring(L" _ "), tokens[3]);
+			}
+		}
+
 		TEST_METHOD(test_ConvertTimeUnitToSeconds)
 		{
 			const std::unordered_map<std::wstring, double> unitMap = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400}};
