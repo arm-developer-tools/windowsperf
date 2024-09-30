@@ -1128,27 +1128,45 @@ To achieve that we will:
 
 Let's go...
 
-### CPython cross-build on x64 machine targeting ARM64
+### Build CPython targeting ARM64
 
-Let's build CPython locally in debug mode. We will in this example cross-compile CPython to the ARM64 target. Build machine is x64.
+:warning: Use `Visual Studio 2022 Developer Command Prompt` command line tool to access VS toolchain required for this build.
+
+Let's build CPython locally in debug mode using the `build.bat` script. You have the option to build CPython directly on your ARM64 machine or cross-compile it on an x64 machine. Below is an example demonstrating how to build it on an ARM64 machine.
+
+#### Clone CPython source code on your local machine
 
 ```
 > git clone git@github.com:python/cpython.git
 > cd cpython
+> git checkout 1ff81c0cb67215694f084e51c4d35ae53b9f5cf9
+```
+
+```
 > git log -1
 commit 1ff81c0cb67215694f084e51c4d35ae53b9f5cf9 (HEAD -> main, origin/main, origin/HEAD)
 Author: Eric Snow <ericsnowcurrently@gmail.com>
 Date:   Tue Mar 14 10:05:54 2023 -0600
+```
+
+#### Go to CPython directory and run build script
+
+```
 > cd PCBuild
 > build.bat -d -p ARM64
 ...
+```
+
+#### Execute CPython interpreter to check for build correctness
+
+```
 > arm64>python_d.exe
 Python 3.12.0a6+ (heads/main:1ff81c0cb6, Mar 14 2023, 16:26:50) [MSC v.1935 64 bit (ARM64)] on win32
 Type "help", "copyright", "credits" or "license" for more information.
 >>>
 ```
 
-Copy above CPython binaries from `PCbuild/arm64` directory to your ARM64 machine. Do not forget the `Lib` directory containing extra libs CPython uses.
+**Note**: For cross-compiled CPython to the ARM64 target (Build was done on machine is x64) copy above CPython binaries from `PCbuild/arm64` directory to your ARM64 machine. Do not forget the `Lib` directory containing extra libs CPython uses.
 
 ### Example 1: sampling CPython executing Googolplex calculation
 
