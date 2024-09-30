@@ -1768,12 +1768,13 @@ If `FeatureString` for both components (`wperf` and `wperf-driver`) contains `+s
 
 ### arm_spe_0// format
 
-Users can specify SPE filters with `arm_spe_0//`. We added CLI parser function for `-e arm_spe_0/*/` notation for `record` command. Where `*` is a comma separated list of supported filters. Currently we support filters. Users can define filters such as `store_filter=`, `load_filter=`, `branch_filter=` or short equivalents like `st=`, `ld=` and `b=`. Use `0` or `1` to disabled or enable a given filter. For example:
+Users can specify SPE filters using the `-e` command line option with `arm_spe_0//`. We've introduced the `arm_spe_0/*/` notation for the `record` command, where `*` represents a comma-separated list of supported filters. Currently, we support filters such as `store_filter=`, `load_filter=`, and `branch_filter=`, or their short equivalents like `st=`, `ld=`, and `b=`. Use `0` or `1` to disable or enable a given filter. For example:
 
 ```
->wperf record -c 0 -e arm_spe_0/branch_filter=1/
->wperf record -c 0 -e arm_spe_0/load_filter=1,branch_filter=0/
->wperf record -c 0 -e arm_spe_0/st=0,ld=0,b=1/
+arm_spe_0/branch_filter=1/
+arm_spe_0/load_filter=1,branch_filter=0/
+arm_spe_0/ld=1,branch_filter=0/
+arm_spe_0/st=0,ld=0,b=1/
 ```
 
 #### Filtering sample records
