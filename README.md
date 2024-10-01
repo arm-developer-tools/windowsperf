@@ -23,7 +23,7 @@ Currently we support:
 
 You can find example usage of [counting model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#counting-model) and [sampling model](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf#sampling-model) in `wperf` [README.md](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/README.md).
 
-### Arm Telemetry Solution integration
+### Arm Telemetry Solution Integration
 
 The integration of WindowsPerf and [Arm Telemetry Solution](https://developer.arm.com/documentation/109542/0100/About-Arm-CPU-Telemetry-Solution) is a significant advancement in performance analysis on Windows On Arm. This integration is primarily based on PMU (Performance Monitoring Unit) events, which provide a detailed insight into the system’s performance. One of the standout features of the WindowsPerf Tool is the implementation of the [Arm Topdown Methodology](https://developer.arm.com/documentation/109542/0100/Arm-Topdown-methodology) for μarch (microarchitecture) performance analysis. This methodology is tailored for each Arm CPU μarch. It involves the use of PMU events, metrics, and groups of metrics to provide a comprehensive analysis of the system’s performance. Furthermore, the WindowsPerf Tool is capable of [platform μarchitecture detection](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main), including Neoverse-N1, V1, and N2 CPUs.
 
@@ -75,7 +75,7 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 
 # References
 
-## Blogs and announcements
+## Blogs And Announcements
 
 - [WindowsPerf Release 3.7.2](https://www.linaro.org/blog/expanding-profiling-capabilities-with-windowsperf-372-release) blog post.
 - [WindowsPerf Release 3.3.0](https://www.linaro.org/blog/windowsperf-release-3-3-0/) blog post.
@@ -96,11 +96,21 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 
 ## Arm CPU Telemetry Solution
 
+### Arm Neoverse PMU Guides
+
+- [Arm Neoverse N1 PMU Guide](https://developer.arm.com/documentation/109956/latest/)
+- [Arm Neoverse V1 PMU Guide](https://developer.arm.com/documentation/109708/latest/)
+- [Arm Neoverse N2 PMU Guide](https://developer.arm.com/documentation/109710/latest/)
+- [Arm Neoverse V2 PMU Guide](https://developer.arm.com/documentation/109709/latest/)
+
+### Arm Telemetry Specifications
+
 - [Arm CPU Telemetry Solution Topdown Methodology Specification](https://developer.arm.com/documentation/109542/0100/Introduction/Useful-resources).
 - [Arm Telemetry Solution Tools](https://gitlab.arm.com/telemetry-solution/telemetry-solution).
 - [Arm Neoverse N1 Core Telemetry Specification](https://developer.arm.com/documentation/108070/0100/?lang=en).
 - [Arm Neoverse V1 Core Telemetry Specification](https://developer.arm.com/documentation/109216/0100/?lang=en).
 - [Arm Neoverse N2 Core Telemetry Specification](https://developer.arm.com/documentation/109215/0200/?lang=en).
+- [Arm Neoverse V2 Core Telemetry Specification](https://developer.arm.com/documentation/109528/0200)
 - [Arm Statistical Profiling Extension: Performance Analysis Methodology White Paper](https://developer.arm.com/documentation/109429/latest/) documentation.
 - [Arm Neoverse V1 – Top-down Methodology for Performance Analysis & Telemetry Specification](https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/arm-neoverse-v1-top-down-methodology) blog (with white paper).
 
