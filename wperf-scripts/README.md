@@ -7,7 +7,7 @@
 Use the command below to install the packages according to the configuration file `requirements.txt`.
 
 ```
->pip install -r requirements.txt
+> pip install -r requirements.txt
 ```
 
 # Script library
@@ -25,7 +25,7 @@ This script is wrapper for `devcon` command line tool. See [README.md](devcon/RE
 `arch_events_update.py` script can fetch PMU events stored in [ARM-software/data/pmu](https://github.com/ARM-software/data/blob/master/pmu/) and output in format compatible with [armv8-arch-events.def](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-common/armv8-arch-events.def).
 
 ```
->python3 arch_events_update.py
+> python3 arch_events_update.py
 usage: arch_events_update.py [-h] [-l] [-c CPU] [-o OUTPUT] [--license LICENSE]
 
 update the cpu's pmu events file!
@@ -51,10 +51,10 @@ Print to terminal:
 > python telemetry_events_update.py 
 ```
 
-To manually pipe into a desitnation file
+To manually pipe into a destination file:
 
 ```
->python telemetry_events_update.py > ..\wperf-common\telemetry-solution-data.def
+> python telemetry_events_update.py > ..\wperf-common\telemetry-solution-data.def
 ```
 
 `-o` flag, path of desired output file (file will be made or overwritten). If not specified, outputs to stdout. `--output` is an alias.
@@ -69,5 +69,3 @@ To manually pipe into a desitnation file
 > python telemetry_events_update.py --file
 > python telemetry_events_update.py --file --output ./test.def
 ```
-
-

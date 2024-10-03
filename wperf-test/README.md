@@ -11,17 +11,18 @@ Project `wperf-test` is VS Native Unit Test project. It references `wperf` proje
 Note: You can currently build unit tests only on `x64` host!
 
 Build and run `wperf` unit tests with:
-```
->make test                                          (Default Debug/x64)
->make config=Release test                           (Release/x64)
-```
+
+| Command                    | Configuration     |
+| ---                        | ---               |
+| `make test`                | Default Debug/x64 |
+| `make config=Release test` | Release/x64       |
 
 or more verbose version of above:
 
-```
->make wperf-test wperf-test-run                     (Default Debug/x64)
->make config=Release wperf-test wperf-test-run      (Release/x64)
-```
+| Command                                         | Configuration     |
+| ---                                             | ---               |
+| `make wperf-test wperf-test-run`                | Default Debug/x64 |
+| `make config=Release wperf-test wperf-test-run` | Release/x64       |
 
 The `wperf-test` project require `wperf` project to be built first. WindowsPerf VS solution defines this build dependency and you can just run `make ... wperf-test` and all dependencies will build.
 
@@ -30,7 +31,7 @@ Note: You can use `config=` command line option to switch between `Debug` and `R
 ## Example make test output
 
 ```
->make test
+> make test
 ...
 1>------ Rebuild All started: Project: wperf (wperf\wperf), Configuration: Debug x64 ------
 ...
@@ -105,5 +106,5 @@ In order to satisfy `wperf-test`'s link dependencies `Makefile` command `make al
 
 Please note we are building:
 
-* cross x64 -> ARM64 for WindowsPerf suite and
-* x64 -> x64 `wperf` and its unit tests.
+- cross x64 -> ARM64 for WindowsPerf suite and
+- x64 -> x64 `wperf` and its unit tests.
