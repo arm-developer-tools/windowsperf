@@ -19,7 +19,7 @@ the device and driver were already installed make sure to type `wperf-devgen uni
 ## Driver installation
 
 ```
->wperf-devgen.exe install
+> wperf-devgen.exe install
 Executing command: install.
 Install requested.
 Waiting for device creation...
@@ -31,7 +31,7 @@ Success installing driver.
 ## Driver uninstallation
 
 ```
->wperf-devgen uninstall
+> wperf-devgen uninstall
 Executing command: uninstall.
 Uninstall requested.
 Waiting for device creation...
