@@ -163,4 +163,3 @@ You can dry test this setting and:
         config.count.period                                 13
 ...
 ```
-
