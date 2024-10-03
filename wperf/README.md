@@ -217,7 +217,7 @@ EXAMPLES:
 
 ## Important Note: Use of curly braces in command line
 
-* PowerShell (and Developer PowerShell for VS):
+- PowerShell (and Developer PowerShell for VS):
 
 [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview) treats curly braces `{}` as a special character, therefore passing them incorrectly when used in command line.
 
@@ -227,7 +227,7 @@ Therefore, a list of events must be surrounded by quotation marks `""` when usin
 >wperf stat -e "{inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec" -c 0 sleep 1
 ```
 
-* Command Prompt (and Developer Command Prompt for VS):
+- Command Prompt (and Developer Command Prompt for VS):
 
 No such special requirements, the command works as is:
 
@@ -629,10 +629,10 @@ See how CPython computation of `10^10^100` is `integer_dp_percentage` and `load_
 Options `--timeout`, `sleep` and `-i` can be used with a number along with one, or none, of the supported units: `ms` (milliseconds), `s` (seconds), `m` (minutes), `h` (hours), `d` (days).
 
 The following restrictions apply:
-* The default unit `seconds` is used if no unit is provided as input.
-* Units may not be used in conjunction with one another: `--timeout 1m30s` is not accepted.
-* Decimals may be up to 2 decimal places, and must be preceded by a single `0`: `.001h` is not accepted.
-* Padded `0`s are not permitted: `01h` is not accepted.
+- The default unit `seconds` is used if no unit is provided as input.
+- Units may not be used in conjunction with one another: `--timeout 1m30s` is not accepted.
+- Decimals may be up to 2 decimal places, and must be preceded by a single `0`: `.001h` is not accepted.
+- Padded `0`s are not permitted: `01h` is not accepted.
 
 See the following for examples of correct usage:
 
@@ -935,9 +935,9 @@ Support for `--output-csv` command line in timeline (`-t`) is as follows:
 Previously users had to specify `-v` (verbose mode on) with `-t` (timeline command line option) to retrieve from the console name of the timeline CSV file. Now users can also specify timeline output filename with `--output-csv <FILENAME>` command line option, where `<FILENAME>` is template string for timeline CSV file.
 
 User can specify in `<FILENAME>` few placeholders which can improve timeline filename:
-* `{timestamp}` to add the current timestamp to the output filename. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
-* `{class}` to add event class name (e.g. `core`, `dsu`, `dmc_clk`, `dmc_clkdiv2`). Multiple timeline files will be created if the user specifies `-e` events with different classes.
-* `{core}` to add `<N>` from `-c <N>` command line option. Note: when more than one core is specified `{core}` will be replaced with the first core specified.
+- `{timestamp}` to add the current timestamp to the output filename. E.g. `2023_09_21_09_42_59` for 21st of September 2023, time: 09:42:59.
+- `{class}` to add event class name (e.g. `core`, `dsu`, `dmc_clk`, `dmc_clkdiv2`). Multiple timeline files will be created if the user specifies `-e` events with different classes.
+- `{core}` to add `<N>` from `-c <N>` command line option. Note: when more than one core is specified `{core}` will be replaced with the first core specified.
 
 Examples:
 
@@ -996,8 +996,8 @@ cycle,      l1d_cache,  l1d_cache_refill,   inst_retired,   l1d_tlb_refill, M@l1
 
 Where metrics:
 
-* `l1d_cache_miss_ratio` = (`l1d_cache_refill` / `l1d_cache`) [per cache access] and
-* `l1d_tlb_mpki` = ((`l1d_tlb_refill` / `inst_retired`) * 1000) [MPKI].
+- `l1d_cache_miss_ratio` = (`l1d_cache_refill` / `l1d_cache`) [per cache access] and
+- `l1d_tlb_mpki` = ((`l1d_tlb_refill` / `inst_retired`) * 1000) [MPKI].
 
 Note: use `wperf list -v` command line option to determine if your CPU supports TS metrics or metrics with defined formula.
 
@@ -1121,10 +1121,10 @@ Store counting results in the JSON file `count.json` and does not print anything
 
 In this example we will build CPython from sources and execute simple instructions in Python interactive mode to obtain sampling information from CPython runtime image.
 To achieve that we will:
-* Build CPython binaries targeting ARM64 from sources in debug mode.
-* Pin `python_d.exe` interactive console to core no. 1.
-* Try to calculate absurdly large integer number [Googolplex](https://en.wikipedia.org/wiki/Googolplex) to stress CPython and get a simple workload.
-* Run counting and sampling to obtain some simple event information.
+- Build CPython binaries targeting ARM64 from sources in debug mode.
+- Pin `python_d.exe` interactive console to core no. 1.
+- Try to calculate absurdly large integer number [Googolplex](https://en.wikipedia.org/wiki/Googolplex) to stress CPython and get a simple workload.
+- Run counting and sampling to obtain some simple event information.
 
 Let's go...
 
