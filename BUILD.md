@@ -25,11 +25,11 @@ As an Administrator run from the command line:
 
 ### Toolchain and software kits
 
-* [Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/vs/).
- * Windows Software Development Kit (SDK).
-* [Windows Driver Kit (WDK)](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk).
+- [Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/vs/).
+  - Windows Software Development Kit (SDK).
+- [Windows Driver Kit (WDK)](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk).
 
-Please note that SDK and WDK versions installed on your system must be compatible! First install Windows SDK using Visual Studio installer and after it’s installed proceed and install WDK which must match the DSK version so that the first three numbers of the version are the same. For example, the SDK version `10.0.22621.1` and WDK `10.0.22621.382` are a match.
+Please note that SDK and WDK versions installed on your system must be compatible! First install Windows SDK using Visual Studio installer and after it’s installed proceed and install WDK which must match the SDK version so that the first three numbers of the version are the same. For example, the SDK version `10.0.22621.1` and WDK `10.0.22621.382` are a match.
 
 ### Code base
 
