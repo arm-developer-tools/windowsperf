@@ -135,7 +135,7 @@ Users can now specify counting timer period (see !300+ for more details). User c
 ## Example setting of counting timer value to 10ms
 
 ```
->wperf stat .... --config count.period=10 ...
+> wperf stat .... --config count.period=10 ...
 ```
 
 ## How to check current `config.count.period*` settings
@@ -158,7 +158,7 @@ Note: Please note that this period is set in `PMU_CTL_START` IOCTRL message.
 You can dry test this setting and:
 
 ```
->wperf test --config count.period=13
+> wperf test --config count.period=13
 ...
         config.count.period                                 13
 ...

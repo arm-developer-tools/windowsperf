@@ -913,7 +913,7 @@ Timeline command (`-t`) produces [CSV file](https://en.wikipedia.org/wiki/Comma-
 Timeline stores results in a form of a CSV file. Below is an output from the above timeline example. Please note that we
 
 ```
->type wperf_core_1_2023_09_13_13_24_59.core.csv
+> type wperf_core_1_2023_09_13_13_24_59.core.csv
 Multiplexing,FALSE
 Kernel mode,FALSE
 Count interval,2.00
@@ -1161,7 +1161,7 @@ Date:   Tue Mar 14 10:05:54 2023 -0600
 #### Execute CPython interpreter to check for build correctness
 
 ```
-> arm64>python_d.exe
+> arm64\python_d.exe
 Python 3.12.0a6+ (heads/main:1ff81c0cb6, Mar 14 2023, 16:26:50) [MSC v.1935 64 bit (ARM64)] on win32
 Type "help", "copyright", "credits" or "license" for more information.
 >>>

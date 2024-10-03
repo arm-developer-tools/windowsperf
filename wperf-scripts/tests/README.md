@@ -28,8 +28,8 @@ WindowsPerf must be tested natively on WOA hardware with installed `wperf-driver
 Use `pytest` command in `windowsperf\wperf-scripts\tests\` directory to run all regression tests, see example below:
 
 ```
->cd windowsperf\wperf-scripts\tests\
->pytest
+> cd windowsperf\wperf-scripts\tests\
+> pytest
 ================================ test session starts =====================================
 platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
 rootdir: C:\Users\$USER\Desktop\wperf\merge-request\3.2.2, configfile: pytest.ini
@@ -114,7 +114,7 @@ You should be able to verify if your dependencies are correct by few simple chec
 ```
 
 ```
->make --version
+> make --version
 GNU Make 3.81
 Copyright (C) 2006  Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.
@@ -125,7 +125,7 @@ This program built for i386-pc-mingw32
 ```
 
 ```
->clang --version
+> clang --version
 clang version 16.0.5
 Target: aarch64-pc-windows-msvc
 Thread model: posix
@@ -174,7 +174,7 @@ Below you can see example regression test pass report ran on `neoverse-n1` WOA
 hardware with WindowsPerf 3.4.0 installed:
 
 ```
->pytest
+> pytest
 ================================ test session starts ================================
 platform win32 -- Python 3.11.1, pytest-7.2.0, pluggy-1.0.0
 rootdir: C:\Users\$USER\Desktop\testing\wperf\3.4.0, configfile: pytest.ini
@@ -281,13 +281,13 @@ ustress micro-benchmarks which are tuned for Neoverse platform(s) only.
 Having properly setup the Python unit tests using the instructions above all you need to do is to run:
 
 ```
->stress.ps1
+> stress.ps1
 ```
 
 The default number of cycles is 1. You can change that using the first command line argument, so if you want to run it 5 times just type:
 
 ```
->stress.ps1 5
+> stress.ps1 5
 ```
 
 A bunch of commands will be executed in succession trying to stress the driver, at the end of each cycle the Python tests are also executed so make sure they are properly configured.
