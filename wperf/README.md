@@ -4,7 +4,8 @@
 
 # Build wperf CLI
 
-You can build `wperf` project from the command line:
+- Build WindowsPerf Visual Studio Solution with `Debug|ARM64` or `Release|ARM64` configuration or
+- you can build `wperf` project directly from the command line with:
 
 ```
 > devenv windowsperf.sln /Rebuild "Debug|ARM64" /Project wperf\wperf.vcxproj
