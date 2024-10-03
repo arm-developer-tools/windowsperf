@@ -225,7 +225,7 @@ EXAMPLES:
 Therefore, a list of events must be surrounded by quotation marks `""` when using curly braces for correct parsing:
 
 ```
->wperf stat -e "{inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec" -c 0 sleep 1
+> wperf stat -e "{inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec" -c 0 sleep 1
 ```
 
 - Command Prompt (and Developer Command Prompt for VS):
@@ -233,7 +233,7 @@ Therefore, a list of events must be surrounded by quotation marks `""` when usin
 No such special requirements, the command works as is:
 
 ```
->wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
+> wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
 ```
 
 # WindowsPerf Driver lock/unlock feature
@@ -244,7 +244,7 @@ This prevents others from interfering with current `wperf` run and protects you 
 When other `wperf` process "locked" access to the driver you will see below warning:
 
 ```
->wperf --version
+> wperf --version
 warning: other WindowsPerf process acquired the wperf-driver.
 Operation cancelled!
 ```
@@ -252,17 +252,17 @@ Operation cancelled!
 You can force the lock (and kick-out other `wperf` process from accessing Kernel Driver) with `--force-lock` command line option:
 
 ```
->wperf --version --force-lock
-        Component     Version  GitVer
-        =========     =======  ======
-        wperf         3.3.0    fb7f8c66
-        wperf-driver  3.3.0    fb8d521c
+> wperf --version --force-lock
+        Component     Version  GitVer    FeatureString
+        =========     =======  ======    =============
+        wperf         3.8.0    6d15ddfc  +etw-app
+        wperf-driver  3.8.0    4c88f933  +trace
 ```
 
 Process that was forced out and lost the lock will fail with below warning:
 
 ```
->wperf stat -m imix -c 1
+> wperf stat -m imix -c 1
 ...
 warning: other WindowsPerf process hijacked (forced lock) the wperf-driver, see --force-lock.
 Operation terminated, your data was lost!
@@ -275,7 +275,7 @@ Operation terminated, your data was lost!
 ## List available PMU events, metrics and groups of metrics with `list`
 
 ```
->wperf list
+> wperf list
 List of pre-defined events (to be used in -e):
 
 Alias Name                    Raw Index   Event Type
@@ -353,7 +353,7 @@ Obtain information about a specific set of PMU events, metrics and groups of met
 Use `wperf list [-v]` command to list all available events, metrics or groups of metrics first.
 
 ```
->wperf man ld_spec
+> wperf man ld_spec
 
 NAME
     ld_spec
@@ -364,7 +364,7 @@ DESCRIPTION
 Note: To learn about events, metrics or groups of metrics available on other CPUs, prefix the option with the CPU name (default is detected CPU) followed by `/` and name.
 
 ```
->wperf man neoverse-v1/fp_fixed_ops_spec,neoverse-n1/ld_spec
+> wperf man neoverse-v1/fp_fixed_ops_spec,neoverse-n1/ld_spec
 
 NAME
     fp_fixed_ops_spec
@@ -379,7 +379,7 @@ DESCRIPTION
 ## Obtain information about `WindowsPerf` configuration with `test`
 
 ```
->wperf test
+> wperf test
         Test Name                                           Result
         =========                                           ======
         request.ioctl_events [EVT_CORE]                     False
@@ -435,7 +435,7 @@ DESCRIPTION
 ## Enumerate devices with WindowsPerf Kernel Driver GUID
 
 ```
->wperf detect
+> wperf detect
         Device Instance ID                                           Hardware IDs
         ==================                                           ============
         \\?\ROOT#SYSTEM#0001#{f8047fdd-7083-4c2e-90ef-c0c73f1045fd}  Root\WPERFDRIVER
@@ -445,7 +445,7 @@ DESCRIPTION
 
 ## Counting core 0 (Ctrl-C to stop counting)
 ```
->wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0
 counting ...
 
 Performance counter stats for core 0, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
@@ -466,7 +466,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 ## Counting core 0 for 1 second
 ```
->wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 sleep 1
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec -c 0 sleep 1
 counting ... done
 
 Performance counter stats for core 0, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
@@ -487,7 +487,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 ## Specify up to 127 events, they will get multiplexed automatically, for example:
 ```
->wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0 sleep 1
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0 sleep 1
 counting core 0...done
 Performance counter stats for core 0, multiplexed, kernel mode excluded:
 
@@ -508,7 +508,7 @@ Performance counter stats for core 0, multiplexed, kernel mode excluded:
 
 ## Count using event group
 ```
->wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
+> wperf stat -e {inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec},br_immed_spec,crypto_spec -c 0 sleep 1
 counting ... done
 
 Performance counter stats for core 0, multiplexed, kernel mode excluded, on Arm Limited core implementation:
@@ -531,7 +531,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 
 ## Count using pre-defined metrics, metric could be used together with -e, no restriction
 ```
->wperf stat -m imix -e l1i_cache -c 0 sleep 1
+> wperf stat -m imix -e l1i_cache -c 0 sleep 1
 counting ... done
 
 Performance counter stats for core 0, multiplexed, kernel mode excluded, on Arm Limited core implementation:
@@ -561,7 +561,7 @@ customizedmetric:{inst_spec,dp_spec,vfp_spec,ase_spec,ldst_spec}
 
 Use command line options `-C <filename>` to select metrics configuration file and option `-m` to use new metric, see:
 ```
->wperf stat -C customized_config -m customizedmetric -c 0 sleep 1
+> wperf stat -C customized_config -m customizedmetric -c 0 sleep 1
 counting ... done
 
 Performance counter stats for core 0, no multiplexing, kernel mode included, on Arm Limited core implementation:
@@ -584,7 +584,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 For some CPUs (e.g. `neoverse-n1`) Arm Telemetry Solution team defined metrics, and groups of metrics you can use to simplify your analysis.
 
 ```
->wperf stat -m Operation_Mix -c 7 --timeout 3 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+> wperf stat -m Operation_Mix -c 7 --timeout 3 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
 counting ... done
 
 Performance counter stats for core 7, multiplexed, kernel mode excluded, on Arm Limited core implementation:
@@ -638,13 +638,13 @@ The following restrictions apply:
 See the following for examples of correct usage:
 
 ```
->wperf stat -c 0 -e ld_spec --timeout 10
+> wperf stat -c 0 -e ld_spec --timeout 10
 
->wperf stat -c 0 -e ld_spec --timeout 1.00h
+> wperf stat -c 0 -e ld_spec --timeout 1.00h
 
->wperf stat -c 0 -e ld_spec sleep 750ms
+> wperf stat -c 0 -e ld_spec sleep 750ms
 
->wperf stat -c 0 -e ld_spec sleep 5m
+> wperf stat -c 0 -e ld_spec sleep 5m
 ```
 
 represent a duration of `10`, `3600`, `0.75` & `300` seconds respectively.
@@ -668,7 +668,7 @@ Skip `-c` to count on all cores.
 Note: when you specify more than one core overall summary will be also printed. See last table with counted events in below listing.
 
 ```
->wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0,1,6,7 sleep 1
+> wperf stat -e inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec -c 0,1,6,7 sleep 1
 counting ... done
 
 Performance counter stats for core 0, multiplexed, kernel mode excluded, on Arm Limited core implementation:
@@ -847,7 +847,7 @@ Timeline feature allow users to perform continuous counting:
 For example command:
 
 ```
->wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
+> wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5
 counting ... done
 sleeping ... done
 counting ... done
@@ -864,7 +864,7 @@ will perform:
 Note: use `-v` (verbose) command line option together with timeline to get access to CSV output filename:
 
 ```
->wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5  -v
+> wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5  -v
 timeline file: 'wperf_core_1_2023_09_13_13_31_59.core.csv'
 events to be counted:
      5              core events: 0x001b 0x0073 0x0075 0x0074 0x0070
@@ -884,7 +884,7 @@ Note: to check available events and metrics please use `wperf list` and `wperf l
 See how timeline JSON file format looks like for below command:
 
 ```
->wperf stat -t -i 1.3 -n 7 --json -m imix --timeout 2.2
+> wperf stat -t -i 1.3 -n 7 --json -m imix --timeout 2.2
 ```
 
 Please note that `"timeline"` list is an ordered list of all counting occurrences captured. You can see that we pass count interval, duration and timeline count from `wperf` CLI to timeline JSON.
@@ -943,17 +943,17 @@ User can specify in `<FILENAME>` few placeholders which can improve timeline fil
 Examples:
 
 ```
->wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 1,2,3 -v --output-csv timeline_{core}_{timestamp}_{class}.csv
+> wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 1,2,3 -v --output-csv timeline_{core}_{timestamp}_{class}.csv
 timeline file: 'timeline_1_2023_09_21_12_21_46_core.csv'
 ```
 
 ```
->wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output-csv timeline--{core}--{class}.csv
+> wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v --output-csv timeline--{core}--{class}.csv
 timeline file: 'timeline--7--core.csv'
 ```
 
 ```
->wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v -o {timestamp}.{core}.{class}.csv
+> wperf stat -e l1d_cache_rd -t -i 0 --timeout 1 -n 3 -c 7 -v -o {timestamp}.{core}.{class}.csv
 timeline file: '2023_09_21_12_23_58.7.core.csv'
 ```
 
@@ -982,7 +982,7 @@ In case of targets supporting Telemetry Solution metrics users can specify those
 For below command which is using TS metrics `l1d_cache_miss_ratio` and `l1d_tlb_mpki` available on neoverse CPUs:
 
 ```
->wperf stat  -m l1d_cache_miss_ratio,l1d_tlb_mpki -c 1 -t -i 1 -n 3
+> wperf stat  -m l1d_cache_miss_ratio,l1d_tlb_mpki -c 1 -t -i 1 -n 3
 ```
 
 We can see two new columns in CSV file on right-hand side: `M@l1d_cache_miss_ratio` and `M@l1d_tlb_mpki`:
@@ -1191,7 +1191,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 #### Counting to asses which events are "popular"
 
 ```
->wperf stat -m imix -c 1 sleep 3
+> wperf stat -m imix -c 1 sleep 3
 counting ... done
 
 Performance counter stats for core 1, no multiplexing, kernel mode excluded, on Arm Limited core implementation:
@@ -1217,7 +1217,7 @@ Let's sample the `ld_spec` event. Please note that you can specify the process i
 We can stop sampling by pressing `Ctrl-C` in the `wperf` console or we can end the process we are sampling.
 
 ```
->wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1
+> wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1
 base address of 'python_d.exe': 0x7ff6e0a41270, runtime delta: 0x7ff5a0a40000
 sampling ....e.e.e.e.e.eCtrl-C received, quit counting... done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -1261,7 +1261,7 @@ Please note that again CPython executes code from its `python312_d.dll`.
 Sampling again for `ld_spec`:
 
 ```
->wperf sample -e ld_spec:10000 --pe_file python_d.exe --pdb_file python_d.pdb --image_name python_d.exe -c 1
+> wperf sample -e ld_spec:10000 --pe_file python_d.exe --pdb_file python_d.pdb --image_name python_d.exe -c 1
 base address of 'python_d.exe': 0x7ff6e0a41270, runtime delta: 0x7ff5a0a40000
 sampling ....ee.e.eCtrl-C received, quit counting... done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -1306,7 +1306,7 @@ We've also added extra prints for verbose mode (`-v`). These add more informatio
 See verbose mode on for example 1:
 
 ```
->wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1 -v
+> wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1 -v
 ================================
                     ADVAPI32.dll          0x000000007fff934e0000          C:\Windows\System32\ADVAPI32.dll
                     KERNEL32.DLL          0x000000007fff92270000          C:\Windows\System32\KERNEL32.DLL
@@ -1468,20 +1468,20 @@ The `record` command spawns the process and pins it to the core specified by the
 you would like to execute. For example:
 
 ```
->wperf record -e vfp_spec -c 1 --pe_file main.exe --timeout 1
+> wperf record -e vfp_spec -c 1 --pe_file main.exe --timeout 1
 ```
 
 or:
 
 ```
->wperf record -e vfp_spec -c 1 --timeout 1 -- main.exe
+> wperf record -e vfp_spec -c 1 --timeout 1 -- main.exe
 ```
 
 If you want to pass command line arguments to your application you can just call it after all WindowsPerf options, all command line arguments are going to be passed
 verbatim to the program that is being spawned. If you want to execute the CPython example above using this approach you could just type:
 
 ```
->wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**1000
+> wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**1000
 ```
 
 ### wperf "--" (double-dash) support
@@ -1489,7 +1489,7 @@ verbatim to the program that is being spawned. If you want to execute the CPytho
 A double-dash (`--`) is a syntax used in shell commands to signify end of command options and beginning of positional arguments. In other words, it separates `wperf` CLI options from arguments that the command operates on. Use `--` to separate `wperf.exe` command line options from the process you want to spawn followed by its verbatim arguments.
 
 ```
->wperf [OPTIONS] -- PROCESS_NAME [ARGS]
+> wperf [OPTIONS] -- PROCESS_NAME [ARGS]
 ```
 
 ## Using the `annotate` option
@@ -1497,7 +1497,7 @@ A double-dash (`--`) is a syntax used in shell commands to signify end of comman
 A normal output of the following command
 
 ```
->wperf record -c 0 -e vfp_spec:1000 --timeout 5 -- .\WindowsPerfSample1.exe
+> wperf record -c 0 -e vfp_spec:1000 --timeout 5 -- .\WindowsPerfSample1.exe
 ```
 
 could be
@@ -1517,7 +1517,7 @@ sampling ....eeee done!
 If you want to have more information about the exact place in the source code where those samples were acquired you can use the `--annotate` option, like so
 
 ```
->wperf record -c 0 -e vfp_spec:1000 --timeout 5 --annotate -- .\WindowsPerfSample1.exe
+> wperf record -c 0 -e vfp_spec:1000 --timeout 5 --annotate -- .\WindowsPerfSample1.exe
 ```
 
 resulting in
@@ -1555,7 +1555,7 @@ The filename and line number shows information extracted from the PDB files matc
 In case you need even more information than the one given by `--annotate` you can use the `--disassemble` option to give the particular surroundings of the instruction that generated the sample. Notice that `--disassemble` implies `--annotate`. Use the following command
 
 ```
->wperf record -c 0 -e vfp_spec:1000 --timeout 5 --disassemble -- .\WindowsPerfSample1.exe
+> wperf record -c 0 -e vfp_spec:1000 --timeout 5 --disassemble -- .\WindowsPerfSample1.exe
 ```
 
 to get
@@ -1675,7 +1675,7 @@ This option filters the symbols in the output of a `record` command (and `sample
 Example filtering for exact symbol `x_mul`:
 
 ```
->wperf record -e ld_spec:100000 -c 1 --timeout 3 --symbol "x_mul" -- python_d.exe -c 10**10**100
+> wperf record -e ld_spec:100000 -c 1 --timeout 3 --symbol "x_mul" -- python_d.exe -c 10**10**100
 base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff73e481288, runtime delta: 0x7ff5fe480000
 sampling .....e done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -1694,7 +1694,7 @@ There are two additional symbol filtering options:
 For example, filtering for all symbols starting with `x_`,
 
 ```
->wperf record -e ld_spec:100000 -c 1 --timeout 10 --symbol "^x_" -- python_d.exe -c 10**10**10
+> wperf record -e ld_spec:100000 -c 1 --timeout 10 --symbol "^x_" -- python_d.exe -c 10**10**10
 base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff62aab1288, runtime delta: 0x7ff4eaab0000
 sampling .... done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -1710,7 +1710,7 @@ sampling .... done!
 Or for suffix `_mul`,
 
 ```
->wperf record -e ld_spec:100000 -c 1 --timeout 10 --symbol "mul$" -- python_d.exe -c 10**10**10
+> wperf record -e ld_spec:100000 -c 1 --timeout 10 --symbol "mul$" -- python_d.exe -c 10**10**10
 base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff62aab1288, runtime delta: 0x7ff4eaab0000
 sampling .... done!
 ======================== sample source: ld_spec, top 50 hot functions ========================
@@ -1734,7 +1734,7 @@ WindowsPerf added support (in `record` command) for the Arm Statistical Profilin
 You can use the same `--annotate` and `--disassemble` interface of WindowsPerf with one exception. To reach out to SPE resources please use `-e` command with `arm_spe_0//` options. For example:
 
 ```
->wperf record -e arm_spe_0// -c 0 --timeout 10 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+> wperf record -e arm_spe_0// -c 0 --timeout 10 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
 ```
 
 ### SPE detection
@@ -1746,7 +1746,7 @@ You can use the same `--annotate` and `--disassemble` interface of WindowsPerf w
 You can check if your system supports SPE or if WindowsPerf can detect SPE with `wperf test` command. See below an example of `spe_device.version_name` property value on system with SPE:
 
 ```
->wperf test
+> wperf test
         Test Name                                           Result
         =========                                           ======
 ...
@@ -1758,7 +1758,7 @@ You can check if your system supports SPE or if WindowsPerf can detect SPE with 
 You can check feature string (`FeatureString`) of both `wperf` and `wperf-driver` with `wperf --version` command:
 
 ```
->wperf --version
+> wperf --version
         Component     Version  GitVer          FeatureString
         =========     =======  ======          =============
         wperf         3.7.2    4338371a        +etw-app+spe
@@ -1792,7 +1792,7 @@ SPE register `PMSFCR_EL1.FT` enables filtering by operation type. When enabled `
 Annotate example with `ld=1` filter enabled: enables collection of load sampled operations, including atomic operations that return a value to a register.
 
 ```
->wperf record -e arm_spe_0/ld=1/ -c 8 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+> wperf record -e arm_spe_0/ld=1/ -c 8 -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
 ```
 
 Expected output contains both PMU `sample_` events associated with SPE and sampling section with symbols, overhead and hit count:
@@ -1826,7 +1826,7 @@ note: 'e' - normal event, 'gN' - grouped event with group number N, metric name 
 Disassemble example with `ld=1` filter enabled: enables collection of load sampled operations, including atomic operations that return a value to a register.
 
 ```
->wperf record -e arm_spe_0/ld=1/ -c 8 --disassemble -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+> wperf record -e arm_spe_0/ld=1/ -c 8 --disassemble -- cpython\PCbuild\arm64\python_d.exe -c 10**10**100
 base address of 'cpython\PCbuild\arm64\python_d.exe': 0x7ff69e251288, runtime delta: 0x7ff55e250000
 sampling ...ee..eee..e. done!
 ======================== sample source: LOAD_STORE_ATOMIC-LOAD-GP/retired+level1-data-cache-access+tlb_access, top 50 hot functions ========================
