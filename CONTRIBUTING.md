@@ -4,33 +4,41 @@
 
 # Basic guidelines
 
-All changes you commit or submit by merge request should follow these simple guidelines:
-- Use merge requests.
-- Should build without new warnings or errors. Please use the project's solution file to drive the build and test process.
-- Please do not squash your Merge Request commits into one commit. Split PR into many meaningful commits, we can review separately.
+All changes you commit or submit by pull request should follow these simple guidelines:
+- Use pull requests.
+- Solution and project you've modified should build without new warnings or errors.
+- Please do not squash your Pull Request commits into one commit. Split PR into many meaningful commits, we can review separately.
 - Code should be free from profanities in any language.
 
-# Merge requests
+# Pull requests
 
-- Your merge request title should contain WindowsPerf [JIRA](https://linaro.atlassian.net/jira/software/c/projects/WPERF/boards/169) ticket, which is prefixed `WPERF-`. Note: our GitLab JIRA integration requires developers to add it.
-  - You can post your MR without a JIRA ticket but we will require a ticket number to merge.
-  - WindowsPerf JIRA tickets are in format: `WPERF-[0-9]+`.
-- Make use of labels, milestones, assignees, and other relevant query parameters to create informative pull requests.
+1. Clear and Descriptive Title: Use a concise and informative title that summarizes the changes made.
+2. Detailed Description: Provide a detailed description of what the pull request does, why the changes are necessary, and any relevant context.
+3. Reference Issues: Link to any related issues or tickets to provide context and traceability.
+4. Small and Focused Changes: Keep pull requests small and focused on a single task or feature to make them easier to review.
+5. Code Review Checklist: Ensure your code follows the project's coding standards, includes necessary tests, and has been tested locally.
+6. Request Reviews: Tag relevant team members or reviewers to get their feedback and approval.
+7. Respond to Feedback: Address any comments or suggestions from reviewers promptly and respectfully.
+8. Update Documentation: If your changes affect documentation, make sure to update it accordingly.
+9. Automated Checks: Ensure that all automated checks and tests pass before requesting a review.
+10. Commit Messages: Write clear and meaningful commit messages that explain the changes made in each commit.
 
-## Advice on merge requests
+Following these practices can help streamline the review process and improve the quality of your contributions. Let me know if you need any more information!
 
-- Applying the single responsibility principle to merge requests is always a good idea. Try not to include some additional stuff into the merge request. For example, do not fix any typos other than your current context or do not add a tiny bug fix to a feature.
+## Advice on pull requests
+
+- Applying the single responsibility principle to pull requests is always a good idea. Try not to include some additional stuff into the pull request. For example, do not fix any typos other than your current context or do not add a tiny bug fix to a feature.
 - Title and description is the first place where you can inform other developers about the changes.
-- Description of a merge request should always be prepared with the same attention, whether the merge request has a small or huge change.
-- Always think that anybody could read your merge request anytime.
-- You should build your code and test (if possible) before creating the merge request.
+- Description of a pull request should always be prepared with the same attention, whether the pull request has a small or huge change.
+- Always think that anybody could read your pull request anytime.
+- You should build your code and test (if possible) before creating the pull request.
 - Both reviewers and the author should be polite in the comments.
 
 Other:
 - The source branch must be rebased onto the target branch.
-- Members who can merge are allowed to add commits to merge requests.
+- Members who can merge are allowed to add commits to pull requests.
 
-## Commits in your merge requests
+## Commits in your pull requests
 
 - One commit should represent one meaningful change. E.g. Please do not add a new header file and in the same commit update project solution.
 - Have short (72 chars or less) meaningful subjects.
@@ -72,7 +80,7 @@ Example of correctly prefixed commits:
 # If you have commit access
 
 - Do NOT use `git push --force` on `main` branch.
-- Use Merge Requests to suggest changes to other maintainers.
+- Use pull requests to suggest changes to other maintainers.
 
 # Creating Reliable Kernel-Mode Drivers
 
