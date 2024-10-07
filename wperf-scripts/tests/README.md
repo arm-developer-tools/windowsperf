@@ -1,8 +1,4 @@
-# WindowsPerf regression testing
-
-[[_TOC_]]
-
-# Introduction
+# WindowsPerf Regression Testing
 
 This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md). Here you can also find `stress.ps1` a PowerShell script to stress test the driver.
 

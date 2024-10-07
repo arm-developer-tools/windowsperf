@@ -1,7 +1,3 @@
-# wperf-driver
-
-[[_TOC_]]
-
 # Build wperf-driver
 
 You can build `wperf-driver` project from the command line:

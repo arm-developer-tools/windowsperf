@@ -1,5 +1,3 @@
-[[_TOC_]]
-
 # Build step generators
 
 This scripts generate meta-data used in build steps.

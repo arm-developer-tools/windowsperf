@@ -1,7 +1,5 @@
 # WindowsPerf Command Line Example Usage
 
-[[_TOC_]]
-
 ## WindowsPerf CLI Cheatsheet
 
 | `wperf` Command     | Description |

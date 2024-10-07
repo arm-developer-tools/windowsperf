@@ -1,9 +1,5 @@
 # Contributing Guidelines
 
-[[_TOC_]]
-
-# Basic guidelines
-
 All changes you commit or submit by pull request should follow these simple guidelines:
 - Use pull requests.
 - Solution and project you've modified should build without new warnings or errors.

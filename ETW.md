@@ -1,7 +1,5 @@
 # WindowsPerf support for Event Tracing for Windows (ETW)
 
-[[_TOC_]]
-
 # Introduction
 
 ## Event Tracing for Windows (ETW)

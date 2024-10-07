@@ -1,7 +1,5 @@
 # wperf
 
-[[_TOC_]]
-
 # Build wperf CLI
 
 - Build WindowsPerf Visual Studio Solution with `Debug|ARM64` or `Release|ARM64` configuration or

@@ -1,6 +1,4 @@
-# Scripts
-
-[[_TOC_]]
+# WindowsPerf Scripts
 
 # How to install all dependencies for Python scripts in this directory
 

@@ -1,9 +1,5 @@
 # wperf-test
 
-[[_TOC_]]
-
-# Introduction
-
 Project `wperf-test` is VS Native Unit Test project. It references `wperf` project. Its purpose is to contain and execute `wperf`'s unit tests.
 
 # Building and running unit tests

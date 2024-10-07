@@ -1,7 +1,3 @@
-# wperf-devgen
-
-[[_TOC_]]
-
 # Introduction
 
 Project `wperf-devgen` is a help utility to install the Windows Perf Driver using the Software Device API.
