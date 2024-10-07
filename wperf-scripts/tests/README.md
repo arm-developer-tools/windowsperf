@@ -52,7 +52,7 @@ See `pytest` official documentation [How to invoke pytest](https://docs.pytest.o
 
 ## ustress framework test bench
 
-We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/tests?ref_type=heads). It allows users to build, execute `ustress` micro-benchmarks and track with `wperf` timeline specified metrics.
+We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-scripts/tests?ref_type=heads). It allows users to build, execute `ustress` micro-benchmarks and track with `wperf` timeline specified metrics.
 
 This test bench is composed of:
 - `wperf-scripts/tests/telemetry-solution` - [telemetry-solution](https://gitlab.arm.com/telemetry-solution/telemetry-solution) git submodule pointing to specific SHA we use for testing. Use `git submodule update --init --recursive` command to "pull" this submodule.
@@ -71,7 +71,7 @@ Note:
 WindowsPerf `ustress` test bench will build `ustress` from sources. It will produce `ustress` micro-benchmarks executables using below dependencies.
 To build `ustress` from sources you will need `MSVC cross/native arm64 build environment` with clang toolchain, and  `make` plus `tr` to drive `ustress` Makefile.
 
-Note: when you run WindowsPerf test bench with `pytest` command, script [wperf_cli_ustress_bench_test.py](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/wperf_cli_ustress_bench_test.py?ref_type=heads) will be responsible for building `ustress`. Tests in this script will be skipped if your AMR64 host platform is not supported. Currently `ustress` supports various `neoverse` platforms.
+Note: when you run WindowsPerf test bench with `pytest` command, script [wperf_cli_ustress_bench_test.py](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-scripts/tests/wperf_cli_ustress_bench_test.py?ref_type=heads) will be responsible for building `ustress`. Tests in this script will be skipped if your AMR64 host platform is not supported. Currently `ustress` supports various `neoverse` platforms.
 
 Note: If your ARM64 host platform is not supported you will see list of `ustress` skipped tests with assert warning.
 ```
