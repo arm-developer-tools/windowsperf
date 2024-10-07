@@ -30,7 +30,7 @@ New macro, `ENABLE_ETW_TRACING` is used to control ETW output inside the `wperf-
 
 Kernel drivers can be installed and removed on ARM64 machines with DevCon command.
 
-Please note that we now release `WindowsPerf` with the signed Kernel driver `wperf-driver`. This driver can be installed on all ARM64 machines without tempering with SecureBoot or other critical security settings. Please refer to [releases](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases) to get the latest stable driver and user space application.
+Please note that we now release `WindowsPerf` with the signed Kernel driver `wperf-driver`. This driver can be installed on all ARM64 machines without tempering with SecureBoot or other critical security settings. Please refer to [releases](https://github.com/arm-developer-tools/windowsperf/releases) to get the latest stable driver and user space application.
 
 First change directory to directory where your `wperf-driver` files (`wperf-driver.cat`, `wperf-driver.inf`, and `wperf-driver.sys`) are:
 
@@ -44,7 +44,7 @@ First change directory to directory where your `wperf-driver` files (`wperf-driv
 
 Use `DevCon Install` command to install the driver and `DevCon Status` to check the driver's status. You can also remove the driver using the `DevCon Remove` command. See examples below.
 
-Note: We've prepared wrapper scripts for installation, removal and status check of the driver. Please see [wperf-scripts/devcon](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-scripts/devcon).
+Note: We've prepared wrapper scripts for installation, removal and status check of the driver. Please see [wperf-scripts/devcon](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-scripts/devcon).
 
 ## DevCon Install
 
@@ -97,7 +97,7 @@ You can also refer to [Where can I download DevCon?](https://learn.microsoft.com
 
 ## Extra step (installing non-signed driver)
 
-Users who develop their own `wperf-driver` (e.g., build from sources), and do not sign it themselves, will be forced to do a few extra steps to enable non-signed driver installation. Please note that early WindowsPerf binary releases (before release [2.4.0](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases/2.4.0)) we distributed WITHOUT signed driver.
+Users who develop their own `wperf-driver` (e.g., build from sources), and do not sign it themselves, will be forced to do a few extra steps to enable non-signed driver installation. Please note that early WindowsPerf binary releases (before release [2.4.0](https://github.com/arm-developer-tools/windowsperf/releases/2.4.0)) we distributed WITHOUT signed driver.
 
 Enabling installation of an unsigned driver on WOA ARM64 machines requires a few extra steps:
 

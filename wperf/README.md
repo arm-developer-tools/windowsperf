@@ -18,9 +18,6 @@ New macro, `ENABLE_ETW_TRACING_APP` is used to control ETW output inside the `wp
 # Usage of wperf
 
 ```
-WindowsPerf ver. 3.8.0 (6d15ddfc/Release+etw-app) WOA profiling with performance counters.
-Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
-
 NAME:
     wperf - Performance analysis tools for Windows on Arm
 
@@ -904,7 +901,7 @@ Please note that `"timeline"` list is an ordered list of all counting occurrence
 ...
 ```
 
-Hint: you can find timeline JSON schema in [wperf-scripts/tests/schemas/wperf.timeline.schema](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/schemas/wperf.timeline.schema?ref_type=heads) file.
+Hint: you can find timeline JSON schema in [wperf-scripts/tests/schemas/wperf.timeline.schema](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-scripts/tests/schemas/wperf.timeline.schema) file.
 
 ### Timeline CSV output file
 
@@ -1661,7 +1658,7 @@ Failed to call disassembler!
 
 You can either:
 - Download LLVM from its [releases page](https://releases.llvm.org/) or
-- Follow the instructions [here](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-scripts/tests/README.md?ref_type=heads#build-dependencies) to get it installed within Visual Studio.
+- Follow the instructions [here](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-scripts/tests/README.md#build-dependencies) to get it installed within Visual Studio.
   - Shortcut: You need clang targeting `aarch64-pc-windows-msvc`:
     - Go to Visual Studio Installer and install: Modify -> Individual Components -> search "clang".
     - Install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."

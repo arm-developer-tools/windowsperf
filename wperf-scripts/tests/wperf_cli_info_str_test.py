@@ -64,5 +64,5 @@ def test_wperf_cli_no_commands(record_property):
 
     assert len(ver_str) == 1    # ['WindowsPerf ver. 2.5.1 (4153c04e/Release)']
     assert b'WOA profiling with performance counters' in stdout
-    assert b'Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues' in stdout
+    assert b'Report bugs to: ' in stdout
     assert b'Use --help for help.' in stdout

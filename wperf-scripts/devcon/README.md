@@ -31,9 +31,9 @@ PS> wperf-devcon.ps1 status  -infpath <path\to\driver\dir>
 
 | Script operation           | Description                 | More info |
 | -------------------------- | --------------------------- | --------- |
-| `wperf-devcon.ps1 install` | Install `wperf-driver`      | [DevCon Install](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver#devcon-install) |
-| `wperf-devcon.ps1 remove`  | Remove `wperf-driver`       | [DevCon Remove](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver#devcon-remove) |
-| `wperf-devcon.ps1 status`  | Check `wperf-driver` status | [DevCon Status](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver#devcon-status) |
+| `wperf-devcon.ps1 install` | Install `wperf-driver`      | [DevCon Install](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver#devcon-install) |
+| `wperf-devcon.ps1 remove`  | Remove `wperf-driver`       | [DevCon Remove](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver#devcon-remove) |
+| `wperf-devcon.ps1 status`  | Check `wperf-driver` status | [DevCon Status](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver#devcon-status) |
 
 ## Examples
 

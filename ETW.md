@@ -16,13 +16,13 @@ WindowsPerf raises corresponding PMU events from `wperf` application and `wperf-
 
 ### Windows Performance Analyzer
 
-[Windows Performance Analyzer](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer) is a tool that creates graphs and data tables of Event Tracing for Windows (ETW) events that are recorded by Windows Performance Recorder (WPR), Xperf and WindowsPerf via [WPA-plugin-etl](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl).
+[Windows Performance Analyzer](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer) is a tool that creates graphs and data tables of Event Tracing for Windows (ETW) events that are recorded by Windows Performance Recorder (WPR), Xperf and WindowsPerf via [WPA-plugin-etl](https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl).
 
 ## WindowsPerf ETW architecture
 
 ## WPA-plugin-etl
 
-The [WPA-plugin-etl](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl) is a dedicated plugin developed for the Windows Performance Analyzer (WPA). Its primary function is to interpret and present event traces that have been injected by the WindowsPerf ETW (Event Tracing for Windows). These events can be injected through two main sources: the [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf?ref_type=heads) application and the [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver?ref_type=heads). The `wperf` application is a user-mode application, while the `wperf-driver` is a Windows Kernel Driver.
+The [WPA-plugin-etl](https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl) is a dedicated plugin developed for the Windows Performance Analyzer (WPA). Its primary function is to interpret and present event traces that have been injected by the WindowsPerf ETW (Event Tracing for Windows). These events can be injected through two main sources: the [wperf](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf) application and the [wperf-driver](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver). The `wperf` application is a user-mode application, while the `wperf-driver` is a Windows Kernel Driver.
 
 Together, they provide a comprehensive view of system performance and behavior, making the `WPA-plugin-etl` a valuable tool for system analysis and debugging. This plugin enhances the capabilities of WPA, allowing users to delve deeper into the Arm core and uncore PMU performance characteristics of their Windows on Arm systems. It’s an essential tool for anyone looking to optimize system performance or troubleshoot issues.
 
@@ -39,12 +39,12 @@ Note: The `WevtUtil.exe` tool is included in `%windir%\System32` directory. You 
 > %windir%\System32\WevtUtil.exe /?
 ```
 
-- WindowsPerf `wperf` ETW event manifest file [wperf-etw-manifest.xml](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-driver/wperf-etw-manifest.xml?ref_type=heads). This file is part of [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf?ref_type=heads) project.
-- WindowsPerf `wperf` WPR profile file [wperf-app-wpr-profile.wprp](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/wperf-app-wpr-profile.wprp?ref_type=heads).
+- WindowsPerf `wperf` ETW event manifest file [wperf-etw-manifest.xml](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-driver/wperf-etw-manifest.xml). This file is part of [wperf](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf) project.
+- WindowsPerf `wperf` WPR profile file [wperf-app-wpr-profile.wprp](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf/wperf-app-wpr-profile.wprp).
 
 ## Configuration instructions for `wperf` ETW support
 
-1. Download locally [wperf-etw-manifest.xml](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/wperf-etw-manifest.xml?ref_type=heads) manifest file.
+1. Download locally [wperf-etw-manifest.xml](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf/wperf-etw-manifest.xml) manifest file.
 
 **Note**: Make sure the XML file corresponds to the `wperf` version you are using on your system.
 
@@ -88,7 +88,7 @@ Now you've installed the ETW manifest. You are ready to capture the ETW trace pr
 
 1. Run `WPR` session from `Start` -> `Search` and type `wpr`. Launch WPR.
 
-- Download locally [wperf-app-wpr-profile.wprp](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf/wperf-app-wpr-profile.wprp?ref_type=heads).
+- Download locally [wperf-app-wpr-profile.wprp](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf/wperf-app-wpr-profile.wprp).
 - Select `Show options` and select `Add profiles`.
 - Find and select `wperf-app-wpr-profile.wprp` file locally. Open profile. You should now see in `Select additional profiles` tree view `WindowsPerf App ETW profile`.
 - Select other profiles if needed and press `Start` to record the ETW trace.
@@ -101,7 +101,7 @@ Now you've installed the ETW manifest. You are ready to capture the ETW trace pr
 
 3. Visualize with `WPA` and `WPA-plugin-etl` captured ETW trace (stored with `WPR` in local `ETL` file).
 
-- Download locally [wpa-plugin-etl](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl/-/releases).
+- Download locally [wpa-plugin-etl]https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl/releases).
 - You can run WPA from the command line. Use `-addsearchdir PATH` command line option to tell `WPA` where `wpa-plugin-etl` DLL file is located.
 
 ```

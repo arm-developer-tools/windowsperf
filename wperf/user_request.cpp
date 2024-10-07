@@ -275,7 +275,7 @@ void user_request::print_help_header()
         << L") WOA profiling with performance counters."
         << std::endl;
 
-    m_out.GetOutputStream() << L"Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues"
+    m_out.GetOutputStream() << L"Report bugs to: https://github.com/arm-developer-tools/windowsperf/issues"
         << std::endl;
 }
 
