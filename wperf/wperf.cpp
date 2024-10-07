@@ -77,7 +77,7 @@ GetDevicePath(
     if (deviceInterfaceListLength <= 1) {
         bRet = FALSE;
         m_out.GetErrorOutputStream() << L"error: No active device interfaces found." << std::endl
-            << L"Is the driver loaded? You can get the latest driver from https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/releases" << std::endl;
+            << L"Is the driver loaded? You can get the latest driver from https://github.com/arm-developer-tools/windowsperf/releases" << std::endl;
         goto clean0;
     }
 

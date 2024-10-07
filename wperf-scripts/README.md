@@ -22,7 +22,7 @@ This script is wrapper for `devcon` command line tool. See [README.md](devcon/RE
 
 ## arch_events_update.py
 
-`arch_events_update.py` script can fetch PMU events stored in [ARM-software/data/pmu](https://github.com/ARM-software/data/blob/master/pmu/) and output in format compatible with [armv8-arch-events.def](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/blob/main/wperf-common/armv8-arch-events.def).
+`arch_events_update.py` script can fetch PMU events stored in [ARM-software/data/pmu](https://github.com/ARM-software/data/blob/master/pmu/) and output in format compatible with [armv8-arch-events.def](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-common/armv8-arch-events.def).
 
 ```
 > python3 arch_events_update.py
