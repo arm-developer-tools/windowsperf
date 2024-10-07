@@ -108,7 +108,7 @@ You should test your code locally before you submit a patch.
 
 # Reporting Bugs
 
-A good bug report, which is complete and self-contained, enables us to fix the bug. Before  you report a bug, please check the list of [issues](https://gitlab.com/groups/Linaro/WindowsPerf/-/issues) and, if possible, try a bleeding edge code (latest source tree commit).
+A good bug report, which is complete and self-contained, enables us to fix the bug. Before  you report a bug, please check the list of [issues](https://github.com/arm-developer-tools/windowsperf/issues) and, if possible, try a bleeding edge code (latest source tree commit).
  
 ## What we want
 
