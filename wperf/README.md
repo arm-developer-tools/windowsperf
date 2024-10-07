@@ -18,9 +18,6 @@ New macro, `ENABLE_ETW_TRACING_APP` is used to control ETW output inside the `wp
 # Usage of wperf
 
 ```
-WindowsPerf ver. 3.8.0 (6d15ddfc/Release+etw-app) WOA profiling with performance counters.
-Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues
-
 NAME:
     wperf - Performance analysis tools for Windows on Arm
 

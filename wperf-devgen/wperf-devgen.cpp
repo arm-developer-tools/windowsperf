@@ -341,7 +341,7 @@ void print_help_header()
         << L") WindowsPerf's Kernel Driver Installer."
         << std::endl;
 
-    std::wcout << L"Report bugs to: https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues"
+    std::wcout << L"Report bugs to: https://github.com/arm-developer-tools/windowsperf/issues"
         << std::endl;
 }
 

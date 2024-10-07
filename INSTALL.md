@@ -30,7 +30,7 @@ For more details, see the [Driver Installation](https://gitlab.com/Linaro/Window
 wperf.exe --version
 ```
 
-This command will display the version of `wperf.exe`, which can help you verify if it's compatible with the installed driver. If you encounter any issues or need further assistance, feel free to ask [here](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/issues).
+This command will display the version of `wperf.exe`, which can help you verify if it's compatible with the installed driver. If you encounter any issues or need further assistance, feel free to ask [here](https://github.com/arm-developer-tools/windowsperf/issues).
 
 ## Uninstalling the WindowsPerf Driver
 
