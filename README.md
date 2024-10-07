@@ -33,7 +33,7 @@ The `topdown-tool` uses the WindowsPerf to access the PMU events and metrics on 
 
 ## WindowsPerf Installation
 
-You can find the latest WindowsPerf installation instructions in [INSTALL.md](https://github.com/arm-developer-tools/windowsperf/blob/main/INSTALL.md?ref_type=heads).
+You can find the latest WindowsPerf installation instructions in [INSTALL.md](https://github.com/arm-developer-tools/windowsperf/blob/main/INSTALL.md).
 
 ## WindowsPerf Releases
 
@@ -41,7 +41,7 @@ You can find all binary releases of WindowsPerf (`wperf-driver` and `wperf` appl
 
 ## Building WindowsPerf
 
-You can find the latest WindowsPerf build instructions in [BUILD.md](https://github.com/arm-developer-tools/windowsperf/blob/main/BUILD.md?ref_type=heads).
+You can find the latest WindowsPerf build instructions in [BUILD.md](https://github.com/arm-developer-tools/windowsperf/blob/main/BUILD.md).
 
 ## Contributing
 
@@ -56,7 +56,7 @@ WindowsPerf solution contains few projects:
 - [wperf-driver](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver) is a Kernel-Mode Driver Framework (KMDF) driver.
   - See [Using WDF to Develop a Driver](https://learn.microsoft.com/en-us/windows-hardware/drivers/wdf/using-the-framework-to-develop-a-driver) article for more details on KMDF.
 - [wperf-devgen](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-devgen) is our own simple implementation of tool which can install or remove [wperf-driver](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver).
-  - See [INSTALL.md](https://github.com/arm-developer-tools/windowsperf/blob/main/INSTALL.md?ref_type=heads) for more details and usage.
+  - See [INSTALL.md](https://github.com/arm-developer-tools/windowsperf/blob/main/INSTALL.md) for more details and usage.
 - [wperf-installer](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-installer) is our Windows Installer project. The project uses [WiX Toolset](https://wixtoolset.org/) to build a MSI package to install WindowsPerf. This project requires WiX v5.
   - See [wperf-installer/README.md](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-installer/README.md) for more details.
 - [wperf-lib](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-lib) is our WindowsPerf C library, please note that is doesn't not support all the latest features of WindowsPerf.
