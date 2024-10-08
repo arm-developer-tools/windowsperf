@@ -1,6 +1,6 @@
 # WindowsPerf support for Event Tracing for Windows (ETW)
 
-# Introduction
+WindowsPerf supports Event Tracing for Windows (ETW) in both the `wperf` CLI application and the Kernel Driver (`wperf-driver`). This integration allows for comprehensive performance monitoring and analysis. Additionally, we have dedicated WPA plugins called [WPA-plugin-etl](https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl), which enhance the capabilities of Windows Performance Analyzer (WPA) by providing specialized tools for analyzing ETW data.
 
 ## Event Tracing for Windows (ETW)
 
@@ -16,7 +16,7 @@ WindowsPerf raises corresponding PMU events from `wperf` application and `wperf-
 
 [Windows Performance Analyzer](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer) is a tool that creates graphs and data tables of Event Tracing for Windows (ETW) events that are recorded by Windows Performance Recorder (WPR), Xperf and WindowsPerf via [WPA-plugin-etl](https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl).
 
-## WindowsPerf ETW architecture
+## WindowsPerf ETW Architecture
 
 ## WPA-plugin-etl
 
@@ -24,7 +24,7 @@ The [WPA-plugin-etl](https://github.com/arm-developer-tools/windowsperf-wpa-plug
 
 Together, they provide a comprehensive view of system performance and behavior, making the `WPA-plugin-etl` a valuable tool for system analysis and debugging. This plugin enhances the capabilities of WPA, allowing users to delve deeper into the Arm core and uncore PMU performance characteristics of their Windows on Arm systems. It’s an essential tool for anyone looking to optimize system performance or troubleshoot issues.
 
-# HOWTO use WindowsPerf with ETW
+# How To Use WindowsPerf With ETW
 
 ## Dependencies
 
@@ -40,7 +40,7 @@ Note: The `WevtUtil.exe` tool is included in `%windir%\System32` directory. You 
 - WindowsPerf `wperf` ETW event manifest file [wperf-etw-manifest.xml](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-driver/wperf-etw-manifest.xml). This file is part of [wperf](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf) project.
 - WindowsPerf `wperf` WPR profile file [wperf-app-wpr-profile.wprp](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf/wperf-app-wpr-profile.wprp).
 
-## Configuration instructions for `wperf` ETW support
+## Configuration Instructions For `wperf` ETW Support
 
 1. Download locally [wperf-etw-manifest.xml](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf/wperf-etw-manifest.xml) manifest file.
 
@@ -80,7 +80,7 @@ to the EventLog service account (NT SERVICE\EventLog).
 
 Note: Command `{im | install-manifest} <Manifest>` installs event publishers and logs from a manifest.
 
-## Collecting ETW data with WindowsPerf
+## Collecting ETW Data With WindowsPerf
 
 Now you've installed the ETW manifest. You are ready to capture the ETW trace provided with WindowsPerf using `WPR` and visualize it with `WPA`. Follow below steps to collect the data and plot the results for your workload.
 
