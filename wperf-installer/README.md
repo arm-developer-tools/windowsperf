@@ -16,7 +16,7 @@ You may need additional software to load and build `wperf-installer` project bas
 
 - To install `WiX v3 - Visual Studio 2022 Extension` go to Visual Studio Marketplace [here](https://marketplace.visualstudio.com/items?itemName=WixToolset.WixToolsetVisualStudio2022Extension).
 
-Now you may 
+After installing WiX and the WiX VS Extension, please restart Visual Studio to ensure that the `wperf-installer` loads correctly.
 
 > :warning: Please refer to [Get started with WiX](https://wixtoolset.org/docs/intro/) for more details.
 
