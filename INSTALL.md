@@ -1,4 +1,8 @@
-# WindowsPerf Driver Installation and User-Space Application Usage
+# WindowsPerf Driver Installation And User-Space Application Usage
+
+This file provides detailed instructions on how to install the WindowsPerf tool. It covers all the necessary steps, including system requirements, downloading the tool, and executing the installation process. By following the guidelines in this document, users can ensure a smooth and successful installation of WindowsPerf, enabling them to leverage its powerful performance monitoring and analysis capabilities.
+
+> :warning: See [Known Installation Issues](#known-installation-issues) for troubleshooting.
 
 ## Prerequisites
 
@@ -9,15 +13,12 @@ Native Windows On Arm hardware is required for WindowsPerf to install and operat
 ## Steps
 
 1. **Download** the latest WindowsPerf zipped package from the [release page](https://github.com/arm-developer-tools/windowsperf/releases).
-
 2. **Unzip** the `windowsperf-bin-x.y.z.zip` file to a local folder.
-
 3. Navigate to the `wperf-driver` sub-directory that contains the WindowsPerf Kernel Driver files.
-
 4. From the command line as `Administrator`, execute the command `wperf-devgen.exe install`:
 
 ```
->wperf-devgen.exe install
+> wperf-devgen.exe install
 ```
 
 For more details, see the [Driver Installation](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-devgen/README.md#driver-installation) section in the `wperf-devgen.exe` documentation. Example:
@@ -26,23 +27,23 @@ For more details, see the [Driver Installation](https://github.com/arm-developer
 
 6. To check your driver and user-space application compatibility, run the following command:
 
-```shell
-wperf.exe --version
+```
+> wperf.exe --version
 ```
 
 This command will display the version of `wperf.exe`, which can help you verify if it's compatible with the installed driver. If you encounter any issues or need further assistance, feel free to ask [here](https://github.com/arm-developer-tools/windowsperf/issues).
 
-## Uninstalling the WindowsPerf Driver
+## Uninstalling The WindowsPerf Driver
 
 If you no longer require the use of WindowsPerf, you have the option to uninstall the `wperf-driver` from your system. Detailed instructions for the driver uninstallation process can be found in the `Driver uninstallation` section of the [WindowsPerf documentation](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-devgen/README.md#driver-uninstallation).
 
 Example:
 
 ```
->wperf-devgen uninstall
+> wperf-devgen uninstall
 ```
 
-# Known installation issues
+# Known Installation Issues
 
 ## wperf-devgen.exe - Application Error
 

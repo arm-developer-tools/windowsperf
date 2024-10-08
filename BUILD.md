@@ -7,7 +7,7 @@ Both projects `wperf` and `wperf-driver` in WindowsPerf solution are configured 
 
 ## wperf project
 
-WindowsPerf's project `wperf` and its application require [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022) support.
+WindowsPerf sub-project `wperf` require [DIA SDK](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/getting-started-debug-interface-access-sdk?view=vs-2022).
 
 You may need to register DIA SDK using [regsvr32](https://support.microsoft.com/en-us/topic/how-to-use-the-regsvr32-tool-and-troubleshoot-regsvr32-error-messages-a98d960a-7392-e6fe-d90a-3f4e0cb543e5).
 If the `DIA SDK` directory is missing from your system go to your VS installer, launch it and in `Workloads` tab please make sure you've installed `Desktop development with C++`. This installation should add `C:\Program Files\Microsoft Visual Studio\2022\Community\DIA SDK`. This directory should contain `DIA SDK` root file system with DIA SDK DLL.

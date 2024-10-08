@@ -1,4 +1,4 @@
-# WindowsPerf JSON schemas
+# WindowsPerf JSON Schemas
 
 This set of JSON schemas is used to verify `wperf` CLI (Command line interface) correctness.
 

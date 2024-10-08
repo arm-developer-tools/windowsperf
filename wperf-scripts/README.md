@@ -1,6 +1,6 @@
-# Scripts
+# WindowsPerf Scripts
 
-[[_TOC_]]
+The `wperf-scripts` module in WindowsPerf includes both test scripts, which are used to validate the tool, and helper scripts, which assist in various tasks and streamline processes.
 
 # How to install all dependencies for Python scripts in this directory
 
@@ -20,7 +20,7 @@ Use the command below to install the packages according to the configuration fil
 
 This script is wrapper for `devcon` command line tool. See [README.md](devcon/README.md) for more details.
 
-## arch_events_update.py
+## Script arch_events_update.py
 
 `arch_events_update.py` script can fetch PMU events stored in [ARM-software/data/pmu](https://github.com/ARM-software/data/blob/master/pmu/) and output in format compatible with [armv8-arch-events.def](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf-common/armv8-arch-events.def).
 
@@ -39,14 +39,16 @@ options:
   --license LICENSE     license file added to the script header
 ```
 
-## telemetry_events_update.py
+## Script telemetry_events_update.py
 
 Script fetches Telemetry Solution CPU's PMU related information from [Telemetry Solution](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/data/pmu/cpu).
 
 Note: for simplicity we now hard-code CPUs available in above repository. In the future we will add enumeration functionality!
 
 ### Usage
+
 Print to terminal:
+
 ```
 > python telemetry_events_update.py 
 ```

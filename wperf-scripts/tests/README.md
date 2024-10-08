@@ -1,12 +1,10 @@
-# WindowsPerf regression testing
-
-[[_TOC_]]
-
-# Introduction
+# WindowsPerf Regression Testing
 
 This set of Python scripts is using [pytest](https://docs.pytest.org/) library to drive functional testing of [wperf](../../README.md). Here you can also find `stress.ps1` a PowerShell script to stress test the driver.
 
-## WindowsPerf testing prerequisites
+This set of Python scripts utilizes the A[pytest](https://docs.pytest.org/) library to conduct functional testing of An external link was removed to protect your privacy.. Additionally, it includes `stress.ps1`, a PowerShell script designed to stress test the driver.
+
+## WindowsPerf Testing Prerequisites
 
 WindowsPerf must be tested natively on WOA hardware with installed `wperf-driver` and `wperf`. Both must be compatible (have the same version). See `wperf --version` to see if your system facilitates above.
 
@@ -21,7 +19,7 @@ WindowsPerf must be tested natively on WOA hardware with installed `wperf-driver
 - Make sure that `windowsperf\wperf-scripts\tests\telemetry-solution\` submodule is pulled with git.
   - How to pull submodule: On init run the following command: `git submodule update --init --recursive` from within the git repo directory, this will pull all latest including submodules. Or you can clone submodules directly using `git clone --recurse-submodules`.
 
-### Test execution with Pytest
+### Test Execution With Pytest
 
 > The pytest framework makes it easy to write small tests, yet scales to support complex functional testing for applications and libraries.
 
@@ -50,23 +48,23 @@ Other `pytest` command invocation include:
 
 See `pytest` official documentation [How to invoke pytest](https://docs.pytest.org/en/7.2.x/how-to/usage.html) for more details.
 
-## ustress framework test bench
+## Arm Telemetry-Solution ustress Framework Test Bench
 
 We've added [ustress](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main/tools/ustress) test bench. It's located in [wperf-scripts](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-scripts/tests). It allows users to build, execute `ustress` micro-benchmarks and track with `wperf` timeline specified metrics.
 
 This test bench is composed of:
 - `wperf-scripts/tests/telemetry-solution` - [telemetry-solution](https://gitlab.arm.com/telemetry-solution/telemetry-solution) git submodule pointing to specific SHA we use for testing. Use `git submodule update --init --recursive` command to "pull" this submodule.
 - `pytest` test cases prefixed with `wperf_cli_ustress_`. For example:
-    - `wperf_cli_ustress_bench_test.py` - Will attempt to build `ustress` from sources using available `clang` compiler environment.
-    - `wperf_cli_ustress_dep_record_test.py` - `wperf record` tests with `ustress` micro-benchmarks.
-    - `wperf_cli_ustress_dep_wperf_lib_timeline_test.py` - Test timeline (`wperf stat -t`) with `ustress` micro-benchmarks.
-    - `wperf_cli_ustress_dep_wperf_test.py` - Test `wperf stat` using `ustress` micro-benchmarks and telemetry-solution defined metrics.
+  - `wperf_cli_ustress_bench_test.py` - Will attempt to build `ustress` from sources using available `clang` compiler environment.
+  - `wperf_cli_ustress_dep_record_test.py` - `wperf record` tests with `ustress` micro-benchmarks.
+  - `wperf_cli_ustress_dep_wperf_lib_timeline_test.py` - Test timeline (`wperf stat -t`) with `ustress` micro-benchmarks.
+  - `wperf_cli_ustress_dep_wperf_test.py` - Test `wperf stat` using `ustress` micro-benchmarks and telemetry-solution defined metrics.
 
 Note:
-- `pytest` calls tests in alphabetical order so first "build test" has _bench_ in name and dependent test files are prefixed with _dep_.
+- `pytest` calls tests in alphabetical order so first "build test" has a _bench_ in name and dependent test files are prefixed with _dep_.
 - `ustress` supports various `neoverse` CPU platforms only!
 
-### ustress build dependencies
+### ustress Build Dependencies
 
 WindowsPerf `ustress` test bench will build `ustress` from sources. It will produce `ustress` micro-benchmarks executables using below dependencies.
 To build `ustress` from sources you will need `MSVC cross/native arm64 build environment` with clang toolchain, and  `make` plus `tr` to drive `ustress` Makefile.
@@ -82,8 +80,10 @@ SKIPPED [1] wperf_cli_ustress_dep_wperf_lib_timeline_test.py:107: unsupported co
 SKIPPED [1] wperf_cli_ustress_dep_wperf_test.py:110: unsupported configuration: ustress do not support CPU=ARMV8_A
 ```
 
-### List of all build dependencies for `ustress` build:
+### List Of All Build Dependencies For `ustress` Build
+
 - MSVC cross/native arm64 build environment, see `vcvarsall.bat`. See configuration needed to build `ustress` tests:
+
 ```
 > %comspec% /k "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
 **********************************************************************
@@ -142,11 +142,12 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 > make CPU=NEOVERSE-N1
 ```
 
-### See merge request documentation
-* [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
-* !327+, !330+ and !339+.
+### See Merge Request Documentation
 
-## Testing sampling feature with native CPython
+- [ustress test environment](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327#ustress-test-environment) section for more details.
+- [327](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/327), [330](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/330), and [339](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/339).
+
+## Testing Sampling Feature With Native CPython
 
 We've added `cpython` test bench. It's located in `wperf-scripts/tests/`. It allows us to build CPython (in debug mode) from sources, run and test `wperf` sampling of CPython binary `python_d.exe`. This regression tests improve our overall testing strategy.
 
@@ -158,20 +159,19 @@ This test bench is composed of:
 
 Note: `pytest` calls tests in alphabetical order so first "build test" has _bench_ in name and dependent test files are prefixed with _dep_.
 
-## Testing directory structure
+## Testing Directory Structure
 
 In below test directory we've added locally `wperf.exe`.
 
-### Go to regression test directory
+### Go To Regression Test Directory
 
 ```
 > cd windowsperf\wperf-scripts\tests
 ```
 
-### Example test execution (neoverse-n1)
+### Example Test Execution, neoverse-n1 CPU
 
-Below you can see example regression test pass report ran on `neoverse-n1` WOA
-hardware with WindowsPerf 3.4.0 installed:
+Below you can see example regression test pass report ran on `neoverse-n1` WOA hardware with WindowsPerf 3.4.0 installed:
 
 ```
 > pytest
@@ -214,8 +214,7 @@ wperf-driver: 3.4.0.2fb0f1b9
 
 ### Example test execution (Lenovo x13s Snapdragon)
 
-Below you can see example regression test pass report ran on Snapdragon WOA
-hardware with WindowsPerf 3.4.0 installed:
+Below you can see example regression test pass report ran on Snapdragon WOA hardware with WindowsPerf 3.4.0 installed:
 
 ```
 pytest
@@ -276,7 +275,7 @@ SKIPPED [4] wperf_cli_timeline_test.py:310: unsupported metric: l1d_tlb_mpki
 Note: some tests are skipped due to different hardware configuration. For example some tests are using Telemetry-Solution
 ustress micro-benchmarks which are tuned for Neoverse platform(s) only.
 
-## WindowsPerf stress testing script
+## WindowsPerf Stress Testing Script
 
 Having properly setup the Python unit tests using the instructions above all you need to do is to run:
 

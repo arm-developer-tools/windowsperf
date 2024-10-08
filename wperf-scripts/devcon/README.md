@@ -1,7 +1,5 @@
 # wperf-devcon helper scripts
 
-[[_TOC_]]
-
 :warning: This script is a helper script for those who prefer to use `devcon` tool from Windows Driver Kit (WDK), see this [article](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/devcon#where-can-i-download-devcon).
 
 :grey_exclamation: Please use `wperf-devgen.exe` distributed with latest WindowsPerf releases to install `wperf-driver`.

@@ -1,12 +1,10 @@
-[[_TOC_]]
+# Build Step Generators
 
-# Build step generators
+These scripts generate metadata utilized in Visual Studio build steps.
 
-This scripts generate meta-data used in build steps.
+## Script gengitver.ps1
 
-## gengitver.ps1
-
-Generates current Git repo HEAD SHA and defined WPERF_GIT_VER_STR wide string which contain it.
+Generates current Git repo HEAD SHA and defined `WPERF_GIT_VER_STR` wide string which contain it.
 This is used in pre-build step in e.g. `wperf` project.
 
 ```
