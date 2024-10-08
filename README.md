@@ -1,7 +1,5 @@
 # WindowsPerf
 
-## Introduction
-
 WindowsPerf is (`Linux perf` inspired) Windows on Arm performance profiling tool. Profiling is based on ARM64 PMU and its hardware counters. WindowsPerf supports the counting model for obtaining aggregate counts of occurrences of special events, and sampling model for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels.
 
 WindowsPerf can instrument Arm CPU performance counters. As of now, it can collect:
@@ -15,7 +13,7 @@ Currently we support:
 - **counting model**: WindowsPerf can utilize the Performance Monitoring Unit (PMU) counters from the CPU, DSU, and DMC to capture detailed counting profiles of workloads. By leveraging these counters, WindowsPerf can monitor various performance metrics and events, providing insights into the behavior and efficiency of the system. This comprehensive profiling helps in identifying bottlenecks, optimizing performance, and ensuring that workloads are running efficiently across different components of the system. You can find examples [here](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf#counting-model).
 - **sampling model**: WindowsPerf can sample CPU Performance Monitoring Unit (PMU) events using two methods: software sampling and hardware sampling. In software sampling, the process is triggered by a PMU counter overflow interrupt request (IRQ), allowing the system to collect data at specific intervals. On the other hand, hardware sampling with the Arm Statistical Profiling Extension (SPE) provides precise sampling directly in hardware. This method captures detailed performance data without the overhead associated with software-based sampling, resulting in more accurate and reliable measurements. You can find examples [here](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf#sampling-model).
 
-### Arm Telemetry Solution Integration
+# Arm Telemetry Solution Integration
 
 The integration of WindowsPerf and [Arm Telemetry Solution](https://developer.arm.com/documentation/109542/0100/About-Arm-CPU-Telemetry-Solution) is a significant advancement in performance analysis on Windows On Arm. This integration is primarily based on PMU (Performance Monitoring Unit) events, which provide a detailed insight into the system’s performance. One of the standout features of the WindowsPerf Tool is the implementation of the [Arm Topdown Methodology](https://developer.arm.com/documentation/109542/0100/Arm-Topdown-methodology) for μarch (microarchitecture) performance analysis. This methodology is tailored for each Arm CPU μarch. It involves the use of PMU events, metrics, and groups of metrics to provide a comprehensive analysis of the system’s performance. Furthermore, the WindowsPerf Tool is capable of [platform μarchitecture detection](https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/tree/main), including Neoverse-N1, V1, and N2 CPUs.
 
@@ -23,23 +21,23 @@ The Arm Telemetry Solution also includes a [topdown-tool](https://gitlab.arm.com
 
 The `topdown-tool` uses the WindowsPerf to access the PMU events and metrics on Windows On Arm, enabling it to gather and analyze performance data directly from the hardware. This integration allows the `topdown-tool` to provide a comprehensive view of the system’s performance, from high-level metrics to low-level, detailed μarch events.
 
-## WindowsPerf Installation
+# WindowsPerf Installation
 
 You can find the latest WindowsPerf installation instructions in [INSTALL.md](https://github.com/arm-developer-tools/windowsperf/blob/main/INSTALL.md).
 
-## WindowsPerf Releases
+# WindowsPerf Releases
 
 You can find all binary releases of WindowsPerf (`wperf-driver` and `wperf` application) [here](https://github.com/arm-developer-tools/windowsperf/releases).
 
-## Building WindowsPerf
+# Building WindowsPerf
 
 You can find the latest WindowsPerf build instructions in [BUILD.md](https://github.com/arm-developer-tools/windowsperf/blob/main/BUILD.md).
 
-## Contributing
+# Contributing
 
 When contributing to this repository, please first read [CONTRIBUTING.md](https://github.com/arm-developer-tools/windowsperf/blob/main/CONTRIBUTING.md) file for more details regarding how to contribute to this project.
 
-## WindowsPerf Modules
+# WindowsPerf Modules
 
 WindowsPerf solution contains few projects:
 
@@ -61,7 +59,7 @@ Other directories contain:
   - Note: [wperf](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf) application communicates with [wperf-driver](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-driver) via IOCTRL buffer. Proprietary binary protocol is used to exchange data, commands and status between two.
 - [wperf-scripts](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf-scripts) contains various scripts including testing scripts.
 
-## Project resources
+# Project resources
 
 For more information regarding the project visit [WindowsPerf Wiki](https://linaro.atlassian.net/wiki/spaces/WPERF/overview).
 
@@ -86,7 +84,7 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 - [Get started with WindowsPerf](https://learn.arm.com/learning-paths/laptops-and-desktops/windowsperf/).
 - [Sampling CPython with WindowsPerf](https://learn.arm.com/learning-paths/laptops-and-desktops/windowsperf_sampling_cpython/).
 
-## Arm CPU Telemetry Solution
+## Arm CPU Telemetry Solution Documentation
 
 ### Arm Neoverse PMU Guides
 
