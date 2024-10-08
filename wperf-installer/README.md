@@ -1,8 +1,8 @@
 # WindowsPerf Installer
 
-## Introduction
-
 This project uses [WiX Toolset](https://wixtoolset.org/) to build a MSI package to install WindowsPerf. This project requires WiX v5. Make sure to download and install, you should be able to create a new WiX project on Visual Studio if everything was done correctly.
+
+This project utilizes the [WiX Toolset](https://wixtoolset.org/) to build an MSI package for installing WindowsPerf. It requires WiX v5, so ensure you download and install it. If everything is set up correctly, you should be able to create a new WiX project in Visual Studio.
 
 ## Environment Variables
 
