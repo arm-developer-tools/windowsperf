@@ -64,6 +64,10 @@ wperf-lib-app/wperf-lib-c-compat/ARM64/
 wperf-lib-app/wperf-lib-c-compat/ARM64EC/
 wperf-lib-app/wperf-lib-c-compat/x64/
 
+# wperf-installer
+wperf-installer/bin/
+wperf-installer/obj/
+
 # Temporary files that should be masked
 tmp/
 
