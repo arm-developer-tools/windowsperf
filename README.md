@@ -12,14 +12,8 @@ WindowsPerf can instrument Arm CPU performance counters. As of now, it can colle
 - Arm Statistical Profiling Extension (SPE).
 
 Currently we support:
-- **counting model**, for obtaining aggregate counts of occurrences of special events, and
-- **sampling model**, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels. Sampling model features include:
-  - sampling mode initial merge, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/111
-  - support for DLL symbol resolution, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/132
-  - deduce from the command line image name and PDB file name, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/134
-  - stop sampling when sampled process ends, see  https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/merge_requests/135
-
-You can find example usage of [counting model](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf#counting-model) and [sampling model](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf#sampling-model) in `wperf` [README.md](https://github.com/arm-developer-tools/windowsperf/blob/main/wperf/README.md).
+- **counting model**: WindowsPerf can utilize the Performance Monitoring Unit (PMU) counters from the CPU, DSU, and DMC to capture detailed counting profiles of workloads. By leveraging these counters, WindowsPerf can monitor various performance metrics and events, providing insights into the behavior and efficiency of the system. This comprehensive profiling helps in identifying bottlenecks, optimizing performance, and ensuring that workloads are running efficiently across different components of the system. You can find examples [here](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf#counting-model).
+- **sampling model**: WindowsPerf can sample CPU Performance Monitoring Unit (PMU) events using two methods: software sampling and hardware sampling. In software sampling, the process is triggered by a PMU counter overflow interrupt request (IRQ), allowing the system to collect data at specific intervals. On the other hand, hardware sampling with the Arm Statistical Profiling Extension (SPE) provides precise sampling directly in hardware. This method captures detailed performance data without the overhead associated with software-based sampling, resulting in more accurate and reliable measurements. You can find examples [here](https://github.com/arm-developer-tools/windowsperf/tree/main/wperf#sampling-model).
 
 ### Arm Telemetry Solution Integration
 
