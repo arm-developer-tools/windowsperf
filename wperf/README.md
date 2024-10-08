@@ -1,5 +1,8 @@
 # wperf
 
+The `wperf` project is a sub-project of WindowsPerf, designed as a user-space command-line tool that drives the WindowsPerf Kernel Driver. This tool provides users with the ability to interact with and control the kernel driver, enabling comprehensive performance monitoring and analysis. By leveraging the wperf tool, users can execute various commands and collect detailed performance data, making it an essential component for optimizing system performance and diagnosing issues.
+Additionally, the `wperf` CLI tool offers command line options similar to those found in the Linux perf tool, providing a familiar interface for users who are accustomed to Linux performance monitoring tools.
+
 # Build wperf CLI
 
 - Build WindowsPerf Visual Studio Solution with `Debug|ARM64` or `Release|ARM64` configuration or
