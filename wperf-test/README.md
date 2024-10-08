@@ -1,10 +1,8 @@
 # wperf-test
 
-Project `wperf-test` is VS Native Unit Test project. It references `wperf` project. Its purpose is to contain and execute `wperf`'s unit tests.
+The `wperf-test` project is a Visual Studio Native Unit Test project that references the `wperf` project. Its primary purpose is to house and execute the unit tests for `wperf`.
 
-# Building and running unit tests
-
-Note: You can currently build unit tests only on `x64` host!
+# Building And Running Unit Tests
 
 Build and run `wperf` unit tests with:
 
@@ -24,7 +22,7 @@ The `wperf-test` project require `wperf` project to be built first. WindowsPerf 
 
 Note: You can use `config=` command line option to switch between `Debug` and `Release` configurations.
 
-## Example make test output
+## Example Make Test Output
 
 ```
 > make test
@@ -78,13 +76,13 @@ Total tests: 28
 
 `VSTest.Console.exe` command-line tool executes all unit tests in the project and presents user with simple summary. If you want to learn more read [VSTest.Console.exe command-line options](https://learn.microsoft.com/en-us/visualstudio/test/vstest-console-options?view=vs-2022) article.
 
-# Writing tests
+# Writing Tests
 
 Test code is written in C++ Microsoft Native Unit Test Framework.
 
 Read [Microsoft.VisualStudio.TestTools.CppUnitTestFramework API reference](https://learn.microsoft.com/en-us/visualstudio/test/microsoft-visualstudio-testtools-cppunittestframework-api-reference?view=vs-2022) article to learrn how to write C++ unit tests based on the Microsoft Native Unit Test Framework.
 
-# Command line testing introduction
+# Command Line Testing Introduction
 
 You can run `wperf`'s unit test project `wperf-test` from the command line with top-level `Makefile`. Below documentation describes how to interact with `Makefile` in order to run unit tests for `wperf`.
 
