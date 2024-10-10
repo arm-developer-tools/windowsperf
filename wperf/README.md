@@ -1664,7 +1664,7 @@ You can either:
     - Go to Visual Studio Installer and install: Modify -> Individual Components -> search "clang".
     - Install: "C++ Clang Compiler..." and "MSBuild support for LLVM..."
 
-### Using the '--symbol' option
+### Using the `--symbol` option
 
 This option filters the symbols in the output of a `record` command (and `sample` command). It has the alias `-s`. and symbol name are case insensitive. 
 
@@ -1785,7 +1785,7 @@ SPE register `PMSFCR_EL1.FT` enables filtering by operation type. When enabled `
 
 ### Sampling with SPE CPython example
 
-### SPE with annotate
+#### SPE with annotate
 
 Annotate example with `ld=1` filter enabled: enables collection of load sampled operations, including atomic operations that return a value to a register.
 
