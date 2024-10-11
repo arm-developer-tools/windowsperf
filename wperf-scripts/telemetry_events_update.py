@@ -58,8 +58,10 @@ PMU_CPU_MAPPING = {
                   "neoverse-n2-r0p1.json",
                   "neoverse-n2-r0p3.json",
                   "neoverse-n2.json",
+                  "neoverse-n3.json",
                   "neoverse-v1.json",
-                  "neoverse-v2.json"]
+                  "neoverse-v2.json",
+                  "neoverse-v3.json"]
 }
 
 input_mode = "url"          # default input is presumed to be URL, unless specified otherwise
