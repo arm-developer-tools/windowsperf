@@ -47,9 +47,20 @@ Example:
 
 ## wperf-devgen.exe - Application Error
 
-If you see error:
+If you see below error when you try to run `wperf-devgen.exe`:
 
 > :warning: "The application was unable to start correctly (0xc000007b). Click OK to close this application."
 
-when you issue e.g. `wperf-devgen.exe` command please refer to [A Windows Error 0xC000007B](https://answers.microsoft.com/en-us/windows/forum/all/a-windows-error-0xc000007b/c25fbcb7-1162-487f-bd81-6d8314a52891) article.
+Please refer to [A Windows Error 0xC000007B](https://answers.microsoft.com/en-us/windows/forum/all/a-windows-error-0xc000007b/c25fbcb7-1162-487f-bd81-6d8314a52891) article.
+
 Usually errors like these are due to missing `vcredist` files. We suggest downloading the updated ones from Microsoft's page, for example [Latest Microsoft Visual C++ Redistributable Version](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version).
+
+## wperf-devgen.exe - System Error
+
+If you see below error when you try to run `wperf-devgen.exe`:
+
+> :warning: "The code execution cannot proceed because MSVCP140.dll was not found. Reinstalling the program may fix this problem."
+
+Please refer to [VCRUNTIME140.dll and MSVCP140.dll missing in Windows 11](https://answers.microsoft.com/en-us/windows/forum/all/vcruntime140dll-and-msvcp140dll-missing-in-windows/caf454d1-49f4-4d2b-b74a-c83fb7c38625) article.
+
+Usually errors like these are due to missing `MSVCP140.dll` and `VCRUNTIME140.dll` files. We suggest downloading the updated ones from Microsoft's page, for example [Latest Microsoft Visual C++ Redistributable Version](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version).
