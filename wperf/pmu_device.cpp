@@ -75,7 +75,15 @@ std::map<std::wstring, struct product_configuration> pmu_device::m_product_confi
 #define WPERF_TS_PRODUCT_CONFIGURATION(A,B,C,D,E,F,G,H,I,J) {std::wstring(L##A),{std::wstring(L##B),C,D,E,F,G,H,std::wstring(L##I),std::wstring(L##J)}},
 #define WPERF_TS_ALIAS(...)
 #define WPERF_TS_GROUPS_METRICS(...)
-#include "wperf-common/telemetry-solution-data.def"
+#include "wperf-common/neoverse-n1.def"
+#include "wperf-common/neoverse-n2-r0p0.def"
+#include "wperf-common/neoverse-n2-r0p1.def"
+#include "wperf-common/neoverse-n2-r0p3.def"
+#include "wperf-common/neoverse-n2.def"
+#include "wperf-common/neoverse-n3.def"
+#include "wperf-common/neoverse-v1.def"
+#include "wperf-common/neoverse-v2.def"
+#include "wperf-common/neoverse-v3.def"
 #undef WPERF_TS_EVENTS
 #undef WPERF_TS_METRICS
 #undef WPERF_TS_PRODUCT_CONFIGURATION
@@ -90,7 +98,8 @@ std::map<std::wstring, std::wstring> pmu_device::m_product_alias =
 #define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #define WPERF_TS_ALIAS(A,B) {L##A,L##B},
 #define WPERF_TS_GROUPS_METRICS(...)
-#include "wperf-common/telemetry-solution-data.def"
+#include "wperf-common/neoverse-n2-r0p0.def"
+#include "wperf-common/neoverse-n2-r0p1.def"
 #undef WPERF_TS_EVENTS
 #undef WPERF_TS_METRICS
 #undef WPERF_TS_PRODUCT_CONFIGURATION
@@ -122,7 +131,16 @@ void pmu_device::init_ts_metrics()
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
 #       define WPERF_TS_GROUPS_METRICS(...)
-#       include "wperf-common/telemetry-solution-data.def"
+#include "wperf-common/neoverse-n1.def"
+#include "wperf-common/neoverse-n2-r0p0.def"
+#include "wperf-common/neoverse-n2-r0p1.def"
+#include "wperf-common/neoverse-n2-r0p3.def"
+#include "wperf-common/neoverse-n2.def"
+#include "wperf-common/neoverse-n3.def"
+#include "wperf-common/neoverse-v1.def"
+#include "wperf-common/neoverse-v2.def"
+#include "wperf-common/neoverse-v3.def"
+
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
@@ -137,7 +155,15 @@ void pmu_device::init_ts_groups_metrics()
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
 #       define WPERF_TS_GROUPS_METRICS(A,B,C,D,E) m_product_groups_metrics[std::wstring(L##A)][std::wstring(L##B)] = { std::wstring(L##B),std::wstring(L##C),std::wstring(L##D), std::wstring(L##E) };
-#       include "wperf-common/telemetry-solution-data.def"
+#include "wperf-common/neoverse-n1.def"
+#include "wperf-common/neoverse-n2-r0p0.def"
+#include "wperf-common/neoverse-n2-r0p1.def"
+#include "wperf-common/neoverse-n2-r0p3.def"
+#include "wperf-common/neoverse-n2.def"
+#include "wperf-common/neoverse-n3.def"
+#include "wperf-common/neoverse-v1.def"
+#include "wperf-common/neoverse-v2.def"
+#include "wperf-common/neoverse-v3.def"
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
@@ -152,7 +178,15 @@ void pmu_device::init_ts_events()
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
 #       define WPERF_TS_GROUPS_METRICS(...)
-#       include "wperf-common/telemetry-solution-data.def"
+#include "wperf-common/neoverse-n1.def"
+#include "wperf-common/neoverse-n2-r0p0.def"
+#include "wperf-common/neoverse-n2-r0p1.def"
+#include "wperf-common/neoverse-n2-r0p3.def"
+#include "wperf-common/neoverse-n2.def"
+#include "wperf-common/neoverse-n3.def"
+#include "wperf-common/neoverse-v1.def"
+#include "wperf-common/neoverse-v2.def"
+#include "wperf-common/neoverse-v3.def"
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
