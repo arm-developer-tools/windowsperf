@@ -194,8 +194,10 @@ def test_wperf_man_ts_cpu_alias_compare(alias, cpu, event):
 [
     ("neoverse-v1"),
     ("neoverse-v2"),
+    ("neoverse-v3"),
     ("neoverse-n1"),
     ("neoverse-n2"),
+    ("neoverse-n3"),
     ("neoverse-n2-r0p0"),
     ("neoverse-n2-r0p1"),
     ("neoverse-n2-r0p3"),
@@ -224,6 +226,7 @@ def test_wperf_man_ts_events(cpu, argument, title, description):
 [
     ("neoverse-v1"),
     ("neoverse-v2"),
+    ("neoverse-v3"),
     ("neoverse-n1"),
     ("neoverse-n2"),
     ("neoverse-n2-r0p0"),
@@ -259,8 +262,10 @@ def test_wperf_man_ts_metrics(cpu, argument, event, unit):
 [
     ("neoverse-v1"),
     ("neoverse-v2"),
+    ("neoverse-v3"),
     ("neoverse-n1"),
     ("neoverse-n2"),
+    ("neoverse-n3"),
     ("neoverse-n2-r0p0"),
     ("neoverse-n2-r0p1"),
     ("neoverse-n2-r0p3"),
@@ -291,8 +296,10 @@ def test_wperf_man_ts_group_metrics(cpu, argument, title, metric):
 [
     ("neoverse-v1"),
     ("neoverse-v2"),
+    ("neoverse-v3"),
     ("neoverse-n1"),
-    ("neoverse-n1"),
+    ("neoverse-n2"),
+    ("neoverse-n3"),
 ]
 )
 @pytest.mark.parametrize("argument",
