@@ -264,6 +264,12 @@ def ts_parse_cpu_json(j, name):
 def main(args):
     """the entry for arch events update"""
 
+    if args.print_family:
+        for family in PMU_CPU_MAPPING:
+            for cpu_json in PMU_CPU_MAPPING[family]:
+                print(f"{cpu_json.split('.')[0]} ", end='')
+        return
+
     cpu_mapping = PMU_CPU_MAPPING
 
     if args.family:
@@ -302,6 +308,7 @@ if __name__ == "__main__":
     parser.add_argument("--url", action = "store_true",help="selects URL as input source (on by default!)")
     parser.add_argument("--file", action = "store_true",help="selects file as input source")
     parser.add_argument("--family", type=str, help="select family (JSON name) to process")
+    parser.add_argument("--print-family", action = "store_true", help="print cpu families and exit")
     args = parser.parse_args()
 
     if args.output:
