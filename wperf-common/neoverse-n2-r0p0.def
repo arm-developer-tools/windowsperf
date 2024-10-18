@@ -1,0 +1,3 @@
+// https://gitlab.arm.com/telemetry-solution/telemetry-solution/-/raw/main/data/pmu/cpu/neoverse/neoverse-n2-r0p0.json
+WPERF_TS_ALIAS("neoverse-n2-r0p0","neoverse-n2")
+
