@@ -45,12 +45,26 @@ Script fetches Telemetry Solution CPU's PMU related information from [Telemetry 
 
 Note: for simplicity we now hard-code CPUs available in above repository. In the future we will add enumeration functionality!
 
+### What to do when new Arm Telemetry Solution CPUs is added?
+
+You should add new CPU to `PMU_CPU_MAPPING` map in `telemetry_events_update.py` script.
+And run `regenerate-ts-def.sh` script to recreate all `.def` files.
+
+### Script regenerate-ts-def.sh
+
+This script simply calls `telemetry_events_update.py` for each Arm Telemetry CPU and generates separate .def file for each CPU.
+The Arm Telemetry Solution `.def` files will be updated in `wperf-common`.
+
+```sh
+./regenerate-ts-def.sh
+```
+
 ### Usage
 
 Print to terminal:
 
 ```
-> python telemetry_events_update.py 
+> python telemetry_events_update.py
 ```
 
 To manually pipe into a destination file:
