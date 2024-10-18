@@ -9,6 +9,7 @@
 for cpu in `python telemetry_events_update.py --print-family`;
 do
     cat ../LICENSE > ../wperf-common/${cpu}.def
+    sed -i -e 's#^#// #' ../wperf-common/${cpu}.def
     echo "" >> ../wperf-common/${cpu}.def
     python telemetry_events_update.py --family ${cpu}.json >> ../wperf-common/${cpu}.def
 done
