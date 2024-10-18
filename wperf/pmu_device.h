@@ -137,6 +137,9 @@ public:
     void init_ts_metrics();
     void init_ts_groups_metrics();
     void init_ts_events();
+    void init_ts_events_nv1();  // Initalize for Noeverse-N1/V1
+    void init_ts_events_nv2();  // Initalize for Noeverse-N2/V2
+    void init_ts_events_nv3();  // Initalize for Noeverse-N3/V3
     void init_arm_events();
     void init_armv8_events();
     void init_armv9_events();

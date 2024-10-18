@@ -171,27 +171,66 @@ void pmu_device::init_ts_groups_metrics()
 #       undef WPERF_TS_GROUPS_METRICS
 }
 
-void pmu_device::init_ts_events()
-{   // Initialize Telemetry Solution events for each product
+// Initialize Telemetry Solution events for Noeverse-N1/V1
+void pmu_device::init_ts_events_nv1()
+{
 #       define WPERF_TS_EVENTS(A,B,C,D,E,F) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E),std::wstring(L##F) };
 #       define WPERF_TS_METRICS(...)
 #       define WPERF_TS_PRODUCT_CONFIGURATION(...)
 #       define WPERF_TS_ALIAS(...)
 #       define WPERF_TS_GROUPS_METRICS(...)
 #include "wperf-common/neoverse-n1.def"
+#include "wperf-common/neoverse-v1.def"
+#       undef WPERF_TS_EVENTS
+#       undef WPERF_TS_METRICS
+#       undef WPERF_TS_PRODUCT_CONFIGURATION
+#       undef WPERF_TS_ALIAS
+#       undef WPERF_TS_GROUPS_METRICS
+
+}
+
+// Initialize Telemetry Solution events for Noeverse-N2/V2 (all revisions)
+void pmu_device::init_ts_events_nv2()
+{
+#       define WPERF_TS_EVENTS(A,B,C,D,E,F) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E),std::wstring(L##F) };
+#       define WPERF_TS_METRICS(...)
+#       define WPERF_TS_PRODUCT_CONFIGURATION(...)
+#       define WPERF_TS_ALIAS(...)
+#       define WPERF_TS_GROUPS_METRICS(...)
 #include "wperf-common/neoverse-n2-r0p0.def"
 #include "wperf-common/neoverse-n2-r0p1.def"
 #include "wperf-common/neoverse-n2-r0p3.def"
 #include "wperf-common/neoverse-n2.def"
-#include "wperf-common/neoverse-n3.def"
-#include "wperf-common/neoverse-v1.def"
 #include "wperf-common/neoverse-v2.def"
+#       undef WPERF_TS_EVENTS
+#       undef WPERF_TS_METRICS
+#       undef WPERF_TS_PRODUCT_CONFIGURATION
+#       undef WPERF_TS_ALIAS
+#       undef WPERF_TS_GROUPS_METRICS
+}
+
+// Initialize Telemetry Solution events for Noeverse-N3/V3
+void pmu_device::init_ts_events_nv3()
+{
+#       define WPERF_TS_EVENTS(A,B,C,D,E,F) m_product_events[std::wstring(L##A)][std::wstring(L##D)] = { std::wstring(L##D),uint16_t(C),std::wstring(L##E),std::wstring(L##F) };
+#       define WPERF_TS_METRICS(...)
+#       define WPERF_TS_PRODUCT_CONFIGURATION(...)
+#       define WPERF_TS_ALIAS(...)
+#       define WPERF_TS_GROUPS_METRICS(...)
+#include "wperf-common/neoverse-n3.def"
 #include "wperf-common/neoverse-v3.def"
 #       undef WPERF_TS_EVENTS
 #       undef WPERF_TS_METRICS
 #       undef WPERF_TS_PRODUCT_CONFIGURATION
 #       undef WPERF_TS_ALIAS
 #       undef WPERF_TS_GROUPS_METRICS
+}
+
+void pmu_device::init_ts_events()
+{   // Initialize Telemetry Solution events for each product
+    init_ts_events_nv1();
+    init_ts_events_nv2();
+    init_ts_events_nv3();
 }
 
 void pmu_device::init_arm_events()
