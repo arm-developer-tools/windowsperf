@@ -58,8 +58,10 @@ PMU_CPU_MAPPING = {
                   "neoverse-n2-r0p1.json",
                   "neoverse-n2-r0p3.json",
                   "neoverse-n2.json",
+                  "neoverse-n3.json",
                   "neoverse-v1.json",
-                  "neoverse-v2.json"]
+                  "neoverse-v2.json",
+                  "neoverse-v3.json"]
 }
 
 input_mode = "url"          # default input is presumed to be URL, unless specified otherwise
@@ -259,29 +261,40 @@ def ts_parse_cpu_json(j, name):
         ts_parse_groups_metrics(j, name)
         print(file=output_file)
 
-def main(argv):
+def main(args):
     """the entry for arch events update"""
 
-    if input_mode == "file":
-        for family in PMU_CPU_MAPPING: # e.g neoverse
-            file_family = os.path.join(FILE_PATH, family) # join the FILE_PATH with the family
+    if args.print_family:
+        for family in PMU_CPU_MAPPING:
             for cpu_json in PMU_CPU_MAPPING[family]:
+                print(f"{cpu_json.split('.')[0]} ", end='')
+        return
+
+    cpu_mapping = PMU_CPU_MAPPING
+
+    if args.family:
+        cpu_mapping = { "neoverse" : [args.family]}
+
+    if input_mode == "file":
+        for family in cpu_mapping: # e.g neoverse
+            file_family = os.path.join(FILE_PATH, family) # join the FILE_PATH with the family
+            for cpu_json in cpu_mapping[family]:
                 name = cpu_json.split('.')[0]   # name of the cpu via JSON filename e.g neoverse-n2
                 filepath = os.path.join(file_family, cpu_json)  # assuming the json files are in a directory named after the family
                 ts_print_as_comment (filepath)
                 j = ts_load_json(filepath, name)
                 ts_parse_cpu_json(j, name)
     elif input_mode == "url":
-        for family in PMU_CPU_MAPPING:
+        for family in cpu_mapping:
             url_family = urljoin(URL, family + '/')
-            for cpu_json in PMU_CPU_MAPPING[family]:
+            for cpu_json in cpu_mapping[family]:
                 name = cpu_json.split('.')[0]   # name of the cpu via JSON filename
                 url = urljoin(url_family, cpu_json)
                 ts_print_as_comment (url)
                 j = ts_download_json(url, name)
                 ts_parse_cpu_json(j, name)
     else:
-        raise Exception("unrecognised parameters with arg '-i', expected 'url' or'file'")
+        raise Exception("unrecognized parameters with arg '-i', expected 'url' or'file'")
 
 
 if __name__ == "__main__":
@@ -294,6 +307,8 @@ if __name__ == "__main__":
     parser.add_argument("--license", type=str,help="license file added to the script header")
     parser.add_argument("--url", action = "store_true",help="selects URL as input source (on by default!)")
     parser.add_argument("--file", action = "store_true",help="selects file as input source")
+    parser.add_argument("--family", type=str, help="select family (JSON name) to process")
+    parser.add_argument("--print-family", action = "store_true", help="print cpu families and exit")
     args = parser.parse_args()
 
     if args.output:
