@@ -380,6 +380,16 @@ void pmu_device::spe_stop()
         throw fatal_exception("PMU_CTL_SPE_STOP failed");
 }
 
+// Print PMU core stats related to SPE and update some JSON global data for printing
+void pmu_device::spe_print_core_stats(std::vector<struct evt_noted>& events)
+{
+    print_core_stat(events);
+
+    // Add generated samples to SPE JSON sampling
+    uint64_t samples_generated = get_core_stat_by_name(L"sample_filtrate", events);
+    m_globalSamplingJSON.m_samples_generated = samples_generated;
+}
+
 void pmu_device::core_init()
 {
     query_hw_cfg(m_hw_cfg);
@@ -1295,6 +1305,29 @@ void pmu_device::events_query_driver(std::map<enum evt_class, std::vector<uint16
 
         consumed_sz += sizeof(struct evt_hdr) + evt_num * sizeof(uint16_t);
     }
+}
+
+// Get Core event count from received data, select event by name
+uint64_t pmu_device::get_core_stat_by_name(std::wstring ename, std::vector<struct evt_noted>& events)
+{
+    uint32_t core_base = cores_idx[0];
+    uint16_t event_idx = (uint16_t)pmu_events_get_event_index(ename);
+    UINT32 evt_num = core_outs[core_base].evt_num;
+
+    for (size_t j = 0; j < evt_num; j++)
+    {
+        if (j >= 1 && (events[j - 1].type == EVT_PADDING))
+            continue;
+
+        struct pmu_event_usr* evts = core_outs[core_base].evts;
+        struct pmu_event_usr* evt = &evts[j];
+
+        // We've found event (by index) we were looking for, we can return event (counter) value
+        if (evt->event_idx == event_idx)
+            return evt->value;
+    }
+
+    return 0;
 }
 
 void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
@@ -3130,6 +3163,17 @@ const wchar_t* pmu_device::pmu_events_get_event_name(uint16_t index, enum evt_cl
 
     return pmu_events::get_event_name(index, e_class);
 }
+
+int pmu_device::pmu_events_get_event_index(std::wstring ename, enum evt_class e_class)
+{
+    if (e_class == EVT_CORE && m_product_events.count(m_product_name))
+        for (const auto& [key, value] : m_product_events[m_product_name])
+            if (value.name == std::wstring(ename))
+                return value.index;
+
+    return pmu_events::get_event_index(ename, e_class);
+}
+
 
 const wchar_t* pmu_device::pmu_events_get_evt_name_prefix(enum evt_class e_class)
 {

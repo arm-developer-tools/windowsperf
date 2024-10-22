@@ -744,10 +744,11 @@ wmain(
                     pmu_device.start(enable_bits);
                     pmu_device.spe_start(request.m_sampling_flags);
                 }
-                else pmu_device.start_sample();
+                else {
+                    pmu_device.start_sample();
+                }
 
                 m_out.GetOutputStream() << L"sampling ...";
-
                 
                 GetSystemTime(&timestamp_a);
 
@@ -782,17 +783,16 @@ wmain(
 
                 m_out.GetOutputStream() << " done!" << std::endl;
 
-                if(request.m_sampling_with_spe)
+                if (request.m_sampling_with_spe)
                 {
                     // We stop the SPE first so we don't miss any PMU events
                     pmu_device.spe_stop();
                     pmu_device.spe_get();
                     pmu_device.stop(enable_bits);
 
-                    // Now we read jus the core events and print the debugging information
+                    // Now we read just the core events and print the debugging information
                     pmu_device.core_events_read();
-                    pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
-                    pmu_device.print_core_metrics(request.ioctl_events[EVT_CORE]);
+                    pmu_device.spe_print_core_stats(request.ioctl_events[EVT_CORE]);
                 } else {
                     pmu_device.stop_sample();
                 }
