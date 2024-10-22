@@ -128,6 +128,7 @@ public:
     void spe_start(const std::map<std::wstring, bool>& flags);
     void spe_stop();
     bool spe_get();
+    void pmu_device::spe_print_core_stats(std::vector<struct evt_noted>& events);
 
     size_t m_spe_size_to_copy;
     std::vector<UINT8> m_spe_buffer;

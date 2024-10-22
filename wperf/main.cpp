@@ -792,14 +792,7 @@ wmain(
 
                     // Now we read just the core events and print the debugging information
                     pmu_device.core_events_read();
-                    pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
-                    {
-                        // Add generated samples to SPE JSON sampling
-                        uint64_t samples_generated = pmu_device.get_core_stat_by_name(L"sample_filtrate", request.ioctl_events[EVT_CORE]);
-                        uint64_t samples_pop = pmu_device.get_core_stat_by_name(L"sample_pop", request.ioctl_events[EVT_CORE]);
-                        m_globalSamplingJSON.m_samples_generated = samples_generated;
-                        m_globalSamplingJSON.m_samples_dropped = samples_pop - samples_generated;
-                    }
+                    pmu_device.spe_print_core_stats(request.ioctl_events[EVT_CORE]);
                 } else {
                     pmu_device.stop_sample();
                 }
