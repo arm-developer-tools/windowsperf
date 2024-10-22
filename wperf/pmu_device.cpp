@@ -1297,6 +1297,29 @@ void pmu_device::events_query_driver(std::map<enum evt_class, std::vector<uint16
     }
 }
 
+// Get Core event count from received data, select event by name
+uint64_t pmu_device::get_core_stat_by_name(std::wstring ename, std::vector<struct evt_noted>& events)
+{
+    uint32_t core_base = cores_idx[0];
+    uint16_t event_idx = (uint16_t)pmu_events_get_event_index(ename);
+    UINT32 evt_num = core_outs[core_base].evt_num;
+
+    for (size_t j = 0; j < evt_num; j++)
+    {
+        if (j >= 1 && (events[j - 1].type == EVT_PADDING))
+            continue;
+
+        struct pmu_event_usr* evts = core_outs[core_base].evts;
+        struct pmu_event_usr* evt = &evts[j];
+
+        // We've found event (by index) we were looking for, we can return event (counter) value
+        if (evt->event_idx == event_idx)
+            return evt->value;
+    }
+
+    return 0;
+}
+
 void pmu_device::print_core_stat(std::vector<struct evt_noted>& events)
 {
     const enum evt_class e_class = EVT_CORE;
@@ -3131,7 +3154,7 @@ const wchar_t* pmu_device::pmu_events_get_event_name(uint16_t index, enum evt_cl
     return pmu_events::get_event_name(index, e_class);
 }
 
-uint16_t pmu_device::pmu_events_get_event_index(std::wstring ename, enum evt_class e_class)
+int pmu_device::pmu_events_get_event_index(std::wstring ename, enum evt_class e_class)
 {
     if (e_class == EVT_CORE && m_product_events.count(m_product_name))
         for (const auto& [key, value] : m_product_events[m_product_name])

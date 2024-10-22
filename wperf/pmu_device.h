@@ -179,7 +179,7 @@ public:
     // Events
     const wchar_t* pmu_events_get_evt_class_name(enum evt_class e_class);
     const wchar_t* pmu_events_get_event_name(uint16_t index, enum evt_class e_class = EVT_CORE);
-    uint16_t pmu_events_get_event_index(std::wstring ename, enum evt_class e_class = EVT_CORE);
+    int pmu_events_get_event_index(std::wstring ename, enum evt_class e_class = EVT_CORE);
     const wchar_t* pmu_events_get_evt_name_prefix(enum evt_class e_class);
     const wchar_t* pmu_events_get_evt_desc(uint16_t index, enum evt_class e_class = EVT_CORE);
 
@@ -195,6 +195,8 @@ public:
     void dmc_events_read(void);
     void events_query(std::map<enum evt_class, std::vector<uint16_t>>& events_out);         // Query for events available to the user
     void events_query_driver(std::map<enum evt_class, std::vector<uint16_t>>& events_out);  // Query driver for known events
+
+    uint64_t get_core_stat_by_name(std::wstring ename, std::vector<struct evt_noted>& events);
 
     void print_core_stat(std::vector<struct evt_noted>& events); 
     void print_dsu_stat(std::vector<struct evt_noted>& events, bool report_l3_metric);
