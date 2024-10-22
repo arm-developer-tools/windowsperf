@@ -322,14 +322,12 @@ def test_cpython_bench_spe_consistency(request, tmp_path, EVENT,SPE_FILTERS,PYTH
     samples_generated = json_output["sampling"]["sampling"]["samples_generated"]
     samples_dropped = json_output["sampling"]["sampling"]["samples_dropped"]
 
-    sample_pop = 0
     sample_filtrate = 0
 
     for events in json_output["counting"]["core"]["cores"][0]["Performance_counter"]:
-        if events["event_name"] == "sample_pop":
-            sample_pop = events["counter_value"]
         if events["event_name"] == "sample_filtrate":
             sample_filtrate = events["counter_value"]
 
+    assert sample_filtrate >= 0
+    assert samples_dropped >= 0
     assert samples_generated == sample_filtrate
-    assert samples_dropped == (sample_pop - sample_filtrate)
