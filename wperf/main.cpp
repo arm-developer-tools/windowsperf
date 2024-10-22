@@ -793,7 +793,6 @@ wmain(
                     // Now we read just the core events and print the debugging information
                     pmu_device.core_events_read();
                     pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
-                    pmu_device.print_core_metrics(request.ioctl_events[EVT_CORE]);
                     {
                         // Add generated samples to SPE JSON sampling
                         uint64_t samples_generated = pmu_device.get_core_stat_by_name(L"sample_filtrate", request.ioctl_events[EVT_CORE]);
