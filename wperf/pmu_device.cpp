@@ -387,9 +387,7 @@ void pmu_device::spe_print_core_stats(std::vector<struct evt_noted>& events)
 
     // Add generated samples to SPE JSON sampling
     uint64_t samples_generated = get_core_stat_by_name(L"sample_filtrate", events);
-    uint64_t samples_pop = get_core_stat_by_name(L"sample_pop", events);
     m_globalSamplingJSON.m_samples_generated = samples_generated;
-    m_globalSamplingJSON.m_samples_dropped = samples_pop - samples_generated;
 }
 
 void pmu_device::core_init()
