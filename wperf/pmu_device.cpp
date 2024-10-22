@@ -3131,6 +3131,17 @@ const wchar_t* pmu_device::pmu_events_get_event_name(uint16_t index, enum evt_cl
     return pmu_events::get_event_name(index, e_class);
 }
 
+uint16_t pmu_device::pmu_events_get_event_index(std::wstring ename, enum evt_class e_class)
+{
+    if (e_class == EVT_CORE && m_product_events.count(m_product_name))
+        for (const auto& [key, value] : m_product_events[m_product_name])
+            if (value.name == std::wstring(ename))
+                return value.index;
+
+    return pmu_events::get_event_index(ename, e_class);
+}
+
+
 const wchar_t* pmu_device::pmu_events_get_evt_name_prefix(enum evt_class e_class)
 {
     return pmu_events::get_evt_name_prefix(e_class);

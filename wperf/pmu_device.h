@@ -179,6 +179,7 @@ public:
     // Events
     const wchar_t* pmu_events_get_evt_class_name(enum evt_class e_class);
     const wchar_t* pmu_events_get_event_name(uint16_t index, enum evt_class e_class = EVT_CORE);
+    uint16_t pmu_events_get_event_index(std::wstring ename, enum evt_class e_class = EVT_CORE);
     const wchar_t* pmu_events_get_evt_name_prefix(enum evt_class e_class);
     const wchar_t* pmu_events_get_evt_desc(uint16_t index, enum evt_class e_class = EVT_CORE);
 
