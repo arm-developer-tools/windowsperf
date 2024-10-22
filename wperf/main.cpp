@@ -794,6 +794,8 @@ wmain(
                     pmu_device.core_events_read();
                     pmu_device.print_core_stat(request.ioctl_events[EVT_CORE]);
                     pmu_device.print_core_metrics(request.ioctl_events[EVT_CORE]);
+                    // Add generated samples to SPE JSON sampling
+                    m_globalSamplingJSON.m_samples_generated = pmu_device.get_core_stat_by_name(L"sample_filtrate", request.ioctl_events[EVT_CORE]);
                 } else {
                     pmu_device.stop_sample();
                 }
