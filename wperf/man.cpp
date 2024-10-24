@@ -112,29 +112,28 @@ bool static man_find_in_product_data(const pmu_device& pdev, std::wstring produc
 			product_name = pdev.get_product_name(product_name);
 		}
 
-		const auto& metrics_map = pdev.m_product_metrics.at(product_name);
-		const auto& events_map = pdev.m_product_events.at(product_name);
-		const auto& group_metrics_map = pdev.m_product_groups_metrics.at(product_name);
-
-		if (metrics_map.find(requested_arg) != metrics_map.end()) 
+		if (pdev.m_product_metrics.count(product_name) &&
+			pdev.m_product_metrics.at(product_name).count(requested_arg))
 		{
 			requested_items.push_back({ man_Item::Metric, product_name, requested_arg });
 			return true;
 		}
-		else if (events_map.find(requested_arg) != events_map.end()) 
+
+		if (pdev.m_product_events.count(product_name) &&
+			pdev.m_product_events.at(product_name).count(requested_arg))
 		{
 			requested_items.push_back({ man_Item::Event, product_name, requested_arg });
 			return true;
 		}
-		else if (group_metrics_map.find(requested_arg) != group_metrics_map.end()) 
+
+		if (pdev.m_product_groups_metrics.count(product_name) &&
+			pdev.m_product_groups_metrics.at(product_name).count(requested_arg))
 		{
 			requested_items.push_back({ man_Item::Group_Metric, product_name, requested_arg });
 			return true;
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 	catch (const std::out_of_range&) {
 		return false;
