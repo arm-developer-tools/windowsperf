@@ -88,10 +88,10 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 
 ### Arm Neoverse PMU Guides
 
-- [Arm Neoverse N1 PMU Guide](https://developer.arm.com/documentation/109956/latest/)
-- [Arm Neoverse V1 PMU Guide](https://developer.arm.com/documentation/109708/latest/)
-- [Arm Neoverse N2 PMU Guide](https://developer.arm.com/documentation/109710/latest/)
-- [Arm Neoverse V2 PMU Guide](https://developer.arm.com/documentation/109709/latest/)
+- [Arm Neoverse N1 PMU Guide](https://developer.arm.com/documentation/109956/latest/).
+- [Arm Neoverse V1 PMU Guide](https://developer.arm.com/documentation/109708/latest/).
+- [Arm Neoverse N2 PMU Guide](https://developer.arm.com/documentation/109710/latest/).
+- [Arm Neoverse V2 PMU Guide](https://developer.arm.com/documentation/109709/latest/).
 
 ### Arm Telemetry Specifications
 
