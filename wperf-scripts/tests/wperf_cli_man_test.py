@@ -38,7 +38,7 @@ from common import run_command
 ### Test cases
 
 def test_wperf_man_help():
-    """ Test `wperf man` with no arg"""
+    """ Test `wperf man` with no args"""
     cmd = 'wperf man'
     _, stderr = run_command(cmd.split())
 
@@ -55,13 +55,13 @@ def test_wperf_man_help():
 def test_wperf_man_not_compatible_cpu_throws(cpu, argument):
     """Test `wperf man` when prompted with invalid CPUs throws the necessary error"""
     cmd = f'wperf man {cpu}/{argument}'
-    _,stderr = run_command(cmd.split())
+    _, stderr = run_command(cmd.split())
 
     assert b"unexpected arg" not in stderr
     expected_error = f"warning: \"{argument}\" not found! Ensure it is compatible with the specified CPU".encode()
     assert expected_error in stderr
 
-# Note - stacked parametrizations creates permutations
+# Note - stacked parameterizations creates permutations
 @pytest.mark.parametrize("cpu",
 [
     (""),
@@ -82,10 +82,92 @@ def test_wperf_man_not_compatible_cpu_throws(cpu, argument):
 ]
 )
 def test_wperf_man_invalid_cpu_throws(cpu, argument):
-    """Test `wperf man` when prompted with invlaid CPUs throws the necessary error"""
+    """Test `wperf man` when prompted with invalid CPUs throws the necessary error"""
     cmd = f'wperf man {cpu}/{argument}'
-    _,stderr = run_command(cmd.split())
+    _, stderr = run_command(cmd.split())
 
     assert b"unexpected arg" not in stderr
     expected_error = f"warning: CPU name: \"{cpu}\" not found, use".encode()
     assert expected_error in stderr
+
+#
+# NOK cases for armv8-a / armv9-a
+#
+
+@pytest.mark.parametrize("cpu, argument",
+[
+    # This events are not present in given CPU
+    ("armv8-a", "trcextout0"),
+    ("armv8-a", "trcextout1"),
+    ("armv8-a", "trcextout2"),
+    ("armv8-a", "trcextout3"),
+]
+)
+def test_wperf_man_not_compatible_cpu_event_err(cpu, argument):
+    """Test `wperf man` when prompted with invalid CPUs throws the necessary error"""
+    cmd = f'wperf man {cpu}/{argument}'
+    _, stderr = run_command(cmd.split())
+
+    assert b"unexpected arg" not in stderr
+    expected_error = f"warning: \"{argument}\" not found! Ensure it is compatible with the specified CPU".encode()
+    assert expected_error in stderr
+
+#
+# OK cases for armv8-a / armv9-a
+#
+
+# Note - stacked parameterizations creates permutations
+@pytest.mark.parametrize("cpu",
+[
+    ("armv8-a"),
+    ("armv9-a"),
+]
+)
+@pytest.mark.parametrize("argument",
+[
+    ("ld_spec"),
+    ("remote_access_rd"),
+    ("l3d_cache_lmiss_rd"),
+    ("stall_frontend_membound"),
+    ("br_immed_mis_pred_retired"),
+]
+)
+def test_wperf_man_armv89_common_events(cpu, argument):
+    """Test `wperf man` when prompted with invalid CPUs throws the necessary error"""
+    cmd = f'wperf man {cpu}/{argument}'
+    stdout, stderr = run_command(cmd.split())
+
+    assert b"unexpected arg" not in stderr
+    assert b"warning:" not in stderr
+    assert b"CPU" in stdout
+    assert b"NAME" in stdout
+    assert b"DESCRIPTION" in stdout
+
+# Note - stacked parameterizations creates permutations
+@pytest.mark.parametrize("cpu",
+[
+    ("armv9-a"),
+    ("neoverse-n2"),
+    ("neoverse-v2"),
+    ("neoverse-n3"),
+]
+)
+@pytest.mark.parametrize("argument",
+[
+    ("trb_wrap"),
+    ("trcextout0"),
+    ("trcextout1"),
+    ("trcextout2"),
+    ("trcextout3"),
+]
+)
+def test_wperf_man_armv9_n23_v2_common_events(cpu, argument):
+    """Test `wperf man` when prompted with invalid CPUs throws the necessary error"""
+    cmd = f'wperf man {cpu}/{argument}'
+    stdout, stderr = run_command(cmd.split())
+
+    assert b"unexpected arg" not in stderr
+    assert b"warning:" not in stderr
+    assert b"CPU" in stdout
+    assert b"NAME" in stdout
+    assert b"DESCRIPTION" in stdout
