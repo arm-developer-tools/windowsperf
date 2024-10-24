@@ -338,7 +338,7 @@ void read_function_lines(FuncSymDesc& funcSymDesc, IDiaSymbol* pSymbol, IDiaSess
                         }
 
                         funcSymDesc.lines.push_back(LineNumberDesc{
-                            std::wstring(fName),
+                            std::wstring(file_name_wstr),
                             linenum,
                             colnum,
                             isStatement,
