@@ -97,12 +97,12 @@ For more information regarding the project visit [WindowsPerf Wiki](https://lina
 
 - [Arm CPU Telemetry Solution Topdown Methodology Specification](https://developer.arm.com/documentation/109542/0100/Introduction/Useful-resources).
 - [Arm Telemetry Solution Tools](https://gitlab.arm.com/telemetry-solution/telemetry-solution).
-- [Arm Neoverse N1 Core Telemetry Specification](https://developer.arm.com/documentation/108070/0100/?lang=en).
-- [Arm Neoverse V1 Core Telemetry Specification](https://developer.arm.com/documentation/109216/0100/?lang=en).
-- [Arm Neoverse N2 Core Telemetry Specification](https://developer.arm.com/documentation/109215/0200/?lang=en).
-- [Arm Neoverse V2 Core Telemetry Specification](https://developer.arm.com/documentation/109528/0200)
-- [Arm Neoverse N3 Core Telemetry Specification](https://developer.arm.com/documentation/109530/0100)
-- [Arm Neoverse V3 Core Telemetry Specification](https://developer.arm.com/documentation/107905/0100)
+- [Arm Neoverse N1 Core Telemetry Specification](https://developer.arm.com/documentation/108070/0100).
+- [Arm Neoverse V1 Core Telemetry Specification](https://developer.arm.com/documentation/109216/0100).
+- [Arm Neoverse N2 Core Telemetry Specification](https://developer.arm.com/documentation/109215/0200).
+- [Arm Neoverse V2 Core Telemetry Specification](https://developer.arm.com/documentation/109528/0200).
+- [Arm Neoverse N3 Core Telemetry Specification](https://developer.arm.com/documentation/109530/0100).
+- [Arm Neoverse V3 Core Telemetry Specification](https://developer.arm.com/documentation/107905/0100).
 - [Arm Statistical Profiling Extension: Performance Analysis Methodology White Paper](https://developer.arm.com/documentation/109429/latest/) documentation.
 - [Arm Neoverse V1 – Top-down Methodology for Performance Analysis & Telemetry Specification](https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/arm-neoverse-v1-top-down-methodology) blog (with white paper).
 
