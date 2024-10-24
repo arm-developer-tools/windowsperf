@@ -61,7 +61,7 @@ def test_wperf_man_not_compatible_cpu_throws(cpu, argument):
     expected_error = f"warning: \"{argument}\" not found! Ensure it is compatible with the specified CPU".encode()
     assert expected_error in stderr
 
-# Note - stacked parametrizations creates permutations
+# Note - stacked parameterizations creates permutations
 @pytest.mark.parametrize("cpu",
 [
     (""),
