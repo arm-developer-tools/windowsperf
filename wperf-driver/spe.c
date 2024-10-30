@@ -99,11 +99,13 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             }
             */
 
+            _WriteStatusReg(PMSCR_EL1, 0x00);
             if (context->config_flags & SPE_CTL_FLAG_TS)
             {
                 // Enable timestamps with ts_enable filter:
-                _WriteStatusReg(PMSICR_EL1, _ReadStatusReg(PMSICR_EL1) | BIT(5));   // TS, bit [5]
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: ts_enable=1 PMSICR_EL1=0x%llX\n", _ReadStatusReg(PMSICR_EL1)));
+                UINT64 pmscr_el1_val = 0x00 | BIT(5);   // PMSCR_EL1.TS
+                _WriteStatusReg(PMSCR_EL1, pmscr_el1_val);
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: ts_enable=1 PMSICR_EL1=0x%llX\n", _ReadStatusReg(PMSCR_EL1) & 0b11111011));
             }
 
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
