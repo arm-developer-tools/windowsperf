@@ -259,11 +259,11 @@ struct spe_ctl_hdr
 #define SPE_OPERATON_FILTER_B  0b001
 #define SPE_OPERATON_FILTER_LD 0b010
 #define SPE_OPERATON_FILTER_ST 0b100
-#define SPE_OPERATON_FILTER_TS 0b1000
     UINT64 event_filter;
     UINT64 config_flags;
     UINT32 interval;
 #define SPE_CTL_FLAG_RND (0x1 << 0)
+#define SPE_CTL_FLAG_TS  (0x1 << 1)
 };
 
 //

@@ -347,16 +347,17 @@ void pmu_device::spe_start(const std::map<std::wstring, bool>& flags)
     ctl.cores_idx.cores_no[0] = cores_idx[0];
     ctl.event_filter = 0;
     UINT8 opfilter = 0;
+    UINT64 config_flags = 0;
     for (const auto& [key, val] : flags)
     {
         if ((key == L"load_filter" || key == L"ld") && val)     opfilter |= SPE_OPERATON_FILTER_LD;
         if ((key == L"store_filter" || key == L"st") && val)    opfilter |= SPE_OPERATON_FILTER_ST;
         if ((key == L"branch_filter" || key == L"b") && val)    opfilter |= SPE_OPERATON_FILTER_B;
-        if ((key == L"ts_enable" || key == L"ts") && val)       opfilter |= SPE_OPERATON_FILTER_TS;
+        if ((key == L"ts_enable" || key == L"ts") && val)       config_flags |= SPE_CTL_FLAG_TS;
     }
     ctl.operation_filter = opfilter;
     ctl.interval = 1024;
-    ctl.config_flags = 0;
+    ctl.config_flags = config_flags;
 
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_START, &ctl, sizeof(struct spe_ctl_hdr), NULL, 0, &res_len);
     if (!status)
