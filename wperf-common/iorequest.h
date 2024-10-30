@@ -262,8 +262,8 @@ struct spe_ctl_hdr
     UINT64 event_filter;
     UINT64 config_flags;
     UINT32 interval;
-#define SPE_CTL_FLAG_RND (0x1 << 0)
-#define SPE_CTL_FLAG_TS  (0x1 << 1)
+#define SPE_CTL_FLAG_RND (0x1 << 0)     // config_flags: jitter filter flag
+#define SPE_CTL_FLAG_TS  (0x1 << 1)     // config_flags: ts_enable filter flag
 };
 
 //
