@@ -352,6 +352,7 @@ void pmu_device::spe_start(const std::map<std::wstring, bool>& flags)
         if ((key == L"load_filter" || key == L"ld") && val)     opfilter |= SPE_OPERATON_FILTER_LD;
         if ((key == L"store_filter" || key == L"st") && val)    opfilter |= SPE_OPERATON_FILTER_ST;
         if ((key == L"branch_filter" || key == L"b") && val)    opfilter |= SPE_OPERATON_FILTER_B;
+        if ((key == L"ts_enable" || key == L"ts") && val)       opfilter |= SPE_OPERATON_FILTER_TS;
     }
     ctl.operation_filter = opfilter;
     ctl.interval = 1024;
