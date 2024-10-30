@@ -99,6 +99,11 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             }
             */
 
+            /*
+            * Configure PMSCR_EL1 settings based on user-space flags. By default all settings are disabled
+            * (we zero the register). When user selects flag, e.g. /ts_enable=1/ we enable given setting
+            * (e.g. TS bit) to "ON" in this register.
+            */
             _WriteStatusReg(PMSCR_EL1, 0x00);
             if (context->config_flags & SPE_CTL_FLAG_TS)
             {
