@@ -148,3 +148,5 @@ def test_wperf_list_spe_available():
             assert b"[SPE filter]" in line
         if b"branch_filter" in line:
             assert b"[SPE filter]" in line
+        if b"ts_enable" in line:
+            assert b"[SPE filter]" in line
