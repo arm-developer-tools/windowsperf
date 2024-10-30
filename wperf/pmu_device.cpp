@@ -357,7 +357,7 @@ void pmu_device::spe_start(const std::map<std::wstring, bool>& flags)
     ctl.interval = 1024;
     ctl.config_flags = 0;
 
-    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_START, &ctl, sizeof(struct pmu_ctl_hdr), NULL, 0, &res_len);
+    BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_START, &ctl, sizeof(struct spe_ctl_hdr), NULL, 0, &res_len);
     if (!status)
         throw fatal_exception("PMU_CTL_SPE_START failed");
         
