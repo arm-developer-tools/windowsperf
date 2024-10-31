@@ -127,12 +127,15 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
     ("load_filter="),
     ("store_filter="),
     ("branch_filter="),
+    ("ts_enable="),
     ("ld="),
     ("st="),
     ("b="),
+    ("ts="),
     ("load_filter=3"),
     ("load_filter=a"),
     ("load_filter=one"),
+    ("ts_enable=one"),
 
     ("load_filter=0,load_filter="),
     ("load_filter=0,store_filter="),
@@ -140,9 +143,11 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
     ("load_filter=0,ld="),
     ("load_filter=0,st="),
     ("load_filter=0,b="),
+    ("load_filter=0,ts="),
     ("load_filter=0,load_filter=3"),
     ("load_filter=0,load_filter=a"),
     ("load_filter=0,load_filter=one"),
+    ("ts_enable=1,ts_enable=one"),
 ]
 )
 def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):

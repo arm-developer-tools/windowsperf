@@ -113,6 +113,32 @@ namespace wperftest
 			Assert::IsTrue(flags[L"branch_filter"] == false);
 		}
 
+		TEST_METHOD(parse_events_str_for_feat_spe_ts_enable_1)
+		{
+			std::wstring events_str = L"arm_spe_0/ts_enable=1/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 1);
+			Assert::IsTrue(flags.count(L"ts_enable"));
+			Assert::IsTrue(flags[L"ts_enable"] == true);
+		}
+
+		TEST_METHOD(parse_events_str_for_feat_spe_ts_enable_0)
+		{
+			std::wstring events_str = L"arm_spe_0/ts_enable=0/";
+			std::map<std::wstring, bool> flags;
+
+			bool ret = parse_events_str_for_feat_spe(events_str, flags);
+
+			Assert::IsTrue(ret);
+			Assert::IsTrue(flags.size() == 1);
+			Assert::IsTrue(flags.count(L"ts_enable"));
+			Assert::IsTrue(flags[L"ts_enable"] == false);
+		}
+
 		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_10)
 		{
 			std::wstring events_str = L"arm_spe_0/branch_filter=1,jitter=0/";
@@ -181,24 +207,27 @@ namespace wperftest
 		* LD enables collection of load sampled operations, including atomic operations that return a value to 
 		  register.
 		* B enables collection of branch sampled operations, including direct and indirect branches and exception
-		  returns.		
+		  returns.
+		* TS enables timestamping with value of generic timer (PMSCR.TS).
 		*/
 
 		TEST_METHOD(parse_events_str_for_feat_spe_2_filters_010)
 		{
-			std::wstring events_str = L"arm_spe_0/ld=0,st=1,b=0/";
+			std::wstring events_str = L"arm_spe_0/ld=0,st=1,b=0,ts=0/";
 			std::map<std::wstring, bool> flags;
 
 			bool ret = parse_events_str_for_feat_spe(events_str, flags);
 
 			Assert::IsTrue(ret);
-			Assert::IsTrue(flags.size() == 3);
+			Assert::IsTrue(flags.size() == 4);
 			Assert::IsTrue(flags.count(L"ld"));
 			Assert::IsTrue(flags.count(L"st"));
 			Assert::IsTrue(flags.count(L"b"));
+			Assert::IsTrue(flags.count(L"ts"));
 			Assert::IsTrue(flags[L"ld"] == false);
 			Assert::IsTrue(flags[L"st"] == true);
 			Assert::IsTrue(flags[L"b"] == false);
+			Assert::IsTrue(flags[L"ts"] == false);
 		}
 	};
 

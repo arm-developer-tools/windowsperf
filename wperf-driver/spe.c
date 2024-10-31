@@ -99,6 +99,20 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             }
             */
 
+            /*
+            * Configure PMSCR_EL1 settings based on user-space flags. By default all settings are disabled
+            * (we zero the register). When user selects flag, e.g. /ts_enable=1/ we enable given setting
+            * (e.g. TS bit) to "ON" in this register.
+            */
+            _WriteStatusReg(PMSCR_EL1, 0x00);
+            if (context->config_flags & SPE_CTL_FLAG_TS)
+            {
+                // Enable timestamps with ts_enable filter:
+                UINT64 pmscr_el1_val = 0x00 | BIT(5);   // PMSCR_EL1.TS
+                _WriteStatusReg(PMSCR_EL1, pmscr_el1_val);
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: ts_enable=1 PMSICR_EL1=0x%llX\n", _ReadStatusReg(PMSCR_EL1) & 0b11111011));
+            }
+
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
             //PMBPTR_EL1[63:56] must equal PMBLIMITR_EL1.LIMIT[63:56]
             _WriteStatusReg(PMBLIMITR_EL1, (UINT64)SpeMemoryBufferLimit | PMBLIMITR_EL1_E); // Enable PMBLIMITR_ELI1.E
