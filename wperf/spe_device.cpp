@@ -143,7 +143,7 @@ namespace SPEParser
                     m_type = type;
                     m_header0 = byte;
                     m_state = ParsingState::READING_DATA;
-                    m_bytes_to_read = ((m_header0 & (~MASK_MIDDLE)) >> 4) + 1;
+                    m_bytes_to_read = (static_cast<size_t>((m_header0 & (~MASK_MIDDLE)) >> 4)) + 1;
                     break;
                 }
                 case PacketType::OPERATION_TYPE:
