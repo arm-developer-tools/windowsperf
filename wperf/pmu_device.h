@@ -125,7 +125,7 @@ public:
 
     // SPE
     void spe_init();
-    void spe_start(const std::map<std::wstring, bool>& flags);
+    void spe_start(const std::map<std::wstring, uint32_t>& flags);
     void spe_stop();
     bool spe_get();
     void pmu_device::spe_print_core_stats(std::vector<struct evt_noted>& events);
@@ -247,7 +247,7 @@ public:
 
     // SPE
     bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
-    std::map<std::wstring, bool> m_sampling_flags;      // SPE: sampling flags
+    std::map<std::wstring, uint32_t> m_sampling_flags;      // SPE: sampling flags
     std::wstring get_spe_version_name();                // SPE: get SPE feature exact version based on HW detection
 
     uint8_t gpc_nums[EVT_CLASS_NUM];
