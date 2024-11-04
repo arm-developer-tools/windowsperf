@@ -209,7 +209,7 @@ bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstrin
                 || value < 0
                 || value > std::numeric_limits<int32_t>::max())
             {
-                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << filter_name << L"='" << filter << L"'." << std::endl;
+                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << filter_name << L"='" << filter_value << L"'." << std::endl;
                 throw fatal_exception("ERROR_SPE_FILTER_VALUE");
             }
 

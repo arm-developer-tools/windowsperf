@@ -73,7 +73,7 @@ public:
         return m_filter_names_aliases.count(fname);
     }
 
-    static uint32_t max_filter_val(std::wstring fname)
+    static uint64_t max_filter_val(std::wstring fname)
     {
         if (CaseInsensitiveWStringComparision(fname, L"min_latency"))
             return 0xFFFF;  // PMSLATFR_EL1, Sampling Latency Filter Register, MINLAT, bits [15:0]
