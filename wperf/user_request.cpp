@@ -1076,7 +1076,7 @@ void user_request::show_events()
 void user_request::check_events(enum evt_class evt, int max)
 {
     if (ioctl_events.count(evt) &&
-        ioctl_events[evt].size() > MAX_MANAGED_CORE_EVENTS)
+        ioctl_events[evt].size() > max)
     {
         m_out.GetErrorOutputStream() << L"error: too many " << pmu_events::get_evt_class_name(evt) << L" (including padding) events: "
             << ioctl_events[evt].size() << L" > " << max << std::endl;
