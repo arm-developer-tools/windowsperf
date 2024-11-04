@@ -174,7 +174,7 @@ void parse_events_extra(std::wstring events_str, std::map<enum evt_class, std::v
     $ perf record -e arm_spe/branch_filter=1,jitter=1/ -- workload
     $ perf record -e spe/branch_filter=1,jitter=1/ -- workload
 */
-bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstring, bool>& flags)
+bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstring,uint64_t>& flags)
 {
     // Detect arm_spe_0/*/      - where '*'
     if (events_str.size() >= std::wstring(L"arm_spe_0//").size()
@@ -204,13 +204,16 @@ bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstrin
                 throw fatal_exception("ERROR_SPE_FILTER_NAME");
             }
 
-            if (filter_value != L"0" && filter_value != L"1")
+            int32_t value = 0;
+            if (ConvertWStringToInt(filter_value, value, 0) == false
+                || value < 0
+                || value > std::numeric_limits<int32_t>::max())
             {
-                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << L"'" << filter << L"'. 0 or 1 allowed" << std::endl;
+                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << filter_name << L"='" << filter_value << L"'." << std::endl;
                 throw fatal_exception("ERROR_SPE_FILTER_VALUE");
             }
 
-            flags[filter_name] = true ? filter_value == L"1" : false;
+            flags[filter_name] = static_cast<uint32_t>(value);
         }
 
         return true;

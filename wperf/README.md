@@ -1767,7 +1767,7 @@ If `FeatureString` for both components (`wperf` and `wperf-driver`) contains `+s
 
 ### arm_spe_0// format
 
-Users can specify SPE filters using the `-e` command line option with `arm_spe_0//`. We've introduced the `arm_spe_0/*/` notation for the `record` command, where `*` represents a comma-separated list of supported filters. Currently, we support filters such as `store_filter=`, `load_filter=`, and `branch_filter=`, or their short equivalents like `st=`, `ld=`, and `b=`. Use `0` or `1` to disable or enable a given filter. For example:
+Users can specify SPE filters using the `-e` command line option with `arm_spe_0//`. We've introduced the `arm_spe_0/*/` notation for the `record` command, where `*` represents a comma-separated list of supported filters. Currently, we support filters such as `store_filter=`, `load_filter=`, `branch_filter=` and `ts_enable=`, or their short equivalents like `st=`, `ld=`, `b=` and `ts=`. Use `0` or `1` to disable or enable a given filter. For example:
 
 ```
 arm_spe_0/branch_filter=1/
@@ -1775,6 +1775,13 @@ arm_spe_0/load_filter=1,branch_filter=0/
 arm_spe_0/ld=1,branch_filter=0/
 arm_spe_0/st=0,ld=0,b=1/
 ```
+
+### List of supported SPE filters
+
+- `branch_filter=1`- collect branches only.
+- `load_filter=1` - collect loads only.
+- `store_filter=1` - collect stores only.
+- `ts_enable=1` - enable timestamping with value of generic timer.
 
 #### Filtering sample records
 

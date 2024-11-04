@@ -30,11 +30,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <windows.h>
+#include <vector>
+#include <map>
 #include <string>
 #include "wperf-common/macros.h"
 #include "wperf-common/iorequest.h"
-#include <vector>
-#include <map>
+#include "utils.h"
+
 
 class spe_device
 {
@@ -69,5 +71,12 @@ public:
 
     static bool is_filter_name_alias(std::wstring fname) {
         return m_filter_names_aliases.count(fname);
+    }
+
+    static uint64_t max_filter_val(std::wstring fname)
+    {
+        if (CaseInsensitiveWStringComparision(fname, L"min_latency"))
+            return 0xFFFF;  // PMSLATFR_EL1, Sampling Latency Filter Register, MINLAT, bits [15:0]
+        return 1;
     }
 };

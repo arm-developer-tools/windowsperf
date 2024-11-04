@@ -115,7 +115,7 @@ public:
     std::map<std::wstring, metric_desc> metrics;
     std::map<uint32_t, uint32_t> sampling_inverval;     //!< [event_index] -> event_sampling_interval
     bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
-    std::map<std::wstring, bool> m_sampling_flags;      // SPE: sampling flags
+    std::map<std::wstring, uint64_t> m_sampling_flags;      // SPE: sampling flags
 
 private:
     bool all_cores_p() const {

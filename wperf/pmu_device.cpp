@@ -336,7 +336,7 @@ bool pmu_device::spe_get()
     return m_spe_size_to_copy > 0;
 }
 
-void pmu_device::spe_start(const std::map<std::wstring, bool>& flags)
+void pmu_device::spe_start(const std::map<std::wstring, uint64_t>& flags)
 {
     if (!m_has_spe) return;
 

@@ -60,6 +60,38 @@ void ReplaceAllTokensInWString(std::wstring& str, const std::wstring& old_token,
 std::wstring GetFullFilePath(std::wstring dir_str, std::wstring filename_str);
 
 /// <summary>
+/// Convert WSTRING to (unsigned) long long.
+/// </summary>
+/// <param name="input">WSTRING to parse</param>
+/// <param name="output">Value conveted to (U)LL</param>
+/// <param name="base">std::stoll//stoull base parameter</param>
+template<typename T>
+bool ConvertWStringToInt(std::wstring input, T& output, int base = 0)
+{
+    static_assert(std::is_integral<T>::value, "Integral type required in output<T>");
+
+    try
+    {
+        std::size_t pos = 0;
+        if (std::is_unsigned_v<T>)
+            output = static_cast<T>(std::stoull(input, &pos, base));
+        else
+            output = static_cast<T>(std::stoll(input, &pos, base));
+    }
+    catch (std::invalid_argument const&)
+    {
+        return false;
+    }
+    catch (std::out_of_range const&)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
+/// <summary>
 /// Converts integer VALUE to decimal WSTRING, e.g. 123 -> "123"
 /// </summary>
 /// <param name="Value">Value to convert to hex string</param>

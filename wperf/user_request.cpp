@@ -506,6 +506,14 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                                 << std::endl;
                             throw fatal_exception("ERROR_SPE_FILTER_ERR");
                         }
+
+                        if (value > spe_device::max_filter_val(key))
+                        {
+                            m_out.GetErrorOutputStream() << L"SPE filter '" << key << L"' value out of range, use: 0-"
+                                << spe_device::max_filter_val(key)
+                                << std::endl;
+                            throw fatal_exception("ERROR_SPE_FILTER_ERR");
+                        }
                     }
 
                     /* When the user requests SPE we always include hidden events for the PMU. This 

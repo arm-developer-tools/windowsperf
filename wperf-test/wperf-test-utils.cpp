@@ -1212,5 +1212,121 @@ namespace wperftest
 			Assert::AreEqual(ConvertNumberWithUnit(double(60), std::wstring(L"d"), unitMap), double(5184000));
 			Assert::AreEqual(ConvertNumberWithUnit(double(2.5), std::wstring(L"h"), unitMap), double(9000));
 		}
+
+		TEST_METHOD(test_ConvertWStringToInt_type_uint32_t)
+		{
+			uint32_t value;
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"1"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"32"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"1025"), value, 0));
+
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0x00"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0x10"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0xFAFAFA"), value, 0));
+		}
+
+		TEST_METHOD(test_ConvertWStringToInt_value_uint32_t)
+		{
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"0"), value, 0);
+				Assert::IsTrue(value == 0);
+			}
+
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"0x00"), value, 0);
+				Assert::IsTrue(value == 0);
+			}
+
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"1"), value, 0);
+				Assert::IsTrue(value == 1);
+			}
+
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"0x1"), value, 0);
+				Assert::IsTrue(value == 0x1);
+			}
+
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"0x16"), value, 0);
+				Assert::IsTrue(value == 0x16);
+			}
+
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"0xaF12D"), value, 0);
+				Assert::IsTrue(value == 0xAF12D);
+			}
+
+			{
+				uint32_t value;
+				ConvertWStringToInt(std::wstring(L"7919"), value, 0);
+				Assert::IsTrue(value == 7919);
+			}
+		}
+
+		TEST_METHOD(test_ConvertWStringToInt_type_uint64_t)
+		{
+			uint64_t value;
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"1"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"32"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"1025"), value, 0));
+
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0x00"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0x10"), value, 0));
+			Assert::IsTrue(ConvertWStringToInt(std::wstring(L"0xDEADBEAF"), value, 0));
+		}
+
+		TEST_METHOD(test_ConvertWStringToInt_value_uint64_t)
+		{
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"0"), value, 0);
+				Assert::IsTrue(value == 0);
+			}
+
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"0x00"), value, 0);
+				Assert::IsTrue(value == 0);
+			}
+
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"1"), value, 0);
+				Assert::IsTrue(value == 1);
+			}
+
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"0x1"), value, 0);
+				Assert::IsTrue(value == 0x1);
+			}
+
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"0x16"), value, 0);
+				Assert::IsTrue(value == 0x16);
+			}
+
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"0xaF12D"), value, 0);
+				Assert::IsTrue(value == 0xAF12D);
+			}
+
+			{
+				uint64_t value;
+				ConvertWStringToInt(std::wstring(L"7919"), value, 0);
+				Assert::IsTrue(value == 7919);
+			}
+		}
 	};
 }
