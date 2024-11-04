@@ -99,6 +99,31 @@ def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
 
 @pytest.mark.parametrize("SPE_FILTERS",
 [
+    ("b=2"),
+    ("ld=3"),
+    ("st=4"),
+    ("load_filter=10"),
+    ("store_filter=0x2"),
+    ("branch_filter=0xf1da"),
+]
+)
+def test_cpython_bench_spe_cli_filter_value_out_of_range(SPE_FILTERS):
+    """ Test `wperf record` with SPE CLI filter value
+
+    "SPE filter 'ts_enable' value out of range, use: 0-1"
+
+    """
+    #
+    # Run for CPython payload but we should fail when we hit CLI parser errors
+    #
+    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    _, stderr = run_command(cmd)
+
+    assert b"unexpected arg" not in stderr
+    assert b"value out of range, use:" in stderr
+
+@pytest.mark.parametrize("SPE_FILTERS",
+[
     ("=0"),
     ("=1"),
 
@@ -132,7 +157,6 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
     ("st="),
     ("b="),
     ("ts="),
-    ("load_filter=3"),
     ("load_filter=a"),
     ("load_filter=one"),
     ("ts_enable=one"),
@@ -144,10 +168,23 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
     ("load_filter=0,st="),
     ("load_filter=0,b="),
     ("load_filter=0,ts="),
-    ("load_filter=0,load_filter=3"),
     ("load_filter=0,load_filter=a"),
     ("load_filter=0,load_filter=one"),
     ("ts_enable=1,ts_enable=one"),
+
+    ("b=-1"),
+    ("ld=-1"),
+    ("st=-1"),
+    ("load_filter=-10"),
+    ("store_filter=-0x2"),
+    ("branch_filter=-0xf"),
+
+    ("load_filter=0,load_filter=-1"),
+    ("load_filter=0,store_filter=-1"),
+    ("load_filter=0,branch_filter=-1"),
+    ("load_filter=0,ld=-1"),
+    ("load_filter=0,st=-1"),
+    ("load_filter=0,b=-1"),
 ]
 )
 def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):
