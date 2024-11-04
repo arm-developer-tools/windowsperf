@@ -105,6 +105,9 @@ def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
     ("load_filter=10"),
     ("store_filter=0x2"),
     ("branch_filter=0xf1da"),
+    ("b=1,load_filter=10"),
+    ("b=0,store_filter=0x2"),
+    ("b=1,branch_filter=0xf1da"),
 ]
 )
 def test_cpython_bench_spe_cli_filter_value_out_of_range(SPE_FILTERS):
@@ -203,8 +206,10 @@ def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):
 
 @pytest.mark.parametrize("EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG",
 [
-    ("arm_spe_0", "",               "x_mul:python312_d.dll", 65, "10**10**100"),
-    ("arm_spe_0", "load_filter=1",  "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("arm_spe_0", "",                           "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("arm_spe_0", "load_filter=1",              "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("arm_spe_0", "ts_enable=1",                "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("arm_spe_0", "load_filter=1,ts_enable=1",  "x_mul:python312_d.dll", 65, "10**10**100"),
 ]
 )
 def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG):
