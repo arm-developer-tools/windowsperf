@@ -857,6 +857,14 @@ wmain(
                         sd.desc = b;
                         sd.module = 0;
                         found = true;
+                        if (request.do_verbose)
+                            m_out.GetOutputStream() << "symbol found:\t"
+                                << std::hex
+                                    << L"\t" << L"0x" << sd.desc.sec_idx
+                                    << L"\t" << L"0x" << sd.desc.offset
+                                    << L"\t" << L"0x" << sd.desc.size
+                            << L"\t" << sd.desc.sname << L"\t" << sd.desc.name
+                            << std::endl;
                         break;
                     }
                 }
@@ -898,6 +906,14 @@ wmain(
                                     sd.desc.sname = b.name;
                                     sd.module = &mmd;
                                     found = true;
+                                    if (request.do_verbose)
+                                        m_out.GetOutputStream() << "symbol found:\t"
+                                            << std::hex
+                                                << L"\t" << L"0x" << sd.desc.sec_idx
+                                                << L"\t" << L"0x" << sd.desc.offset
+                                                << L"\t" << L"0x" << sd.desc.size
+                                        << L"\t" << sd.desc.sname << L"\t" << sd.desc.name
+                                        << L"\t" << sd.module->mod_name << std::endl;
                                     break;
                                 }
                         }
