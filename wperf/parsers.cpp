@@ -204,13 +204,16 @@ bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstrin
                 throw fatal_exception("ERROR_SPE_FILTER_NAME");
             }
 
-            if (filter_value != L"0" && filter_value != L"1")
+            int32_t value = 0;
+            if (ConvertWStringToInt(filter_value, value, 0) == false
+                || value < 0
+                || value > std::numeric_limits<int32_t>::max())
             {
-                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << L"'" << filter << L"'. 0 or 1 allowed" << std::endl;
+                m_out.GetErrorOutputStream() << L"incorrect SPE filter value: " << filter_name << L"='" << filter << L"'." << std::endl;
                 throw fatal_exception("ERROR_SPE_FILTER_VALUE");
             }
 
-            flags[filter_name] = true ? filter_value == L"1" : false;
+            flags[filter_name] = static_cast<uint32_t>(value);
         }
 
         return true;
