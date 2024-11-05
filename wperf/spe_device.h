@@ -75,8 +75,9 @@ public:
 
     static uint64_t max_filter_val(std::wstring fname)
     {
-        if (CaseInsensitiveWStringComparision(fname, L"min_latency"))
-            return 0xFFFF;  // PMSLATFR_EL1, Sampling Latency Filter Register, MINLAT, bits [15:0]
+        if (CaseInsensitiveWStringComparision(fname, L"min_latency") ||
+            CaseInsensitiveWStringComparision(fname, L"min"))
+            return SPE_CTL_FLAG_VAL_MASK;  // PMSLATFR_EL1, Sampling Latency Filter Register, MINLAT, bits [15:0]
         return 1;
     }
 };
