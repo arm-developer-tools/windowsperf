@@ -75,14 +75,6 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             
             _WriteStatusReg(PMBPTR_EL1, (UINT64)SpeMemoryBuffer);
            
-            if(context->operation_filter)
-            {
-                _WriteStatusReg(PMSFCR_EL1, PMSFCR_EL1_FT | ((UINT64)context->operation_filter << 16));
-            }
-            else {
-                _WriteStatusReg(PMSFCR_EL1, 0);
-            }
-
             /*
             * Writing to PMSIRR_EL1 and PMSICR_EL1 seems to be innefective for some reason.
             * When PMSIRR_EL1 is written to its value just goes to 0 and PMSICR_EL1 seems to be unchanged.
@@ -98,6 +90,45 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
                 _WriteStatusReg(PMSIRR_EL1, (UINT64)context->interval << 8);
             }
             */
+
+            /*
+            * Setup `Sampling Filter Control Register`
+            */
+            UINT64 pmsfcr = 0x00;
+            if (context->operation_filter)  // Add operation filters (LD, ST, B)
+                pmsfcr = PMSFCR_EL1_FT | ((UINT64)context->operation_filter << 16);
+
+            /*
+            * Setup `Latency filtering`, Samples with a total latency less than PMSLATFR_EL1.MINLAT will not be recorded.
+            */
+            if (context->config_flags & SPE_CTL_FLAG_MIN)   // Set up min_latency=<n>
+            {
+                /*
+                * Configure PMSLATFR_EL1.MINLAT setting based on user-space flag.
+                * `min_latency=<n>` - collect only samples with this latency or higher* (PMSLATFR).
+                *   where <n> is unsigned 16-bit value;
+                * Latency is the total latency from the point at which sampling started on that instruction,
+                * rather than only the execution latency.
+                */
+                UINT16 min_latency = (UINT16)((context->config_flags >> 48) & SPE_CTL_FLAG_VAL_MASK);
+
+                /*
+                * If PMSIDR_EL1.CountSize is 0b0010, PMSLATFR_EL1.MINLAT[15:12] is RES0.
+                */
+                UINT64 pmsidr_el1_value = _ReadStatusReg(PMSIDR_EL1);
+                UINT64 countsize = (pmsidr_el1_value & PMSIDR_EL1_CountSize_MASK) >> 16;
+                if ((countsize & 0xF) == PMSIDR_EL1_CountSize_12Bit)
+                {
+                    min_latency &= SPE_CTL_FLAG_VAL_12_BIT_MASK;  // trim latency to 12-bit value
+                    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u is 12-bit, min_latency is trimmed! \n", min_latency));
+                }
+                _WriteStatusReg(PMSLATFR_EL1, min_latency); // Configure PMSLATFR_EL1.MINLAT
+
+                pmsfcr &= PMSFCR_EL1_FL;    // Enable Filter by latency
+                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u PMSFCR_EL1=0x%llX\n", min_latency, pmsfcr));
+            }
+
+            _WriteStatusReg(PMSFCR_EL1, pmsfcr);
 
             /*
             * Configure PMSCR_EL1 settings based on user-space flags. By default all settings are disabled

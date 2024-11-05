@@ -37,10 +37,17 @@
 #define PMSCR_EL1_E0SPE_E1SPE               0b11
 #define PMBLIMITR_EL1_E                     1ULL
 #define PMBSR_EL1_S                         BIT(17)
-#define PMSFCR_EL1_ST                       BIT(18)
-#define PMSFCR_EL1_LD                       BIT(17)
-#define PMSFCR_EL1_B                        BIT(16)
-#define PMSFCR_EL1_FT                       BIT(1)
+
+#define PMSFCR_EL1_ST                       BIT(18) // Store filter enable
+#define PMSFCR_EL1_LD                       BIT(17) // Load filter enable
+#define PMSFCR_EL1_B                        BIT(16) // Branch filter enable
+#define PMSFCR_EL1_FT                       BIT(1)  // Filter by operation type
+#define PMSFCR_EL1_FL                       BIT(2)  // Filter by latency
+
+#define PMSIDR_EL1_CountSize_MASK           (0x0F << 16)    // CountSize, bits [19:16]
+#define PMSIDR_EL1_CountSize_12Bit          0b0010          // 12-bit saturating counters.
+#define PMSIDR_EL1_CountSize_16Bit          0b0011          // 16-bit saturating counters.
+
 #define PMSIRR_EL1_RND                      BIT(0)
 #define PMBLIMITR_EL1_LIMIT_MASK            (~((UINT64)0xFFF))  // PMBLIMITR.LIMIT, bits [63:12]
 
