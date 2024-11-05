@@ -77,6 +77,9 @@ public:
     {
         if (get_filter_name(fname) == L"min_latency")
             return SPE_CTL_FLAG_VAL_MASK;  // PMSLATFR_EL1, Sampling Latency Filter Register, MINLAT, bits [15:0]
+        else if (CaseInsensitiveWStringComparision(fname, L"period") ||
+            CaseInsensitiveWStringComparision(fname, L"per"))
+            return SPE_CTL_INTERVAL_VAL_MASK;   // PMSIRR_EL1, Sampling Interval Reload Register, INTERVAL, bits [31:8]
         return 1;
     }
 
