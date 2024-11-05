@@ -108,6 +108,15 @@ def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
     ("b=1,load_filter=10"),
     ("b=0,store_filter=0x2"),
     ("b=1,branch_filter=0xf1da"),
+
+    ("ld=1,min=0x10000"),
+    ("load_filter=1,min=0x10000"),
+    ("ld=1,min=0x10000,store_filter=0"),
+    ("load_filter=1,min=0x10000,store_filter=0"),
+    ("ld=1,min_latency=0x10000"),
+    ("load_filter=1,min_latency=0x10000"),
+    ("ld=1,min_latency=0x10000,store_filter=0"),
+    ("load_filter=1,min_latency=0x10000,store_filter=0"),
 ]
 )
 def test_cpython_bench_spe_cli_filter_value_out_of_range(SPE_FILTERS):
