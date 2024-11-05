@@ -857,6 +857,15 @@ wmain(
                         sd.desc = b;
                         sd.module = 0;
                         found = true;
+                        if (request.do_verbose)
+                            m_out.GetOutputStream() << "symbol found:\t"
+                                << std::hex
+                                    << L"\t" << L"0x" << (b.offset + sec_base)
+                                    << L"\t" << L"0x" << sd.desc.sec_idx
+                                    << L"\t" << L"0x" << sd.desc.offset
+                                    << L"\t" << L"0x" << sd.desc.size
+                            << L"\t" << sd.desc.sname << L"\t" << sd.desc.name
+                            << std::endl;
                         break;
                     }
                 }
@@ -898,6 +907,15 @@ wmain(
                                     sd.desc.sname = b.name;
                                     sd.module = &mmd;
                                     found = true;
+                                    if (request.do_verbose)
+                                        m_out.GetOutputStream() << "symbol found:\t"
+                                            << std::hex
+                                                << L"\t" << L"0x" << (b.offset + sec_base)
+                                                << L"\t" << L"0x" << sd.desc.sec_idx
+                                                << L"\t" << L"0x" << sd.desc.offset
+                                                << L"\t" << L"0x" << sd.desc.size
+                                        << L"\t" << sd.desc.sname << L"\t" << sd.desc.name
+                                        << L"\t" << sd.module->mod_name << std::endl;
                                     break;
                                 }
                         }
@@ -1083,10 +1101,9 @@ wmain(
                 if (request.do_verbose)
                 {
                     std::sort(a.pc.begin(), a.pc.end(), sort_pcs);
-
-                    for (int i = 0; i < 10 && i < a.pc.size(); i++)
+                    for (int i = 0; i < a.pc.size(); i++)
                     {
-                        m_out.GetOutputStream() << L"                   " << IntToHexWideString(a.pc[i].first, 20) << L" " << IntToDecWideString(a.pc[i].second, 8) << std::endl;
+                        m_out.GetOutputStream() << L"pc:\t" << IntToHexWideString(a.pc[i].first, 20) << L"\t" << IntToDecWideString(a.pc[i].second, 8) << std::endl;
                         col_pcs.push_back(a.pc[i].first);
                         col_pcs_count.push_back(a.pc[i].second);
                     }
