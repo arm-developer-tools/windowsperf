@@ -124,10 +124,11 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
                 }
                 _WriteStatusReg(PMSLATFR_EL1, min_latency); // Configure PMSLATFR_EL1.MINLAT
 
-                pmsfcr &= PMSFCR_EL1_FL;    // Enable Filter by latency
+                pmsfcr |= PMSFCR_EL1_FL;    // Enable Filter by latency
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u PMSFCR_EL1=0x%llX\n", min_latency, pmsfcr));
             }
 
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: pmsfcr=0x%llX \n", pmsfcr));
             _WriteStatusReg(PMSFCR_EL1, pmsfcr);
 
             /*
