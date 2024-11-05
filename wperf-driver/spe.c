@@ -74,7 +74,8 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             START_WORK_ON_CORE(context->core_idx);
             
             _WriteStatusReg(PMBPTR_EL1, (UINT64)SpeMemoryBuffer);
-           
+            __isb(_ARM64_BARRIER_SY);
+
             /*
             * Setup `Sampling Interval Reload Register`
             */
@@ -101,6 +102,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: pmsirr=0x%llX \n", pmsirr));
             _WriteStatusReg(PMSIRR_EL1, pmsirr);
+            __isb(_ARM64_BARRIER_SY);
 
             /*
             * Setup `Sampling Filter Control Register`
@@ -134,6 +136,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
                     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u is 12-bit, min_latency is trimmed! \n", min_latency));
                 }
                 _WriteStatusReg(PMSLATFR_EL1, min_latency); // Configure PMSLATFR_EL1.MINLAT
+                __isb(_ARM64_BARRIER_SY);
 
                 pmsfcr |= PMSFCR_EL1_FL;    // Enable Filter by latency
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u PMSFCR_EL1=0x%llX\n", min_latency, pmsfcr));
@@ -141,6 +144,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: pmsfcr=0x%llX \n", pmsfcr));
             _WriteStatusReg(PMSFCR_EL1, pmsfcr);
+            __isb(_ARM64_BARRIER_SY);
 
             /*
             * Configure PMSCR_EL1 settings based on user-space flags. By default all settings are disabled
@@ -148,6 +152,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             * (e.g. TS bit) to "ON" in this register.
             */
             _WriteStatusReg(PMSCR_EL1, 0x00);
+            __isb(_ARM64_BARRIER_SY);
             if (context->config_flags & SPE_CTL_FLAG_TS)
             {
                 // Enable timestamps with ts_enable filter:
@@ -157,9 +162,12 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             }
 
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
+            __isb(_ARM64_BARRIER_SY);
             //PMBPTR_EL1[63:56] must equal PMBLIMITR_EL1.LIMIT[63:56]
             _WriteStatusReg(PMBLIMITR_EL1, (UINT64)SpeMemoryBufferLimit | PMBLIMITR_EL1_E); // Enable PMBLIMITR_ELI1.E
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) | PMSCR_EL1_E0SPE_E1SPE); // Enable PMSCR_EL1.{E0SPE,E1SPE}
+            __isb(_ARM64_BARRIER_SY);
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer 0x%llX\n", _ReadStatusReg(PMBPTR_EL1)));
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer limit address %llX\n", _ReadStatusReg(PMBLIMITR_EL1)));
@@ -191,10 +199,12 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             START_WORK_ON_CORE(context->core_idx);
 
             _WriteStatusReg(PMBLIMITR_EL1, 0); // Disable PMBLIMITR_ELI1.E
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) & (~PMSCR_EL1_E0SPE_E1SPE)); // Disable PMSCR_EL1.{E0SPE,E1SPE}
-
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
-            
+            __isb(_ARM64_BARRIER_SY);
+
             STOP_WORK_ON_CORE();
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer 0x%llX\n", _ReadStatusReg(PMBPTR_EL1)));
@@ -225,8 +235,11 @@ static VOID dpc_spe_overflow(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE_DPC profiling buffer full\n"));
             //Disable sampling
             _WriteStatusReg(PMBLIMITR_EL1, 0); // Disable PMBLIMITR_ELI1.E
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) & (~PMSCR_EL1_E0SPE_E1SPE)); // Disable PMSCR_EL1.{E0SPE,E1SPE}
+            __isb(_ARM64_BARRIER_SY);
             spu->profiling_running = FALSE;
         }
     }
