@@ -348,12 +348,28 @@ void pmu_device::spe_start(const std::map<std::wstring, uint64_t>& flags)
     ctl.event_filter = 0;
     UINT8 opfilter = 0;
     UINT64 config_flags = 0;
+    /*
+    * `config_flags` stores multiple values:
+    *
+    * 63                    47                8                       0
+    * +---------------------------------------------------------------+
+    * | PMSLATFR_EL1.MINLAT |      ....       |    SPE_CTL_FLAG_*     |
+    * +---------------------------------------------------------------+
+    *
+    */
+
     for (const auto& [key, val] : flags)
     {
-        if ((key == L"load_filter" || key == L"ld") && val)     opfilter |= SPE_OPERATON_FILTER_LD;
-        if ((key == L"store_filter" || key == L"st") && val)    opfilter |= SPE_OPERATON_FILTER_ST;
+        if ((key == L"load_filter"   || key == L"ld") && val)   opfilter |= SPE_OPERATON_FILTER_LD;
+        if ((key == L"store_filter"  || key == L"st") && val)   opfilter |= SPE_OPERATON_FILTER_ST;
         if ((key == L"branch_filter" || key == L"b") && val)    opfilter |= SPE_OPERATON_FILTER_B;
-        if ((key == L"ts_enable" || key == L"ts") && val)       config_flags |= SPE_CTL_FLAG_TS;
+        if ((key == L"ts_enable"     || key == L"ts") && val)   config_flags |= SPE_CTL_FLAG_TS;
+        if ((key == L"min_latency"   || key == L"min") && val)
+        {
+            UINT64 minlat = val & SPE_CTL_FLAG_VAL_MASK;   // PMSLATFR_EL1.MINLAT is 16 - bit value
+            config_flags |= (minlat << 48);
+            config_flags |= SPE_CTL_FLAG_MIN;
+        }
     }
     ctl.operation_filter = opfilter;
     ctl.interval = 1024;

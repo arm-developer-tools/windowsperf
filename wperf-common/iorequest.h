@@ -261,9 +261,11 @@ struct spe_ctl_hdr
 #define SPE_OPERATON_FILTER_ST 0b100
     UINT64 event_filter;
     UINT64 config_flags;
-    UINT32 interval;
 #define SPE_CTL_FLAG_RND (0x1 << 0)     // config_flags: jitter filter flag
 #define SPE_CTL_FLAG_TS  (0x1 << 1)     // config_flags: ts_enable filter flag
+#define SPE_CTL_FLAG_MIN (0x1 << 2)     // config_flags: min_latency=<n> filter flag
+#define SPE_CTL_FLAG_VAL_MASK 0xFFFF    // PMSLATFR_EL1.MINLAT is 16-bit wide
+    UINT32 interval;
 };
 
 //
