@@ -67,7 +67,7 @@
                                                             }
                                                           }
                                                         }
-                                                      } 
+                                                      }
                                                     }
                                                 }
                                             }
@@ -77,14 +77,15 @@
 
                                 },
                             },
-                            "pcs": {  
-                            "type": "array",                      
+                            "pcs": {
+                            "type": "array",
                             "items": {
                                 "type": "object",
-                                "required": [ "address", "count" ],
+                                "required": [ "address", "count", "in_symbol" ],
                                 "properties": {
                                     "address": { "type" : "integer" },
-                                    "count": { "type": "integer" }
+                                    "count": { "type": "integer" },
+                                    "in_symbol": { "type": "string" }
                                 }
                             },
                             },
@@ -112,7 +113,7 @@
                         }
                     }
                 },
-                "modules_info": { 
+                "modules_info": {
                 	"type" : "array",
                     "items": {
                       "type": "object",
