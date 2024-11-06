@@ -94,11 +94,11 @@ namespace wperftest
 
 		TEST_METHOD(test_spe_device_get_filter_name)
 		{
-			Assert::AreEqual(spe_device::get_filter_name(L"ld").c_str(), L"load_filter");
-			Assert::AreEqual(spe_device::get_filter_name(L"st").c_str(), L"store_filter");
-			Assert::AreEqual(spe_device::get_filter_name(L"b").c_str(), L"branch_filter");
-			Assert::AreEqual(spe_device::get_filter_name(L"ts").c_str(), L"ts_enable");
-			Assert::AreEqual(spe_device::get_filter_name(L"min").c_str(), L"min_latency");
+			Assert::AreEqual(spe_device::get_filter_name(L"ld"), std::wstring(L"load_filter"));
+			Assert::AreEqual(spe_device::get_filter_name(L"st"), std::wstring(L"store_filter"));
+			Assert::AreEqual(spe_device::get_filter_name(L"b"), std::wstring(L"branch_filter"));
+			Assert::AreEqual(spe_device::get_filter_name(L"ts"), std::wstring(L"ts_enable"));
+			Assert::AreEqual(spe_device::get_filter_name(L"min"), std::wstring(L"min_latency"));
 
 		}
 
