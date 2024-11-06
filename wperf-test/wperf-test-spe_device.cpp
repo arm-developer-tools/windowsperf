@@ -99,6 +99,11 @@ namespace wperftest
 			Assert::AreEqual(spe_device::get_filter_name(L"b").c_str(), L"branch_filter");
 			Assert::AreEqual(spe_device::get_filter_name(L"ts").c_str(), L"ts_enable");
 			Assert::AreEqual(spe_device::get_filter_name(L"min").c_str(), L"min_latency");
+
+			uint64_t val = SPE_CTL_FLAG_VAL_MASK;
+
+			Assert::AreEqual(spe_device::max_filter_val(L"min"), val);
+			Assert::AreEqual(spe_device::max_filter_val(L"min_latency"), val);
 		}
 	};
 }
