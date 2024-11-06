@@ -74,6 +74,7 @@ namespace wperftest
 			Assert::IsTrue(spe_device::is_filter_name(L"store_filter"));
 			Assert::IsTrue(spe_device::is_filter_name(L"branch_filter"));
 			Assert::IsTrue(spe_device::is_filter_name(L"ts_enable"));
+			Assert::IsTrue(spe_device::is_filter_name(L"min_latency"));
 		}
 
 		TEST_METHOD(test_spe_device_filter_name_as_alias)
@@ -82,6 +83,7 @@ namespace wperftest
 			Assert::IsTrue(spe_device::is_filter_name(L"st"));
 			Assert::IsTrue(spe_device::is_filter_name(L"b"));
 			Assert::IsTrue(spe_device::is_filter_name(L"ts"));
+			Assert::IsTrue(spe_device::is_filter_name(L"min"));
 		}
 
 		TEST_METHOD(test_spe_device_filter_name_is_alias)
@@ -90,6 +92,7 @@ namespace wperftest
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"st"));
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"b"));
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"ts"));
+			Assert::IsTrue(spe_device::is_filter_name_alias(L"min"));
 		}
 
 		TEST_METHOD(test_spe_device_get_filter_name)
@@ -100,14 +103,26 @@ namespace wperftest
 			Assert::AreEqual(spe_device::get_filter_name(L"ts"), std::wstring(L"ts_enable"));
 			Assert::AreEqual(spe_device::get_filter_name(L"min"), std::wstring(L"min_latency"));
 
+			Assert::AreEqual(spe_device::get_filter_name(L"load_filter"), std::wstring(L"load_filter"));
+			Assert::AreEqual(spe_device::get_filter_name(L"store_filter"), std::wstring(L"store_filter"));
+			Assert::AreEqual(spe_device::get_filter_name(L"branch_filter"), std::wstring(L"branch_filter"));
+			Assert::AreEqual(spe_device::get_filter_name(L"ts_enable"), std::wstring(L"ts_enable"));
+			Assert::AreEqual(spe_device::get_filter_name(L"min_latency"), std::wstring(L"min_latency"));
 		}
 
 		TEST_METHOD(test_max_filter_val)
 		{
-			Assert::AreEqual(spe_device::max_filter_val(L"min"), (uint64_t)SPE_CTL_FLAG_VAL_MASK);
-			Assert::AreEqual(spe_device::max_filter_val(L"min_latency"), (uint64_t)SPE_CTL_FLAG_VAL_MASK);
 			Assert::AreEqual(spe_device::max_filter_val(L"ld"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"st"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"b"), (uint64_t)1);
 			Assert::AreEqual(spe_device::max_filter_val(L"ts"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"min"), (uint64_t)SPE_CTL_FLAG_VAL_MASK);
+
+			Assert::AreEqual(spe_device::max_filter_val(L"load_filter"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"store_filter"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"branch_filter"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"ts_enable"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"min_latency"), (uint64_t)SPE_CTL_FLAG_VAL_MASK);
 		}
 	};
 }
