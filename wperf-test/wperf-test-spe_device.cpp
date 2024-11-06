@@ -91,5 +91,14 @@ namespace wperftest
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"b"));
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"ts"));
 		}
+
+		TEST_METHOD(test_spe_device_get_filter_name)
+		{
+			Assert::AreEqual(spe_device::get_filter_name(L"ld").c_str(), L"load_filter");
+			Assert::AreEqual(spe_device::get_filter_name(L"st").c_str(), L"store_filter");
+			Assert::AreEqual(spe_device::get_filter_name(L"b").c_str(), L"branch_filter");
+			Assert::AreEqual(spe_device::get_filter_name(L"ts").c_str(), L"ts_enable");
+			Assert::AreEqual(spe_device::get_filter_name(L"min").c_str(), L"min_latency");
+		}
 	};
 }

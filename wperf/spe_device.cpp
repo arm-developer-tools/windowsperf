@@ -488,3 +488,10 @@ bool spe_device::is_spe_supported(UINT64 id_aa64dfr0_el1_value)
     return false;
 #endif
 }
+
+std::wstring spe_device::get_filter_name(std::wstring fname)
+{
+    if (is_filter_name_alias(fname))
+        return m_filter_names_aliases.at(fname);
+    return fname;
+}

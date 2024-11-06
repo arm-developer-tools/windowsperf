@@ -64,7 +64,7 @@ public:
     static void get_samples(const std::vector<UINT8>& spe_buffer, std::vector<FrameChain>& raw_samples, std::map<UINT64, std::wstring>& spe_events);
 
     static bool is_filter_name(std::wstring fname) {
-        if (m_filter_names_aliases.count(fname))
+        if (is_filter_name_alias(fname))
             fname = m_filter_names_aliases.at(fname);
         return std::find(m_filter_names.begin(), m_filter_names.end(), fname) != m_filter_names.end();
     }
@@ -80,4 +80,6 @@ public:
             return SPE_CTL_FLAG_VAL_MASK;  // PMSLATFR_EL1, Sampling Latency Filter Register, MINLAT, bits [15:0]
         return 1;
     }
+
+    static std::wstring get_filter_name(std::wstring fname);
 };
