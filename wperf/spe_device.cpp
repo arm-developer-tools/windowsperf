@@ -489,6 +489,12 @@ bool spe_device::is_spe_supported(UINT64 id_aa64dfr0_el1_value)
 #endif
 }
 
+/// <summary>
+/// Retrieves the filter name for the given filter name or alias. If the filter name is an alias,
+/// the corresponding filter name is returned; otherwise, the original filter name is returned.
+/// </summary>
+/// <param name="fname">The filter name or alias for which the filter name is to be retrieved.</param>
+/// <returns>The filter name if the full filter name.</returns>
 std::wstring spe_device::get_filter_name(std::wstring fname)
 {
     if (is_filter_name_alias(fname))

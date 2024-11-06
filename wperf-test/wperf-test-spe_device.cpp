@@ -86,7 +86,7 @@ namespace wperftest
 
 		TEST_METHOD(test_spe_device_filter_name_is_alias)
 		{
-			Assert::IsTrue(spe_device::is_filter_name_alias (L"ld"));
+			Assert::IsTrue(spe_device::is_filter_name_alias(L"ld"));
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"st"));
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"b"));
 			Assert::IsTrue(spe_device::is_filter_name_alias(L"ts"));
@@ -100,10 +100,14 @@ namespace wperftest
 			Assert::AreEqual(spe_device::get_filter_name(L"ts").c_str(), L"ts_enable");
 			Assert::AreEqual(spe_device::get_filter_name(L"min").c_str(), L"min_latency");
 
-			uint64_t val = SPE_CTL_FLAG_VAL_MASK;
+		}
 
-			Assert::AreEqual(spe_device::max_filter_val(L"min"), val);
-			Assert::AreEqual(spe_device::max_filter_val(L"min_latency"), val);
+		TEST_METHOD(test_max_filter_val)
+		{
+			Assert::AreEqual(spe_device::max_filter_val(L"min"), (uint64_t)SPE_CTL_FLAG_VAL_MASK);
+			Assert::AreEqual(spe_device::max_filter_val(L"min_latency"), (uint64_t)SPE_CTL_FLAG_VAL_MASK);
+			Assert::AreEqual(spe_device::max_filter_val(L"ld"), (uint64_t)1);
+			Assert::AreEqual(spe_device::max_filter_val(L"ts"), (uint64_t)1);
 		}
 	};
 }
