@@ -1283,8 +1283,8 @@ wmain(
 
             TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
             pcs_table.PresetHeaders();
-            pcs_table.Insert(col_pcs, col_pcs_count);
-            m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables,pcs_table);
+            pcs_table.Insert(col_pcs, col_pcs_count, col_pcs_in_symbol);
+            m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables, pcs_table);
             m_globalSamplingJSON.m_sample_display_row = request.sample_display_row;
 
             if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)

@@ -93,7 +93,7 @@ make_arch=ARM64
 
 # By default we build with Debug configuration. Define config variable to change default
 # value.
-make_config=Debug
+make_config=Debug+SPE
 
 ifdef arch
 	make_arch=$(arch)
