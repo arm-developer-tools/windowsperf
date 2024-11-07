@@ -59,7 +59,7 @@ if not wperf_event_is_available("arm_spe_0//"):
 
 ### Test cases
 
-@pytest.mark.parametrize("SPE_FILTERS",
+@pytest.mark.parametrize("spe_filters",
 [
     ("x"),
     ("_"),
@@ -82,22 +82,22 @@ if not wperf_event_is_available("arm_spe_0//"):
     ("load_filter=0,branch_filter"),      # Should be e.g. `branch_filter=0`
 ]
 )
-def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
+def test_cpython_bench_spe_cli_incorrect_filter(spe_filters):
     """ Test `wperf record` with SPE CLI not OK filters, we expect:
 
-    "incorrect SPE filter: '<SPE_FILTERS>' in <SPE_FILTERS>"
+    "incorrect SPE filter: '<spe_filters>' in <spe_filters>"
 
     """
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
-    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    cmd = f"wperf record -e arm_spe_0/{spe_filters}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
     assert b"unexpected arg" not in stderr
     assert b"incorrect SPE filter:" in stderr
 
-@pytest.mark.parametrize("SPE_FILTERS",
+@pytest.mark.parametrize("spe_filters",
 [
     ("b=2"),
     ("ld=3"),
@@ -119,7 +119,7 @@ def test_cpython_bench_spe_cli_incorrect_filter(SPE_FILTERS):
     ("load_filter=1,min_latency=0x10000,store_filter=0"),
 ]
 )
-def test_cpython_bench_spe_cli_filter_value_out_of_range(SPE_FILTERS):
+def test_cpython_bench_spe_cli_filter_value_out_of_range(spe_filters):
     """ Test `wperf record` with SPE CLI filter value
 
     "SPE filter 'ts_enable' value out of range, use: 0-1"
@@ -128,7 +128,7 @@ def test_cpython_bench_spe_cli_filter_value_out_of_range(SPE_FILTERS):
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
-    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    cmd = f"wperf record -e arm_spe_0/{spe_filters}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
     assert b"unexpected arg" not in stderr
@@ -143,23 +143,23 @@ def test_cpython_bench_spe_cli_filter_value_out_of_range(SPE_FILTERS):
     ("load_filter=0,=1"),
 ]
 )
-def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
+def test_cpython_bench_spe_cli_incorrect_filter_name(spe_filters):
     """ Test `wperf record` with SPE CLI not OK filters, we expect:
 
-    "incorrect SPE filter name: '<SPE_FILTERS>' in <SPE_FILTERS>"
+    "incorrect SPE filter name: '<spe_filters>' in <spe_filters>"
 
     This error is for "empty" filter name.
     """
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
-    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    cmd = f"wperf record -e arm_spe_0/{spe_filters}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
     assert b"unexpected arg" not in stderr
     assert b"incorrect SPE filter name:" in stderr
 
-@pytest.mark.parametrize("SPE_FILTERS",
+@pytest.mark.parametrize("spe_filters",
 [
     ("load_filter="),
     ("store_filter="),
@@ -199,15 +199,15 @@ def test_cpython_bench_spe_cli_incorrect_filter_name(SPE_FILTERS):
     ("load_filter=0,b=-1"),
 ]
 )
-def test_cpython_bench_spe_cli_incorrect_filter_value(SPE_FILTERS):
+def test_cpython_bench_spe_cli_incorrect_filter_value(spe_filters):
     """ Test `wperf record` with SPE CLI not OK filters, we expect:
 
-    "incorrect SPE filter value: '<SPE_FILTERS>' in <SPE_FILTERS>"
+    "incorrect SPE filter value: '<spe_filters>' in <spe_filters>"
     """
     #
     # Run for CPython payload but we should fail when we hit CLI parser errors
     #
-    cmd = f"wperf record -e arm_spe_0/{SPE_FILTERS}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
+    cmd = f"wperf record -e arm_spe_0/{spe_filters}/ -c 4 --timeout 3 --json -- python_d.exe -c 10**10**100"
     _, stderr = run_command(cmd)
 
     assert b"unexpected arg" not in stderr
@@ -349,14 +349,14 @@ def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, verbose, event,
     except Exception as err:
         assert False, f"Unexpected {err=}, {type(err)=}, cmd='{cmd}'"
 
-@pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
+@pytest.mark.parametrize("spe_filters,python_arg",
 [
-    ("arm_spe_0", "",                   "10**10**100"),
-    ("arm_spe_0", "load_filter=1",      "10**10**100"),
-    ("arm_spe_0", "load_filter=1,st=1", "10**10**100"),
+    ("",                   "10**10**100"),
+    ("load_filter=1",      "10**10**100"),
+    ("load_filter=1,st=1", "10**10**100"),
 ]
 )
-def test_cpython_bench_spe_consistency(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
+def test_cpython_bench_spe_consistency(request, tmp_path, spe_filters, python_arg):
     """ Test SPE JSON output against stdout scheme """
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
@@ -364,7 +364,7 @@ def test_cpython_bench_spe_consistency(request, tmp_path, EVENT,SPE_FILTERS,PYTH
     if not check_if_file_exists(pyhton_d_exe_path):
         pytest.skip(f"Can't locate CPython native executable in {pyhton_d_exe_path}")
 
-    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+    cmd = f"wperf record -e arm_spe_0/{spe_filters}/ -c 2 --timeout 5 --json -- {pyhton_d_exe_path} -c {python_arg}"
     stdout, _ = run_command(cmd.split())
 
     json_output = json.loads(stdout)
