@@ -159,7 +159,7 @@ def test_ustress_bench_build_ustress__make_cpu():
     ### Build ustress for this platform
     product_name = get_product_name()
     CPU = get_make_CPU_name(product_name)
-    stdout, _ = run_command(f"make CPU={CPU}", TS_USTRESS_DIR)   # Build all tests
+    stdout, _ = run_command(f"make CPU={CPU} USE_C=1", TS_USTRESS_DIR)   # Build all tests, USE_C=1 - fallback to C implementation.
 
     # Build sanity checks, e.g.:
     # clang -std=c11 -O2 -g -Wall -pedantic -DCPU_NEOVERSE_N1  --target=arm64-pc-windows-msvc -o branch_direct_workload.exe branch_direct_workload.c
