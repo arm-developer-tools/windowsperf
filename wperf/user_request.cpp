@@ -138,16 +138,17 @@ OPTIONS:
         Number of consecutive counts in timeline mode (disabled by default).
 
     --annotate
-        Enable translating addresses taken from samples in sample/record mode into source code line numbers.
+        Enable translating addresses taken from samples in sample/record mode
+        into source code line numbers.
 
     --disassemble
         Enable disassemble output on sampling mode. Implies 'annotate'.
 
     --image_name
-        Specify the image name you want to sample.
+        Specify the image (base) name of a module to sample.
 
     --pe_file
-        Specify the PE filename (and path).
+        Specify the PE filename (and path) to sample.
 
     --pdb_file
         Specify the PDB filename (and path), PDB file should directly
@@ -336,6 +337,13 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
     // Deduce image name and PDB file name from PE file name
     if (sample_pe_file.size())
     {
+        /*
+        * if `image_name` is not provided by user with `--image_name` we can
+        * deduce image / base module name based on PE file name provided with
+        * `--pe_file`. In most cases these are the same. In case image name is
+        * different than PE name users should provide `image_name` to remove
+        * ambiguity.
+        */
         if (sample_image_name.empty())
         {
             sample_image_name = sample_pe_file;
@@ -343,6 +351,12 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
                 m_out.GetOutputStream() << L"deduced image name '" << sample_image_name << L"'" << std::endl;
         }
 
+        /*
+        * We can also deduce PE file's corresponding PDB file (with debug information)
+        * based on PE file name (and path). Assumptions is that PDB files and PE files
+        * are located in the same directory and have the same name (excluding extension).
+        * E.g. `c:\path\to\image.exe` ->`c:\path\to\image.pdb`.
+        */
         if (sample_pdb_file.empty())
         {
             sample_pdb_file = ReplaceFileExtension(sample_pe_file, L"pdb");
