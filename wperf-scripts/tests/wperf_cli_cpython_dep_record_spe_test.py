@@ -134,7 +134,7 @@ def test_cpython_bench_spe_cli_filter_value_out_of_range(spe_filters):
     assert b"unexpected arg" not in stderr
     assert b"value out of range, use:" in stderr
 
-@pytest.mark.parametrize("SPE_FILTERS",
+@pytest.mark.parametrize("spe_filters",
 [
     ("=0"),
     ("=1"),
