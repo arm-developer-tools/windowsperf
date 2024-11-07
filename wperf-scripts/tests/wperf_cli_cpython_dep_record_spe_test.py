@@ -282,13 +282,19 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
     #
     assert median(overheads) >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% SPE sampling hotspot in {HOT_SYMBOL}, overheads={overheads}, cmd={cmd}"
 
-@pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
+@pytest.mark.parametrize("verbose",
+[
+    ("-v"),
+    (""),
+]
+)
+@pytest.mark.parametrize("event,spe_filters,python_arg",
 [
     ("arm_spe_0", "",              "10**10**100"),
     ("arm_spe_0", "load_filter=1", "10**10**100"),
 ]
 )
-def test_cpython_bench_spe_json_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
+def test_cpython_bench_spe_json_schema(request, tmp_path, verbose, event, spe_filters, python_arg):
     """ Test SPE JSON output against scheme """
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
@@ -299,7 +305,7 @@ def test_cpython_bench_spe_json_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTH
     test_path = os.path.dirname(request.path)
     file_path = tmp_path / 'test.json'
 
-    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --output {str(file_path)} -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+    cmd = f"wperf record -e {event}/{spe_filters}/ -c 2 {verbose} --timeout 5 --output {str(file_path)} -- {pyhton_d_exe_path} -c {python_arg}"
     _, _ = run_command(cmd.split())
 
     json_output = {}
@@ -309,7 +315,7 @@ def test_cpython_bench_spe_json_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTH
             json_output = json.loads(json_file.read())
         validate(instance=json_output, schema=get_schema("spe", test_path))
     except Exception as err:
-        assert False, f"Unexpected {err=}, {type(err)=}"
+        assert False, f"Unexpected {err=}, {type(err)=}, cmd='{cmd}'"
 
 @pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
 [
