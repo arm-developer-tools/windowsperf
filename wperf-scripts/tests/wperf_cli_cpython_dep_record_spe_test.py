@@ -317,13 +317,19 @@ def test_cpython_bench_spe_json_schema(request, tmp_path, verbose, event, spe_fi
     except Exception as err:
         assert False, f"Unexpected {err=}, {type(err)=}, cmd='{cmd}'"
 
-@pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
+@pytest.mark.parametrize("verbose",
+[
+    ("-v"),
+    (""),
+]
+)
+@pytest.mark.parametrize("event,spe_filters,python_arg",
 [
     ("arm_spe_0", "",              "10**10**100"),
     ("arm_spe_0", "load_filter=1", "10**10**100"),
 ]
 )
-def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, EVENT,SPE_FILTERS,PYTHON_ARG):
+def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, verbose, event, spe_filters, python_arg):
     """ Test SPE JSON output against stdout scheme """
     ## Execute benchmark
     pyhton_d_exe_path = os.path.join(CPYTHON_EXE_DIR, "python_d.exe")
@@ -333,7 +339,7 @@ def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, EVENT,SPE_FILTE
 
     test_path = os.path.dirname(request.path)
 
-    cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c 2 --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+    cmd = f"wperf record -e {event}/{spe_filters}/ -c 3 {verbose} --timeout 5 --json -- {pyhton_d_exe_path} -c {python_arg}"
     stdout, _ = run_command(cmd.split())
 
     json_output = json.loads(stdout)
@@ -341,7 +347,7 @@ def test_cpython_bench_spe_json_stdout_schema(request, tmp_path, EVENT,SPE_FILTE
     try:
         validate(instance=json_output, schema=get_schema("spe", test_path))
     except Exception as err:
-        assert False, f"Unexpected {err=}, {type(err)=}"
+        assert False, f"Unexpected {err=}, {type(err)=}, cmd='{cmd}'"
 
 @pytest.mark.parametrize("EVENT,SPE_FILTERS,PYTHON_ARG",
 [
