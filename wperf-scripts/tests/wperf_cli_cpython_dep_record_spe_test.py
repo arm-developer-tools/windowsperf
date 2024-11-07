@@ -213,15 +213,15 @@ def test_cpython_bench_spe_cli_incorrect_filter_value(spe_filters):
     assert b"unexpected arg" not in stderr
     assert b"incorrect SPE filter value:" in stderr
 
-@pytest.mark.parametrize("EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG",
+@pytest.mark.parametrize("spe_filters,hot_symbol,hot_minimum,python_arg",
 [
-    ("arm_spe_0", "",                           "x_mul:python312_d.dll", 65, "10**10**100"),
-    ("arm_spe_0", "load_filter=1",              "x_mul:python312_d.dll", 65, "10**10**100"),
-    ("arm_spe_0", "ts_enable=1",                "x_mul:python312_d.dll", 65, "10**10**100"),
-    ("arm_spe_0", "load_filter=1,ts_enable=1",  "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("",                           "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("load_filter=1",              "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("ts_enable=1",                "x_mul:python312_d.dll", 65, "10**10**100"),
+    ("load_filter=1,ts_enable=1",  "x_mul:python312_d.dll", 65, "10**10**100"),
 ]
 )
-def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTHON_ARG):
+def test_cpython_bench_spe_hotspot(spe_filters, hot_symbol, hot_minimum, python_arg):
     """ Test `wperf record` for python_d.exe call for example `Googolplex` calculation.
         We will sample with SPE for one event + filters and we expect one hottest symbol
         with some minimum sampling %."""
@@ -239,7 +239,7 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
         #
         sleep(2)    # Cool-down the core
 
-        cmd = f"wperf record -e {EVENT}/{SPE_FILTERS}/ -c {core_no} --timeout 5 --json -- {pyhton_d_exe_path} -c {PYTHON_ARG}"
+        cmd = f"wperf record -e arm_spe_0/{spe_filters}/ -c {core_no} --timeout 5 --json -- {pyhton_d_exe_path} -c {python_arg}"
         stdout, _ = run_command(cmd)
         core_no += 1
 
@@ -274,13 +274,13 @@ def test_cpython_bench_spe_hotspot(EVENT,SPE_FILTERS,HOT_SYMBOL,HOT_MINIMUM,PYTH
         """
         for event in events:    # Gather all symbol overheads for all events for given symbol
             for sample in event["samples"]:
-                if sample["symbol"] == HOT_SYMBOL:
+                if sample["symbol"] == hot_symbol:
                     overheads.append(int(sample["overhead"]))
 
     #
     # We want to see at least e.g. 70% of samples in e.g `x_mul`:
     #
-    assert median(overheads) >= HOT_MINIMUM, f"expected {HOT_MINIMUM}% SPE sampling hotspot in {HOT_SYMBOL}, overheads={overheads}, cmd={cmd}"
+    assert median(overheads) >= hot_minimum, f"expected {hot_minimum}% SPE sampling hotspot in {hot_symbol}, overheads={overheads}, cmd='{cmd}'"
 
 @pytest.mark.parametrize("verbose",
 [
