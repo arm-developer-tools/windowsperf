@@ -112,16 +112,17 @@ OPTIONS:
         Number of consecutive counts in timeline mode (disabled by default).
 
     --annotate
-        Enable translating addresses taken from samples in sample/record mode into source code line numbers.
+        Enable translating addresses taken from samples in sample/record mode
+        into source code line numbers.
 
     --disassemble
         Enable disassemble output on sampling mode. Implies 'annotate'.
 
     --image_name
-        Specify the image name you want to sample.
+        Specify the image (base) name of a module to sample.
 
     --pe_file
-        Specify the PE filename (and path).
+        Specify the PE filename (and path) to sample.
 
     --pdb_file
         Specify the PDB filename (and path), PDB file should directly
@@ -133,7 +134,7 @@ OPTIONS:
     --sample-display-row
         Set how many samples you want to see in the summary (50 by default).
 
-    -s, --symbol
+    --symbol
         Filter results for specific symbols (for use with 'record' and 'sample' commands).
 
     --record_spawn_delay
@@ -183,6 +184,8 @@ OPTIONS aliases:
 
     sleep
         Alias of `--timeout`.
+    -s
+        Alias of `--symbol`.
 
 EXAMPLES:
 
@@ -212,6 +215,11 @@ EXAMPLES:
     with frequency `100000` on core #1 for 30 seconds.
     Hint: add `--annotate` or `--disassemble` to `wperf record` command line
     parameters to increase sampling "resolution".
+
+    > wperf record -e arm_spe_0/ld=1/ -c 8 --cpython\PCbuild\arm64\python_d.exe -c 10**10**100
+    Launch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable
+    collection of load sampled operations, including atomic operations that return a value to a register.
+    Hint: add `--annotate` or `--disassemble` to `wperf record` command.
 ```
 
 ## Important Note: Use of curly braces in command line
