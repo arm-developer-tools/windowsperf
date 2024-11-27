@@ -28,8 +28,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "arg-parser-arg.h"
 #include <stdexcept>
+#include "arg-parser-arg.h"
+#include "utils.h"
 
 namespace ArgParserArg {
     arg_parser_arg::arg_parser_arg(
@@ -73,7 +74,7 @@ namespace ArgParserArg {
         return *this;
     }
 
-    size_t arg_parser_arg::get_arg_count() const
+    int arg_parser_arg::get_arg_count() const
     {
         return m_arg_count;
     }
@@ -86,14 +87,7 @@ namespace ArgParserArg {
     std::wstring arg_parser_arg::get_alias_string() const
     {
         // convert alias vector to wstring
-        std::wstring alias_string;
-        for (auto& m_alias : m_aliases) {
-            if (m_alias.empty()) continue;
-            alias_string.append(m_alias + L", ");
-        }
-        if (alias_string.find(L", ") != std::wstring::npos) alias_string.erase(alias_string.end() - 2, alias_string.end());
-
-        return alias_string;
+        return WStringJoin(m_aliases, L", ");
     }
 
     arg_parser_arg arg_parser_arg::add_check_func(std::function<bool(const std::wstring&)> check_func)
@@ -127,9 +121,9 @@ namespace ArgParserArg {
         if (arg_vect.size() == 0 || !is_match(arg_vect[0]))
             return false;
 
-        if (m_arg_count == -1 && arg_vect.size() > 0) m_arg_count = arg_vect.size() - 1;
+        if (m_arg_count == -1 && int(arg_vect.size()) > 0) m_arg_count = int(arg_vect.size()) - 1;
 
-        if (arg_vect.size() < m_arg_count + 1)
+        if (int(arg_vect.size()) < m_arg_count + 1)
             throw std::invalid_argument("Not enough arguments provided.");
 
         if (m_arg_count == 0)

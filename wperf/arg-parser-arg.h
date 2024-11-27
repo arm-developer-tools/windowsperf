@@ -42,7 +42,7 @@ namespace ArgParserArg {
         std::vector<std::wstring> m_aliases{};
         const std::wstring m_description;
 
-        size_t m_arg_count; // -1 for variable number of arguments
+        int m_arg_count; // -1 for variable number of arguments
         bool m_is_parsed = false;
         std::vector<std::wstring> m_values{};
 
@@ -63,7 +63,7 @@ namespace ArgParserArg {
         virtual std::wstring get_all_flags_string() const;
         virtual std::wstring get_usage_text() const;
         arg_parser_arg add_alias(std::wstring new_alias);
-        size_t get_arg_count() const;
+        int get_arg_count() const;
         std::wstring get_name() const;
         std::wstring get_alias_string() const;
         arg_parser_arg add_check_func(std::function<bool(const std::wstring&)> check_func);

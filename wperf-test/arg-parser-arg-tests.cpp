@@ -47,6 +47,9 @@ namespace arg_parser_arg_tests
             arg_parser_arg arg(L"--name", { L"-n" }, L"Description of the argument", { L"default" }, 1);
             Assert::AreEqual(std::wstring(L"--name"), arg.get_name());
             Assert::AreEqual(std::wstring(L"-n"), arg.get_alias_string());
+            auto values = arg.get_values();
+            Assert::AreEqual(size_t(1), values.size());
+            Assert::AreEqual(std::wstring(L"default"), values[0]);
             Assert::AreEqual(std::wstring(L"Description of the argument"), arg.get_usage_text());
         }
 
@@ -103,7 +106,7 @@ namespace arg_parser_arg_tests
         TEST_METHOD(TestOptionalArgument)
         {
             arg_parser_arg_opt arg(L"--optional", {}, L"An optional argument");
-            Assert::AreEqual(size_t(0), arg.get_arg_count());
+            Assert::AreEqual(0, arg.get_arg_count());
             Assert::IsTrue(arg.parse({ L"--optional" }));
             Assert::IsTrue(arg.is_set());
         }
@@ -111,7 +114,7 @@ namespace arg_parser_arg_tests
         TEST_METHOD(TestPositionalArgument)
         {
             arg_parser_arg_pos arg(L"filename", {}, L"Input file", {}, 1);
-            Assert::AreEqual(size_t(1), arg.get_arg_count());
+            Assert::AreEqual(1, arg.get_arg_count());
             Assert::IsTrue(arg.parse({ L"filename", L"input.txt" }));
             auto values = arg.get_values();
             Assert::AreEqual(std::wstring(L"input.txt"), values[0]);
@@ -124,6 +127,8 @@ namespace arg_parser_arg_tests
 
             // Check if the help text includes all flags and description
             Assert::IsTrue(help_text.find(L"--help, -h") != std::wstring::npos);
+            // Check if the help text does not include an extra ',' at the end
+            Assert::IsFalse(help_text.find(L"--help, -h,") != std::wstring::npos);
             Assert::IsTrue(help_text.find(L"Displays help information.") != std::wstring::npos);
         }
 
