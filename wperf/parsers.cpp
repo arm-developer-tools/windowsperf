@@ -171,8 +171,6 @@ void parse_events_extra(std::wstring events_str, std::map<enum evt_class, std::v
 /*
     Example string to parse:
     $ perf record -e arm_spe_0/branch_filter=1,jitter=1/ -- workload
-    $ perf record -e arm_spe/branch_filter=1,jitter=1/ -- workload
-    $ perf record -e spe/branch_filter=1,jitter=1/ -- workload
 */
 bool parse_events_str_for_feat_spe(std::wstring events_str, std::map<std::wstring,uint64_t>& flags)
 {

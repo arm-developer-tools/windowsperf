@@ -1022,6 +1022,7 @@ wmain(
                 std::variant<TableOutput<SamplingAnnotateOutputTraitsL<false>, GlobalCharType>,
                              TableOutput<SamplingAnnotateOutputTraitsL<true>, GlobalCharType>>>> annotateTables;
             std::vector<uint64_t> col_pcs, col_pcs_count;
+            std::vector<std::wstring> col_pcs_in_symbol;
             for (auto &a : resolved_samples)
             {
                 if (a.event_src != prev_evt_src)
@@ -1042,7 +1043,7 @@ wmain(
                             table.m_event = GlobalStringType(spe_event_map[prev_evt_src]);
                         TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
                         pcs_table.PresetHeaders();
-                        pcs_table.Insert(col_pcs, col_pcs_count);
+                        pcs_table.Insert(col_pcs, col_pcs_count, col_pcs_in_symbol);
                         m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables, pcs_table);
                         col_overhead.clear();
                         col_count.clear();
@@ -1050,6 +1051,7 @@ wmain(
                         annotateTables.clear();
                         col_pcs.clear();
                         col_pcs_count.clear();
+                        col_pcs_in_symbol.clear();
                     }
                     prev_evt_src = a.event_src;
 
@@ -1106,6 +1108,7 @@ wmain(
                         m_out.GetOutputStream() << L"pc:\t" << IntToHexWideString(a.pc[i].first, 20) << L"\t" << IntToDecWideString(a.pc[i].second, 8) << std::endl;
                         col_pcs.push_back(a.pc[i].first);
                         col_pcs_count.push_back(a.pc[i].second);
+                        col_pcs_in_symbol.push_back(a.desc.name);
                     }
                 }
 
@@ -1280,8 +1283,8 @@ wmain(
 
             TableOutput<SamplingPCOutputTraits<GlobalCharType>, GlobalCharType> pcs_table(m_outputType);
             pcs_table.PresetHeaders();
-            pcs_table.Insert(col_pcs, col_pcs_count);
-            m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables,pcs_table);
+            pcs_table.Insert(col_pcs, col_pcs_count, col_pcs_in_symbol);
+            m_globalSamplingJSON.m_map[table.m_event] = std::make_tuple(table, annotateTables, pcs_table);
             m_globalSamplingJSON.m_sample_display_row = request.sample_display_row;
 
             if (m_outputType == TableType::JSON || m_outputType == TableType::ALL)
