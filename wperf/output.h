@@ -290,10 +290,11 @@ template <typename CharType>
 struct SamplingPCOutputTraits : public TableOutputTraits<CharType>
 {
     typedef typename std::conditional_t<std::is_same_v<CharType, char>, std::string, std::wstring> StringType;
-    inline const static std::tuple<uint64_t, uint64_t> columns;
-    inline const static std::tuple<CharType*, CharType*> headers =
+    inline const static std::tuple<uint64_t, uint64_t, StringType> columns;
+    inline const static std::tuple<CharType*, CharType*, CharType*> headers =
         std::make_tuple(LITERALCONSTANTS_GET("address"),
-            LITERALCONSTANTS_GET("count"));
+            LITERALCONSTANTS_GET("count"),
+            LITERALCONSTANTS_GET("in_symbol"));
     inline const static int size = std::tuple_size_v<decltype(headers)>;
     inline const static CharType* key = LITERALCONSTANTS_GET("pcs");
 };
