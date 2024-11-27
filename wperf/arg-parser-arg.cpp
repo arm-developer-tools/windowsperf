@@ -114,7 +114,7 @@ namespace ArgParserArg {
 
     bool arg_parser_arg::is_set() const
     {
-        return is_parsed() && m_values.size() == m_arg_count;
+        return is_parsed() && m_values.size() >= m_arg_count;
     }
 
     std::vector<std::wstring> arg_parser_arg::get_values() const

@@ -305,6 +305,7 @@ namespace arg_parser_tests
             arg_parser parser;
             parser.parse(argc, argv);
             Assert::AreEqual(parser.events_arg.get_values().size(), size_t(2));
+            Assert::IsTrue(parser.events_arg.is_set());
             Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"vfp_spec"));
             Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"ld_spec"));
         }
