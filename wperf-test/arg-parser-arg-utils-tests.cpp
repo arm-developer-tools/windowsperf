@@ -68,7 +68,7 @@ namespace arg_parser_arg_utils_tests
 
         TEST_METHOD(TestMultipleLines)
         {
-            std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.";
+            std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.\n";
             size_t max_width = 15;
             std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
