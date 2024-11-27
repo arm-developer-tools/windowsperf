@@ -164,7 +164,7 @@ namespace ArgParser {
     wstring arg_parser_arg_command::get_usage_text() const
     {
         return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(
-            m_useage_text + L"\n" + m_description), L"\t   ");
+            m_useage_text + L"\n" + m_description), L"\t   ") + L"\n";
     }
 
     wstring arg_parser_arg_command::get_examples() const

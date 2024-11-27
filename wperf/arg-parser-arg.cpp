@@ -148,6 +148,7 @@ namespace ArgParserArg {
 
     std::wstring arg_parser_add_wstring_behind_multiline_text(const std::wstring& str, const std::wstring& prefix)
     {
+        if (str.empty()) return str;
         std::wstring formatted_str;
         std::wstring current_line;
         std::wistringstream iss(str);
@@ -158,56 +159,63 @@ namespace ArgParserArg {
                 formatted_str += L"\n";
                 continue;
             }
+            if (formatted_str.empty()) {
+                formatted_str += prefix + current_line;
+                continue;
+            }
 
-            formatted_str += prefix + current_line + L"\n";
+            formatted_str += L"\n" + prefix + current_line;
         }
         return formatted_str;
     }
 
     std::wstring arg_parser_format_string_to_length(const std::wstring& str, size_t max_width)
     {
-        std::wstring formatted_str;
+        if (str.empty()) return str;
         std::wistringstream lines_stream(str);
-        std::wstring line;
+        std::wstring formatted_str = L"";
+        std::wstring line = L"";
 
-        while (std::getline(lines_stream, line, L'\n'))
-        {
+        while (std::getline(lines_stream, line, L'\n')) {
+            if (line.empty())
+            {
+                formatted_str += L"\n";
+                continue;
+            }
+            if (!formatted_str.empty()) {
+                formatted_str += L"\n";
+            }
             std::wstring current_line;
             std::wistringstream word_stream(line);
             std::wstring word;
-
-            while (word_stream >> word)
-            {
-                if (current_line.size() + word.size() > max_width && !current_line.empty())
+            while (word_stream >> word) {
+                if (current_line.empty())
                 {
-                    if (!current_line.empty() && current_line.back() == L' ')
-                    {
-                        current_line.pop_back();
-                    }
-                    formatted_str += current_line + L"\n";
-                    current_line = word + L" ";
+                    current_line += word;
+                    continue;
                 }
-                else
+                if (current_line.size() + word.size() <= max_width) {
+                    current_line = current_line + L" " + word;
+                    continue;
+                }
+                if (formatted_str.empty())
                 {
-                    current_line += word + L" ";
+                    formatted_str = current_line;
                 }
+                else {
+                    formatted_str = formatted_str + L"\n" + current_line;
+                }
+                current_line = word;
             }
-            if (!current_line.empty() && current_line.back() == L' ')
+            if (formatted_str.empty() && !current_line.empty())
             {
-                current_line.pop_back();
+                formatted_str = current_line;
             }
-            if (!current_line.empty())
+            else if (!current_line.empty())
             {
-                formatted_str += current_line + L"\n\n";
+                formatted_str = formatted_str + L"\n" + current_line;
             }
         }
-
-        // Remove the trailing newline, if any
-        if (!formatted_str.empty() && formatted_str.back() == L'\n')
-            formatted_str.pop_back();
-        if (!formatted_str.empty() && formatted_str.back() == L'\n')
-            formatted_str.pop_back();
-
         return formatted_str;
     }
 }

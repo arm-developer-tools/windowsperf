@@ -62,26 +62,37 @@ namespace arg_parser_arg_utils_tests
         {
             std::wstring input = L"This is a line that exceeds the width.";
             size_t max_width = 15;
-            std::wstring expected = L"This is a line\nthat exceeds\nthe width.";
+            std::wstring expected = L"This is a line\nthat exceeds the\nwidth.";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
         }
-
         TEST_METHOD(TestMultipleLines)
+        {
+            std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.";
+            size_t max_width = 15;
+            std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.";
+            Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
+        }
+        TEST_METHOD(TestTrailingNewlineRemoval)
         {
             std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.\n";
             size_t max_width = 15;
             std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
         }
-
-        TEST_METHOD(TestTrailingNewlineRemoval)
+        TEST_METHOD(TestMultipleLinesAndMultipleTrailingReturnToLines)
         {
-            std::wstring input = L"Line with trailing newline.\n";
-            size_t max_width = 30;
-            std::wstring expected = L"Line with trailing newline.";
+            std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.\n\n\n\n\n\n\n";
+            size_t max_width = 15;
+            std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.\n\n\n\n\n\n";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
         }
-
+        TEST_METHOD(MultipleRetrunToLines)
+        {
+            std::wstring input = L"\n\n\n";
+            size_t max_width = 15;
+            std::wstring expected = L"\n\n\n";
+            Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
+        }
         TEST_METHOD(TestExactFit)
         {
             std::wstring input = L"Exactly fifteen";
@@ -113,7 +124,7 @@ namespace arg_parser_arg_utils_tests
         {
             std::wstring input = L"Hello, world!";
             std::wstring prefix = L"\t-> ";
-            std::wstring expected = L"\t-> Hello, world!\n";
+            std::wstring expected = L"\t-> Hello, world!";
             Assert::AreEqual(expected, arg_parser_add_wstring_behind_multiline_text(input, prefix));
         }
 
@@ -121,7 +132,7 @@ namespace arg_parser_arg_utils_tests
         {
             std::wstring input = L"Line one.\nLine two.\nLine three.";
             std::wstring prefix = L"\t* ";
-            std::wstring expected = L"\t* Line one.\n\t* Line two.\n\t* Line three.\n";
+            std::wstring expected = L"\t* Line one.\n\t* Line two.\n\t* Line three.";
             Assert::AreEqual(expected, arg_parser_add_wstring_behind_multiline_text(input, prefix));
         }
 
@@ -129,7 +140,7 @@ namespace arg_parser_arg_utils_tests
         {
             std::wstring input = L"Line one.\n\nLine three.";
             std::wstring prefix = L"# ";
-            std::wstring expected = L"# Line one.\n\n# Line three.\n";
+            std::wstring expected = L"# Line one.\n\n# Line three.";
             Assert::AreEqual(expected, arg_parser_add_wstring_behind_multiline_text(input, prefix));
         }
 
@@ -145,16 +156,23 @@ namespace arg_parser_arg_utils_tests
         {
             std::wstring input = L"Special line.";
             std::wstring prefix = L"*** ";
-            std::wstring expected = L"*** Special line.\n";
+            std::wstring expected = L"*** Special line.";
             Assert::AreEqual(expected, arg_parser_add_wstring_behind_multiline_text(input, prefix));
         }
-
+        TEST_METHOD(TestPrefixWithSeriesOfNewLines)
+        {
+            std::wstring input = L"\n\n\n";
+            std::wstring prefix = L"*** ";
+            std::wstring expected = L"\n\n\n";
+            Assert::AreEqual(expected, arg_parser_add_wstring_behind_multiline_text(input, prefix));
+        }
         TEST_METHOD(TestPrefixAndMultilineSpacing)
         {
             std::wstring input = L"Line one.\n\nLine two.\n\n";
             std::wstring prefix = L"--> ";
-            std::wstring expected = L"--> Line one.\n\n--> Line two.\n\n";
+            std::wstring expected = L"--> Line one.\n\n--> Line two.\n";
             Assert::AreEqual(expected, arg_parser_add_wstring_behind_multiline_text(input, prefix));
         }
+
     };
 }
