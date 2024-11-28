@@ -303,14 +303,13 @@ namespace wperftest
             parser.parse(_countof(argv), argv);
 
             // Check all _command flags setup
-            Assert::IsTrue(parser.count_command.is_set());
             Assert::IsFalse(parser.record_command.is_set());
             Assert::IsFalse(parser.list_command.is_set());
             Assert::IsFalse(parser.help_command.is_set());
             Assert::IsFalse(parser.version_command.is_set());
             Assert::IsFalse(parser.detect_command.is_set());
             Assert::IsFalse(parser.sample_command.is_set());
-            Assert::IsFalse(parser.count_command.is_set());
+            Assert::IsTrue(parser.count_command.is_set());
             Assert::IsFalse(parser.man_command.is_set());
 
             // Check all _arg flags setup
@@ -432,7 +431,7 @@ namespace wperftest
             Assert::IsFalse(parser.timeline_opt.is_set());
 
             // Check all _arg flags setup
-            Assert::IsFalse(parser.extra_args_arg.is_set());
+            Assert::IsTrue(parser.extra_args_arg.is_set());
             Assert::IsTrue(parser.cores_arg.is_set());
             Assert::IsTrue(parser.timeout_arg.is_set());
             Assert::IsFalse(parser.symbol_arg.is_set());
