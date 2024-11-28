@@ -112,6 +112,7 @@ namespace wperftest
             parser.parse(argc, argv);
             Assert::IsTrue(parser.record_command.is_set());
             Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"notepad.exe"));
+            Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"test_arg"));
             Assert::IsTrue(COMMAND_CLASS::RECORD == parser.m_command);
         }
 
@@ -327,5 +328,83 @@ namespace wperftest
             Assert::IsTrue(check_value_in_vector(parser.output_filename_arg.get_values(), L"_output_02.json"));
             Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec"));
         }
+
+        // Test test command with set of config
+        TEST_METHOD(test_test_json_config)
+        {
+            const wchar_t* argv[] = { L"wperf", L"test", L"--json", L"--config", L"count.period=13" };
+            const int argc = _countof(argv);
+            arg_parser parser;
+            parser.parse(argc, argv);
+
+            Assert::IsTrue(parser.test_command.is_set());
+            Assert::IsFalse(parser.record_command.is_set());
+            Assert::IsFalse(parser.list_command.is_set());
+            Assert::IsFalse(parser.help_command.is_set());
+            Assert::IsFalse(parser.version_command.is_set());
+            Assert::IsFalse(parser.detect_command.is_set());
+            Assert::IsFalse(parser.sample_command.is_set());
+            Assert::IsFalse(parser.count_command.is_set());
+            Assert::IsFalse(parser.man_command.is_set());
+
+            Assert::IsTrue(parser.json_opt.is_set());
+            Assert::IsTrue(parser.config_arg.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.config_arg.get_values(), L"count.period=13"));
+            Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
+
+            // Double-dash aka "--"
+            Assert::IsFalse(parser.extra_args_arg.is_set());
+        }
+
+        TEST_METHOD(test_test_record_spe_with_double_dash)
+        {
+            const wchar_t* argv[] = { L"wperf", L"record", L"-e", L"arm_spe_0/load_filter=0,store_filter/", L"-c", L"4", L"--timeout", L"3", L"--json", L"--", L"python_d.exe", L"-c", L"10**10**100" };
+            const int argc = _countof(argv);
+            arg_parser parser;
+            parser.parse(argc, argv);
+
+            Assert::IsTrue(parser.record_command.is_set());
+            Assert::IsFalse(parser.list_command.is_set());
+            Assert::IsFalse(parser.test_command.is_set());
+            Assert::IsFalse(parser.help_command.is_set());
+            Assert::IsFalse(parser.version_command.is_set());
+            Assert::IsFalse(parser.detect_command.is_set());
+            Assert::IsFalse(parser.sample_command.is_set());
+            Assert::IsFalse(parser.count_command.is_set());
+            Assert::IsFalse(parser.man_command.is_set());
+
+            Assert::IsTrue(parser.json_opt.is_set());
+            Assert::IsTrue(parser.timeout_arg.is_set());
+            Assert::IsTrue(parser.cores_arg.is_set());
+            Assert::IsTrue(parser.events_arg.is_set());
+
+            // Double-dash aka "--"
+            Assert::IsTrue(parser.extra_args_arg.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"-c"));
+            Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"10**10**100"));
+
+            Assert::IsTrue(COMMAND_CLASS::RECORD == parser.m_command);
+        }
+
+        TEST_METHOD(test_record_pmu_with_double_dash)
+        {
+            const wchar_t* argv[] = { L"wperf", L"record", L"-e", L"ld_spec:100000", L"-c", L"1", L"--symbol", L"^x_mul$", L"--timeout", L"3", L"--", L"cpython\\PCbuild\\arm64\\python_d.exe", L"-c", L"10**10**100" };
+            const int argc = _countof(argv);
+            arg_parser parser;
+            parser.parse(argc, argv);
+
+            Assert::IsTrue(parser.timeout_arg.is_set());
+            Assert::IsTrue(parser.cores_arg.is_set());
+            Assert::IsTrue(parser.events_arg.is_set());
+            Assert::IsTrue(parser.symbol_arg.is_set());
+
+            // Double-dash aka "--"
+            Assert::IsTrue(parser.extra_args_arg.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"-c"));
+            Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"10**10**100"));
+
+            Assert::IsTrue(COMMAND_CLASS::RECORD == parser.m_command);
+        }
+
     };
 }
