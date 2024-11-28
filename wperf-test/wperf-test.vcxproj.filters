@@ -63,13 +63,13 @@
     <ClCompile Include="wperf-test-spe_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="arg-parser-tests.cpp">
+    <ClCompile Include="wperf-test-arg_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="arg-parser-arg-utils-tests.cpp">
+    <ClCompile Include="wperf-test-arg_parser_arg-utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="arg-parser-arg-tests.cpp">
+    <ClCompile Include="wperf-test-arg_parser_arg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

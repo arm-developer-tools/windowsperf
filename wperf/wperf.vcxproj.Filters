@@ -69,10 +69,10 @@
     <ClCompile Include="man.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="arg-parser.cpp">
+    <ClCompile Include="arg_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="arg-parser-arg.cpp">
+    <ClCompile Include="arg_parser_arg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

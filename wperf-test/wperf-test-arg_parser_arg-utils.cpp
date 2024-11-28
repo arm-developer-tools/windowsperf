@@ -31,12 +31,12 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include <unordered_map>
-#include "wperf/arg-parser-arg.h"
+#include "wperf/arg_parser_arg.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace ArgParserArg;
 
-namespace arg_parser_arg_utils_tests
+namespace wperftest
 {
 
     TEST_CLASS(ArgParserArgFormatToLengthTests)
