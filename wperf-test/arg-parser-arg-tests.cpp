@@ -36,7 +36,7 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace ArgParserArg;
 
-namespace arg_parser_arg_tests
+namespace wperftest
 {
 
     TEST_CLASS(ArgParserArgTests)
