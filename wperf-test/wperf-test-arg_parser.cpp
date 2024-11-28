@@ -46,7 +46,7 @@ namespace wperftest
         {
             return std::find(vec.begin(), vec.end(), value) != vec.end();
         }
-        TEST_METHOD(TEST_CORRECT_TEST_COMMAND)
+        TEST_METHOD(test_correct_test_command)
         {
             const wchar_t* argv[] = { L"wperf", L"test", L"-v", L"--json" };
             int argc = 4;
@@ -57,7 +57,7 @@ namespace wperftest
             Assert::AreEqual(true, parser.json_opt.is_set());
             Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
         }
-        TEST_METHOD(TEST_RANDOM_ARGS_REJECTION)
+        TEST_METHOD(test_random_args_rejection)
         {
             const wchar_t* argv[] = { L"wperf", L"test", L"-v", L"--json", L"random" };
             int argc = 5;
@@ -68,7 +68,7 @@ namespace wperftest
             );
         }
         // Test parsing the "help" command with no arguments
-        TEST_METHOD(TEST_HELP_COMMAND)
+        TEST_METHOD(test_help_command)
         {
             const wchar_t* argv[] = { L"wperf", L"--help" };
             int argc = 2;
@@ -80,7 +80,7 @@ namespace wperftest
         }
 
         // Test parsing the 'version' command with no arguments
-        TEST_METHOD(TEST_VERSION_COMMAND)
+        TEST_METHOD(test_version_command)
         {
             const wchar_t* argv[] = { L"wperf", L"--version" };
             int argc = 2;
@@ -92,7 +92,7 @@ namespace wperftest
         }
 
         // Test parsing the 'list' command with no arguments
-        TEST_METHOD(TEST_LIST_COMMAND)
+        TEST_METHOD(test_list_command)
         {
             const wchar_t* argv[] = { L"wperf", L"list" };
             int argc = 2;
@@ -104,7 +104,7 @@ namespace wperftest
         }
 
         // Test parsing the 'record' command with command line separator and arguments
-        TEST_METHOD(TEST_RECORD_COMMAND_WITH_PROCESS)
+        TEST_METHOD(test_record_command_with_process)
         {
             const wchar_t* argv[] = { L"wperf", L"record", L"--", L"notepad.exe", L"test_arg" };
             int argc = 5;
@@ -116,7 +116,7 @@ namespace wperftest
         }
 
         // Test that missing required arguments cause exceptions
-        TEST_METHOD(TEST_SAMPLE_COMMAND_MISSING_REQUIRED_ARG)
+        TEST_METHOD(test_sample_command_missing_required_arg)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout" };
             int argc = 3;
@@ -128,7 +128,7 @@ namespace wperftest
         }
 
         // Test that invalid arguments cause exceptions
-        TEST_METHOD(TEST_SIMPLE_INVALID_ARGUMENT)
+        TEST_METHOD(test_simple_invalid_argument)
         {
             const wchar_t* argv[] = { L"wperf", L"invalid_command" };
             int argc = 2;
@@ -140,7 +140,7 @@ namespace wperftest
         }
 
         // Test parsing timeout with different units
-        TEST_METHOD(TEST_TIMEOUT_WITH_UNITS)
+        TEST_METHOD(test_timeout_with_units)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout", L"2m" };
             int argc = 4;
@@ -150,7 +150,7 @@ namespace wperftest
             Assert::IsTrue(check_value_in_vector(parser.timeout_arg.get_values(), L"2m"));
         }
 
-        TEST_METHOD(TEST_INVALID_TIMEOUT_WITH_WRONG_FORMAT)
+        TEST_METHOD(test_invalid_timeout_with_wrong_format)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout", L"5.4", L"ms" };
             int argc = 5;
@@ -162,7 +162,7 @@ namespace wperftest
         }
 
         // Test parsing the 'detect' command
-        TEST_METHOD(TEST_DETECT_COMMAND)
+        TEST_METHOD(test_detect_command)
         {
             const wchar_t* argv[] = { L"wperf", L"detect" };
             int argc = 2;
@@ -174,7 +174,7 @@ namespace wperftest
         }
 
         // Test parsing multiple flags tois_sether
-        TEST_METHOD(TEST_MULTIPLE_FLAGS)
+        TEST_METHOD(test_multiple_flags)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--verbose", L"-q", L"--json" };
             int argc = 5;
@@ -188,7 +188,7 @@ namespace wperftest
         }
 
         // Test parsing sample command with symbol argument
-        TEST_METHOD(TEST_SAMPLE_COMMAND_WITH_SYMBOL)
+        TEST_METHOD(test_sample_command_with_symbol)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--symbol", L"main" };
             int argc = 4;
@@ -200,7 +200,7 @@ namespace wperftest
         }
 
         // Test parsing sample command with sample display row
-        TEST_METHOD(TEST_SAMPLE_DISPLAY_ROW)
+        TEST_METHOD(test_sample_display_row)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--sample-display-row", L"100" };
             int argc = 4;
@@ -212,7 +212,7 @@ namespace wperftest
         }
 
         // Test parsing sample command with pe_file
-        TEST_METHOD(TEST_SAMPLE_COMMAND_WITH_PE_FILE)
+        TEST_METHOD(test_sample_command_with_pe_file)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--pe_file", L"C:\\Program\\sample.exe" };
             int argc = 4;
@@ -225,7 +225,7 @@ namespace wperftest
         }
 
         // Test parsing sample command with pdb_file
-        TEST_METHOD(TEST_SAMPLE_COMMAND_WITH_PDB_FILE)
+        TEST_METHOD(test_sample_command_with_pdb_file)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--pdb_file", L"C:\\Program\\sample.pdb" };
             int argc = 4;
@@ -239,7 +239,7 @@ namespace wperftest
         }
 
         // Test parsing sample command with image_name
-        TEST_METHOD(TEST_SAMPLE_COMMAND_WITH_IMAGE_NAME)
+        TEST_METHOD(test_sample_command_with_image_name)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--image_name", L"notepad.exe" };
             int argc = 4;
@@ -251,7 +251,7 @@ namespace wperftest
         }
 
         // Test parsing with --force-lock flag
-        TEST_METHOD(TEST_FORCE_LOCK_FLAG)
+        TEST_METHOD(test_force_lock_flag)
         {
             const wchar_t* argv[] = { L"wperf", L"test", L"--force-lock" };
             int argc = 3;
@@ -263,7 +263,7 @@ namespace wperftest
         }
 
         // Test parsing the 'stat' command (not fully implemented in the parser)
-        TEST_METHOD(TEST_STAT_COMMAND)
+        TEST_METHOD(test_stat_command)
         {
             const wchar_t* argv[] = { L"wperf", L"stat" };
             int argc = 2;
@@ -275,7 +275,7 @@ namespace wperftest
         }
 
         // Test parsing with unknown flags
-        TEST_METHOD(TEST_UNKNOWN_FLAG)
+        TEST_METHOD(test_unknown_flag)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--unknown" };
             int argc = 3;
@@ -287,7 +287,7 @@ namespace wperftest
         }
 
         // Test parsing with no command
-        TEST_METHOD(TEST_NO_COMMAND)
+        TEST_METHOD(test_no_command)
         {
             const wchar_t* argv[] = { L"wperf", L"--annotate", L"--json" };
             int argc = 3;
@@ -298,7 +298,7 @@ namespace wperftest
             );
         }
         // Test parsing with the same command called twice
-        TEST_METHOD(TEST_DUPLICATE_ARGUMENT)
+        TEST_METHOD(test_duplicate_argument)
         {
             const wchar_t* argv[] = { L"wperf", L"stat", L"-e", L"ld_spec", L"-e", L"vfp_spec" };
             int argc = 6;
@@ -311,7 +311,7 @@ namespace wperftest
         }
 
         // Test complex stat command 
-        TEST_METHOD(TEST_FULL_STAT_COMMAND)
+        TEST_METHOD(test_full_stat_command)
         {
             const wchar_t* argv[] = { L"wperf", L"stat", L"--output", L"_output_02.json", L"-e", L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", L"-c", L"0", L"sleep", L"5" };
             int argc = 10;
