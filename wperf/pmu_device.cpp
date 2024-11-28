@@ -348,6 +348,7 @@ void pmu_device::spe_start(const std::map<std::wstring, uint64_t>& flags)
     ctl.event_filter = 0;
     UINT8 opfilter = 0;
     UINT64 config_flags = 0;
+    UINT32 interval = 0;    // 0 will force minimum indicated by PMSIDR_EL1.Interval.
     /*
     * `config_flags` stores multiple values:
     *
@@ -364,6 +365,8 @@ void pmu_device::spe_start(const std::map<std::wstring, uint64_t>& flags)
         if (spe_device::get_filter_name(key) == L"store_filter" && val)   opfilter |= SPE_OPERATON_FILTER_ST;
         if (spe_device::get_filter_name(key) == L"branch_filter" && val)    opfilter |= SPE_OPERATON_FILTER_B;
         if (spe_device::get_filter_name(key) == L"ts_enable" && val)   config_flags |= SPE_CTL_FLAG_TS;
+        if (spe_device::get_filter_name(key) == L"jitter" && val)    config_flags |= SPE_CTL_FLAG_RND;
+        if (spe_device::get_filter_name(key) == L"period" && val)  interval = val & SPE_CTL_INTERVAL_VAL_MASK;
         if (spe_device::get_filter_name(key) == L"min_latency" && val)
         {
             UINT64 minlat = val & SPE_CTL_FLAG_VAL_MASK;   // PMSLATFR_EL1.MINLAT is 16 - bit value
@@ -372,7 +375,7 @@ void pmu_device::spe_start(const std::map<std::wstring, uint64_t>& flags)
         }
     }
     ctl.operation_filter = opfilter;
-    ctl.interval = 1024;
+    ctl.interval = interval;
     ctl.config_flags = config_flags;
 
     BOOL status = DeviceAsyncIoControl(m_device_handle, PMU_CTL_SPE_START, &ctl, sizeof(struct spe_ctl_hdr), NULL, 0, &res_len);

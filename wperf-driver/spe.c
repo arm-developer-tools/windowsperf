@@ -74,22 +74,35 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             START_WORK_ON_CORE(context->core_idx);
             
             _WriteStatusReg(PMBPTR_EL1, (UINT64)SpeMemoryBuffer);
-           
+            __isb(_ARM64_BARRIER_SY);
+
             /*
-            * Writing to PMSIRR_EL1 and PMSICR_EL1 seems to be innefective for some reason.
-            * When PMSIRR_EL1 is written to its value just goes to 0 and PMSICR_EL1 seems to be unchanged.
-            * At least this is what can be seen in the logs.
-            * This looks like an unexpected behaviour as the documentation seems to imply that 
-            * PMSCIR_EL1 needs to be zeroed before sampling starts and PMSIRR_EL1.Interval needs to be set. 
-            _WriteStatusReg(PMSICR_EL1, 0);
-            if (context->config_flags & SPE_CTL_FLAG_RND)
-            {
-                _WriteStatusReg(PMSIRR_EL1, PMSIRR_EL1_RND | ((UINT64)context->interval << 8));
-            }
-            else {
-                _WriteStatusReg(PMSIRR_EL1, (UINT64)context->interval << 8);
-            }
+            * Setup `Sampling Interval Reload Register`
             */
+            UINT64 pmsirr = 0x00;
+            UINT32 interval = (context->interval & SPE_CTL_INTERVAL_VAL_MASK);  // Controlled with period=<n>
+            {
+                UINT32 min_interval = spe_recommended_min_sampling_interval(_ReadStatusReg(PMSIDR_EL1));
+                if (interval < min_interval)
+                {
+                    // Software should set this to a value GREATER
+                    // than the minimum indicated by PMSIDR_EL1.Interval
+                    interval = min_interval + 1;
+                    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: jitter=1, interval=%u is below recommended min sampling interval, new interval=%u \n", context->interval, interval));
+                }
+            }
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: interval=%u \n", interval));
+            pmsirr |= (UINT64)interval << 8;
+
+            /*
+            * Setup `jitter`, Controls randomization of the sampling interval
+            */
+            if (context->config_flags & SPE_CTL_FLAG_RND)
+                pmsirr |= PMSIRR_EL1_RND;
+
+            KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: pmsirr=0x%llX \n", pmsirr));
+            _WriteStatusReg(PMSIRR_EL1, pmsirr);
+            __isb(_ARM64_BARRIER_SY);
 
             /*
             * Setup `Sampling Filter Control Register`
@@ -123,6 +136,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
                     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u is 12-bit, min_latency is trimmed! \n", min_latency));
                 }
                 _WriteStatusReg(PMSLATFR_EL1, min_latency); // Configure PMSLATFR_EL1.MINLAT
+                __isb(_ARM64_BARRIER_SY);
 
                 pmsfcr |= PMSFCR_EL1_FL;    // Enable Filter by latency
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: min_latency=%u PMSFCR_EL1=0x%llX\n", min_latency, pmsfcr));
@@ -130,6 +144,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE: pmsfcr=0x%llX \n", pmsfcr));
             _WriteStatusReg(PMSFCR_EL1, pmsfcr);
+            __isb(_ARM64_BARRIER_SY);
 
             /*
             * Configure PMSCR_EL1 settings based on user-space flags. By default all settings are disabled
@@ -137,6 +152,7 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             * (e.g. TS bit) to "ON" in this register.
             */
             _WriteStatusReg(PMSCR_EL1, 0x00);
+            __isb(_ARM64_BARRIER_SY);
             if (context->config_flags & SPE_CTL_FLAG_TS)
             {
                 // Enable timestamps with ts_enable filter:
@@ -146,9 +162,12 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             }
 
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
+            __isb(_ARM64_BARRIER_SY);
             //PMBPTR_EL1[63:56] must equal PMBLIMITR_EL1.LIMIT[63:56]
             _WriteStatusReg(PMBLIMITR_EL1, (UINT64)SpeMemoryBufferLimit | PMBLIMITR_EL1_E); // Enable PMBLIMITR_ELI1.E
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) | PMSCR_EL1_E0SPE_E1SPE); // Enable PMSCR_EL1.{E0SPE,E1SPE}
+            __isb(_ARM64_BARRIER_SY);
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer 0x%llX\n", _ReadStatusReg(PMBPTR_EL1)));
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer limit address %llX\n", _ReadStatusReg(PMBLIMITR_EL1)));
@@ -180,10 +199,12 @@ VOID SPEWorkItemFunc(WDFWORKITEM WorkItem)
             START_WORK_ON_CORE(context->core_idx);
 
             _WriteStatusReg(PMBLIMITR_EL1, 0); // Disable PMBLIMITR_ELI1.E
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) & (~PMSCR_EL1_E0SPE_E1SPE)); // Disable PMSCR_EL1.{E0SPE,E1SPE}
-
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
-            
+            __isb(_ARM64_BARRIER_SY);
+
             STOP_WORK_ON_CORE();
 
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Statistical Profiling Extension: memory buffer 0x%llX\n", _ReadStatusReg(PMBPTR_EL1)));
@@ -214,8 +235,11 @@ static VOID dpc_spe_overflow(struct _KDPC* dpc, PVOID ctx, PVOID sys_arg1, PVOID
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SPE_DPC profiling buffer full\n"));
             //Disable sampling
             _WriteStatusReg(PMBLIMITR_EL1, 0); // Disable PMBLIMITR_ELI1.E
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMBSR_EL1, _ReadStatusReg(PMBSR_EL1) & (~PMBSR_EL1_S)); // Clear PMBSR_EL1.S
+            __isb(_ARM64_BARRIER_SY);
             _WriteStatusReg(PMSCR_EL1, _ReadStatusReg(PMSCR_EL1) & (~PMSCR_EL1_E0SPE_E1SPE)); // Disable PMSCR_EL1.{E0SPE,E1SPE}
+            __isb(_ARM64_BARRIER_SY);
             spu->profiling_running = FALSE;
         }
     }
@@ -384,4 +408,22 @@ void spe_stop(WDFWORKITEM* workItem, UINT32 core_idx)
     UNREFERENCED_PARAMETER(workItem);
     UNREFERENCED_PARAMETER(core_idx);
 #endif
+}
+
+UINT32 spe_recommended_min_sampling_interval(UINT64 pmsidr_el1_value)
+{
+    const UINT64 interval = (pmsidr_el1_value & PMSIDR_EL1_Interval_MASK) >> 8;
+    switch (interval)
+    {
+        // All other values are reserved.
+        case 0b0000: return 256;
+        case 0b0010: return 512;
+        case 0b0011: return 768;
+        case 0b0100: return 1024;
+        case 0b0101: return 1536;
+        case 0b0110: return 2048;
+        case 0b0111: return 3072;
+        default:
+        case 0b1000: return 4096;
+    }
 }

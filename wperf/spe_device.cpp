@@ -409,7 +409,9 @@ const std::vector<std::wstring> spe_device::m_filter_names = {
     L"store_filter",
     L"branch_filter",
     L"ts_enable",
-    L"min_latency"
+    L"min_latency",
+    L"jitter",
+    L"period"
 };
 
 // Filters also have aliases, this structure helps to translate alias to filter name
@@ -418,7 +420,9 @@ const std::map<std::wstring, std::wstring> spe_device::m_filter_names_aliases = 
     { L"st",  L"store_filter" },
     { L"b" ,  L"branch_filter" },
     { L"ts",  L"ts_enable" },
-    { L"min", L"min_latency" }
+    { L"min", L"min_latency" },
+    { L"j",   L"jitter" },
+    { L"per", L"period" }
 };
 
 // Filters also have aliases, this structure helps to translate alias to filter name
@@ -427,7 +431,9 @@ const std::map<std::wstring, std::wstring> spe_device::m_filter_names_descriptio
     { L"store_filter",  L"Enables collection of store sampled operations, including all atomic operations." },
     { L"branch_filter", L"Enables collection of branch sampled operations, including direct and indirect branches and exception returns." },
     { L"ts_enable",     L"Enables timestamping with value of generic timer." },
-    { L"min_latency",   L"Collect only samples with this latency or higher." }
+    { L"min_latency",   L"Collect only samples with this latency or higher." },
+    { L"jitter",        L"Use jitter to avoid resonance when sampling." },
+    { L"pertiod",       L"Use period to set interval counter reload value. The minimum interval is used by default." },
 };
 
 spe_device::spe_device() {}
