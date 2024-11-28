@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdexcept>
-#include "arg-parser-arg.h"
+#include "arg_parser_arg.h"
 #include "utils.h"
 
 namespace ArgParserArg {

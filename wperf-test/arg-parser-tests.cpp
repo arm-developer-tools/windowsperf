@@ -31,7 +31,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include <unordered_map>
-#include "wperf/arg-parser.h"
+#include "wperf/arg_parser.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace ArgParser;
