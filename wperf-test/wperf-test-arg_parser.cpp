@@ -301,15 +301,46 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"stat", L"--output", L"_output_02.json", L"-e", L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", L"-c", L"0", L"sleep", L"5" };
             arg_parser parser;
             parser.parse(_countof(argv), argv);
-            Assert::IsTrue(COMMAND_CLASS::STAT == parser.m_command);
-            Assert::IsTrue(parser.events_arg.is_set());
-            Assert::IsTrue(parser.output_filename_arg.is_set());
+
+            // Check all _command flags setup
+            Assert::IsTrue(parser.count_command.is_set());
+            Assert::IsFalse(parser.record_command.is_set());
+            Assert::IsFalse(parser.list_command.is_set());
+            Assert::IsFalse(parser.help_command.is_set());
+            Assert::IsFalse(parser.version_command.is_set());
+            Assert::IsFalse(parser.detect_command.is_set());
+            Assert::IsFalse(parser.sample_command.is_set());
+            Assert::IsFalse(parser.count_command.is_set());
+            Assert::IsFalse(parser.man_command.is_set());
+
+            // Check all _arg flags setup
+            Assert::IsFalse(parser.extra_args_arg.is_set());
             Assert::IsTrue(parser.cores_arg.is_set());
             Assert::IsTrue(parser.timeout_arg.is_set());
+            Assert::IsFalse(parser.symbol_arg.is_set());
+            Assert::IsFalse(parser.record_spawn_delay_arg.is_set());
+            Assert::IsFalse(parser.sample_display_row_arg.is_set());
+            Assert::IsFalse(parser.pe_file_arg.is_set());
+            Assert::IsFalse(parser.image_name_arg.is_set());
+            Assert::IsFalse(parser.pdb_file_arg.is_set());
+            Assert::IsFalse(parser.metric_config_arg.is_set());
+            Assert::IsFalse(parser.event_config_arg.is_set());
+            Assert::IsTrue(parser.output_filename_arg.is_set());
+            Assert::IsFalse(parser.output_csv_filename_arg.is_set());
+            Assert::IsFalse(parser.output_prefix_arg.is_set());
+            Assert::IsFalse(parser.config_arg.is_set());
+            Assert::IsFalse(parser.interval_arg.is_set());
+            Assert::IsFalse(parser.iteration_arg.is_set());
+            Assert::IsFalse(parser.dmc_arg.is_set());
+            Assert::IsFalse(parser.metrics_arg.is_set());
+            Assert::IsTrue(parser.events_arg.is_set());
+
             Assert::IsTrue(check_value_in_vector(parser.timeout_arg.get_values(), L"5"));
             Assert::IsTrue(check_value_in_vector(parser.cores_arg.get_values(), L"0"));
             Assert::IsTrue(check_value_in_vector(parser.output_filename_arg.get_values(), L"_output_02.json"));
             Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec"));
+
+            Assert::IsTrue(COMMAND_CLASS::STAT == parser.m_command);
         }
 
         // Test test command with set of config
@@ -320,6 +351,7 @@ namespace wperftest
             arg_parser parser;
             parser.parse(argc, argv);
 
+            // Check all _command flags setup
             Assert::IsTrue(parser.test_command.is_set());
             Assert::IsFalse(parser.record_command.is_set());
             Assert::IsFalse(parser.list_command.is_set());
@@ -330,8 +362,40 @@ namespace wperftest
             Assert::IsFalse(parser.count_command.is_set());
             Assert::IsFalse(parser.man_command.is_set());
 
-            Assert::IsTrue(parser.json_opt.is_set());
+            // Check all _arg flags setup
+            Assert::IsFalse(parser.extra_args_arg.is_set());
+            Assert::IsFalse(parser.cores_arg.is_set());
+            Assert::IsFalse(parser.timeout_arg.is_set());
+            Assert::IsFalse(parser.symbol_arg.is_set());
+            Assert::IsFalse(parser.record_spawn_delay_arg.is_set());
+            Assert::IsFalse(parser.sample_display_row_arg.is_set());
+            Assert::IsFalse(parser.pe_file_arg.is_set());
+            Assert::IsFalse(parser.image_name_arg.is_set());
+            Assert::IsFalse(parser.pdb_file_arg.is_set());
+            Assert::IsFalse(parser.metric_config_arg.is_set());
+            Assert::IsFalse(parser.event_config_arg.is_set());
+            Assert::IsFalse(parser.output_filename_arg.is_set());
+            Assert::IsFalse(parser.output_csv_filename_arg.is_set());
+            Assert::IsFalse(parser.output_prefix_arg.is_set());
             Assert::IsTrue(parser.config_arg.is_set());
+            Assert::IsFalse(parser.interval_arg.is_set());
+            Assert::IsFalse(parser.iteration_arg.is_set());
+            Assert::IsFalse(parser.dmc_arg.is_set());
+            Assert::IsFalse(parser.metrics_arg.is_set());
+            Assert::IsFalse(parser.events_arg.is_set());
+
+            // Check all _opt flags setup
+            Assert::IsTrue(parser.json_opt.is_set());
+            Assert::IsFalse(parser.kernel_opt.is_set());
+            Assert::IsFalse(parser.force_lock_opt.is_set());
+            Assert::IsFalse(parser.sample_display_long_opt.is_set());
+            Assert::IsFalse(parser.verbose_opt.is_set());
+            Assert::IsFalse(parser.quite_opt.is_set());
+            Assert::IsFalse(parser.annotate_opt.is_set());
+            Assert::IsFalse(parser.disassembly_opt.is_set());
+            Assert::IsFalse(parser.timeline_opt.is_set());
+
+
             Assert::IsTrue(check_value_in_vector(parser.config_arg.get_values(), L"count.period=13"));
             Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
 
@@ -356,9 +420,37 @@ namespace wperftest
             Assert::IsFalse(parser.count_command.is_set());
             Assert::IsFalse(parser.man_command.is_set());
 
+            // Check all _opt flags setup
             Assert::IsTrue(parser.json_opt.is_set());
-            Assert::IsTrue(parser.timeout_arg.is_set());
+            Assert::IsFalse(parser.kernel_opt.is_set());
+            Assert::IsFalse(parser.force_lock_opt.is_set());
+            Assert::IsFalse(parser.sample_display_long_opt.is_set());
+            Assert::IsFalse(parser.verbose_opt.is_set());
+            Assert::IsFalse(parser.quite_opt.is_set());
+            Assert::IsFalse(parser.annotate_opt.is_set());
+            Assert::IsFalse(parser.disassembly_opt.is_set());
+            Assert::IsFalse(parser.timeline_opt.is_set());
+
+            // Check all _arg flags setup
+            Assert::IsFalse(parser.extra_args_arg.is_set());
             Assert::IsTrue(parser.cores_arg.is_set());
+            Assert::IsTrue(parser.timeout_arg.is_set());
+            Assert::IsFalse(parser.symbol_arg.is_set());
+            Assert::IsFalse(parser.record_spawn_delay_arg.is_set());
+            Assert::IsFalse(parser.sample_display_row_arg.is_set());
+            Assert::IsFalse(parser.pe_file_arg.is_set());
+            Assert::IsFalse(parser.image_name_arg.is_set());
+            Assert::IsFalse(parser.pdb_file_arg.is_set());
+            Assert::IsFalse(parser.metric_config_arg.is_set());
+            Assert::IsFalse(parser.event_config_arg.is_set());
+            Assert::IsFalse(parser.output_filename_arg.is_set());
+            Assert::IsFalse(parser.output_csv_filename_arg.is_set());
+            Assert::IsFalse(parser.output_prefix_arg.is_set());
+            Assert::IsFalse(parser.config_arg.is_set());
+            Assert::IsFalse(parser.interval_arg.is_set());
+            Assert::IsFalse(parser.iteration_arg.is_set());
+            Assert::IsFalse(parser.dmc_arg.is_set());
+            Assert::IsFalse(parser.metrics_arg.is_set());
             Assert::IsTrue(parser.events_arg.is_set());
 
             // Double-dash aka "--"
