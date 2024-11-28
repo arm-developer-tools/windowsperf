@@ -32,6 +32,7 @@
 #include "CppUnitTest.h"
 #include <unordered_map>
 #include "wperf/arg_parser.h"
+#include "wperf/exception.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace ArgParser;
@@ -61,7 +62,7 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"test", L"-v", L"--json", L"random" };
             const int argc = _countof(argv);
             arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+            Assert::ExpectException<fatal_exception>([&parser, argc, &argv]() {
                 parser.parse(argc, argv);
                 }
             );
@@ -117,7 +118,7 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout" };
             const int argc = _countof(argv);
             arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+            Assert::ExpectException<fatal_exception>([&parser, argc, &argv]() {
                 parser.parse(argc, argv);
                 }
             );
@@ -129,7 +130,7 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"invalid_command" };
             const int argc = _countof(argv);
             arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+            Assert::ExpectException<fatal_exception>([&parser, argc, &argv]() {
                 parser.parse(argc, argv);
                 }
             );
@@ -150,7 +151,7 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout", L"5.4", L"ms" };
             const int argc = _countof(argv);
             arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+            Assert::ExpectException<fatal_exception>([&parser, argc, &argv]() {
                 parser.parse(argc, argv);
                 }
             );
@@ -266,7 +267,7 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"sample", L"--unknown" };
             const int argc = _countof(argv);
             arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+            Assert::ExpectException<fatal_exception>([&parser, argc, &argv]() {
                 parser.parse(argc, argv);
                 }
             );
@@ -278,7 +279,7 @@ namespace wperftest
             const wchar_t* argv[] = { L"wperf", L"--annotate", L"--json" };
             const int argc = _countof(argv);
             arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+            Assert::ExpectException<fatal_exception>([&parser, argc, &argv]() {
                 parser.parse(argc, argv);
                 }
             );
