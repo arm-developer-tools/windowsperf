@@ -50,6 +50,7 @@
 #include "config.h"
 #include "perfdata.h"
 #include "disassembler.h"
+#include "arg-parser.h"
 
 static bool no_ctrl_c = true;
 
@@ -81,10 +82,12 @@ wmain(
 )
 {
     auto exit_code = EXIT_SUCCESS;
+    ArgParser::arg_parser arg_parser;
+	arg_parser.parse(argc, argv);
+    
 
     user_request request;
     pmu_device pmu_device;
-    wstr_vec raw_args;
 
     LLVMDisassembler disassembler;
     bool spawned_process = false;
@@ -92,24 +95,14 @@ wmain(
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
 
-    //* Handle CLI options before we initialize PMU device(s)
-    for (int i = 1; i < argc; i++)
-        raw_args.push_back(argv[i]);
-
-    pmu_device.do_force_lock = user_request::is_force_lock(raw_args);
-
-    if (raw_args.size() == 1 && user_request::is_help(raw_args))
+    if (arg_parser.m_command == ArgParser::COMMAND_CLASS::HELP)
     {
-        user_request::print_help();
+        arg_parser.print_help();
         goto clean_exit;
     }
 
-    if (raw_args.empty())
-    {
-        user_request::print_help_header();
-        user_request::print_help_prompt();
-        goto clean_exit;
-    }
+    pmu_device.do_force_lock = arg_parser.force_lock_opt.is_set();
+
     //* Handle CLI options before we initialize PMU device(s)
 
     try {
@@ -162,7 +155,7 @@ wmain(
     {
         struct pmu_device_cfg pmu_cfg;
         pmu_device.get_pmu_device_cfg(pmu_cfg);
-        request.init(raw_args, pmu_cfg,
+        request.init(arg_parser, pmu_cfg,
             pmu_device.builtin_metrics,
             pmu_device.get_product_groups_metrics_names(),
             pmu_events::extra_events);
@@ -1340,7 +1333,8 @@ clean_exit:
 #if defined(ENABLE_ETW_TRACING_APP)
     EventUnregisterWindowsPerf_App();
 #endif
-
+    std::wstring hellp;
+    std::wcin >> hellp;
     if(spawned_process)
     {
         TerminateProcess(pi.hProcess, 0);

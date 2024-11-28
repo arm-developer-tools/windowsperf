@@ -58,7 +58,7 @@ namespace ArgParser {
         MAN,
         NO_COMMAND
     };
-    class arg_parser_arg_command : public arg_parser_arg_opt {
+    class arg_parser_arg_command : public arg_parser_arg_pos {
 
     public:
         arg_parser_arg_command(
@@ -67,8 +67,9 @@ namespace ArgParser {
             const std::wstring description,
             const std::wstring useage_text,
             const COMMAND_CLASS command,
-            const wstr_vec examples
-        ) : arg_parser_arg_opt(name, alias, description), m_examples(examples), m_command(command), m_useage_text(useage_text) {};
+            const wstr_vec examples,
+			const int arg_count = 0
+        ) : arg_parser_arg_pos(name, alias, description, {}, arg_count), m_examples(examples), m_command(command), m_useage_text(useage_text) {};
         const COMMAND_CLASS m_command = COMMAND_CLASS::NO_COMMAND;
         const wstr_vec m_examples;
         const std::wstring m_useage_text;
@@ -180,7 +181,8 @@ namespace ArgParser {
             L"wperf man [--json]",
             COMMAND_CLASS::MAN,
             {
-            }
+            },
+            1
             );
 
 #pragma endregion
@@ -346,7 +348,7 @@ namespace ArgParser {
             {}
         );
         arg_parser_arg_pos iteration_arg = arg_parser_arg_pos::arg_parser_arg_pos(
-            L"-i",
+            L"-n",
             {},
             L"Number of consecutive counts in timeline mode (disabled by default).",
             {}

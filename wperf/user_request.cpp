@@ -319,7 +319,7 @@ bool user_request::is_help(const wstr_vec& raw_args)
         || is_cli_option_in_args(raw_args, std::wstring(L"-h"));
 }
 
-void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+void user_request::init(ArgParser::arg_parser& parsed_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<std::wstring, metric_desc>& builtin_metrics,
     const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
     std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
@@ -332,7 +332,7 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
     cores_idx.resize(pmu_cfg.core_num);
     std::iota(cores_idx.begin(), cores_idx.end(), (UINT8)0);
 
-    parse_raw_args(raw_args, pmu_cfg, events, groups, builtin_metrics, groups_of_metrics, extra_events);
+    parse_raw_args(parsed_args, pmu_cfg, events, groups, builtin_metrics, groups_of_metrics, extra_events);
 
     // Deduce image name and PDB file name from PE file name
     if (sample_pe_file.size())
@@ -392,75 +392,62 @@ void user_request::init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg
     check_events(EVT_DMC_CLKDIV2, MAX_MANAGED_DMC_CLKDIV2_EVENTS);
 }
 
-void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+void user_request::parse_raw_args(ArgParser::arg_parser& parsed_args, const struct pmu_device_cfg& pmu_cfg,
     std::map<enum evt_class, std::deque<struct evt_noted>>& events,
     std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
     std::map<std::wstring, metric_desc>& builtin_metrics,
     const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
     std::map<enum evt_class, std::vector<struct extra_event>>& extra_events)
 {   
-    bool waiting_events = false;
-    bool waiting_metrics = false;
-    bool waiting_core_idx = false;
-    bool waiting_dmc_idx = false;
-    bool waiting_duration = false;
-    bool waiting_interval = false;
-    bool waiting_metric_config = false;
-    bool waiting_events_config = false;
-    bool waiting_output_filename = false;
-    bool waiting_output_csv_filename = false;
-    bool waiting_image_name = false;
-    bool waiting_pe_file = false;
-    bool waiting_pdb_file = false;
-    bool waiting_sample_display_row = false;
-    bool waiting_timeline_count = false;
-    bool waiting_config = false;
-    bool waiting_commandline = false;
-    bool waiting_record_spawn_delay = false;
-    bool waiting_man_query = false;
-    bool waiting_cwd = false;
-    bool waiting_symbol = false;
+
 
     bool sample_pe_file_given = false;
 
     std::wstring waiting_duration_arg;
     std::wstring output_filename, output_csv_filename;
 
-    if (raw_args.empty())
+    switch (parsed_args.m_command)
     {
-        print_help_header();
-        print_help_prompt();
+        case ArgParser::COMMAND_CLASS::STAT:
+			do_count = true;
+            break;
+        case ArgParser::COMMAND_CLASS::SAMPLE:
+			do_sample = true;
+            break;
+        case ArgParser::COMMAND_CLASS::RECORD:
+			do_record = true;
+            break;
+        case ArgParser::COMMAND_CLASS::TEST:
+			do_test = true;
+            break;
+        case ArgParser::COMMAND_CLASS::DETECT:
+            do_detect = true;
+            break;
+        case ArgParser::COMMAND_CLASS::HELP:
+			do_help = true;
+            break;
+        case ArgParser::COMMAND_CLASS::VERSION:
+			do_version = true;
+            break;
+        case ArgParser::COMMAND_CLASS::LIST:
+			do_list = true;
+            break;
+        case ArgParser::COMMAND_CLASS::MAN:
+			do_man = true;
+            break;
+        default:
+            break;
     }
 
-    for (const auto& a : raw_args)
+    if (parsed_args.metric_config_arg.is_set())
     {
-        if (waiting_metric_config)
-        {
-            waiting_metric_config = false;
-            load_config_metrics(a, pmu_cfg);
-            continue;
-        }
-
-        if (a == L"-C")
-        {
-            waiting_metric_config = true;
-            continue;
-        }
-
-        if (waiting_events_config)
-        {
-            waiting_events_config = false;
-            load_config_events(a, extra_events);
-            continue;
-        }
-
-        if (a == L"-E")
-        {
-            waiting_events_config = true;
-            continue;
-        }
+        load_config_metrics(parsed_args.metric_config_arg.get_values().front(), pmu_cfg);
     }
-
+    if (parsed_args.event_config_arg.is_set())
+    {
+        load_config_events(parsed_args.event_config_arg.get_values().front(), extra_events);
+    }
+    
     if (builtin_metrics.size())
     {
         for (const auto& [key, value] : builtin_metrics)
@@ -469,43 +456,173 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                 metrics[key] = value;
         }
     }
-
-    for (const auto& a : raw_args)
+    if (parsed_args.extra_args_arg.is_set())
     {
-        if (waiting_commandline)
+        if (sample_pe_file.empty())
+            sample_pe_file = parsed_args.extra_args_arg.get_values().front();
+        
+        record_commandline += WStringJoin(parsed_args.extra_args_arg.get_values(), L" ");
+        if (!(do_record || do_count))
+            m_out.GetErrorOutputStream() << L"warning: only `stat` and `record` support process spawn!" << std::endl;
+
+        sample_pe_file.clear();
+        record_commandline.clear();
+    }
+    if (parsed_args.output_prefix_arg.is_set())
+    {
+        m_cwd = parsed_args.output_prefix_arg.get_values().front();
+    }
+    if (parsed_args.output_filename_arg.is_set())
+    {
+        output_filename = parsed_args.output_filename_arg.get_values().front();
+    }
+
+    if (parsed_args.output_csv_filename_arg.is_set())
+    {
+        output_csv_filename = parsed_args.output_csv_filename_arg.get_values().front();
+    }
+
+    if (parsed_args.config_arg.is_set())
+    {
+        wstring config_values = parsed_args.config_arg.get_values().front();
+        if (drvconfig::set(config_values) == false)
+            m_out.GetErrorOutputStream() << L"error: can't set '" << config_values << "' config" << std::endl;
+    }
+    if (parsed_args.image_name_arg.is_set())
+    {
+        sample_image_name = parsed_args.image_name_arg.get_values().front();
+    }
+
+    if (parsed_args.pe_file_arg.is_set())
+    {
+		wstring parsed_pe_file = parsed_args.pe_file_arg.get_values().front();
+        if (std::filesystem::exists(parsed_pe_file) == false)
         {
-            if (sample_pe_file.empty())
-            {
-                sample_pe_file = a;
-                record_commandline = a;
-            }
-            else
-                record_commandline += L" " + a;
-            continue;
+            m_out.GetErrorOutputStream() << L"PE file '" << parsed_pe_file << L"' doesn't exist"
+                << std::endl;
+            throw fatal_exception("ERROR_PE_FILE_PATH");
+        }
+        sample_pe_file = parsed_pe_file;
+        sample_pe_file_given = true;
+    }
+  
+    if (parsed_args.pdb_file_arg.is_set())
+    {
+        wstring parsed_pdb_file = parsed_args.pdb_file_arg.get_values().front();
+        if (std::filesystem::exists(parsed_pdb_file) == false)
+        {
+            m_out.GetErrorOutputStream() << L"PDB file '" << parsed_pdb_file << L"' doesn't exist"
+                << std::endl;
+            throw fatal_exception("ERROR_PDB_FILE_PATH");
+        }
+        sample_pdb_file = parsed_pdb_file;
+    }
+
+
+    if (parsed_args.cores_arg.is_set())
+    {
+        wstring core_idx_str = WStringJoin(parsed_args.cores_arg.get_values(), L",");
+
+        if (TokenizeWideStringOfInts(core_idx_str.c_str(), L',', cores_idx) == false)
+        {
+            m_out.GetErrorOutputStream() << L"option -c format not supported, use comma separated list of integers, or range of integers"
+                << std::endl;
+            throw fatal_exception("ERROR_CORES");
         }
 
-        if (waiting_metric_config)
+        if (cores_idx.size() > MAX_PMU_CTL_CORES_COUNT)
         {
-            waiting_metric_config = false;
-            continue;
+            m_out.GetErrorOutputStream() << L"you can specify up to " << int(MAX_PMU_CTL_CORES_COUNT)
+                << L"cores with -c <cpu_list> option"
+                << std::endl;
+            throw fatal_exception("ERROR_CORES");
         }
+    }
 
-        if (waiting_events_config)
-        {
-            waiting_events_config = false;
-            continue;
-        }
+    if (parsed_args.iteration_arg.is_set())
+    {
+        count_timeline = _wtoi(parsed_args.iteration_arg.get_values().front().c_str());
+    }
 
-        if (waiting_events)
+    if (parsed_args.record_spawn_delay_arg.is_set())
+    {
+        uint32_t val = _wtoi(parsed_args.record_spawn_delay_arg.get_values().front().c_str());
+        assert(val <= UINT32_MAX);
+        record_spawn_delay = val;
+    }
+
+    if (parsed_args.dmc_arg.is_set())
+    {
+
+        int val = _wtoi(parsed_args.output_filename_arg.get_values().front().c_str());
+        assert(val <= UCHAR_MAX);
+        dmc_idx = (uint8_t)val;
+    }
+
+    if (parsed_args.timeout_arg.is_set())
+    {
+        count_duration = convert_timeout_arg_to_seconds(parsed_args.output_filename_arg.get_values().front(), parsed_args.timeout_arg.get_name());
+    }
+    
+    if (parsed_args.interval_arg.is_set())
+    {
+        count_interval = convert_timeout_arg_to_seconds(parsed_args.interval_arg.get_values().front(), parsed_args.interval_arg.get_name());
+    }
+
+    if (parsed_args.sample_display_row_arg.is_set())
+    {
+        sample_display_row = _wtoi(parsed_args.sample_display_row_arg.get_values().front().c_str());
+    }
+
+    if (parsed_args.man_command.is_set())
+    {
+        man_query_args = parsed_args.man_command.get_values().front();
+    }
+    if (parsed_args.symbol_arg.is_set())
+    {
+        symbol_arg = parsed_args.symbol_arg.get_values().front();
+        do_symbol = true;
+
+    }
+	do_disassembly = parsed_args.disassembly_opt.is_set();
+	do_annotate = parsed_args.annotate_opt.is_set() || parsed_args.disassembly_opt.is_set();
+	do_force_lock = parsed_args.force_lock_opt.is_set();
+	do_kernel = parsed_args.kernel_opt.is_set();
+	if (parsed_args.timeline_opt.is_set())
+	{
+		do_timeline = true;
+        if (count_interval == -1.0)
+            count_interval = 60;
+        if (count_duration == -1.0)
+            count_duration = 1;
+	}
+    sample_display_short = !parsed_args.sample_display_long_opt.is_set();
+	do_verbose = parsed_args.verbose_opt.is_set();
+	m_out.m_isQuiet = parsed_args.quite_opt.is_set();
+    if (parsed_args.json_opt.is_set() && m_outputType != TableType::ALL)
+    {
+        m_outputType = TableType::JSON;
+        m_out.m_isQuiet = true;
+    }
+    // TODO: Check why This flag is not documented
+    //if (a == L"--export_perf_data")
+    //{
+    //    do_export_perf_data = true;
+    //    continue;
+    //}
+
+
+        if (parsed_args.events_arg.is_set())
         {
+			wstring raw_events_string = WStringJoin(parsed_args.events_arg.get_values(), L",");
             if (do_sample || do_record)
             {
                 m_sampling_flags.clear();   // Prepare to collect SPE filters
-                if (parse_events_str_for_feat_spe(a, m_sampling_flags))   // Check if we are sampling with SPE
+                if (parse_events_str_for_feat_spe(raw_events_string, m_sampling_flags))   // Check if we are sampling with SPE
                 {
                     if (pmu_cfg.has_spe == false)
                     {
-                        m_out.GetErrorOutputStream() << L"SPE is not supported by your hardware: " << a << std::endl;
+                        m_out.GetErrorOutputStream() << L"SPE is not supported by your hardware: " << raw_events_string << std::endl;
                         throw fatal_exception("ERROR_SPE_NOT_SUPP");
                     }
 
@@ -538,7 +655,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                 }
                 else    // Software sampling (no SPE)
                 {
-                    parse_events_str_for_sample(a, ioctl_events_sample, sampling_inverval);
+                    parse_events_str_for_sample(raw_events_string, ioctl_events_sample, sampling_inverval);
                     // After events are parsed check if we can fulfil this request as sampling does not have multiplexing
                     if (ioctl_events_sample.size() > pmu_cfg.total_gpc_num)
                     {
@@ -556,44 +673,14 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                 }
             }
             else
-                parse_events_str(a, events, groups, L"", pmu_cfg);
-            waiting_events = false;
-            continue;
+                parse_events_str(raw_events_string, events, groups, L"", pmu_cfg);
         }
 
-        if (waiting_cwd)
+        if (parsed_args.metrics_arg.is_set())
         {
-            waiting_cwd = false;
-            m_cwd = a;
-            continue;
-        }
-
-        if (waiting_output_filename)
-        {
-            waiting_output_filename = false;
-            output_filename = a;
-            continue;
-        }
-
-        if (waiting_output_csv_filename)
-        {
-            waiting_output_csv_filename = false;
-            output_csv_filename = a;
-            continue;
-        }
-
-        if (waiting_config)
-        {
-            waiting_config = false;
-            if (drvconfig::set(a) == false)
-                m_out.GetErrorOutputStream() << L"error: can't set '" << a << "' config" << std::endl;
-            continue;
-        }
-
-        if (waiting_metrics)
-        {
+            wstring raw_metrics_string = WStringJoin(parsed_args.metrics_arg.get_values(), L",");
             std::vector<std::wstring> list_of_defined_metrics;
-            std::wistringstream metric_stream(a);
+            std::wistringstream metric_stream(raw_metrics_string);
             std::wstring metric_token;
 
             while (std::getline(metric_stream, metric_token, L','))
@@ -642,391 +729,7 @@ void user_request::parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cf
                 else if (metric == L"ddr_bw")
                     report_ddr_bw_metric = true;
             }
-
-            waiting_metrics = false;
-            continue;
         }
-
-        if (waiting_image_name)
-        {
-            sample_image_name = a;
-            waiting_image_name = false;
-            continue;
-        }
-
-        if (waiting_pe_file)
-        {
-            if (std::filesystem::exists(a) == false)
-            {
-                m_out.GetErrorOutputStream() << L"PE file '" << a << L"' doesn't exist"
-                    << std::endl;
-                throw fatal_exception("ERROR_PE_FILE_PATH");
-            }
-
-            sample_pe_file = a;
-            sample_pe_file_given = true;
-            waiting_pe_file = false;
-            continue;
-        }
-
-        if (waiting_pdb_file)
-        {
-            if (std::filesystem::exists(a) == false)
-            {
-                m_out.GetErrorOutputStream() << L"PDB file '" << a << L"' doesn't exist"
-                    << std::endl;
-                throw fatal_exception("ERROR_PDB_FILE_PATH");
-            }
-
-            sample_pdb_file = a;
-            waiting_pdb_file = false;
-            continue;
-        }
-
-        if (waiting_core_idx)
-        {
-            if (TokenizeWideStringOfInts(a.c_str(), L',', cores_idx) == false)
-            {
-                m_out.GetErrorOutputStream() << L"option -c format not supported, use comma separated list of integers, or range of integers"
-                    << std::endl;
-                throw fatal_exception("ERROR_CORES");
-            }
-
-            if (cores_idx.size() > MAX_PMU_CTL_CORES_COUNT)
-            {
-                m_out.GetErrorOutputStream() << L"you can specify up to " << int(MAX_PMU_CTL_CORES_COUNT)
-                    << L"cores with -c <cpu_list> option"
-                    << std::endl;
-                throw fatal_exception("ERROR_CORES");
-            }
-
-            waiting_core_idx = false;
-            continue;
-        }
-
-        if (waiting_timeline_count)
-        {
-            count_timeline = _wtoi(a.c_str());
-            waiting_timeline_count = false;
-            continue;
-        }
-
-        if (waiting_record_spawn_delay)
-        {
-            uint32_t val = _wtoi(a.c_str());
-            assert(val <= UINT32_MAX);
-            record_spawn_delay = val;
-            waiting_record_spawn_delay = false;
-            continue;
-        }
-
-        if (waiting_dmc_idx)
-        {
-            int val = _wtoi(a.c_str());
-            assert(val <= UCHAR_MAX);
-            dmc_idx = (uint8_t)val;
-            waiting_dmc_idx = false;
-            continue;
-        }
-
-        if (waiting_duration)
-        {
-            count_duration = convert_timeout_arg_to_seconds(a, waiting_duration_arg);
-            waiting_duration = false;
-            continue;
-        }
-
-        if (waiting_interval)
-        {
-            count_interval = convert_timeout_arg_to_seconds(a, waiting_duration_arg);
-            waiting_interval = false;
-            continue;
-        }
-
-        if (waiting_sample_display_row)
-        {
-            sample_display_row = _wtoi(a.c_str());
-            waiting_sample_display_row = false;
-            continue;
-        }
-
-        if (waiting_man_query)
-        {
-            man_query_args = a;
-            waiting_man_query = false;
-            continue;
-        }
-
-        if (waiting_symbol)
-        {
-            symbol_arg = a;
-            waiting_symbol = false;
-            continue;
-        }
-
-        // For compatibility with Linux perf
-        if (a == L"list" || a == L"-l")
-        {
-            do_list = true;
-            continue;
-        }
-
-        if (a == L"-e")
-        {
-            waiting_events = true;
-            continue;
-        }
-
-        if (a == L"-C") // Skip this one as it was handled before any other args
-        {
-            waiting_metric_config = true;
-            continue;
-        }
-
-        if (a == L"-E") // Skip this one as it was handled before any other args
-        {
-            waiting_events_config = true;
-            continue;
-        }
-
-        if (a == L"-m")
-        {
-            waiting_metrics = true;
-            continue;
-        }
-
-        if (a == L"stat")
-        {
-            do_count = true;
-            continue;
-        }
-
-        if (a == L"record")
-        {
-            do_record = true;
-            continue;
-        }
-
-        if (a == L"sample")
-        {
-            do_sample = true;
-            continue;
-        }
-
-        if (a == L"detect")
-        {
-            do_detect = true;
-            continue;
-        }
-        if (a == L"man")
-        {
-            do_man = true;
-            waiting_man_query = true;
-            continue;
-        }
-
-        if (a == L"--image_name")
-        {
-            waiting_image_name = true;
-            continue;
-        }
-
-        if (a == L"--disassemble")
-        {
-            do_disassembly = true;
-            do_annotate = true;
-            continue;
-        }
-
-        if (a == L"--force-lock")
-        {
-            do_force_lock = true;
-            continue;
-        }
-
-        if (a == L"--export_perf_data")
-        {
-            do_export_perf_data = true;
-            continue;
-        }
-
-        if (a == L"--record_spawn_delay")
-        {
-            waiting_record_spawn_delay = true;
-            continue;
-        }
-
-        if (a == L"--pe_file")
-        {
-            waiting_pe_file = true;
-            continue;
-        }
-
-        if (a == L"--pdb_file")
-        {
-            waiting_pdb_file = true;
-            continue;
-        }
-
-        if (a == L"--timeout" || a == L"sleep")
-        {
-            waiting_duration = true;
-            waiting_duration_arg = a;
-            continue;
-        }
-
-        if (a == L"--cwd" || a == L"--output-prefix")
-        {
-            waiting_cwd = true;
-            continue;
-        }
-
-        if (a == L"--output" || a == L"-o")
-        {
-            waiting_output_filename = true;
-            continue;
-        }
-
-        if (a == L"--output-csv")
-        {
-            waiting_output_csv_filename = true;
-            continue;
-        }
-
-        if (a == L"--config")
-        {
-            waiting_config = true;
-            continue;
-        }
-
-        if (a == L"-k")
-        {
-            do_kernel = true;
-            continue;
-        }
-
-        if (a == L"-t")
-        {
-            do_timeline = true;
-            if (count_interval == -1.0)
-                count_interval = 60;
-            if (count_duration == -1.0)
-                count_duration = 1;
-            continue;
-        }
-
-        if (a == L"-n")
-        {
-            waiting_timeline_count = true;
-            continue;
-        }
-
-        if (a == L"--sample-display-row")
-        {
-            waiting_sample_display_row = true;
-            continue;
-        }
-
-        if (a == L"--sample-display-long")
-        {
-            sample_display_short = false;
-            continue;
-        }
-
-        if (a == L"-i")
-        {
-            waiting_duration_arg = a;
-            waiting_interval = true;
-            continue;
-        }
-
-        if (a == L"-c" || a == L"--cpu")
-        {
-            waiting_core_idx = true;
-            continue;
-        }
-
-        if (a == L"--dmc")
-        {
-            waiting_dmc_idx = true;
-            continue;
-        }
-
-        if (a == L"-v" || a == L"--verbose")
-        {
-            do_verbose = true;
-            continue;
-        }
-
-        if (a == L"--annotate")
-        {
-            do_annotate = true;
-            continue;
-        }
-
-        if (a == L"--version")
-        {
-            do_version = true;
-            continue;
-        }
-
-        if (a == L"-h" || a == L"--help")
-        {
-            do_help = true;
-            continue;
-        }
-
-        if (a == L"-q")
-        {
-            m_out.m_isQuiet = true;
-            continue;
-        }
-
-        if (a == L"--json")
-        {
-            if (m_outputType != TableType::ALL)
-            {
-                m_outputType = TableType::JSON;
-                m_out.m_isQuiet = true;
-            }
-            continue;
-        }
-
-        if (a == L"test")
-        {
-            do_test = true;
-            continue;
-        }
-
-        if (a == L"-s" || a == L"--symbol")
-        {
-            do_symbol = true;
-            waiting_symbol = true;
-            continue;
-        }
-
-        /* This will finish command line argument parsing. After "--" we will see process to spawn in form of:
-        *
-        *  wperf ... -- PROCESS_NAME ARG ARG ARG ARG ...
-        *
-        *  From now on we will parse process spawn name and verbatim arguments
-        */
-        if (a == L"--")
-        {
-            if (!(do_record || do_count))
-                m_out.GetErrorOutputStream() << L"warning: only `stat` and `record` support process spawn!" << std::endl;
-
-            waiting_commandline = true;
-            /* We will reload here PE file name to spawn. `waiting_commandline` will expect this
-            *  to be empty to detect beggining of the scan.
-            */
-            sample_pe_file.clear();
-            record_commandline.clear();
-            continue;
-        }
-
-        m_out.GetErrorOutputStream() << L"warning: unexpected arg '" << a << L"' ignored" << std::endl;
-    }
 
     std::wstring output_filename_full_path = output_filename;
     std::wstring output_filename_csv_full_path = output_csv_filename;
