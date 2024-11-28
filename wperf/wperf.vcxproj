@@ -443,6 +443,8 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="arg-parser-arg.cpp" />
+    <ClCompile Include="arg-parser.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="disassembler.cpp" />
     <ClCompile Include="events.cpp" />

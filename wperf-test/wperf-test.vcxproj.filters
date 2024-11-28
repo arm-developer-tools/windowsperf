@@ -63,6 +63,15 @@
     <ClCompile Include="wperf-test-spe_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="arg-parser-tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="arg-parser-arg-utils-tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="arg-parser-arg-tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
