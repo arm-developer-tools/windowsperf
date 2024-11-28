@@ -39,7 +39,7 @@ using namespace ArgParser;
 namespace wperftest
 {
 
-    TEST_CLASS(parsertests)
+    TEST_CLASS(ArgParser)
     {
     public:
         bool check_value_in_vector(const std::vector<std::wstring>& vec, const std::wstring& value)
