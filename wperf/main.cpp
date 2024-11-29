@@ -1328,8 +1328,6 @@ clean_exit:
 #if defined(ENABLE_ETW_TRACING_APP)
     EventUnregisterWindowsPerf_App();
 #endif
-    std::wstring hellp;
-    std::wcin >> hellp;
     if(spawned_process)
     {
         TerminateProcess(pi.hProcess, 0);

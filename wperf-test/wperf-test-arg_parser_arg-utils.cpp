@@ -69,21 +69,21 @@ namespace wperftest
         {
             std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.";
             size_t max_width = 15;
-            std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.";
+            std::wstring expected = L"Line one.\nLine two is a\nbit longer.\nShort.";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
         }
         TEST_METHOD(TestTrailingNewlineRemoval)
         {
             std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.\n";
             size_t max_width = 15;
-            std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.";
+            std::wstring expected = L"Line one.\nLine two is a\nbit longer.\nShort.";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
         }
         TEST_METHOD(TestMultipleLinesAndMultipleTrailingReturnToLines)
         {
             std::wstring input = L"Line one.\nLine two is a bit longer.\nShort.\n\n\n\n\n\n\n";
             size_t max_width = 15;
-            std::wstring expected = L"Line one.\n\nLine two is a\nbit longer.\n\nShort.\n\n\n\n\n\n";
+            std::wstring expected = L"Line one.\nLine two is a\nbit longer.\nShort.\n\n\n\n\n\n";
             Assert::AreEqual(expected, arg_parser_format_string_to_length(input, max_width));
         }
         TEST_METHOD(MultipleRetrunToLines)

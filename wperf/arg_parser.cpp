@@ -116,13 +116,13 @@ namespace ArgParser {
         m_out.GetOutputStream() << L"OPTIONS:\n\n";
         for (auto& flag : m_flags_list)
         {
-            m_out.GetOutputStream() << L" " << flag->get_help() << L"\n";
+            m_out.GetOutputStream() << flag->get_help() << L"\n\n";
         }
         m_out.GetOutputStream() << L"EXAMPLES:\n\n";
         for (auto& command : m_commands_list)
         {
             if (command->get_examples().empty()) continue;
-            m_out.GetOutputStream() << L"  " << command->get_examples() << L"\n";
+            m_out.GetOutputStream() << command->get_examples() << L"\n\n";
         }
     }
 
@@ -168,7 +168,7 @@ namespace ArgParser {
     {
         std::wstring example_output;
         for (auto& example : m_examples) {
-            example_output += example + L"\n";
+            example_output += example + L"\n\n";
         }
         return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output), L"\t");
     }
