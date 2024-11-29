@@ -50,7 +50,7 @@
 #include "config.h"
 #include "perfdata.h"
 #include "disassembler.h"
-#include "arg-parser.h"
+#include "arg_parser.h"
 
 static bool no_ctrl_c = true;
 

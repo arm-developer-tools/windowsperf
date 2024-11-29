@@ -34,7 +34,7 @@
 #include <cwchar>
 #include <vector>
 #include <sstream>
-#include "arg-parser.h"
+#include "arg_parser.h"
 #include "output.h"
 #include "exception.h"
 
