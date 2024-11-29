@@ -256,7 +256,7 @@ namespace ArgParser {
         arg_parser_arg_pos extra_args_arg = arg_parser_arg_pos::arg_parser_arg_pos(
             L"--",
             {},
-            L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
+            L"Double-dash is a syntax used signify end of command options. It separates `wperf` command line options from arguments that the process spawn command operates on. Use `--` to separate `wperf.exe` command line options from the process you want to spawn followed by its verbatim arguments.",
             {},
             -1
         );
