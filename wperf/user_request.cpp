@@ -604,12 +604,7 @@ void user_request::parse_raw_args(ArgParser::arg_parser& parsed_args, const stru
         m_outputType = TableType::JSON;
         m_out.m_isQuiet = true;
     }
-    // TODO: Check why This flag is not documented
-    //if (a == L"--export_perf_data")
-    //{
-    //    do_export_perf_data = true;
-    //    continue;
-    //}
+	do_export_perf_data = parsed_args.export_perf_data_opt.is_set();
 
 
         if (parsed_args.events_arg.is_set())
