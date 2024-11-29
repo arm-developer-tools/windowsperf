@@ -4,7 +4,7 @@
 
 | `wperf` Command     | Description |
 | ---                 | ---         |
-| `wperf -–help`      | Run wperf help command, see detailed command line syntax. |
+| `wperf --help`      | Run wperf help command, see detailed command line syntax. |
 | `wperf --version`   | Display version of the driver and CLI application. |
 | `wperf list`        | List supported events and metrics. Enable verbose mode for more details. |
 | `wperf test`        | Configuration information about driver and application. |
