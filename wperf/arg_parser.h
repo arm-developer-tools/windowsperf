@@ -246,7 +246,7 @@ namespace ArgParser {
         arg_parser_arg_opt export_perf_data_opt = arg_parser_arg_opt::arg_parser_arg_opt(
             L"--export_perf_data",
             {},
-            L"",
+            L"Generate local `perf.data` file with partial profiling information (experimental only).",
             {}
         );
 
