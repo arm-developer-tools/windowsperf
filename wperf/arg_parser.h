@@ -425,7 +425,7 @@ namespace ArgParser {
            &export_perf_data_opt,
            &extra_args_arg
         };
-
+        std::vector<arg_parser_arg*> parsed_args = {};
         wstr_vec m_arg_array;
 
 #pragma endregion
