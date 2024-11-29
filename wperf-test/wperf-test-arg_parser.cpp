@@ -310,7 +310,7 @@ namespace wperftest
             Assert::IsFalse(parser.version_command.is_set());
             Assert::IsFalse(parser.detect_command.is_set());
             Assert::IsFalse(parser.sample_command.is_set());
-            Assert::IsTrue(parser.count_command.is_set());
+            Assert::IsTrue(parser.stat_command.is_set());
             Assert::IsFalse(parser.man_command.is_set());
 
             // Check all _arg flags setup
@@ -359,7 +359,7 @@ namespace wperftest
             Assert::IsFalse(parser.version_command.is_set());
             Assert::IsFalse(parser.detect_command.is_set());
             Assert::IsFalse(parser.sample_command.is_set());
-            Assert::IsFalse(parser.count_command.is_set());
+            Assert::IsFalse(parser.stat_command.is_set());
             Assert::IsFalse(parser.man_command.is_set());
 
             // Check all _arg flags setup
@@ -417,7 +417,7 @@ namespace wperftest
             Assert::IsFalse(parser.version_command.is_set());
             Assert::IsFalse(parser.detect_command.is_set());
             Assert::IsFalse(parser.sample_command.is_set());
-            Assert::IsFalse(parser.count_command.is_set());
+            Assert::IsFalse(parser.stat_command.is_set());
             Assert::IsFalse(parser.man_command.is_set());
 
             // Check all _opt flags setup

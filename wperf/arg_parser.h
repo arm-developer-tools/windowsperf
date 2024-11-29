@@ -162,7 +162,7 @@ namespace ArgParser {
     #endif
             }
         );
-        arg_parser_arg_command count_command = arg_parser_arg_command::arg_parser_arg_command(
+        arg_parser_arg_command stat_command = arg_parser_arg_command::arg_parser_arg_command(
             L"stat",
             { L"" },
             L"Counting mode, for obtaining aggregate counts of occurrences of special events.",
@@ -367,7 +367,7 @@ namespace ArgParser {
         arg_parser_arg_pos metrics_arg = arg_parser_arg_pos::arg_parser_arg_pos(
             L"-m",
             {},
-            L"Specify comma separated list of metrics to count.\n\nNote: see list of available metric names using `list` command.",
+            L"Specify comma separated list of metrics to count.\nNote: see list of available metric names using `list` command.",
             {}
         );
         arg_parser_arg_pos events_arg = arg_parser_arg_pos::arg_parser_arg_pos(
@@ -385,7 +385,7 @@ namespace ArgParser {
            &help_command,
            &version_command,
            &sample_command,
-           &count_command,
+           &stat_command,
            &record_command,
            &list_command,
            &test_command,
