@@ -35,7 +35,7 @@
 #include "utils.h"
 #include "events.h"
 #include "output.h"
-
+#include "arg_parser.h"
 typedef std::vector<std::wstring> wstr_vec;
 
 class user_request
@@ -43,12 +43,12 @@ class user_request
 public:
     user_request();
 
-    void init(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+    void init(ArgParser::arg_parser& parsed_args, const struct pmu_device_cfg& pmu_cfg,
         std::map<std::wstring, metric_desc>& builtin_metrics,
         const std::map <std::wstring, std::vector<std::wstring>>& groups_of_metrics,
         std::map<enum evt_class, std::vector<struct extra_event>>& extra_events);
 
-    void parse_raw_args(wstr_vec& raw_args, const struct pmu_device_cfg& pmu_cfg,
+    void parse_raw_args(ArgParser::arg_parser& parsed_args, const struct pmu_device_cfg& pmu_cfg,
         std::map<enum evt_class, std::deque<struct evt_noted>>& events,
         std::map<enum evt_class, std::vector<struct evt_noted>>& groups,
         std::map<std::wstring, metric_desc>& builtin_metrics,
@@ -62,10 +62,6 @@ public:
         std::map<enum evt_class, std::vector<struct extra_event>>& extra_events);
     void load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
 
-    static void print_help();
-    static void print_help_header();
-    static void print_help_prompt();
-    static void print_help_usage();
     static bool is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt);    // Return true if `opt` is in CLI options
     static bool is_force_lock(const wstr_vec& raw_args);    // Return true if `--force-lock` is in CLI options
     static bool is_help(const wstr_vec& raw_args);          // Return true if `--help` is in CLI options

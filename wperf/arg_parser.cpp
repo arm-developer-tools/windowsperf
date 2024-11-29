@@ -28,13 +28,15 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "arg_parser.h"
 #include <iostream>
 #include <codecvt>
 #include <locale>
 #include <cwchar>
 #include <vector>
 #include <sstream>
+#include "arg_parser.h"
+#include "output.h"
+#include "exception.h"
 
 namespace ArgParser {
     arg_parser::arg_parser() {}
@@ -82,6 +84,7 @@ namespace ArgParser {
                 {
                     if (current_flag->parse(raw_args)) {
                         raw_args.erase(raw_args.begin(), raw_args.begin() + current_flag->get_arg_count() + 1);
+						parsed_args.push_back(current_flag);
                     }
                 }
                 catch (const std::exception& err)
@@ -101,26 +104,25 @@ namespace ArgParser {
 
     void arg_parser::print_help() const
     {
-        std::wcout << L"NAME:\n"
-
+        m_out.GetOutputStream() << L"NAME:\n"
             << L"\twperf - Performance analysis tools for Windows on Arm\n\n"
             << L"\tUsage: wperf <command> [options]\n\n"
             << L"SYNOPSIS:\n\n";
         for (auto& command : m_commands_list)
         {
-            std::wcout << L"\t" << command->get_all_flags_string() << L"\n" << command->get_usage_text() << L"\n";
+            m_out.GetOutputStream() << L"\t" << command->get_all_flags_string() << L"\n" << command->get_usage_text() << L"\n";
         }
 
-        std::wcout << L"OPTIONS:\n\n";
+        m_out.GetOutputStream() << L"OPTIONS:\n\n";
         for (auto& flag : m_flags_list)
         {
-            std::wcout << L" " << flag->get_help() << L"\n";
+            m_out.GetOutputStream() << flag->get_help() << L"\n\n";
         }
-        std::wcout << L"EXAMPLES:\n\n";
+        m_out.GetOutputStream() << L"EXAMPLES:\n\n";
         for (auto& command : m_commands_list)
         {
             if (command->get_examples().empty()) continue;
-            std::wcout << L"  " << command->get_examples() << L"\n";
+            m_out.GetOutputStream() << command->get_examples() << L"\n\n";
         }
     }
 
@@ -143,11 +145,6 @@ namespace ArgParser {
         std::wstring indicator(pos, L'~');
         indicator += L'^';
 
-        /*
-        TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
-
-         */
-
         std::wostringstream error_message;
         error_message << L"Invalid argument detected:\n"
             << command << L"\n"
@@ -155,8 +152,8 @@ namespace ArgParser {
         if (!additional_message.empty()) {
             error_message << additional_message << L"\n";
         }
-        std::wcerr << error_message.str();
-        throw std::invalid_argument("INVALID_ARGUMENT");
+        m_out.GetErrorOutputStream() << error_message.str();
+        throw fatal_exception("INVALID_ARGUMENT");
     }
 
 #pragma endregion
@@ -171,7 +168,7 @@ namespace ArgParser {
     {
         std::wstring example_output;
         for (auto& example : m_examples) {
-            example_output += example + L"\n";
+            example_output += example + L"\n\n";
         }
         return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output), L"\t");
     }
