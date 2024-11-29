@@ -145,11 +145,6 @@ namespace ArgParser {
         std::wstring indicator(pos, L'~');
         indicator += L'^';
 
-        /*
-        TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
-
-         */
-
         std::wostringstream error_message;
         error_message << L"Invalid argument detected:\n"
             << command << L"\n"
