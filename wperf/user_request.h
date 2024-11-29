@@ -35,7 +35,7 @@
 #include "utils.h"
 #include "events.h"
 #include "output.h"
-#include "arg-parser.h"
+#include "arg_parser.h"
 typedef std::vector<std::wstring> wstr_vec;
 
 class user_request
