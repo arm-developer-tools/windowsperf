@@ -62,10 +62,6 @@ public:
         std::map<enum evt_class, std::vector<struct extra_event>>& extra_events);
     void load_config_metrics(std::wstring config_name, const struct pmu_device_cfg& pmu_cfg);
 
-    static void print_help();
-    static void print_help_header();
-    static void print_help_prompt();
-    static void print_help_usage();
     static bool is_cli_option_in_args(const wstr_vec& raw_args, std::wstring opt);    // Return true if `opt` is in CLI options
     static bool is_force_lock(const wstr_vec& raw_args);    // Return true if `--force-lock` is in CLI options
     static bool is_help(const wstr_vec& raw_args);          // Return true if `--help` is in CLI options

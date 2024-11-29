@@ -176,11 +176,6 @@ wmain(
         goto clean_exit;
     }
 
-    if (request.do_help)
-    {
-        user_request::print_help();
-        goto clean_exit;
-    }
     if (request.do_man)
     {
         std::vector<std::wstring> col1, col2;
