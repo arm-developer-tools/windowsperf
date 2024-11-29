@@ -139,7 +139,7 @@ InstalledDir: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\L
 ```
 > cd telemetry-solution/tools/ustress
 > make clean
-> make CPU=NEOVERSE-N1
+> make CPU=NEOVERSE-N1 USE_C=1
 ```
 
 ### See Merge Request Documentation
