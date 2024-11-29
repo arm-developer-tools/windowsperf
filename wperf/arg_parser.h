@@ -243,7 +243,12 @@ namespace ArgParser {
             L"Enable timeline mode (count multiple times with specified interval). Use `-i` to specify timeline interval, and `-n` to specify number of counts.",
             {}
         );
-
+        arg_parser_arg_opt export_perf_data_opt = arg_parser_arg_opt::arg_parser_arg_opt(
+            L"--export_perf_data",
+            {},
+            L"",
+            {}
+        );
 
 #pragma endregion
 
@@ -417,6 +422,7 @@ namespace ArgParser {
            &interval_arg,
            &iteration_arg,
            &dmc_arg,
+           &export_perf_data_opt,
            &extra_args_arg
         };
 
