@@ -84,6 +84,7 @@ namespace ArgParser {
                 {
                     if (current_flag->parse(raw_args)) {
                         raw_args.erase(raw_args.begin(), raw_args.begin() + current_flag->get_arg_count() + 1);
+						parsed_args.push_back(current_flag);
                     }
                 }
                 catch (const std::exception& err)
@@ -104,7 +105,6 @@ namespace ArgParser {
     void arg_parser::print_help() const
     {
         m_out.GetOutputStream() << L"NAME:\n"
-
             << L"\twperf - Performance analysis tools for Windows on Arm\n\n"
             << L"\tUsage: wperf <command> [options]\n\n"
             << L"SYNOPSIS:\n\n";
