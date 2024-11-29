@@ -157,7 +157,7 @@ namespace ArgParser {
             {
                 L"> wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**100 Launch `python_d.exe - c 10 * *10 * *100` process and start sampling event `ld_spec` with frequency `100000` on core #1 for 30 seconds. Hint: add `--annotate` or `--disassemble` to `wperf record` command line parameters to increase sampling \"resolution\"."
     #ifdef ENABLE_SPE
-               ,L"(> wperf record -e arm_spe_0/ld=1/ -c 8 --cpython\PCbuild\arm64\python_d.exe -c 10**10**100 Launch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable collection of load sampled operations, including atomic operations that return a value to a register. Hint: add `--annotate` or `--disassemble` to `wperf record` command."
+               ,L"> wperf record -e arm_spe_0/ld=1/ -c 8 --cpython\\PCbuild\\arm64\\python_d.exe -c 10**10**100 Launch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable collection of load sampled operations, including atomic operations that return a value to a register. Hint: add `--annotate` or `--disassemble` to `wperf record` command."
     #endif
             }
         );
