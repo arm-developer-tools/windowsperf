@@ -182,9 +182,6 @@ namespace ArgParserArg {
                 formatted_str += L"\n";
                 continue;
             }
-            if (!formatted_str.empty()) {
-                formatted_str += L"\n";
-            }
             std::wstring current_line;
             std::wistringstream word_stream(line);
             std::wstring word;
