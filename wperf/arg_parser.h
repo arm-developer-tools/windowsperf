@@ -58,7 +58,7 @@ namespace ArgParser {
         MAN,
         NO_COMMAND
     };
-    class arg_parser_arg_command : public arg_parser_arg_opt {
+    class arg_parser_arg_command : public arg_parser_arg_pos {
 
     public:
         arg_parser_arg_command(
@@ -67,8 +67,9 @@ namespace ArgParser {
             const std::wstring description,
             const std::wstring useage_text,
             const COMMAND_CLASS command,
-            const wstr_vec examples
-        ) : arg_parser_arg_opt(name, alias, description), m_examples(examples), m_command(command), m_useage_text(useage_text) {};
+            const wstr_vec examples,
+			const int arg_count = 0
+        ) : arg_parser_arg_pos(name, alias, description, {}, arg_count), m_examples(examples), m_command(command), m_useage_text(useage_text) {};
         const COMMAND_CLASS m_command = COMMAND_CLASS::NO_COMMAND;
         const wstr_vec m_examples;
         const std::wstring m_useage_text;
@@ -103,7 +104,7 @@ namespace ArgParser {
             L"wperf list [-v] [--json] [--force-lock]",
             COMMAND_CLASS::LIST,
             {
-                L"> wperf list -v List all events and metrics available on your host with extended information."
+                L"> wperf list -v \nList all events and metrics available on your host with extended information."
             }
         );
         arg_parser_arg_command test_command = arg_parser_arg_command::arg_parser_arg_command(
@@ -141,36 +142,36 @@ namespace ArgParser {
         arg_parser_arg_command sample_command = arg_parser_arg_command::arg_parser_arg_command(
             L"sample",
             { L"" },
-            L"Sampling mode, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and /or instruction levels.",
+            L"Sampling mode, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and/or instruction levels.",
             L"wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config] [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock] [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble]",
             COMMAND_CLASS::SAMPLE,
             {
-                L"> wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1 Sample event `ld_spec` with frequency `100000` already running process `python_d.exe` on core #1. Press Ctrl + C to stop sampling and see the results.",
+                L"> wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1 \nSample event `ld_spec` with frequency `100000` already running process `python_d.exe` on core #1. Press Ctrl + C to stop sampling and see the results.",
             }
             );
         arg_parser_arg_command record_command = arg_parser_arg_command::arg_parser_arg_command(
             L"record",
             { L"" },
-            L"Same as sample but also automatically spawns the process and pins it to the core specified by `-c`. Process name is defined by COMMAND.User can pass verbatim arguments to the process with[ARGS].",
+            L"Same as sample but also automatically spawns the process and pins it to the core specified by `-c`. Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
             L"wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config] [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock] [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble] --COMMAND[ARGS]",
             COMMAND_CLASS::RECORD,
             {
-                L"> wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**100 Launch `python_d.exe - c 10 * *10 * *100` process and start sampling event `ld_spec` with frequency `100000` on core #1 for 30 seconds. Hint: add `--annotate` or `--disassemble` to `wperf record` command line parameters to increase sampling \"resolution\"."
+                L"> wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**100 \nLaunch `python_d.exe - c 10 * *10 * *100` process and start sampling event `ld_spec` with frequency `100000` on core #1 for 30 seconds. \nHint: add `--annotate` or `--disassemble` to `wperf record` command line parameters to increase sampling \"resolution\"."
     #ifdef ENABLE_SPE
-               ,L"> wperf record -e arm_spe_0/ld=1/ -c 8 --cpython\\PCbuild\\arm64\\python_d.exe -c 10**10**100 Launch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable collection of load sampled operations, including atomic operations that return a value to a register. Hint: add `--annotate` or `--disassemble` to `wperf record` command."
+               ,L"> wperf record -e arm_spe_0/ld=1/ -c 8 -- python_d.exe -c 10**10**100 \nLaunch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable collection of load sampled operations, including atomic operations that return a value to a register. Hint: add `--annotate` or `--disassemble` to `wperf record` command."
     #endif
             }
         );
-        arg_parser_arg_command count_command = arg_parser_arg_command::arg_parser_arg_command(
+        arg_parser_arg_command stat_command = arg_parser_arg_command::arg_parser_arg_command(
             L"stat",
             { L"" },
             L"Counting mode, for obtaining aggregate counts of occurrences of special events.",
-            L"wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json] [--output][--config] [--force-lock] --COMMAND[ARGS]",
+            L"wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json] [--output][--config] [--force-lock] --COMMAND [ARGS]",
             COMMAND_CLASS::STAT,
             {
-                L"> wperf stat -e inst_spec,vfp_spec,ase_spec,ld_spec -c 0 --timeout 3 Count events `inst_spec`, `vfp_spec`, `ase_spec` and `ld_spec` on core #0 for 3 seconds.",
-                L"> wperf stat -m imix -e l1i_cache -c 7 --timeout 10.5 Count metric `imix` (metric events will be grouped) and additional event `l1i_cache` on core #7 for 10.5 seconds.",
-                L"> wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5 Count in timeline mode(output counting to CSV file) metric `imix` 3 times on core #1 with 2 second intervals(delays between counts).Each count will last 5 seconds."
+                L"> wperf stat -e inst_spec,vfp_spec,ase_spec,ld_spec -c 0 --timeout 3 \nCount events `inst_spec`, `vfp_spec`, `ase_spec` and `ld_spec` on core #0 for 3 seconds.",
+                L"> wperf stat -m imix -e l1i_cache -c 7 --timeout 10.5 \nCount metric `imix` (metric events will be grouped) and additional event `l1i_cache` on core #7 for 10.5 seconds.",
+                L"> wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5 \nCount in timeline mode(output counting to CSV file) metric `imix` 3 times on core #1 with 2 second intervals(delays between counts). Each count will last 5 seconds."
             }
         );
         arg_parser_arg_command man_command = arg_parser_arg_command::arg_parser_arg_command(
@@ -180,7 +181,8 @@ namespace ArgParser {
             L"wperf man [--json]",
             COMMAND_CLASS::MAN,
             {
-            }
+            },
+            1
             );
 
 #pragma endregion
@@ -241,7 +243,12 @@ namespace ArgParser {
             L"Enable timeline mode (count multiple times with specified interval). Use `-i` to specify timeline interval, and `-n` to specify number of counts.",
             {}
         );
-
+        arg_parser_arg_opt export_perf_data_opt = arg_parser_arg_opt::arg_parser_arg_opt(
+            L"--export_perf_data",
+            {},
+            L"Generate local `perf.data` file with partial profiling information (experimental only).",
+            {}
+        );
 
 #pragma endregion
 
@@ -249,7 +256,7 @@ namespace ArgParser {
         arg_parser_arg_pos extra_args_arg = arg_parser_arg_pos::arg_parser_arg_pos(
             L"--",
             {},
-            L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
+            L"Double-dash is a syntax used signify end of command options. It separates `wperf` command line options from arguments that the process spawn command operates on. Use `--` to separate `wperf.exe` command line options from the process you want to spawn followed by its verbatim arguments.",
             {},
             -1
         );
@@ -346,7 +353,7 @@ namespace ArgParser {
             {}
         );
         arg_parser_arg_pos iteration_arg = arg_parser_arg_pos::arg_parser_arg_pos(
-            L"-i",
+            L"-n",
             {},
             L"Number of consecutive counts in timeline mode (disabled by default).",
             {}
@@ -360,13 +367,13 @@ namespace ArgParser {
         arg_parser_arg_pos metrics_arg = arg_parser_arg_pos::arg_parser_arg_pos(
             L"-m",
             {},
-            L"Specify comma separated list of metrics to count.\n\nNote: see list of available metric names using `list` command.",
+            L"Specify comma separated list of metrics to count.\nNote: see list of available metric names using `list` command.",
             {}
         );
         arg_parser_arg_pos events_arg = arg_parser_arg_pos::arg_parser_arg_pos(
             L"-e",
             {},
-            L"Specify comma separated list of event names (or raw events) to count, for example `ld_spec,vfp_spec,r10`. Use curly braces to group events. Specify comma separated list of event names with sampling frequency to sample, for example `ld_spec:100000`. Raw events: specify raw evens with `r<VALUE>` where `<VALUE>` is a 16-bit hexadecimal event index value without leading `0x`. For example `r10` is event with index `0x10`. Note: see list of available event names using `list` command.",
+            L"Specify comma separated list of event names (or raw events) to count, for example `ld_spec,vfp_spec,r10`. Use curly braces to group events. \nSpecify comma separated list of event names with sampling frequency to sample, for example `ld_spec:100000`. \nRaw events: specify raw evens with `r<VALUE>` where `<VALUE>` is a 16-bit hexadecimal event index value without leading `0x`. For example `r10` is event with index `0x10`. \nNote: see list of available event names using `list` command.",
             {}
         );
 #pragma endregion
@@ -378,7 +385,7 @@ namespace ArgParser {
            &help_command,
            &version_command,
            &sample_command,
-           &count_command,
+           &stat_command,
            &record_command,
            &list_command,
            &test_command,
@@ -415,9 +422,10 @@ namespace ArgParser {
            &interval_arg,
            &iteration_arg,
            &dmc_arg,
+           &export_perf_data_opt,
            &extra_args_arg
         };
-
+        std::vector<arg_parser_arg*> parsed_args = {};
         wstr_vec m_arg_array;
 
 #pragma endregion
