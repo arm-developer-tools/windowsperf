@@ -267,6 +267,7 @@ struct spe_ctl_hdr
 #define SPE_CTL_FLAG_VAL_MASK 0xFFFF    // PMSLATFR_EL1.MINLAT is 16-bit wide
 #define SPE_CTL_FLAG_VAL_12_BIT_MASK 0x0FFF    // PMSLATFR_EL1.MINLAT is 12-bit wide if CountSize == 0b0010
     UINT32 interval;
+#define SPE_CTL_INTERVAL_VAL_MASK 0x0FFFFF    // INTERVAL, bits [31:8] is interval counter reload value
 };
 
 //

@@ -47,8 +47,9 @@
 #define PMSIDR_EL1_CountSize_MASK           (0x0F << 16)    // CountSize, bits [19:16]
 #define PMSIDR_EL1_CountSize_12Bit          0b0010          // 12-bit saturating counters.
 #define PMSIDR_EL1_CountSize_16Bit          0b0011          // 16-bit saturating counters.
+#define PMSIDR_EL1_Interval_MASK            (0x0F << 8)     // Recommended minimum sampling interval.
 
-#define PMSIRR_EL1_RND                      BIT(0)
+#define PMSIRR_EL1_RND                      BIT(0)              // Add (pseudo-)random jitter to sampling interval.
 #define PMBLIMITR_EL1_LIMIT_MASK            (~((UINT64)0xFFF))  // PMBLIMITR.LIMIT, bits [63:12]
 
 #define SPE_MEMORY_BUFFER_SIZE              (PAGE_SIZE*128)     // PAGE_SIZE is defined in WDM.h
@@ -112,3 +113,4 @@ void spe_destroy();
 
 NTSTATUS spe_setup(ULONG numCores);
 void spe_destroy();
+UINT32 spe_recommended_min_sampling_interval(UINT64 pmsidr_el1_value);
